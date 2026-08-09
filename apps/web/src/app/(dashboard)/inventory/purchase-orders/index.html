@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GymFlowPro — Purchase orders</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="purchase-orders.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+<div class="sb-hdr"><svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<nav class="sb-nav"><a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a></nav>
+<div class="sb-ft"><div class="av-sm" id="userAvatar">—</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">User</div><div class="sb-ft-role" id="userRole">Staff</div></div><button class="sb-logout" id="btnLogout"><i class="ti ti-logout"></i></button></div>
+</aside>
+<div class="main">
+<header class="topbar">
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span></div></div>
+  <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
+</header>
+<div class="content">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</h1>
+      <p class="page-subtitle" data-en="Order from a supplier, approve, then receive into a warehouse." data-ar="اطلب من المورد، وافق، ثم استلم في المستودع.">Order from a supplier, approve, then receive into a warehouse.</p>
+    </div>
+    <div id="manageActions" hidden>
+      <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New PO" data-ar="أمر جديد" data-i18n-text>New PO</span></button>
+    </div>
+  </div>
+
+  <div class="layout-split">
+    <div>
+      <div class="toolbar">
+        <label><span data-en="Status" data-ar="الحالة">Status</span>
+          <select id="filterStatus">
+            <option value="" data-en="All" data-ar="الكل">All</option>
+            <option value="draft">draft</option>
+            <option value="approved">approved</option>
+            <option value="partially_received">partially_received</option>
+            <option value="received">received</option>
+            <option value="cancelled">cancelled</option>
+          </select>
+        </label>
+        <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
+      </div>
+      <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
+    </div>
+    <div class="detail-card" id="detailHost">
+      <p class="muted" data-en="Select a purchase order." data-ar="اختار أمر شراء.">Select a purchase order.</p>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="poModal" hidden>
+  <div class="modal wide">
+    <div class="modal-hdr">
+      <h2 data-en="New purchase order" data-ar="أمر شراء جديد">New purchase order</h2>
+      <button type="button" class="modal-close" data-close="poModal"><i class="ti ti-x"></i></button>
+    </div>
+    <form id="poForm" class="modal-body">
+      <label><span data-en="Supplier *" data-ar="المورد *">Supplier *</span>
+        <select id="poSupplier" required><option value="">…</option></select>
+      </label>
+      <label><span data-en="Warehouse *" data-ar="المستودع *">Warehouse *</span>
+        <select id="poWarehouse" required><option value="">…</option></select>
+      </label>
+      <label><span data-en="Notes" data-ar="ملاحظات">Notes</span><textarea id="poNotes" rows="2" maxlength="500"></textarea></label>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="font-size:13px" data-en="Lines" data-ar="البنود">Lines</strong>
+          <button type="button" class="btn-link" id="btnAddLine" data-en="+ Add line" data-ar="+ بند">+ Add line</button>
+        </div>
+        <div id="poLines"></div>
+      </div>
+      <p class="form-hint" id="poHint"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" data-close="poModal" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        <button type="submit" class="btn-create" data-en="Create draft" data-ar="إنشاء مسودة">Create draft</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="recvModal" hidden>
+  <div class="modal wide">
+    <div class="modal-hdr">
+      <h2 data-en="Receive goods" data-ar="استلام بضاعة">Receive goods</h2>
+      <button type="button" class="modal-close" data-close="recvModal"><i class="ti ti-x"></i></button>
+    </div>
+    <form id="recvForm" class="modal-body">
+      <p class="muted" data-en="Qty cannot exceed remaining. Batch / expiry required when the product tracks them." data-ar="الكمية لا تزيد عن المتبقي. رقم التشغيلة / الصلاحية مطلوبان إذا كان المنتج يتتبعهما.">Qty cannot exceed remaining. Batch / expiry required when the product tracks them.</p>
+      <div id="recvLines"></div>
+      <p class="form-hint" id="recvHint"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" data-close="recvModal" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        <button type="submit" class="btn-create" data-en="Post receipt" data-ar="تسجيل الاستلام">Post receipt</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="purchase-orders-app.js"></script>
+</body>
+</html>

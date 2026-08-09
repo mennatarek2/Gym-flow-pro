@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GymFlowPro — Members Management</title>
+  <meta name="description"
+    content="Manage gym members, view statuses, search, filter and perform bulk actions on your member database.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --c900: #0D0D0D;
+      --c800: #1A1A1A;
+      --c700: #2A2A2A;
+      --c600: #3A3A3A;
+      --c500: #4A4A4A;
+      --c400: #6B6B6B;
+      --c300: #8C8C8C;
+      --c200: #B0B0B0;
+      --c100: #D4D4D4;
+      --c50: #F0F0F0;
+      --l600: #5EAF00;
+      --l500: #7ACC00;
+      --l400: #A0E040;
+      --l300: #BEEC73;
+      --l200: #D8F5A6;
+      --l100: #EDFCD8;
+      --lglow: rgba(160, 224, 64, 0.25);
+      --t700: #0A4D4D;
+      --t600: #0D6B6B;
+      --t500: #148F8F;
+      --t400: #3DB5B5;
+      --suc500: #22C55E;
+      --suc100: #DCFCE7;
+      --suctxt: #166534;
+      --wrn500: #F59E0B;
+      --wrn100: #FEF3C7;
+      --dng500: #EF4444;
+      --dng100: #FEE2E2;
+      --inf500: #3B82F6;
+      --inf100: #DBEAFE;
+      --frz500: #22D3EE;
+      --frz100: #CFFAFE;
+      --pnd500: #FBBF24;
+      --pnd100: #FEF3C7;
+      --lbg: #FAFAFA;
+      --ls1: #FFF;
+      --ls2: #F5F5F5;
+      --ls3: #EBEBEB;
+      --ltp: #1A1A1A;
+      --lts: #4A4A4A;
+      --ltt: #8C8C8C;
+      --lbd: #D4D4D4;
+      --dbg: #0D0D0D;
+      --ds1: #1A1A1A;
+      --ds2: #2A2A2A;
+      --ds3: #3A3A3A;
+      --dtp: #F0F0F0;
+      --dts: #B0B0B0;
+      --dtt: #6B6B6B;
+      --dbd: #4A4A4A;
+      --fd: 'Space Grotesk', sans-serif;
+      --fb: 'IBM Plex Sans', 'IBM Plex Sans Arabic', sans-serif;
+      --fa: 'IBM Plex Sans Arabic', sans-serif;
+      --rsm: 6px;
+      --rmd: 10px;
+      --rlg: 16px;
+      --rxl: 24px;
+      --rpl: 9999px;
+      --sh1: 0 1px 2px rgba(0, 0, 0, .06);
+      --sh2: 0 2px 8px rgba(0, 0, 0, .08);
+      --sh3: 0 4px 16px rgba(0, 0, 0, .12);
+      --sh4: 0 8px 32px rgba(0, 0, 0, .18);
+      --shg: 0 0 20px var(--lglow);
+      --tf: 150ms ease;
+      --tb: 250ms ease;
+      --sidebar-w: 220px;
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      font-family: var(--fb);
+      background: var(--lbg);
+      color: var(--ltp);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden
+    }
+
+    /* ── Sidebar (shared with dashboard) ── */
+    .app {
+      display: flex;
+      height: 100vh
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--c900);
+      color: var(--dtp);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
+      overflow-y: auto;
+      overflow-x: hidden
+    }
+
+    .sb-hdr {
+      padding: 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--c700)
+    }
+
+    .sb-hdr svg {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0
+    }
+
+    .sb-hdr span {
+      font-family: var(--fd);
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--l400);
+      letter-spacing: -.3px
+    }
+
+    .sb-nav {
+      padding: 8px 0;
+      flex: 1
+    }
+
+    .sb-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--tf);
+      border-left: 3px solid transparent;
+      color: var(--c300);
+      text-decoration: none
+    }
+
+    .sb-item:hover {
+      background: var(--c700)
+    }
+
+    .sb-item.act {
+      background: rgba(160, 224, 64, .08);
+      color: var(--l400);
+      border-left-color: var(--l500)
+    }
+
+    .sb-item i {
+      font-size: 18px;
+      opacity: .7;
+      width: 20px;
+      text-align: center
+    }
+
+    .sb-item.act i {
+      opacity: 1
+    }
+
+    .sb-item .nav-badge {
+      margin-left: auto;
+      background: var(--dng500);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: var(--rpl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px
+    }
+
+    .sb-ft {
+      padding: 16px;
+      border-top: 1px solid var(--c700);
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .sb-ft-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .sb-ft-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .sb-ft-role {
+      font-size: 11px;
+      color: var(--c400)
+    }
+
+    .sb-logout {
+      background: none;
+      border: none;
+      color: var(--c400);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px;
+      transition: color var(--tf)
+    }
+
+    .sb-logout:hover {
+      color: var(--dng500)
+    }
+
+    .av-sm {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--fd);
+      font-weight: 700;
+      font-size: 11px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      background: var(--l300);
+      color: var(--c900)
+    }
+
+    /* ── Main + Topbar ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh
+    }
+
+    .topbar {
+      height: 60px;
+      background: var(--ls1);
+      border-bottom: 1px solid var(--ls3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      position: sticky;
+      top: 0;
+      z-index: 50
+    }
+
+    .tb-left {
+      display: flex;
+      align-items: center;
+      gap: 16px
+    }
+
+    .tb-breadcrumb {
+      font-family: var(--fd);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--lts)
+    }
+
+    .tb-breadcrumb span {
+      color: var(--ltt);
+      font-weight: 400;
+      margin-right: 6px
+    }
+
+    .tb-right {
+      display: flex;
+      align-items: center;
+      gap: 16px
+    }
+
+    .tb-gym-name {
+      font-family: var(--fd);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--lts)
+    }
+
+    .tb-gym-name-ar {
+      font-family: var(--fa);
+      font-size: 12px;
+      color: var(--ltt);
+      direction: rtl
+    }
+
+    .content {
+      padding: 24px 32px;
+      flex: 1;
+      position: relative
+    }
+
+    .mob-toggle {
+      display: none !important;
+      width: 36px;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: var(--ls2);
+      border-radius: var(--rmd);
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--lts)
+    }
+
+    @media(max-width:768px) {
+      .sidebar {
+        transform: translateX(-100%)
+      }
+
+      .sidebar.open {
+        transform: translateX(0)
+      }
+
+      .main {
+        margin-left: 0
+      }
+
+      .content {
+        padding: 16px
+      }
+
+      .topbar {
+        padding: 0 16px
+      }
+
+      .mob-toggle {
+        display: flex !important
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="members.css">
+  <link rel="stylesheet" href="member-modals.css">
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ═══════════════════════════════════════════════════════
+       Sidebar — reused from dashboard
+       ═══════════════════════════════════════════════════════ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-hdr">
+        <svg viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="#7ACC00" />
+          <path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span>GymFlowPro</span>
+      </div>
+      <nav class="sb-nav">
+        <a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+        <a class="sb-item act" href="/dashboard/members/"><i class="ti ti-users"></i>Members</a>
+        <a class="sb-item" href="/dashboard/memberships/"><i class="ti ti-id-badge"></i>Memberships</a>
+        <a class="sb-item" href="/dashboard/plans/"><i class="ti ti-package"></i>Plans</a>
+        <a class="sb-item" href="/dashboard/attendance/"><i class="ti ti-door-enter"></i>Attendance</a>
+        <a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
+<a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
+<a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
+<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
+<a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
+<a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
+<a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
+<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
+<a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
+<a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
+        <a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
+<a class="sb-item" href="/dashboard/audit/"><i class="ti ti-list-search"></i>Audit</a>
+        <a class="sb-item" href="/dashboard/notifications/"><i class="ti ti-bell"></i>Notifications</a>
+        <a class="sb-item" id="navStaff" style="display:none" href="/dashboard/staff/"><i
+            class="ti ti-user-shield"></i>Staff</a>
+        <a class="sb-item" href="/dashboard/settings/"><i class="ti ti-settings"></i>Settings</a>
+      </nav>
+      <div class="sb-ft">
+        <div class="av-sm" id="userAvatar">SM</div>
+        <div class="sb-ft-info">
+          <div class="sb-ft-name" id="userName">Sara Manager</div>
+          <div class="sb-ft-role" id="userRole">Manager</div>
+        </div>
+        <button class="sb-logout" id="btnLogout" title="Logout"><i class="ti ti-logout"></i></button>
+      </div>
+    </aside>
+
+    <!-- ═══════════════════════════════════════════════════════
+       Main Content
+       ═══════════════════════════════════════════════════════ -->
+    <div class="main">
+      <header class="topbar">
+        <div class="tb-left">
+          <button class="mob-toggle" id="mobToggle"><i class="ti ti-menu-2"></i></button>
+          <div class="tb-breadcrumb"><span>🏠</span> Dashboard / <strong>Members</strong></div>
+        </div>
+        <div class="tb-right">
+          <div>
+            <div class="tb-gym-name" id="gymName">FitZone Cairo</div>
+            <div class="tb-gym-name-ar" id="gymNameAr">فيت زون القاهرة</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content">
+
+        <!-- Page Header -->
+        <div class="pg-hdr">
+          <div class="pg-title">
+            <h1>Members <span>/ الأعضاء</span></h1>
+            <span class="pg-badge" id="totalBadge">0</span>
+          </div>
+          <button class="btn-primary" id="btnAddMember"><i class="ti ti-plus"></i> Add Member</button>
+        </div>
+
+        <!-- Search -->
+        <div class="controls">
+          <div class="search-box">
+            <i class="ti ti-search"></i>
+            <input type="text" id="searchInput" placeholder="Search by name, phone, or member number...">
+          </div>
+        </div>
+
+        <!-- Filter Chips — person-primary only (P12-R1 / P6). Membership status filters removed. -->
+        <div class="filters">
+          <button class="f-chip act" data-status="all">All</button>
+          <button class="f-chip" data-status="inactive">Archived</button>
+        </div>
+
+        <!-- People count from list API (not membership Expired/Frozen KPIs) -->
+        <div class="q-stats">
+          <div class="q-chip"><span class="q-dot active"></span><span class="q-val" id="statPeople">0</span> People
+          </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="tbl-card">
+
+          <!-- Skeleton Loading -->
+          <div id="skeleton" style="display:none">
+            <div class="sk sk-row">
+              <div class="sk-circ"></div>
+              <div class="sk-bar w30"></div>
+              <div class="sk-bar w15"></div>
+              <div class="sk-bar w20"></div>
+              <div class="sk-bar w10"></div>
+              <div class="sk-bar w15"></div>
+            </div>
+            <div class="sk sk-row">
+              <div class="sk-circ"></div>
+              <div class="sk-bar w30"></div>
+              <div class="sk-bar w15"></div>
+              <div class="sk-bar w20"></div>
+              <div class="sk-bar w10"></div>
+              <div class="sk-bar w15"></div>
+            </div>
+            <div class="sk sk-row">
+              <div class="sk-circ"></div>
+              <div class="sk-bar w30"></div>
+              <div class="sk-bar w15"></div>
+              <div class="sk-bar w20"></div>
+              <div class="sk-bar w10"></div>
+              <div class="sk-bar w15"></div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div id="tblWrap" style="overflow-x:auto">
+            <table class="m-tbl">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th style="width:130px">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tblBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty" id="emptyState" style="display:none">
+            <div class="empty-icon"><i class="ti ti-users-minus"></i></div>
+            <h3>No members found matching your search</h3>
+            <p>Try adjusting your filters or search term</p>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagi" id="pagination" style="display:none">
+            <button class="pagi-btn" id="pagiPrev"><i class="ti ti-chevron-left"></i> Previous</button>
+            <span class="pagi-info" id="pagiInfo">Page <strong>1</strong> of <strong>1</strong></span>
+            <button class="pagi-btn" id="pagiNext">Next <i class="ti ti-chevron-right"></i></button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ADD MEMBER MODAL — 560px centered overlay
+       API: POST /api/members → CreateMemberRequest
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="addMemberModal">
+    <div class="modal-panel wide">
+      <!-- Header -->
+      <div class="mdl-hdr">
+        <div class="mdl-title-wrap">
+          <div class="mdl-title"><i class="ti ti-user-plus" style="color:var(--l500)"></i> Add New Member</div>
+          <div class="mdl-subtitle">إضافة عضو جديد</div>
+        </div>
+        <button class="mdl-close"><i class="ti ti-x"></i></button>
+      </div>
+
+      <!-- Body -->
+      <div class="mdl-body">
+        <!-- Error banner -->
+        <div class="mdl-error-banner" id="addErrorBanner">
+          <i class="ti ti-alert-circle"></i>
+          <div><div class="error-text"></div><div class="error-text-ar" style="display:none"></div></div>
+        </div>
+
+        <!-- Section 1: Personal Info -->
+        <div class="form-section">
+          <div class="section-hdr">
+            <div class="section-title"><i class="ti ti-user"></i> Personal Information</div>
+            <span class="section-tag">Required</span>
+          </div>
+
+          <div class="mdl-form-row">
+            <div class="mdl-form-group">
+              <label class="mdl-label">Full Name (English) <span class="req">*</span></label>
+              <input type="text" class="mdl-input" id="addNameEn" placeholder="e.g. Ahmed Ali">
+              <div class="field-error" id="addNameEnError"><i class="ti ti-alert-circle"></i><span class="field-error-text">This field is required</span></div>
+            </div>
+            <div class="mdl-form-group">
+              <label class="mdl-label">Full Name (Arabic) <span class="req">*</span></label>
+              <input type="text" class="mdl-input rtl" id="addNameAr" placeholder="مثال: أحمد علي">
+              <div class="field-error" id="addNameArError"><i class="ti ti-alert-circle"></i><span class="field-error-text">This field is required</span></div>
+            </div>
+          </div>
+
+          <div class="mdl-form-row">
+            <div class="mdl-form-group">
+              <label class="mdl-label">Phone Number <span class="req">*</span></label>
+              <div class="phone-input-wrap" id="addPhoneWrap">
+                <div class="phone-prefix"><span class="flag">🇪🇬</span> +20</div>
+                <input type="tel" class="phone-input" id="addPhone" placeholder="010 1234 5678" maxlength="15">
+              </div>
+              <div class="field-error" id="addPhoneError"><i class="ti ti-alert-circle"></i><span class="field-error-text">Invalid Egyptian phone format</span></div>
+            </div>
+            <div class="mdl-form-group">
+              <label class="mdl-label">Date of Birth <span class="req">*</span></label>
+              <input type="date" class="mdl-input" id="addDob">
+              <div class="field-error" id="addDobError"><i class="ti ti-alert-circle"></i><span class="field-error-text">Member must be at least 10 years old</span></div>
+            </div>
+          </div>
+
+          <div class="mdl-form-group">
+            <label class="mdl-label">Email <span style="color:var(--ltt);font-weight:400;text-transform:none">(optional)</span></label>
+            <input type="email" class="mdl-input" id="addEmail" placeholder="member@email.com">
+          </div>
+        </div>
+
+        <!-- Section 2: Additional Info (collapsible) -->
+        <div class="form-section">
+          <div class="section-hdr">
+            <div class="section-title"><i class="ti ti-info-circle"></i> Additional Information</div>
+            <button class="section-toggle" id="addSectionToggle" title="Toggle section"><i class="ti ti-chevron-up"></i></button>
+          </div>
+          <div class="section-body" id="addSectionBody">
+            <div class="mdl-form-group">
+              <label class="mdl-label">National ID</label>
+              <input type="text" class="mdl-input" id="addNationalId" placeholder="29901011234567" maxlength="14">
+            </div>
+            <div class="mdl-form-group">
+              <label class="mdl-label">Emergency Contact</label>
+              <div class="phone-input-wrap">
+                <div class="phone-prefix"><span class="flag">🇪🇬</span> +20</div>
+                <input type="tel" class="phone-input" id="addEmergency" placeholder="010 9876 5432" maxlength="15">
+              </div>
+            </div>
+            <div class="mdl-form-group">
+              <label class="mdl-label">Notes</label>
+              <textarea class="mdl-input" id="addNotes" rows="3" placeholder="Any additional notes about this member..."></textarea>
+            </div>
+            <div class="mdl-form-group">
+              <label class="mdl-label">Referral code <span style="color:var(--ltt);font-weight:400;text-transform:none">(optional)</span></label>
+              <input type="text" class="mdl-input" id="addReferralCode" placeholder="e.g. RABCDEF1" style="text-transform:uppercase" maxlength="20">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="mdl-footer">
+        <button class="mdl-btn ghost" onclick="closeOverlay('addMemberModal')">Cancel</button>
+        <button class="mdl-btn primary" id="btnCreateMember" disabled>
+          <span class="btn-spinner"></span>
+          <span class="btn-label"><i class="ti ti-plus"></i> Create Member</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       EDIT MEMBER DRAWER — 400px right slide
+       API: PUT /api/members/{id} → UpdateMemberRequest
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay drawer-overlay" id="editMemberDrawer">
+    <div class="drawer-panel">
+      <!-- Header -->
+      <div class="mdl-hdr">
+        <div class="mdl-title-wrap">
+          <div class="mdl-title"><i class="ti ti-edit" style="color:var(--l500)"></i> Edit Member</div>
+          <div class="mdl-subtitle">تعديل بيانات العضو</div>
+          <div class="mdl-timestamp" id="editTimestamp" style="display:none"><i class="ti ti-clock"></i> <span></span></div>
+        </div>
+        <button class="mdl-close"><i class="ti ti-x"></i></button>
+      </div>
+
+      <!-- Body -->
+      <div class="mdl-body">
+        <!-- Error banner -->
+        <div class="mdl-error-banner" id="editErrorBanner">
+          <i class="ti ti-alert-circle"></i>
+          <div><div class="error-text"></div><div class="error-text-ar" style="display:none"></div></div>
+        </div>
+
+        <!-- Personal Info -->
+        <div class="form-section">
+          <div class="section-hdr">
+            <div class="section-title"><i class="ti ti-user"></i> Personal Information</div>
+          </div>
+
+          <div class="mdl-form-group">
+            <label class="mdl-label">Full Name (English) <span class="req">*</span></label>
+            <input type="text" class="mdl-input" id="editNameEn" placeholder="e.g. Ahmed Ali">
+          </div>
+          <div class="mdl-form-group">
+            <label class="mdl-label">Full Name (Arabic) <span class="req">*</span></label>
+            <input type="text" class="mdl-input rtl" id="editNameAr" placeholder="مثال: أحمد علي">
+          </div>
+          <div class="mdl-form-group">
+            <label class="mdl-label">Phone Number <span class="req">*</span></label>
+            <div class="phone-input-wrap" id="editPhoneWrap">
+              <div class="phone-prefix"><span class="flag">🇪🇬</span> +20</div>
+              <input type="tel" class="phone-input" id="editPhone" placeholder="010 1234 5678" maxlength="15">
+            </div>
+            <div class="field-error" id="editPhoneError"><i class="ti ti-alert-circle"></i><span class="field-error-text">Invalid Egyptian phone format</span></div>
+          </div>
+          <div class="mdl-form-group">
+            <label class="mdl-label">Date of Birth <span class="req">*</span></label>
+            <input type="date" class="mdl-input" id="editDob">
+            <div class="field-error" id="editDobError"><i class="ti ti-alert-circle"></i><span class="field-error-text">Member must be at least 10 years old</span></div>
+          </div>
+          <div class="mdl-form-group">
+            <label class="mdl-label">Email</label>
+            <input type="email" class="mdl-input" id="editEmail" placeholder="member@email.com">
+          </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="form-section">
+          <div class="section-hdr">
+            <div class="section-title"><i class="ti ti-info-circle"></i> Additional Info</div>
+            <button class="section-toggle" id="editSectionToggle" title="Toggle section"><i class="ti ti-chevron-up"></i></button>
+          </div>
+          <div class="section-body" id="editSectionBody">
+            <div class="mdl-form-group">
+              <label class="mdl-label">National ID</label>
+              <input type="text" class="mdl-input" id="editNationalId" placeholder="29901011234567" maxlength="14">
+            </div>
+            <div class="mdl-form-group">
+              <label class="mdl-label">Emergency Contact</label>
+              <div class="phone-input-wrap">
+                <div class="phone-prefix"><span class="flag">🇪🇬</span> +20</div>
+                <input type="tel" class="phone-input" id="editEmergency" placeholder="010 9876 5432" maxlength="15">
+              </div>
+            </div>
+            <div class="mdl-form-group">
+              <label class="mdl-label">Notes</label>
+              <textarea class="mdl-input" id="editNotes" rows="3" placeholder="Notes..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="mdl-footer">
+        <button class="mdl-btn ghost" onclick="closeOverlay('editMemberDrawer')">Cancel</button>
+        <button class="mdl-btn primary" id="btnSaveEdit" disabled>
+          <span class="btn-spinner"></span>
+          <span class="btn-label"><i class="ti ti-device-floppy"></i> Save Changes</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="members-app.js"></script>
+  <script src="member-modals.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymFlowPro — Member Detail</title>
+<meta name="description" content="View and manage individual gym member details, membership, attendance and history.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c900:#0D0D0D;--c800:#1A1A1A;--c700:#2A2A2A;--c600:#3A3A3A;--c500:#4A4A4A;
+  --c400:#6B6B6B;--c300:#8C8C8C;--c200:#B0B0B0;--c100:#D4D4D4;--c50:#F0F0F0;
+  --l600:#5EAF00;--l500:#7ACC00;--l400:#A0E040;--l300:#BEEC73;--l200:#D8F5A6;
+  --l100:#EDFCD8;--lglow:rgba(160,224,64,0.25);
+  --t700:#0A4D4D;--t600:#0D6B6B;--t500:#148F8F;--t400:#3DB5B5;
+  --suc500:#22C55E;--suc100:#DCFCE7;--suctxt:#166534;
+  --dng500:#EF4444;--dng100:#FEE2E2;
+  --inf500:#3B82F6;--inf100:#DBEAFE;
+  --frz500:#22D3EE;--frz100:#CFFAFE;
+  --lbg:#FAFAFA;--ls1:#FFF;--ls2:#F5F5F5;--ls3:#EBEBEB;
+  --ltp:#1A1A1A;--lts:#4A4A4A;--ltt:#8C8C8C;
+  --dtp:#F0F0F0;--dts:#B0B0B0;--dtt:#6B6B6B;
+  --fd:'Space Grotesk',sans-serif;--fb:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;
+  --fa:'IBM Plex Sans Arabic',sans-serif;
+  --rsm:6px;--rmd:10px;--rlg:16px;--rxl:24px;--rpl:9999px;
+  --sh1:0 1px 2px rgba(0,0,0,.06);--sh2:0 2px 8px rgba(0,0,0,.08);
+  --sh3:0 4px 16px rgba(0,0,0,.12);--sh4:0 8px 32px rgba(0,0,0,.18);
+  --shg:0 0 20px var(--lglow);--tf:150ms ease;--tb:250ms ease;--sidebar-w:220px;
+}
+html,body{height:100%}
+body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.6;-webkit-font-smoothing:antialiased}
+.app{display:flex;height:100vh}
+/* ── Sidebar (shared) ── */
+.sidebar{width:var(--sidebar-w);background:var(--c900);color:var(--dtp);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb-hdr{padding:20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--c700)}
+.sb-hdr svg{width:32px;height:32px;flex-shrink:0}
+.sb-hdr span{font-family:var(--fd);font-weight:700;font-size:16px;color:var(--l400)}
+.sb-nav{padding:8px 0;flex:1}
+.sb-item{display:flex;align-items:center;gap:12px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;transition:all var(--tf);border-left:3px solid transparent;color:var(--c300);text-decoration:none}
+.sb-item:hover{background:var(--c700)}
+.sb-item.act{background:rgba(160,224,64,.08);color:var(--l400);border-left-color:var(--l500)}
+.sb-item i{font-size:18px;opacity:.7;width:20px;text-align:center}
+.sb-item.act i{opacity:1}
+.sb-item .nav-badge{margin-left:auto;background:var(--dng500);color:#fff;font-size:9px;font-weight:700;min-width:18px;height:18px;border-radius:var(--rpl);display:flex;align-items:center;justify-content:center;padding:0 5px}
+.sb-ft{padding:16px;border-top:1px solid var(--c700);display:flex;align-items:center;gap:12px}
+.sb-ft-info{flex:1;min-width:0}
+.sb-ft-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-ft-role{font-size:11px;color:var(--c400)}
+.sb-logout{background:none;border:none;color:var(--c400);cursor:pointer;font-size:18px;padding:4px;transition:color var(--tf)}
+.sb-logout:hover{color:var(--dng500)}
+.av-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:11px;flex-shrink:0;text-transform:uppercase;background:var(--l300);color:var(--c900)}
+/* ── Main ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:60px;background:var(--ls1);border-bottom:1px solid var(--ls3);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:50}
+.tb-left{display:flex;align-items:center;gap:16px}
+.tb-breadcrumb{font-family:var(--fd);font-size:14px;color:var(--lts)}
+.tb-breadcrumb a{color:var(--ltt);text-decoration:none;font-weight:400}
+.tb-breadcrumb a:hover{color:var(--l600)}
+.tb-breadcrumb .sep{margin:0 6px;color:var(--ltt)}
+.tb-breadcrumb .cur{font-weight:600;color:var(--ltp)}
+.tb-right{display:flex;align-items:center;gap:12px}
+.tb-gym-name{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--lts)}
+.tb-gym-name-ar{font-family:var(--fa);font-size:12px;color:var(--ltt);direction:rtl}
+.content{padding:24px 32px;flex:1}
+.mob-toggle{display:none!important;width:36px;height:36px;align-items:center;justify-content:center;border:none;background:var(--ls2);border-radius:var(--rmd);cursor:pointer;font-size:18px;color:var(--lts)}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}.content{padding:16px}.topbar{padding:0 16px}
+  .mob-toggle{display:flex!important}
+}
+/* Action bar */
+.action-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.action-bar-left{display:flex;align-items:center;gap:10px}
+.back-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1);font-family:var(--fd);font-size:13px;font-weight:600;color:var(--lts);cursor:pointer;text-decoration:none;transition:all var(--tf)}
+.back-btn:hover{border-color:var(--l500);color:var(--l600)}
+.action-bar-right{display:flex;gap:10px}
+.btn-action{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--rmd);font-family:var(--fd);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--tf)}
+.btn-action.primary{background:var(--l500);color:var(--c900)}
+.btn-action.primary:hover{background:var(--l400);box-shadow:var(--shg)}
+.btn-action.outline{background:var(--ls1);color:var(--lts);border:1px solid var(--ls3)}
+.btn-action.outline:hover{border-color:var(--l500);color:var(--l600)}
+.btn-action i{font-size:16px}
+</style>
+<link rel="stylesheet" href="member-detail.css">
+<link rel="stylesheet" href="../member-modals.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-hdr">
+      <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>GymFlowPro</span>
+    </div>
+    <nav class="sb-nav">
+      <a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+      <a class="sb-item act" href="/dashboard/members/"><i class="ti ti-users"></i>Members</a>
+      <a class="sb-item" href="/dashboard/memberships/"><i class="ti ti-id-badge"></i>Memberships</a>
+      <a class="sb-item" href="/dashboard/plans/"><i class="ti ti-package"></i>Plans</a>
+      <a class="sb-item" href="/dashboard/attendance/"><i class="ti ti-door-enter"></i>Attendance</a>
+      <a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
+<a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
+<a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
+<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
+<a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
+<a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
+<a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
+<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
+<a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
+<a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
+      <a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
+<a class="sb-item" href="/dashboard/audit/"><i class="ti ti-list-search"></i>Audit</a>
+      <a class="sb-item" href="/dashboard/notifications/"><i class="ti ti-bell"></i>Notifications</a>
+      <a class="sb-item" id="navStaff" style="display:none" href="/dashboard/staff/"><i class="ti ti-user-shield"></i>Staff</a>
+      <a class="sb-item" href="/dashboard/settings/"><i class="ti ti-settings"></i>Settings</a>
+    </nav>
+    <div class="sb-ft">
+      <div class="av-sm" id="userAvatar">AO</div>
+      <div class="sb-ft-info">
+        <div class="sb-ft-name" id="userName">Ahmed Owner</div>
+        <div class="sb-ft-role" id="userRole">Owner</div>
+      </div>
+      <button class="sb-logout" id="btnLogout" title="Logout"><i class="ti ti-logout"></i></button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="mob-toggle" id="mobToggle"><i class="ti ti-menu-2"></i></button>
+        <div class="tb-breadcrumb">
+          <a href="/dashboard/">🏠</a>
+          <span class="sep">/</span>
+          <a href="/dashboard/members/">Members</a>
+          <span class="sep">/</span>
+          <span class="cur" id="breadcrumbName">Loading...</span>
+        </div>
+      </div>
+      <div class="tb-right">
+        <div>
+          <div class="tb-gym-name" id="gymName">FitZone Cairo</div>
+          <div class="tb-gym-name-ar" id="gymNameAr">فيت زون القاهرة</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <div class="action-bar-left">
+          <a class="back-btn" href="/dashboard/members/"><i class="ti ti-arrow-left"></i> Back to Members</a>
+        </div>
+        <div class="action-bar-right">
+          <button class="btn-action outline" id="btnNotify"><i class="ti ti-bell"></i> Send Notification</button>
+          <button class="btn-action primary" id="btnEdit"><i class="ti ti-edit"></i> Edit Member</button>
+        </div>
+      </div>
+
+      <!-- 2-Column Layout -->
+      <div class="detail-layout">
+
+        <!-- ── LEFT: Profile Card ── -->
+        <div>
+          <!-- Skeleton -->
+          <div id="skeletonProfile" class="profile-card sk">
+            <div class="sk-circ"></div>
+            <div class="sk-line w60" style="margin:0 auto 8px"></div>
+            <div class="sk-line w40" style="margin:0 auto 20px"></div>
+            <div class="sk-line w80"></div><div class="sk-line w60"></div><div class="sk-line w80"></div>
+          </div>
+          <!-- Profile Content -->
+          <div id="profileContent" style="display:none">
+            <div class="profile-card">
+              <div class="profile-av-wrap">
+                <div class="profile-av" id="profileAv">AA</div>
+                <div class="mem-badge" id="profileMemberNum">#GYM-001</div>
+              </div>
+              <div class="profile-name" id="profileNameEn">Ahmed Ali</div>
+              <div class="profile-name-ar" id="profileNameAr">أحمد علي</div>
+
+              <!-- Status toggle -->
+              <div class="profile-status">
+                <span class="status-dot active" id="profileStatusDot"></span>
+                <span class="status-label" id="statusLabel">Active</span>
+                <label class="status-toggle" title="Toggle active status">
+                  <input type="checkbox" id="statusToggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Info rows -->
+              <div class="profile-info">
+                <div class="info-row"><i class="ti ti-phone"></i><a href="tel:+" id="profilePhone">—</a></div>
+                <div class="info-row"><i class="ti ti-mail"></i><a href="mailto:" id="profileEmail">—</a></div>
+                <div class="info-row"><i class="ti ti-cake"></i><span class="info-val" id="profileDob">—</span></div>
+                <div class="info-row"><i class="ti ti-calendar-plus"></i><span>Joined <span class="info-val" id="profileJoin">—</span></span></div>
+              </div>
+
+              <div class="p-divider"></div>
+
+              <!-- Invitation quota -->
+              <div class="quota-chip">
+                <i class="ti ti-user-plus"></i>
+                <span class="q-label">Invitation Quota</span>
+                <span class="q-num" id="profileQuota">0</span>
+              </div>
+              <div class="quota-chip" id="creditChip" title="Account credit balance">
+                <i class="ti ti-wallet"></i>
+                <span class="q-label">Credits</span>
+                <span class="q-num" id="profileCreditBal">—</span>
+              </div>
+
+              <!-- Quick actions -->
+              <div class="quick-actions">
+                <button class="qa-btn" id="btnEdit2"><i class="ti ti-edit"></i> Edit</button>
+                <button class="qa-btn danger" id="btnDeactivate"><i class="ti ti-trash"></i> Deactivate</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── RIGHT: Tabs ── -->
+        <div>
+          <!-- Skeleton -->
+          <div id="skeletonTabs" class="tabs-card sk" style="padding:24px">
+            <div class="sk-block" style="height:48px;margin-bottom:20px;border-radius:var(--rmd)"></div>
+            <div class="sk-block"></div>
+          </div>
+          <!-- Tabs Content -->
+          <div id="tabsContent" style="display:none">
+            <div class="tabs-card">
+              <!-- Tab bar -->
+              <div class="tab-bar">
+                <button class="tab-btn act" data-tab="tabMs"><i class="ti ti-id-badge"></i> Membership</button>
+                <button class="tab-btn" data-tab="tabAtt"><i class="ti ti-door-enter"></i> Attendance</button>
+                <button class="tab-btn" data-tab="tabCredits"><i class="ti ti-wallet"></i> Credits</button>
+                <button class="tab-btn" data-tab="tabHist"><i class="ti ti-history"></i> History</button>
+              </div>
+
+              <!-- TAB 1: Membership -->
+              <div class="tab-pane act" id="tabMs">
+                <div id="membershipContent">
+                  <div class="sk sk-block"></div>
+                </div>
+                <div id="recentAttWrap" style="display:none;margin-top:20px;padding-top:16px;border-top:1px solid var(--ls3,#E8E8E8)">
+                  <div style="font-size:12px;font-weight:700;color:var(--lts,#4A4A4A);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+                    <i class="ti ti-clock"></i> Recent attendance <span style="font-weight:500;color:var(--ltt,#8C8C8C)">(last 5)</span>
+                  </div>
+                  <div id="recentAttList"></div>
+                </div>
+              </div>
+
+              <!-- TAB 2: Attendance -->
+              <div class="tab-pane" id="tabAtt">
+                <!-- Heatmap -->
+                <div class="heatmap-wrap">
+                  <div class="heatmap-title">12-Week Attendance Pattern</div>
+                  <div class="heatmap" id="heatmap"></div>
+                  <div class="hm-legend">
+                    <span>Less</span>
+                    <div class="hm-day"></div>
+                    <div class="hm-day l1"></div>
+                    <div class="hm-day l2"></div>
+                    <div class="hm-day l3"></div>
+                    <span>More</span>
+                  </div>
+                </div>
+                <!-- Table -->
+                <div style="overflow-x:auto">
+                  <table class="att-tbl">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Check In</th>
+                        <th>Check Out</th>
+                        <th>Method</th>
+                        <th>Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody id="attTbody"></tbody>
+                  </table>
+                </div>
+                <div class="no-data" id="attEmpty" style="display:none">
+                  <i class="ti ti-door-enter"></i>
+                  <p>No attendance records found</p>
+                </div>
+              </div>
+
+              <!-- TAB 3: Account credit ledger -->
+              <div class="tab-pane" id="tabCredits">
+                <div class="credit-balance" id="creditBalance">
+                  <span class="credit-balance-lbl">Account credit</span>
+                  <span class="credit-balance-val" id="creditBalanceVal">—</span>
+                </div>
+                <p class="credit-hint">Ledger from refunds (credit method), payment use, and adjustments. Credit-method refunds correctly have null credit-note invoice ids.</p>
+                <div style="overflow-x:auto">
+                  <table class="att-tbl" id="creditsTable">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Reference</th>
+                        <th>Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody id="creditsTbody"></tbody>
+                  </table>
+                </div>
+                <div class="no-data" id="creditsEmpty" style="display:none">
+                  <i class="ti ti-wallet"></i>
+                  <p>No credit ledger entries</p>
+                </div>
+              </div>
+
+              <!-- TAB 4: History -->
+              <div class="tab-pane" id="tabHist">
+                <div class="timeline" id="histTimeline">
+                  <div class="sk sk-block" style="height:80px;margin-bottom:12px"></div>
+                  <div class="sk sk-block" style="height:80px;margin-bottom:12px"></div>
+                  <div class="sk sk-block" style="height:80px"></div>
+                </div>
+              </div>
+
+            </div><!-- /tabs-card -->
+          </div><!-- /tabsContent -->
+        </div><!-- /right -->
+
+      </div><!-- /detail-layout -->
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Freeze Modal -->
+<div class="modal-overlay" id="modalFreeze">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-snowflake" style="color:var(--frz500)"></i> Freeze Membership</div>
+      <button class="modal-close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Freeze Until *</label>
+      <input type="date" class="form-input" id="freezeUntil">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason (optional)</label>
+      <input type="text" class="form-input" id="freezeReason" placeholder="e.g. Travel / سفر">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modalFreeze')">Cancel</button>
+      <button class="btn-confirm freeze" id="btnFreeze" style="background:var(--frz500);color:#fff"><i class="ti ti-snowflake"></i> Freeze</button>
+    </div>
+  </div>
+</div>
+
+<!-- Deactivate Modal -->
+<div class="modal-overlay" id="modalDeactivate">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="deactivateModalTitle">Deactivate Member?</div>
+      <button class="modal-close"><i class="ti ti-x"></i></button>
+    </div>
+    <p style="font-size:13px;color:var(--lts);margin-bottom:20px">This sets the <strong>account</strong> to inactive (cannot check in). Existing membership plans are <strong>not</strong> cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only.</p>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modalDeactivate')">Cancel</button>
+      <button class="btn-confirm danger" id="btnConfirmDeactivate"><i class="ti ti-trash"></i> Deactivate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Renew Modal (§4 — transitionMode + renew pay methods include vodafone_cash) -->
+<div class="modal-overlay" id="modalRenew">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-refresh" style="color:var(--l500)"></i> Renew Membership</div>
+      <button class="modal-close"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="renewModeBanner" style="font-size:12px;color:var(--ltt);margin-bottom:8px"></div>
+    <div id="renewPreview" style="font-size:12px;color:var(--l600);margin-bottom:12px"></div>
+    <div class="form-group" id="renewTransitionWrap" style="display:none">
+      <label class="form-label">When current plan still covers today</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <button type="button" class="btn-ms primary" id="renewTransCancel" data-mode="cancel_and_switch">Cancel &amp; switch (starts today)</button>
+        <button type="button" class="btn-ms" id="renewTransQueue" data-mode="queue_next">Queue next plan</button>
+      </div>
+      <details>
+        <summary style="cursor:pointer;font-size:12px;color:var(--ltt)">Advanced</summary>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:8px">
+          <input type="checkbox" id="renewRollover">
+          <span>Add remaining days onto new plan (manual rollover)</span>
+        </label>
+      </details>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plan</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button type="button" class="btn-ms primary" id="renewModeSame">Same plan</button>
+        <button type="button" class="btn-ms" id="renewModeDiff">Different plan</button>
+      </div>
+      <select class="form-input" id="renewPlanSelect" style="display:none">
+        <option value="">— Select a plan —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Payment Method *</label>
+      <select class="form-input" id="renewPayment">
+        <option value="cash">Cash</option>
+        <option value="paymob">Paymob</option>
+        <option value="fawry">Fawry</option>
+        <option value="vodafone_cash">Vodafone Cash</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount Paid (EGP) *</label>
+      <input type="number" class="form-input" id="renewAmount" placeholder="500" min="0" step="0.01">
+    </div>
+    <div id="renewPayHint" style="font-size:12px;color:var(--ltt);margin-bottom:12px"></div>
+    <div class="mdl-error-banner" id="renewErrorBanner" style="display:none"><i class="ti ti-alert-circle"></i><span class="error-text"></span></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modalRenew')">Cancel</button>
+      <button class="btn-confirm primary" id="btnDoRenew"><i class="ti ti-refresh"></i> Renew</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Membership Modal — Full Implementation -->
+<div class="modal-overlay" id="modalAssign">
+  <div class="modal-panel wide">
+    <!-- Header -->
+    <div class="mdl-hdr">
+      <div class="mdl-title-wrap">
+        <div class="mdl-title"><i class="ti ti-id-badge" style="color:var(--l500)"></i> Assign Membership Plan</div>
+        <div class="mdl-subtitle">تعيين خطة اشتراك</div>
+      </div>
+      <button class="mdl-close"><i class="ti ti-x"></i></button>
+    </div>
+
+    <!-- Body -->
+    <div class="mdl-body">
+      <!-- Error banner -->
+      <div class="mdl-error-banner" id="assignErrorBanner">
+        <i class="ti ti-alert-circle"></i>
+        <div><div class="error-text"></div><div class="error-text-ar" style="display:none"></div></div>
+      </div>
+
+      <!-- Plan Selector -->
+      <div class="form-section">
+        <div class="section-hdr">
+          <div class="section-title"><i class="ti ti-package"></i> Select Plan</div>
+        </div>
+
+        <!-- Loading state -->
+        <div class="plan-loading" id="planLoading" style="display:none">
+          <div class="dot-pulse"><span></span><span></span><span></span></div>
+          Loading available plans...
+        </div>
+
+        <div class="mdl-form-group">
+          <label class="mdl-label">Membership Plan <span class="req">*</span></label>
+          <select class="mdl-input" id="assignPlanSelect">
+            <option value="">— Select a plan —</option>
+          </select>
+        </div>
+
+        <!-- Plan detail card (shown on selection) -->
+        <div class="plan-detail-card" id="planDetailCard">
+          <div class="plan-detail-row">
+            <span class="plan-detail-label">Plan</span>
+            <span class="plan-detail-val pdc-name"></span>
+          </div>
+          <div class="plan-detail-row">
+            <span class="plan-detail-label">الخطة</span>
+            <span class="plan-detail-val pdc-name-ar" style="font-family:var(--fa);direction:rtl"></span>
+          </div>
+          <div class="plan-divider"></div>
+          <div class="plan-detail-row">
+            <span class="plan-detail-label">Type</span>
+            <span class="plan-type-badge pdc-type"></span>
+          </div>
+          <div class="plan-detail-row">
+            <span class="plan-detail-label">Duration</span>
+            <span class="plan-detail-val pdc-duration"></span>
+          </div>
+          <div class="plan-divider"></div>
+          <div class="plan-detail-row">
+            <span class="plan-detail-label">Price</span>
+            <span class="plan-price pdc-price"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="form-section">
+        <div class="section-hdr">
+          <div class="section-title"><i class="ti ti-gift"></i> Referral (optional)</div>
+        </div>
+        <div class="mdl-form-group">
+          <label class="mdl-label">Referral code</label>
+          <input type="text" class="mdl-input" id="assignReferralCode" placeholder="RXXXXXXX" style="text-transform:uppercase" maxlength="20">
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="form-section">
+        <div class="section-hdr">
+          <div class="section-title"><i class="ti ti-wallet"></i> Payment Method</div>
+        </div>
+
+        <div class="payment-radios">
+          <label class="pay-radio">
+            <input type="radio" name="assignPayment" value="cash">
+            <div class="pay-radio-label">
+              <i class="ti ti-cash pay-radio-icon"></i>
+              <span class="pay-radio-name">Cash</span>
+            </div>
+          </label>
+          <label class="pay-radio">
+            <input type="radio" name="assignPayment" value="paymob">
+            <div class="pay-radio-label">
+              <i class="ti ti-credit-card pay-radio-icon"></i>
+              <span class="pay-radio-name">Paymob</span>
+            </div>
+          </label>
+          <label class="pay-radio">
+            <input type="radio" name="assignPayment" value="fawry">
+            <div class="pay-radio-label">
+              <i class="ti ti-building-store pay-radio-icon"></i>
+              <span class="pay-radio-name">Fawry</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="payment-note" id="assignPaymentNote"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mdl-footer">
+      <button class="mdl-btn ghost" onclick="closeOverlay('modalAssign')">Cancel</button>
+      <button class="mdl-btn primary" id="btnAssignMembership" disabled>
+        <span class="btn-spinner"></span>
+        <span class="btn-label"><i class="ti ti-plus"></i> Assign Plan</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Notify Modal -->
+<div class="modal-overlay" id="modalNotify">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-bell" style="color:var(--l500)"></i> Send Notification</div>
+      <button class="modal-close"><i class="ti ti-x"></i></button>
+    </div>
+    <p style="font-size:12px;color:var(--ltt);margin-bottom:16px">To: <strong id="notifMemberName">—</strong></p>
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" class="form-input" id="notifTitle" placeholder="Membership Reminder">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message *</label>
+      <textarea class="form-input" id="notifBody" rows="3" placeholder="Your membership expires soon..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modalNotify')">Cancel</button>
+      <button class="btn-confirm primary" id="btnSendNotif"><i class="ti ti-send"></i> Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Member Drawer (right-slide, 400px) -->
+<div class="modal-overlay drawer-overlay" id="editMemberDrawer">
+  <div class="drawer-panel">
+    <div class="mdl-hdr">
+      <div class="mdl-title-wrap">
+        <div class="mdl-title"><i class="ti ti-edit" style="color:var(--l500)"></i> Edit Member</div>
+        <div class="mdl-subtitle">تعديل بيانات العضو</div>
+        <div class="mdl-timestamp" id="editTimestamp" style="display:none"><i class="ti ti-clock"></i> <span></span></div>
+      </div>
+      <button class="mdl-close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mdl-body">
+      <div class="mdl-error-banner" id="editErrorBanner">
+        <i class="ti ti-alert-circle"></i>
+        <div><div class="error-text"></div><div class="error-text-ar" style="display:none"></div></div>
+      </div>
+      <div class="form-section">
+        <div class="section-hdr"><div class="section-title"><i class="ti ti-user"></i> Personal Information</div></div>
+        <div class="mdl-form-group">
+          <label class="mdl-label">Full Name (English) <span class="req">*</span></label>
+          <input type="text" class="mdl-input" id="editNameEn" placeholder="e.g. Ahmed Ali">
+        </div>
+        <div class="mdl-form-group">
+          <label class="mdl-label">Full Name (Arabic) <span class="req">*</span></label>
+          <input type="text" class="mdl-input rtl" id="editNameAr" placeholder="مثال: أحمد علي">
+        </div>
+        <div class="mdl-form-group">
+          <label class="mdl-label">Phone Number <span class="req">*</span></label>
+          <div class="phone-input-wrap" id="editPhoneWrap">
+            <div class="phone-prefix"><span class="flag">🇪🇬</span> +20</div>
+            <input type="tel" class="phone-input" id="editPhone" placeholder="010 1234 5678" maxlength="15">
+          </div>
+          <div class="field-error" id="editPhoneError"><i class="ti ti-alert-circle"></i><span class="field-error-text">Invalid Egyptian phone format</span></div>
+        </div>
+        <div class="mdl-form-group">
+          <label class="mdl-label">Date of Birth <span class="req">*</span></label>
+          <input type="date" class="mdl-input" id="editDob">
+          <div class="field-error" id="editDobError"><i class="ti ti-alert-circle"></i><span class="field-error-text">Member must be at least 10 years old</span></div>
+        </div>
+        <div class="mdl-form-group">
+          <label class="mdl-label">Email</label>
+          <input type="email" class="mdl-input" id="editEmail" placeholder="member@email.com">
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="section-hdr">
+          <div class="section-title"><i class="ti ti-info-circle"></i> Additional Info</div>
+          <button class="section-toggle" id="editSectionToggle" title="Toggle"><i class="ti ti-chevron-up"></i></button>
+        </div>
+        <div class="section-body" id="editSectionBody">
+          <div class="mdl-form-group">
+            <label class="mdl-label">National ID</label>
+            <input type="text" class="mdl-input" id="editNationalId" placeholder="29901011234567" maxlength="14">
+          </div>
+          <div class="mdl-form-group">
+            <label class="mdl-label">Emergency Contact</label>
+            <div class="phone-input-wrap">
+              <div class="phone-prefix"><span class="flag">🇪🇬</span> +20</div>
+              <input type="tel" class="phone-input" id="editEmergency" placeholder="010 9876 5432" maxlength="15">
+            </div>
+          </div>
+          <div class="mdl-form-group">
+            <label class="mdl-label">Notes</label>
+            <textarea class="mdl-input" id="editNotes" rows="3" placeholder="Notes..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mdl-footer">
+      <button class="mdl-btn ghost" onclick="closeOverlay('editMemberDrawer')">Cancel</button>
+      <button class="mdl-btn primary" id="btnSaveEdit" disabled>
+        <span class="btn-spinner"></span>
+        <span class="btn-label"><i class="ti ti-device-floppy"></i> Save Changes</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="member-detail.js"></script>
+<script src="../member-modals.js"></script>
+</body>
+</html>

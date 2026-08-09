@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymFlowPro — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<!--
+  Overview widget grid — each widget gated independently via GfpAuthz.useCan():
+  revenue → reports.financial.view (/analytics/overview + snapshotTimeUtc)
+  checkins → members.view
+  shift → shift.open
+  sessions → AnyStaff (Trainer focus; client-filter trainerId)
+  queue → checkin.manual OR sales.sell
+  staff activity → settings.manage
+  empty set → Quick Actions from Front Desk useVisibleNav()
+-->
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c900:#0D0D0D;--c800:#1A1A1A;--c700:#2A2A2A;--c600:#3A3A3A;--c500:#4A4A4A;
+  --c400:#6B6B6B;--c300:#8C8C8C;--c200:#B0B0B0;--c100:#D4D4D4;--c50:#F0F0F0;
+  --l600:#5EAF00;--l500:#7ACC00;--l400:#A0E040;--l300:#BEEC73;--l200:#D8F5A6;
+  --l100:#EDFCD8;--lglow:rgba(160,224,64,0.25);
+  --t700:#0A4D4D;--t600:#0D6B6B;--t500:#148F8F;--t400:#3DB5B5;
+  --suc500:#22C55E;--suc100:#DCFCE7;
+  --wrn500:#F59E0B;--wrn100:#FEF3C7;
+  --dng500:#EF4444;--dng100:#FEE2E2;
+  --inf500:#3B82F6;--inf100:#DBEAFE;
+  --lbg:#FAFAFA;--ls1:#FFF;--ls2:#F5F5F5;--ls3:#EBEBEB;
+  --ltp:#1A1A1A;--lts:#4A4A4A;--ltt:#8C8C8C;--lbd:#D4D4D4;
+  --dtp:#F0F0F0;--dts:#B0B0B0;--dtt:#6B6B6B;--dbd:#4A4A4A;
+  --fd:'Space Grotesk',sans-serif;--fb:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;
+  --fa:'IBM Plex Sans Arabic',sans-serif;
+  --rsm:6px;--rmd:10px;--rlg:16px;--rxl:24px;--rpl:9999px;
+  --sh1:0 1px 2px rgba(0,0,0,.06);--sh2:0 2px 8px rgba(0,0,0,.08);
+  --sh3:0 4px 16px rgba(0,0,0,.12);
+  --tf:150ms ease;--tb:250ms ease;
+  --sidebar-w:220px;
+}
+html,body{height:100%}
+body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+[dir="rtl"] body{font-family:var(--fa)}
+.app{display:flex;height:100vh}
+.sidebar{
+  width:var(--sidebar-w);background:var(--c900);color:var(--dtp);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;
+  z-index:100;overflow-y:auto;overflow-x:hidden;
+}
+[dir="rtl"] .sidebar{left:auto;right:0}
+.sb-hdr{padding:20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--c700)}
+.sb-hdr svg{width:32px;height:32px;flex-shrink:0}
+.sb-hdr span{font-family:var(--fd);font-weight:700;font-size:16px;color:var(--l400);letter-spacing:-.3px}
+.sb-nav{padding:8px 0;flex:1}
+.sb-item{
+  display:flex;align-items:center;gap:12px;padding:10px 20px;
+  font-size:13px;font-weight:500;cursor:pointer;transition:all var(--tf);
+  border-left:3px solid transparent;color:var(--c300);text-decoration:none;
+}
+.sb-item:hover{background:var(--c700)}
+.sb-item.act{background:rgba(160,224,64,.08);color:var(--l400);border-left-color:var(--l500)}
+.sb-item i{font-size:18px;opacity:.7;width:20px;text-align:center}
+.sb-ft{padding:16px;border-top:1px solid var(--c700);display:flex;align-items:center;gap:12px}
+.sb-ft-info{flex:1;min-width:0}
+.sb-ft-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-ft-role{font-size:11px;color:var(--c400)}
+.sb-logout{background:none;border:none;color:var(--c400);cursor:pointer;font-size:18px;padding:4px}
+.sb-logout:hover{color:var(--dng500)}
+.av-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:700;font-size:11px;flex-shrink:0;text-transform:uppercase;background:var(--l300);color:var(--c900)}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+[dir="rtl"] .main{margin-left:0;margin-right:var(--sidebar-w)}
+.topbar{
+  height:60px;background:var(--ls1);border-bottom:1px solid var(--ls3);
+  display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:50;
+}
+.tb-left{display:flex;align-items:center;gap:16px}
+.tb-breadcrumb{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--lts)}
+.tb-right{display:flex;align-items:center;gap:16px}
+.tb-gym-name{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--lts)}
+.tb-gym-name-ar{font-family:var(--fa);font-size:12px;color:var(--ltt);direction:rtl}
+.content{padding:24px 32px;flex:1}
+
+.widget-grid{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:20px;
+}
+.dash-widget{
+  grid-column:span 6;
+  background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rlg);
+  box-shadow:var(--sh1);padding:20px 22px;min-height:160px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.dash-widget[data-widget="revenue"],
+.dash-widget[data-widget="queue"],
+.dash-widget[data-widget="quick-actions"]{grid-column:span 12}
+.dash-widget-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dash-widget-title{font-family:var(--fd);font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dash-widget-title i{color:var(--l600)}
+.dash-widget-sub{font-size:12px;color:var(--ltt);margin-top:2px}
+.dash-perm{
+  font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+  color:var(--ltt);background:var(--ls2);border:1px solid var(--ls3);
+  border-radius:var(--rpl);padding:4px 8px;white-space:nowrap;
+}
+.dash-widget-body{flex:1}
+.dash-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.dash-kpi{background:var(--ls2);border-radius:var(--rmd);padding:12px 14px}
+.dash-kpi .lbl{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--ltt);margin-bottom:4px}
+.dash-kpi strong{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1.15}
+.dash-kpi strong.ok{color:var(--suc500)}
+.dash-snapshot{margin-top:12px;font-size:12px;color:var(--lts);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dash-muted{color:var(--ltt);font-size:13px}
+.dash-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.dash-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font-family:var(--fd);font-size:12px;font-weight:700;padding:8px 14px;
+  border-radius:var(--rmd);border:1px solid var(--ls3);background:var(--ls2);
+  color:var(--lts);text-decoration:none;cursor:pointer;
+}
+.dash-btn.primary{background:var(--l500);border-color:var(--l500);color:var(--c900)}
+.dash-btn.ghost{background:transparent}
+.dash-btn:disabled{opacity:.55;cursor:not-allowed}
+.dash-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.dash-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--ls3);font-size:13px}
+.dash-list li:last-child{border-bottom:none}
+.dash-list-main{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-list-meta{color:var(--ltt);font-size:12px;flex-shrink:0;font-family:var(--fd)}
+.dash-queue-block{margin-bottom:16px}
+.dash-queue-block:last-child{margin-bottom:0}
+.dash-queue-block h3{font-family:var(--fd);font-size:13px;font-weight:700;margin-bottom:8px}
+.dash-link{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--l600);text-decoration:none}
+.dash-link:hover{text-decoration:underline}
+.dash-quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.dash-quick-item{
+  display:flex;align-items:center;gap:10px;padding:14px 12px;border-radius:var(--rmd);
+  border:1px solid var(--ls3);background:var(--ls2);text-decoration:none;color:var(--ltp);
+  font-size:13px;font-weight:600;transition:border-color var(--tf),background var(--tf);
+}
+.dash-quick-item:hover{border-color:var(--l500);background:var(--l100)}
+.dash-quick-item i{font-size:18px;color:var(--l600)}
+
+@media(max-width:900px){
+  .dash-widget,.dash-widget[data-widget="revenue"],.dash-widget[data-widget="queue"],.dash-widget[data-widget="quick-actions"]{grid-column:span 12}
+}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}[dir="rtl"] .sidebar{transform:translateX(100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}[dir="rtl"] .main{margin-right:0}
+  .content{padding:16px}.topbar{padding:0 16px}
+  .mob-toggle{display:flex!important}
+}
+.mob-toggle{display:none!important;width:36px;height:36px;align-items:center;justify-content:center;border:none;background:var(--ls2);border-radius:var(--rmd);cursor:pointer;font-size:18px;color:var(--lts)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-hdr">
+      <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>GymFlowPro</span>
+    </div>
+    <nav class="sb-nav">
+      <!-- Replaced at runtime by GfpShell from useVisibleNav() -->
+      <a class="sb-item act" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+    </nav>
+    <div class="sb-ft">
+      <div class="av-sm" id="userAvatar">—</div>
+      <div class="sb-ft-info">
+        <div class="sb-ft-name" id="userName">User</div>
+        <div class="sb-ft-role" id="userRole">Staff</div>
+      </div>
+      <button class="sb-logout" id="btnLogout" title="Logout"><i class="ti ti-logout"></i></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="mob-toggle" id="mobToggle" type="button"><i class="ti ti-menu-2"></i></button>
+        <div class="tb-breadcrumb">Overview</div>
+      </div>
+      <div class="tb-right">
+        <div>
+          <div class="tb-gym-name" id="gymName">GymFlowPro</div>
+          <div class="tb-gym-name-ar" id="gymNameAr"></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="widget-grid" id="widgetGrid" aria-live="polite">
+        <div class="dash-widget" style="grid-column:span 12"><div class="dash-muted">Loading widgets…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/dashboard/dashboard-home.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+@import url('../warehouses/warehouses.css');
+.modal-body textarea{min-height:64px;border:1px solid var(--ls3);border-radius:var(--rmd);padding:8px 10px;font:inherit;resize:vertical}
+.modal-body input[type=email],.modal-body input[type=number],.modal-body input[type=date],.modal-body select{height:38px;border:1px solid var(--ls3);border-radius:var(--rmd);padding:0 10px;font:inherit}
+.modal.wide{max-width:820px}
+.line-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
+.detail-card{background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rlg);padding:16px 18px;margin-top:16px}
+.detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.recv-line{border:1px solid var(--ls3);border-radius:var(--rmd);padding:12px;margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.recv-line h4{grid-column:1/-1;font-family:var(--fd);font-size:13px}
+.layout-split{display:grid;grid-template-columns:1fr 1.15fr;gap:16px}
+@media(max-width:960px){.layout-split{grid-template-columns:1fr}.line-row,.recv-line{grid-template-columns:1fr}}
+.badge-draft{background:var(--ls2);color:var(--lts)}
+.badge-approved{background:#DBEAFE;color:#1E40AF}
+.badge-partial{background:var(--wrn100);color:var(--wrn500)}
+.badge-received{background:var(--suc100);color:var(--suc500)}
+.badge-cancelled{background:#FEE2E2;color:#991B1B}
+tr.clickable{cursor:pointer}
+tr.clickable:hover td{background:var(--ls2)}
+.trunc-banner{background:var(--wrn100);color:var(--wrnTxt);border:1px solid rgba(245,158,11,.35);border-radius:var(--rmd);padding:10px 12px;margin-bottom:12px;font-size:13px}
+.muted{font-size:12px;color:var(--ltt)}
+.stock-link{margin-left:8px}

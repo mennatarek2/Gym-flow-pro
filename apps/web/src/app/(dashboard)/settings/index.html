@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GymFlowPro — Settings</title>
+<meta name="description" content="Manage gym settings, QR check-in, and subscription for your fitness business.">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="/dashboard/settings/settings.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="sb-hdr"><svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<nav class="sb-nav">
+<a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+<a class="sb-item" href="/dashboard/members/"><i class="ti ti-users"></i>Members</a>
+<a class="sb-item" href="/dashboard/memberships/"><i class="ti ti-id-badge"></i>Memberships</a>
+<a class="sb-item" href="/dashboard/plans/"><i class="ti ti-package"></i>Plans</a>
+<a class="sb-item" href="/dashboard/attendance/"><i class="ti ti-door-enter"></i>Attendance</a>
+<a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
+<a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
+<a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
+<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
+<a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
+<a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
+<a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
+<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
+<a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
+<a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
+<a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
+<a class="sb-item" href="/dashboard/audit/"><i class="ti ti-list-search"></i>Audit</a>
+<a class="sb-item" href="/dashboard/notifications/"><i class="ti ti-bell"></i>Notifications</a>
+<a class="sb-item" id="navStaff" style="display:none" href="/dashboard/staff/"><i class="ti ti-user-shield"></i>Staff</a>
+<a class="sb-item act" href="/dashboard/settings/"><i class="ti ti-settings"></i>Settings</a>
+</nav>
+<div class="sb-ft"><div class="av-sm" id="userAvatar">AO</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">User</div><div class="sb-ft-role" id="userRole">Staff</div></div><button class="sb-logout" id="btnLogout" title="Logout"><i class="ti ti-logout"></i></button></div>
+</aside>
+
+<div class="main">
+<header class="topbar">
+  <div class="tb-left"><div class="tb-breadcrumb"><span>🏠</span><span class="sep">/</span><span class="current">Settings</span></div></div>
+  <div class="tb-right">
+    <div class="status-pills">
+      <span class="st-pill" id="tenantStatus"><span class="st-dot active"></span>Active</span>
+      <span class="st-pill muted" id="tenantId"></span>
+    </div>
+  </div>
+</header>
+
+<div class="content">
+  <div class="page-header">
+    <h1 class="page-title"><i class="ti ti-settings"></i> Gym Settings</h1>
+    <p class="page-subtitle">Gym profile, tax/VAT, and front-desk QR check-in poster</p>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="info" id="tabBtnInfo"><i class="ti ti-building"></i> Gym Information</button>
+    <button class="tab-btn" data-tab="qr"><i class="ti ti-qrcode"></i> QR Code & Check-in</button>
+    <button class="tab-btn" data-tab="tax" id="tabBtnTax"><i class="ti ti-receipt-tax"></i> Tax &amp; VAT</button>
+    <button class="tab-btn" data-tab="invAlerts" id="tabBtnInvAlerts" style="display:none"><i class="ti ti-bell-ringing"></i> <span data-en="Inventory alerts" data-ar="تنبيهات المخزون" data-i18n-text>Inventory alerts</span></button>
+  </div>
+
+  <!-- Tab 1: Gym Information -->
+  <div class="tab-panel active" id="tab-info">
+    <div class="settings-layout">
+      <div class="settings-main">
+        <div class="card">
+          <div class="card-header"><h2><i class="ti ti-info-circle"></i> Basic Information</h2></div>
+          <div class="owner-gate" id="infoOwnerGate" style="display:none">
+            <i class="ti ti-lock"></i>
+            <div>
+              <strong>Owner only</strong>
+              <p>Gym profile editing requires Owner. Use <em>QR Code &amp; Check-in</em> for the front-desk gym code and poster.</p>
+            </div>
+          </div>
+          <form id="infoForm">
+          <div class="card-body">
+            <div class="form-row">
+              <div class="fg"><label>Gym Name (English) <span class="req">*</span></label><input name="gymName" id="gymName" required placeholder="Fitness Hub"></div>
+              <div class="fg"><label>Gym Name (Arabic) <span class="req">*</span></label><input name="gymNameAr" id="gymNameAr" required placeholder="فتنس هب" dir="rtl" style="font-family:var(--fa)"></div>
+            </div>
+            <div class="form-row">
+              <div class="fg"><label>Phone Number</label><input name="phone" id="gymPhone" placeholder="+20 123 456 7890"><div class="hint">Format: +20 xxx xxx xxxx</div></div>
+              <div class="fg"><label>Gym Code</label>
+                <div class="code-chip-wrap">
+                  <div class="code-chip" id="gymCodeChip">—</div>
+                  <button type="button" class="copy-btn" id="copyCode" title="Copy"><i class="ti ti-copy"></i></button>
+                </div>
+                <div class="hint">System-generated, read-only — not sent on save</div>
+              </div>
+            </div>
+            <div class="fg"><label>Address</label><textarea name="address" id="gymAddress" placeholder="123 Main Street, Cairo, Egypt" rows="2"></textarea></div>
+            <div class="fg"><label>Logo URL</label>
+              <input name="logoUrl" id="gymLogoUrl" placeholder="https://…/logo.png">
+              <div class="hint">Optional HTTPS URL stored on the tenant profile</div>
+            </div>
+            <div class="fg"><label>Logo preview</label>
+              <div class="logo-upload" id="logoUpload">
+                <div class="logo-preview" id="logoPreview"><i class="ti ti-photo"></i></div>
+                <div class="logo-info">
+                  <div class="logo-title">Preview from URL</div>
+                  <div class="logo-hint">Paste a logo URL above, or choose a local file to preview (save still uses the URL field)</div>
+                  <input type="file" id="logoFile" accept="image/*" style="display:none">
+                  <button type="button" class="logo-btn" id="logoBrowse"><i class="ti ti-upload"></i> Preview File</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer" id="infoFooter">
+            <div class="meta-info">
+              <span id="metaCreated"></span>
+              <span id="metaUpdated"></span>
+            </div>
+            <button type="submit" class="btn-save" id="btnSave"><i class="ti ti-device-floppy"></i> Save Changes</button>
+          </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: QR Code -->
+  <div class="tab-panel" id="tab-qr">
+    <div class="qr-layout">
+      <div class="card qr-card">
+        <div class="card-header"><h2><i class="ti ti-qrcode"></i> QR Check-in Poster</h2></div>
+        <div class="card-body" style="text-align:center;padding:32px">
+          <div class="qr-poster-frame" id="qrFrame">
+            <div class="qr-loading"><div class="loader"></div>Loading QR poster...</div>
+          </div>
+          <div class="qr-code-display">
+            <span class="qr-code-label">Gym Code:</span>
+            <span class="qr-code-value" id="qrGymCode">—</span>
+          </div>
+          <div class="qr-actions">
+            <button class="btn-qr" id="btnDownloadQR"><i class="ti ti-download"></i> Download Poster</button>
+            <button class="btn-qr outline" id="btnPrintQR"><i class="ti ti-printer"></i> Print</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2><i class="ti ti-info-circle"></i> Instructions</h2></div>
+        <div class="card-body">
+          <div class="instruction-list">
+            <div class="instr-item"><div class="instr-num">1</div><div><strong>Print the QR poster</strong><p>Download and print the poster in A4 or A3 size for best visibility.</p></div></div>
+            <div class="instr-item"><div class="instr-num">2</div><div><strong>Display at entrance</strong><p>Place the printed poster at your gym entrance where members can easily scan.</p></div></div>
+            <div class="instr-item"><div class="instr-num">3</div><div><strong>Members scan to check in</strong><p>Members open the GymFlowPro app and scan the QR code to register their attendance.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Tax & VAT (Owner only) -->
+  <div class="tab-panel" id="tab-tax">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="ti ti-receipt-tax"></i> Tax &amp; VAT</h2>
+        <span class="audit-badge"><i class="ti ti-shield-check"></i> Changes audited</span>
+      </div>
+      <form id="taxForm">
+        <div class="card-body">
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">Enable VAT on invoices</div>
+              <div class="toggle-sub">When on, POS and invoices apply the VAT rate below</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="vatEnabled">
+              <span class="toggle-track"></span>
+              <span class="toggle-knob"></span>
+            </label>
+          </div>
+          <div class="form-row">
+            <div class="fg"><label>VAT rate (%)</label>
+              <input type="number" id="vatRatePct" min="0" max="100" step="0.01" placeholder="14">
+              <div class="hint">Stored as a fraction (e.g. 14% → 0.14). Default 14%.</div>
+            </div>
+            <div class="fg"><label>Tax registration number</label>
+              <input id="taxRegNo" placeholder="VAT / tax ID" autocomplete="off">
+            </div>
+          </div>
+          <div class="fg"><label>Invoice footer (English)</label>
+            <textarea id="invoiceFooter" rows="2" placeholder="Thank you for your business"></textarea>
+          </div>
+          <div class="fg"><label>Invoice footer (Arabic)</label>
+            <textarea id="invoiceFooterAr" rows="2" placeholder="شكراً لتعاملكم معنا" dir="rtl" style="font-family:var(--fa)"></textarea>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="meta-info"><span class="hint" style="margin:0">Before/after values are written to the audit log</span></div>
+          <button type="submit" class="btn-save" id="btnSaveTax"><i class="ti ti-device-floppy"></i> Save Tax Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tab 4: Inventory alerts (Owner only, INVS-10) -->
+  <div class="tab-panel" id="tab-invAlerts">
+    <div class="card">
+      <div class="card-header">
+        <h2><i class="ti ti-bell-ringing"></i> <span data-en="Inventory alerts" data-ar="تنبيهات المخزون">Inventory alerts</span></h2>
+        <span class="audit-badge"><i class="ti ti-shield-check"></i> <span data-en="Daily 08:00 Cairo" data-ar="يومياً ٨:٠٠ القاهرة">Daily 08:00 Cairo</span></span>
+      </div>
+      <form id="invAlertsForm">
+        <div class="card-body">
+          <div class="fg"><label data-en="Notify roles (comma-separated)" data-ar="أدوار التنبيه (مفصولة بفاصلة)">Notify roles (comma-separated)</label>
+            <input id="invNotifyRoles" placeholder="Owner, Manager" autocomplete="off">
+            <div class="hint" data-en="Staff roles receiving low-stock / expiry notifications. Default: Owner, Manager." data-ar="أدوار الموظفين اللي هتوصلهم تنبيهات النفاد / الصلاحية. الافتراضي: Owner, Manager.">Staff roles receiving low-stock / expiry notifications. Default: Owner, Manager.</div>
+          </div>
+          <div class="fg"><label data-en="Expiry windows (days, comma-separated)" data-ar="نوافذ الصلاحية (أيام، مفصولة بفاصلة)">Expiry windows (days, comma-separated)</label>
+            <input id="invExpiryWindows" placeholder="90, 30, 7" autocomplete="off">
+            <div class="hint" data-en="Batches expiring within each window generate alerts. Default: 90, 30, 7." data-ar="التشغيلات اللي هتنتهي خلال كل نافذة تولّد تنبيهاً. الافتراضي: ٩٠، ٣٠، ٧.">Batches expiring within each window generate alerts. Default: 90, 30, 7.</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="meta-info"><span class="hint" style="margin:0" data-en="Applied by the nightly low-stock job." data-ar="تُطبَّق عبر مهمة تنبيه النفاد اليومية.">Applied by the nightly low-stock job.</span></div>
+          <button type="submit" class="btn-save" id="btnSaveInvAlerts"><i class="ti ti-device-floppy"></i> <span data-en="Save alert settings" data-ar="حفظ إعدادات التنبيه" data-i18n-text>Save alert settings</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE=window.API_BASE||'https://localhost:5001/api';
+function getH(){const t=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');const h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;return h;}
+async function apiGet(p){const r=await fetch(API_BASE+p,{headers:getH()});if(r.status===401){window.location.href='/auth/login/';return null;}if(!r.ok)return null;return r.json();}
+async function apiPut(p,b){const r=await fetch(API_BASE+p,{method:'PUT',headers:getH(),body:JSON.stringify(b)});const d=await r.json().catch(()=>null);return{ok:r.ok,status:r.status,data:d};}
+function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
+const user=getUser();if(!user){window.location.href='/auth/login/';}
+const ini=(user.fullName||'U').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+document.getElementById('userAvatar').textContent=ini;
+document.getElementById('userName').textContent=user.fullName||'User';
+document.getElementById('userRole').textContent=user.role||'Staff';
+if(user.role==='Owner'||user.role==='owner')document.getElementById('navStaff').style.display='flex';
+document.getElementById('btnLogout').addEventListener('click',function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});window.location.href='/auth/login/';});
+</script>
+<script src="/dashboard/settings/settings-app.js?v=21"></script>
+</body>
+</html>

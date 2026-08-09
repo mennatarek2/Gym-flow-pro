@@ -1,0 +1,337 @@
+/**
+ * GymFlowPro — shared API client (§0 + §1)
+ * Bearer injection, silent refresh on Token-Expired: true, dual-shape errors, PagedResult helpers.
+ *
+ * Gotchas:
+ * - Persist the newest refresh token immediately (rotation revokes the old one).
+ * - Refresh failure = logout once — never retry refresh in a loop.
+ * - Only silent-refresh when the response carries Token-Expired: true (not every 401).
+ */
+(function (global) {
+  'use strict';
+
+  var KEYS = {
+    access: 'gfp_access_token',
+    refresh: 'gfp_refresh_token',
+    user: 'gfp_user',
+    expires: 'gfp_expires_at',
+    persist: 'gfp_persist' // '1' = localStorage, '0' = sessionStorage
+  };
+
+  function apiBase() {
+    return global.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  }
+
+  function storeForWrite() {
+    var preferLocal = global.localStorage.getItem(KEYS.persist) !== '0';
+    // If tokens already live in session only, keep writing there
+    if (!preferLocal) return global.sessionStorage;
+    if (global.sessionStorage.getItem(KEYS.access) && !global.localStorage.getItem(KEYS.access)) {
+      return global.sessionStorage;
+    }
+    return global.localStorage;
+  }
+
+  function read(key) {
+    return global.localStorage.getItem(key) || global.sessionStorage.getItem(key);
+  }
+
+  function writeBothClearOther(store, key, value) {
+    store.setItem(key, value);
+    var other = store === global.localStorage ? global.sessionStorage : global.localStorage;
+    other.removeItem(key);
+  }
+
+  /** @type {{ getAccess: Function, getRefresh: Function, getUser: Function, getExpiresAt: Function, persistSession: Function, clear: Function, isAccessExpired: Function }} */
+  var tokens = {
+    getAccess: function () { return read(KEYS.access); },
+    getRefresh: function () { return read(KEYS.refresh); },
+    getExpiresAt: function () { return read(KEYS.expires); },
+    getUser: function () {
+      try { return JSON.parse(read(KEYS.user) || 'null'); } catch (e) { return null; }
+    },
+    isAccessExpired: function () {
+      var exp = this.getExpiresAt();
+      if (!exp) return true;
+      // small skew: treat as expired 5s early
+      return new Date(exp).getTime() <= Date.now() + 5000;
+    },
+    /**
+     * Persist LoginResponse / refresh result immediately (including rotated refresh token).
+     * @param {{ accessToken: string, refreshToken: string, expiresAtUtc: string, user?: object }} data
+     * @param {{ remember?: boolean }} [opts]
+     */
+    persistSession: function (data, opts) {
+      opts = opts || {};
+      var remember = opts.remember;
+      if (typeof remember === 'boolean') {
+        global.localStorage.setItem(KEYS.persist, remember ? '1' : '0');
+      }
+      var store = storeForWrite();
+      if (data.accessToken) writeBothClearOther(store, KEYS.access, data.accessToken);
+      // CRITICAL: write rotated refresh immediately — old one is revoked server-side
+      if (data.refreshToken) writeBothClearOther(store, KEYS.refresh, data.refreshToken);
+      if (data.expiresAtUtc) writeBothClearOther(store, KEYS.expires, data.expiresAtUtc);
+      if (data.user) writeBothClearOther(store, KEYS.user, JSON.stringify(data.user));
+    },
+    clear: function () {
+      [KEYS.access, KEYS.refresh, KEYS.user, KEYS.expires, KEYS.persist].forEach(function (k) {
+        global.localStorage.removeItem(k);
+        global.sessionStorage.removeItem(k);
+      });
+    }
+  };
+
+  /**
+   * Dual-shape error parser (§0):
+   * A) ProblemDetails { title, detail, status }
+   * B) Ad-hoc { message } | { error, message? }
+   * @returns {{ code: string|null, message: string, status: number, raw: object|null }}
+   */
+  function parseError(status, body) {
+    var raw = body && typeof body === 'object' ? body : null;
+    if (!raw) {
+      return { code: null, message: status === 0 ? 'Network error' : 'Request failed', status: status || 0, raw: null };
+    }
+    // Shape A — RFC7807 ProblemDetails
+    if (typeof raw.title === 'string' && (raw.detail != null || raw.status != null)) {
+      return {
+        code: raw.title,
+        message: String(raw.detail || raw.title),
+        status: typeof raw.status === 'number' ? raw.status : status,
+        raw: raw
+      };
+    }
+    // Shape B — ad-hoc
+    var msg = raw.message || raw.error || 'Request failed';
+    var code = typeof raw.error === 'string' && raw.message ? raw.error : null;
+    return { code: code, message: String(msg), status: status, raw: raw };
+  }
+
+  /**
+   * Normalize list envelope to PagedResult<T> shape (§0).
+   * @template T
+   * @param {object|null} data
+   * @returns {{ items: T[], totalCount: number, page: number, pageSize: number, totalPages: number, hasNext: boolean, hasPrevious: boolean }}
+   */
+  function asPaged(data) {
+    var empty = {
+      items: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 20,
+      totalPages: 0,
+      hasNext: false,
+      hasPrevious: false
+    };
+    if (!data || typeof data !== 'object') return empty;
+    var items = data.items || data.Items || [];
+    var totalCount = data.totalCount != null ? data.totalCount : (data.TotalCount != null ? data.TotalCount : items.length);
+    var page = data.page != null ? data.page : (data.Page != null ? data.Page : 1);
+    var pageSize = data.pageSize != null ? data.pageSize : (data.PageSize != null ? data.PageSize : 20);
+    var totalPages = data.totalPages != null ? data.totalPages : (data.TotalPages != null ? data.TotalPages : Math.ceil(totalCount / (pageSize || 1)));
+    var hasNext = data.hasNext != null ? !!data.hasNext : (data.HasNext != null ? !!data.HasNext : page < totalPages);
+    var hasPrevious = data.hasPrevious != null ? !!data.hasPrevious : (data.HasPrevious != null ? !!data.HasPrevious : page > 1);
+    return { items: items, totalCount: totalCount, page: page, pageSize: pageSize, totalPages: totalPages, hasNext: hasNext, hasPrevious: hasPrevious };
+  }
+
+  var refreshPromise = null;
+
+  function isTokenExpiredHeader(res) {
+    try {
+      var v = res.headers.get('Token-Expired') || res.headers.get('token-expired');
+      return String(v || '').toLowerCase() === 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function logoutToLogin() {
+    tokens.clear();
+    if (typeof location !== 'undefined' && !/\/auth\/login/.test(location.pathname)) {
+      location.href = '/auth/login/';
+    }
+  }
+
+  /**
+   * Single-flight refresh. Failure clears session (no retry loop).
+   * @returns {Promise<boolean>}
+   */
+  function silentRefresh() {
+    if (refreshPromise) return refreshPromise;
+
+    refreshPromise = (async function () {
+      var rt = tokens.getRefresh();
+      if (!rt) {
+        logoutToLogin();
+        return false;
+      }
+      try {
+        var res = await fetch(apiBase() + '/auth/refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify({ refreshToken: rt })
+        });
+        var data = await res.json().catch(function () { return null; });
+        if (!res.ok || !data || !data.accessToken || !data.refreshToken) {
+          logoutToLogin();
+          return false;
+        }
+        // Persist rotated pair immediately
+        tokens.persistSession(data);
+        return true;
+      } catch (e) {
+        logoutToLogin();
+        return false;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+
+    return refreshPromise;
+  }
+
+  /**
+   * Core request. auth:true sends Bearer. Silent refresh only when Token-Expired: true.
+   * @param {string} method
+   * @param {string} path  e.g. '/members' (leading slash; under /api)
+   * @param {{ body?: any, auth?: boolean, headers?: Record<string,string>, raw?: boolean, _retried?: boolean }} [opts]
+   */
+  async function request(method, path, opts) {
+    opts = opts || {};
+    var auth = opts.auth !== false;
+    var headers = Object.assign({
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    }, opts.headers || {});
+    if (auth) {
+      var at = tokens.getAccess();
+      if (at) headers['Authorization'] = 'Bearer ' + at;
+    }
+
+    var init = { method: method, headers: headers };
+    if (opts.body !== undefined && opts.body !== null && method !== 'GET' && method !== 'HEAD') {
+      init.body = typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body);
+    }
+
+    var res;
+    try {
+      res = await fetch(apiBase() + path, init);
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        data: null,
+        error: parseError(0, null),
+        headers: null,
+        response: null
+      };
+    }
+
+    // Silent refresh: ONLY when API marks Token-Expired (not arbitrary 401)
+    if (res.status === 401 && auth && !opts._retried && isTokenExpiredHeader(res)) {
+      var ok = await silentRefresh();
+      if (ok) {
+        return request(method, path, Object.assign({}, opts, { _retried: true }));
+      }
+      return {
+        ok: false,
+        status: 401,
+        data: null,
+        error: parseError(401, { message: 'Session expired' }),
+        headers: res.headers,
+        response: res
+      };
+    }
+
+    var data = null;
+    var ct = res.headers.get('content-type') || '';
+    if (opts.raw) {
+      data = res;
+    } else if (ct.indexOf('application/json') !== -1) {
+      data = await res.json().catch(function () { return null; });
+    } else if (res.status !== 204) {
+      data = await res.text().catch(function () { return null; });
+    }
+
+    return {
+      ok: res.ok,
+      status: res.status,
+      data: data,
+      error: res.ok ? null : parseError(res.status, typeof data === 'object' ? data : { message: String(data || '') }),
+      headers: res.headers,
+      response: res
+    };
+  }
+
+  async function getJson(path, opts) {
+    var r = await request('GET', path, opts);
+    return r.ok ? r.data : null;
+  }
+
+  async function getPaged(path, opts) {
+    var data = await getJson(path, opts);
+    return asPaged(data);
+  }
+
+  var authApi = {
+    /**
+     * Staff login — POST /api/auth/login
+     * @param {{ email: string, password: string, gymCode: string }} body
+     * @param {{ remember?: boolean }} [opts]
+     */
+    login: async function (body, opts) {
+      var r = await request('POST', '/auth/login', { body: body, auth: false });
+      if (r.ok && r.data && r.data.accessToken) {
+        tokens.persistSession(r.data, { remember: !!(opts && opts.remember) });
+      }
+      return r;
+    },
+    /** Explicit refresh (rarely needed — interceptor handles Token-Expired). */
+    refresh: function () { return silentRefresh(); },
+    /** Member OTP send stub — POST /api/auth/member-otp */
+    requestMemberOtp: function (body) {
+      return request('POST', '/auth/member-otp', { body: body, auth: false });
+    },
+    /** Member OTP verify stub — POST /api/auth/member-verify → LoginResponse */
+    verifyMemberOtp: async function (body, opts) {
+      var r = await request('POST', '/auth/member-verify', { body: body, auth: false });
+      if (r.ok && r.data && r.data.accessToken) {
+        tokens.persistSession(r.data, { remember: !!(opts && opts.remember) });
+      }
+      return r;
+    },
+    logout: function () { logoutToLogin(); }
+  };
+
+  var GfpApi = {
+    tokens: tokens,
+    parseError: parseError,
+    asPaged: asPaged,
+    request: request,
+    get: function (path, opts) { return request('GET', path, opts); },
+    post: function (path, body, opts) { return request('POST', path, Object.assign({}, opts, { body: body })); },
+    put: function (path, body, opts) { return request('PUT', path, Object.assign({}, opts, { body: body })); },
+    del: function (path, opts) { return request('DELETE', path, opts); },
+    getJson: getJson,
+    getPaged: getPaged,
+    auth: authApi,
+    logout: authApi.logout,
+    /** Compatibility helpers matching older inline page helpers */
+    apiGet: getJson,
+    apiPut: async function (path, body) {
+      var r = await request('PUT', path, { body: body });
+      return { ok: r.ok, status: r.status, data: r.data };
+    },
+    apiPost: async function (path, body) {
+      var r = await request('POST', path, { body: body });
+      return { ok: r.ok, status: r.status, data: r.data };
+    }
+  };
+
+  global.GfpApi = GfpApi;
+  global.GFP_API = GfpApi; // alias
+})(typeof window !== 'undefined' ? window : globalThis);

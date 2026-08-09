@@ -1,0 +1,176 @@
+/**
+ * Prompt 2 self-check (node). Run: node src/app/shared/shell.selftest.js
+ * Covers Receptionist plans/settings hide, FEATURE_DISABLED, pending-probe hide,
+ * JWT perm decode, bilingual message/messageAr.
+ */
+var fs = require('fs');
+var path = require('path');
+var vm = require('vm');
+
+function assert(cond, msg) {
+  if (!cond) throw new Error('FAIL: ' + msg);
+  console.log('ok —', msg);
+}
+
+function loadIife(file, sandbox) {
+  var code = fs.readFileSync(file, 'utf8');
+  vm.runInNewContext(code, sandbox, { filename: file });
+  return sandbox;
+}
+
+var sharedDir = __dirname;
+
+// ── mock browser globals ──
+var storage = {};
+function makeStore() {
+  return {
+    getItem: function (k) { return Object.prototype.hasOwnProperty.call(storage, k) ? storage[k] : null; },
+    setItem: function (k, v) { storage[k] = String(v); },
+    removeItem: function (k) { delete storage[k]; }
+  };
+}
+
+function btoaNode(s) {
+  return Buffer.from(s, 'binary').toString('base64');
+}
+
+function fakeJwt(payload) {
+  var enc = btoaNode(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return 'hdr.' + enc + '.sig';
+}
+
+var sandbox = {
+  console: console,
+  atob: function (b64) { return Buffer.from(b64, 'base64').toString('binary'); },
+  localStorage: makeStore(),
+  sessionStorage: makeStore(),
+  document: {
+    readyState: 'complete',
+    documentElement: {
+      lang: 'en',
+      dir: 'ltr',
+      setAttribute: function (k, v) {
+        this[k] = v;
+      },
+      getAttribute: function (k) {
+        return this[k];
+      }
+    },
+    body: { classList: { toggle: function () {} } },
+    addEventListener: function () {},
+    getElementById: function () { return null; },
+    createElement: function () { return { style: {}, classList: { toggle: function () {} }, addEventListener: function () {} }; },
+    head: { appendChild: function () {} },
+    querySelector: function () { return null; },
+    querySelectorAll: function () { return []; }
+  },
+  location: { pathname: '/dashboard/', href: '', origin: 'http://localhost:3000', replace: function () {} },
+  CustomEvent: function () {},
+  dispatchEvent: function () {}
+};
+sandbox.window = sandbox;
+sandbox.globalThis = sandbox;
+
+loadIife(path.join(sharedDir, 'authz.js'), sandbox);
+loadIife(path.join(sharedDir, 'features.js'), sandbox);
+loadIife(path.join(sharedDir, 'i18n.js'), sandbox);
+loadIife(path.join(sharedDir, 'nav.js'), sandbox);
+loadIife(path.join(sharedDir, 'shell.js'), sandbox);
+
+var Authz = sandbox.GfpAuthz;
+var Features = sandbox.GfpFeatures;
+var I18n = sandbox.GfpI18n;
+var Shell = sandbox.GfpShell;
+
+assert(!!Authz && !!Features && !!I18n && !!Shell, 'shared modules attached');
+
+// ── Receptionist JWT (no plans.manage / settings.manage) ──
+var receptionistPerms = [
+  'members.view', 'members.create', 'members.edit', 'checkin.manual',
+  'sales.sell', 'sales.discount.apply', 'payments.cash.accept', 'payments.refund.request',
+  'shift.open', 'shift.close', 'inventory.view'
+];
+storage.gfp_access_token = fakeJwt({
+  sub: 'r1',
+  role: 'Receptionist',
+  perm: receptionistPerms
+});
+storage.gfp_user = JSON.stringify({ role: 'Receptionist', fullName: 'R' });
+
+assert(Authz.useCan('sales.sell'), 'Receptionist can sales.sell');
+assert(Authz.useCan('inventory.view'), 'Receptionist can inventory.view');
+assert(!Authz.useCan('inventory.adjust'), 'Receptionist cannot inventory.adjust');
+assert(!Authz.useCan('plans.manage'), 'Receptionist cannot plans.manage');
+assert(!Authz.useCan('settings.manage'), 'Receptionist cannot settings.manage');
+assert(Authz.useCanRole('AnyStaff'), 'Receptionist matches AnyStaff');
+assert(!Authz.useCanRole('OwnerOnly'), 'Receptionist is not OwnerOnly');
+
+var plans = Shell.NAV_ITEMS.find(function (n) { return n.key === 'plans'; });
+var settings = Shell.NAV_ITEMS.find(function (n) { return n.key === 'settings'; });
+var pos = Shell.NAV_ITEMS.find(function (n) { return n.key === 'pos'; });
+var call = Shell.NAV_ITEMS.find(function (n) { return n.key === 'call-sheet'; });
+var staff = Shell.NAV_ITEMS.find(function (n) { return n.key === 'staff'; });
+var invProducts = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-products'; });
+var invAdjust = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-adjustments'; });
+
+var allOn = {
+  sales: true, shifts: true, trials: true, refunds: true, debtors: true, imports: true, inventory: true
+};
+
+assert(!!plans && !!pos && !!invProducts, 'nav items resolved by key');
+assert(!Shell.isNavItemVisible(plans, allOn), 'Receptionist hides Plans');
+assert(!Shell.isNavItemVisible(settings, allOn), 'Receptionist hides Settings');
+assert(!Shell.isNavItemVisible(staff, allOn), 'Receptionist hides Staff');
+assert(Shell.isNavItemVisible(pos, allOn), 'Receptionist sees POS when sales enabled');
+assert(Shell.isNavItemVisible(call, allOn), 'Receptionist sees Call sheet (no feature flag)');
+assert(Shell.isNavItemVisible(invProducts, allOn), 'Receptionist sees Inventory Products');
+assert(!Shell.isNavItemVisible(invAdjust, allOn), 'Receptionist hides Inventory Adjustments');
+
+// FEATURE_DISABLED
+var salesOff = Object.assign({}, allOn, { sales: false });
+assert(!Shell.isNavItemVisible(pos, salesOff), 'FEATURE_DISABLED hides POS');
+assert(Shell.isNavItemVisible(call, salesOff), 'Call sheet stays when sales flag off');
+
+var invOff = Object.assign({}, allOn, { inventory: false });
+assert(!Shell.isNavItemVisible(invProducts, invOff), 'FEATURE_DISABLED inventory hides Products');
+
+// Pending probe (null registry) — feature modules must NOT be clickable
+assert(!Shell.isNavItemVisible(pos, null), 'Pending probe hides feature-gated POS');
+assert(Shell.isNavItemVisible(call, null), 'Call sheet visible while probes pending');
+assert(!Features.isModuleAvailable('sales', null), 'isModuleAvailable(null) is unavailable');
+assert(Features.isModuleAvailable('sales', allOn), 'isModuleAvailable true when enabled');
+assert(!Features.isModuleAvailable('sales', salesOff), 'isModuleAvailable false when disabled');
+assert(Features.FEATURE_MODULES.indexOf('inventory') !== -1, 'FEATURE_MODULES lists inventory');
+
+// ── Owner sees plans/settings / inventory adjust ──
+storage.gfp_access_token = fakeJwt({
+  role: 'Owner',
+  perm: receptionistPerms.concat([
+    'plans.manage', 'settings.manage', 'reports.financial.view',
+    'inventory.manage', 'inventory.adjust', 'inventory.purchase', 'inventory.transfer'
+  ])
+});
+storage.gfp_user = JSON.stringify({ role: 'Owner' });
+assert(Shell.isNavItemVisible(plans, allOn), 'Owner sees Plans');
+assert(Shell.isNavItemVisible(settings, allOn), 'Owner sees Settings');
+assert(Shell.isNavItemVisible(invAdjust, allOn), 'Owner sees Inventory Adjustments');
+
+// ── Manager: no plans.manage, not Owner ──
+storage.gfp_access_token = fakeJwt({
+  role: 'Manager',
+  perm: receptionistPerms.concat([
+    'reports.financial.view', 'payments.refund.approve', 'memberships.freeze',
+    'inventory.manage', 'inventory.adjust', 'inventory.purchase', 'inventory.transfer'
+  ])
+});
+storage.gfp_user = JSON.stringify({ role: 'Manager' });
+assert(!Shell.isNavItemVisible(plans, allOn), 'Manager hides Plans (no plans.manage)');
+assert(!Shell.isNavItemVisible(settings, allOn), 'Manager hides Settings (not Owner)');
+assert(Shell.isNavItemVisible(invAdjust, allOn), 'Manager sees Inventory Adjustments');
+// ── Bilingual ──
+assert(I18n.pickBilingual('Hello', 'مرحبا', 'ar') === 'مرحبا', 'pickBilingual prefers ar');
+assert(I18n.displayBilingualText({ message: 'Open shift', messageAr: 'افتح الوردية' }, 'ar').indexOf('افتح') === 0, 'message/messageAr');
+assert(I18n.displayBilingualText('English / العربية', 'ar') === 'العربية', 'slash split');
+assert(I18n.displayApiError({ error: { message: 'A / ب' } }, 'ar') === 'ب', 'displayApiError');
+
+console.log('All Prompt 2 self-tests passed.');

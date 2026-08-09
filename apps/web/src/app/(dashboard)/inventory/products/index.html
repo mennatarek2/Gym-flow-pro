@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GymFlowPro — Products</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="products.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+<div class="sb-hdr"><svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<nav class="sb-nav">
+<a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+</nav>
+<div class="sb-ft"><div class="av-sm" id="userAvatar">—</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">User</div><div class="sb-ft-role" id="userRole">Staff</div></div><button class="sb-logout" id="btnLogout" title="Logout"><i class="ti ti-logout"></i></button></div>
+</aside>
+
+<div class="main">
+<header class="topbar">
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Products" data-ar="المنتجات">Products</span></div></div>
+  <div class="tb-right">
+    <div class="gym-name" id="gymName">GymFlowPro</div>
+    <div class="gym-name-ar" id="gymNameAr"></div>
+  </div>
+</header>
+
+<div class="content">
+  <div class="page-header">
+    <div class="ph-left">
+      <h1 class="page-title" data-en="Products" data-ar="قائمة المنتجات">Products</h1>
+      <p class="page-subtitle" data-en="Photos, buy/sell price, and color stock badges. Click a name for details." data-ar="صورة · أسعار · كمية المخزون بلون تحذيري. اضغط اسم المنتج للتفاصيل.">Photos, buy/sell price, and color stock badges. Click a name for details.</p>
+    </div>
+    <div class="ph-right" id="manageActions" hidden>
+      <button type="button" class="btn-secondary" id="btnCategories"><i class="ti ti-folder"></i> <span data-en="Categories" data-ar="الفئات" data-i18n-text>Categories</span></button>
+      <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New product" data-ar="منتج جديد" data-i18n-text>New product</span></button>
+    </div>
+  </div>
+
+  <div id="alertBanner" class="alert-banner" hidden></div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input type="search" id="filterQ" data-en-placeholder="Search name, SKU, barcode…" data-ar-placeholder="بحث: اسم، SKU، باركود…" placeholder="Search name, SKU, barcode…" autocomplete="off">
+    </div>
+    <select id="filterCategory" aria-label="Category">
+      <option value="" data-en="All categories" data-ar="كل التصنيفات">All categories</option>
+    </select>
+    <label class="chk"><input type="checkbox" id="filterArchived"> <span data-en="Archived" data-ar="المحفوظة">Archived</span></label>
+    <div class="view-toggle" role="group" aria-label="View mode">
+      <button type="button" class="view-btn act" data-view="table"><i class="ti ti-list"></i> <span data-en="List" data-ar="قائمة" data-i18n-text>List</span></button>
+      <button type="button" class="view-btn" data-view="cards"><i class="ti ti-layout-grid"></i> <span data-en="Grid" data-ar="شبكة" data-i18n-text>Grid</span></button>
+    </div>
+    <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-pill"><i class="ti ti-box"></i><span id="statTotal">0</span> <span data-en="shown" data-ar="معروض">shown</span></div>
+    <div class="stat-pill active"><i class="ti ti-check"></i><span id="statActive">0</span> <span data-en="active" data-ar="نشط">active</span></div>
+    <div class="stat-pill inactive"><i class="ti ti-archive"></i><span id="statArchived">0</span> <span data-en="archived" data-ar="مؤرشف">archived</span></div>
+  </div>
+
+  <div id="tableHost">
+    <div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- Product detail drawer -->
+<div class="drawer-overlay" id="detailDrawer" hidden>
+  <aside class="drawer" role="dialog" aria-labelledby="detailTitle">
+    <div class="drawer-hdr">
+      <h2 id="detailTitle">تفاصيل المنتج</h2>
+      <button type="button" class="modal-close" id="btnCloseDetail"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="drawer-body" id="detailBody"></div>
+  </aside>
+</div>
+
+<!-- Product modal -->
+<div class="modal-overlay" id="productModal" hidden>
+  <div class="modal modal-lg">
+    <div class="modal-hdr">
+      <h2 id="productModalTitle">New product</h2>
+      <button type="button" class="modal-close" data-close="productModal"><i class="ti ti-x"></i></button>
+    </div>
+    <form id="productForm" class="modal-body">
+      <input type="hidden" id="pId">
+      <div class="form-grid">
+        <label>SKU *<input name="sku" id="pSku" required maxlength="64" autocomplete="off"></label>
+        <label>Barcode<input name="barcode" id="pBarcode" maxlength="64" autocomplete="off"></label>
+        <label>Name *<input name="name" id="pName" required maxlength="150"></label>
+        <label>Name (AR)<input name="nameAr" id="pNameAr" maxlength="150" dir="rtl"></label>
+        <label>Category
+          <select id="pCategory"></select>
+        </label>
+        <label>Brand<input id="pBrand" maxlength="100"></label>
+        <label>Unit of measure<input id="pUom" maxlength="16" value="pcs"></label>
+        <label>Currency<input id="pCurrency" maxlength="3" value="EGP"></label>
+        <label>Sell price<input type="number" id="pSell" min="0" step="0.01" value="0"></label>
+        <label>Cost price<input type="number" id="pCost" min="0" step="0.01" value="0"></label>
+        <label>VAT % (optional)<input type="number" id="pVat" min="0" step="0.01" placeholder="tenant default"></label>
+        <label>Reorder min Qty<input type="number" id="pReorder" min="0" step="0.001" value="0"></label>
+        <label class="span-2">Description<textarea id="pDesc" rows="2" maxlength="500"></textarea></label>
+        <label class="span-2">Description (AR)<textarea id="pDescAr" rows="2" maxlength="500" dir="rtl"></textarea></label>
+        <label class="span-2">Product photo (image URL)
+          <input id="pImage" maxlength="500" placeholder="https://… paste a public image link">
+          <span class="field-hint">No file upload yet — paste a link (CDN, Drive public link, Imgur). Preview updates as you type.</span>
+        </label>
+        <div class="span-2 image-preview-wrap">
+          <div class="image-preview" id="pImagePreview"><i class="ti ti-photo"></i><span>No photo</span></div>
+        </div>
+      </div>
+      <div class="flags">
+        <label class="chk"><input type="checkbox" id="pTaxable" checked> Taxable</label>
+        <label class="chk"><input type="checkbox" id="pTrackStock" checked> Track stock</label>
+        <label class="chk"><input type="checkbox" id="pTrackBatch"> Track batch</label>
+        <label class="chk"><input type="checkbox" id="pTrackExpiry"> Track expiry</label>
+        <label class="chk"><input type="checkbox" id="pFractional"> Allow fractional qty</label>
+        <label class="chk"><input type="checkbox" id="pSellable" checked> Sellable</label>
+        <label class="chk"><input type="checkbox" id="pPurchasable" checked> Purchasable</label>
+        <label class="chk"><input type="checkbox" id="pActive" checked> Active</label>
+      </div>
+      <p class="form-hint" id="productFormHint"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" data-close="productModal">Cancel</button>
+        <button type="submit" class="btn-create" id="btnSaveProduct">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Categories modal -->
+<div class="modal-overlay" id="categoryModal" hidden>
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2>Categories / الفئات</h2>
+      <button type="button" class="modal-close" data-close="categoryModal"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="categoryForm" class="cat-form">
+        <input type="hidden" id="cId">
+        <label>Name *<input id="cName" required maxlength="150"></label>
+        <label>Name (AR)<input id="cNameAr" maxlength="150" dir="rtl"></label>
+        <label>Sort<input type="number" id="cSort" value="0"></label>
+        <label class="chk"><input type="checkbox" id="cActive" checked> Active</label>
+        <button type="submit" class="btn-create" id="btnSaveCategory">Add</button>
+      </form>
+      <div id="categoryList" class="cat-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="products-app.js"></script>
+</body>
+</html>

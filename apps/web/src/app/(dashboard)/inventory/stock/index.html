@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GymFlowPro — Stock</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="stock.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+<div class="sb-hdr"><svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<nav class="sb-nav"><a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a></nav>
+<div class="sb-ft"><div class="av-sm" id="userAvatar">—</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">User</div><div class="sb-ft-role" id="userRole">Staff</div></div><button class="sb-logout" id="btnLogout"><i class="ti ti-logout"></i></button></div>
+</aside>
+<div class="main">
+<header class="topbar">
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Restock" data-ar="تزويد">Restock</span></div></div>
+  <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
+</header>
+<div class="content">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title" data-en="Restock — on hand" data-ar="تزويد — الرصيد">Restock — on hand</h1>
+      <p class="page-subtitle" data-en="Available-first board. Tap a row for warehouses and history. Use Buy &amp; receive when you need to reorder." data-ar="لوحة المتاح أولاً. اضغط صف للمستودعات والحركة. استخدم شراء واستلام لما تحتاج تطلب.">Available-first board. Tap a row for warehouses and history. Use Buy &amp; receive when you need to reorder.</p>
+    </div>
+    <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
+  </div>
+
+  <div class="toolbar board-toolbar">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input type="search" id="boardQ" data-en-placeholder="Search name, SKU, barcode…" data-ar-placeholder="بحث: اسم، SKU، باركود…" placeholder="Search name, SKU, barcode…" autocomplete="off">
+    </div>
+    <label class="field"><span data-en="Warehouse" data-ar="المستودع">Warehouse</span>
+      <select id="boardWarehouse"><option value="">…</option></select>
+    </label>
+    <div class="filter-chips" role="group">
+      <button type="button" class="chip act" data-filter="all" data-en="All" data-ar="الكل">All</button>
+      <button type="button" class="chip" data-filter="low" data-en="Low" data-ar="منخفض">Low</button>
+      <button type="button" class="chip" data-filter="oos" data-en="Unsellable" data-ar="غير قابل للبيع">Unsellable</button>
+      <button type="button" class="chip" data-filter="expired" data-en="Expired" data-ar="منتهي">Expired</button>
+      <button type="button" class="chip" data-filter="ok" data-en="OK" data-ar="تمام">OK</button>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="boardStats"></div>
+  <div class="table-wrap" id="boardHost">
+    <div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div>
+  </div>
+
+  <div id="detailPanel" class="detail-panel" hidden>
+    <div class="detail-hdr">
+      <h2 id="detailTitle" data-en="Details" data-ar="التفاصيل">Details</h2>
+      <button type="button" class="btn-secondary" id="btnCloseDetail"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="qty-card" id="qtyCard">
+      <div class="qty-label" data-en="Sellable (selected WH)" data-ar="قابل للبيع (المستودع المختار)">Sellable (selected WH)</div>
+      <div class="qty-value" id="qtyValue" data-stock-available>—</div>
+      <div class="qty-meta" id="qtyMeta"></div>
+    </div>
+    <div class="detail-actions" id="detailActions" style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px">
+      <a class="btn-secondary" id="linkBuyReceive" href="/dashboard/inventory/purchase-orders/"><i class="ti ti-clipboard-list"></i> <span data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span></a>
+      <a class="btn-secondary" id="linkFixQty" href="/dashboard/inventory/adjustments/" hidden><i class="ti ti-adjustments"></i> <span data-en="Fix quantity" data-ar="عدّل كمية">Fix quantity</span></a>
+    </div>
+    <h3 class="section-title" data-en="By warehouse" data-ar="حسب المستودع">By warehouse</h3>
+    <div class="table-wrap" id="breakdownHost"></div>
+    <h3 class="section-title" data-en="Recent activity" data-ar="آخر الحركات">Recent activity</h3>
+    <div class="table-wrap" id="movementsHost"></div>
+  </div>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="stock-app.js"></script>
+</body>
+</html>

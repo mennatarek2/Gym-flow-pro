@@ -1,0 +1,33 @@
+{
+  "name": "gymflowpro-frontend",
+  "version": "1.0.0",
+  "description": "GymFlowPro Admin Dashboard - Next.js Frontend",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "node apps/web/server.js",
+    "dev:admin": "npm run dev -w admin",
+    "dev:platform": "npm run dev -w platform-console",
+    "dev:turbo": "turbo run dev --parallel",
+    "dev:web": "cd apps/web && npm run dev",
+    "build": "turbo run build",
+    "build:admin": "npm run build -w admin",
+    "build:platform": "npm run build -w platform-console",
+    "build:web": "cd apps/web && npm run build",
+    "test:platform": "npm run test -w platform-console",
+    "start": "cd apps/web && npm start",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.0",
+    "typescript": "^5.0.0"
+  },
+  "overrides": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

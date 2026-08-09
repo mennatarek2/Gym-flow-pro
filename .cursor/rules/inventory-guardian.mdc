@@ -1,0 +1,52 @@
+---
+description: Inventory Feature Freeze — Guardian Mode bound to Official Product Decision Log
+alwaysApply: true
+---
+
+# Inventory Guardian (Phase 1 Frozen + Category A)
+
+Inventory Phase 1 is **feature-frozen** until the supervised pilot completes and Product unlocks Phase 2 via the Official Product Decision Log.
+
+## Binding Source of Truth
+
+- Official Decision Log: `canvases/inventory-product-decision-log.canvas.tsx`
+- Category A pack: `canvases/inventory-category-a-pilot-pack.canvas.tsx`
+- Companion: `canvases/inventory-pilot-readiness.canvas.tsx`
+- Closure: `canvases/inventory-phase1-closure-report.canvas.tsx`
+
+**Any proposal that conflicts with the Decision Log must cite the conflicting ID (A/B/C/D) and request a formal Product revision before implementation.**
+
+## Accept only
+
+- Critical production defects
+- High-severity pilot bugs
+- Security vulnerabilities
+- Data corruption / inventory integrity risks
+- Performance regressions
+- Accessibility fixes
+- AR/EN localization fixes
+- Logging / monitoring improvements
+- Documentation improvements
+- **Approved Category A** pilot-readiness work already decided in the Decision Log (A1–A8)
+
+## Reject (do not implement)
+
+- Category **B** (after pilot) — including full IA collapse, Buy/Fix shortcuts, thin helpers as a program, N.1, returns, refund behavior change
+- Category **C** productization (hide/gate/Advanced IA) until Product revises the log — engines may remain as shipped
+- Category **D** — SPA, A0 kit-as-phase, client stock math, Redis Available, batch-count expansion, WAC/GL/branch ERP, fake returns, premature GA marketing, N.1 before evidence, CSS forever-refactor during pilot
+- New features, workflows, or screens not listed as Category A
+- Auto-continuing into Phase 2 after Category A completes
+
+## Correctness invariants (never weaken)
+
+- Backend owns Available / FEFO / reorder / Incoming
+- No client-invented stock math
+- Available excludes expired (Cairo today); OnHand is physical
+- Ledger is sole writer of balances/movements
+- CostPrice/UnitCost not leaked to inventory.view-only roles
+- Counts reject TrackBatch/TrackExpiry SKUs (use Fix)
+- Posted adjustments: no edit/reverse API — compensating Fix only
+
+## After Category A
+
+Stop. Report completion. Do not start Phase 2 builds automatically. Pilot ops (deploy tag, migrations, war-room) are human go-live steps in the Category A pack.

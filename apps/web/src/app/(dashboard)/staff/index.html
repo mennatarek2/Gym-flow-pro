@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GymFlowPro — Staff Management</title>
+<meta name="description" content="Manage gym staff members, assign roles, and control access for your gym team.">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="staff.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+<div class="sb-hdr"><svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<nav class="sb-nav">
+<a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
+<a class="sb-item" href="/dashboard/members/"><i class="ti ti-users"></i>Members</a>
+<a class="sb-item" href="/dashboard/memberships/"><i class="ti ti-id-badge"></i>Memberships</a>
+<a class="sb-item" href="/dashboard/plans/"><i class="ti ti-package"></i>Plans</a>
+<a class="sb-item" href="/dashboard/attendance/"><i class="ti ti-door-enter"></i>Attendance</a>
+<a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
+<a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
+<a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
+<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
+<a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
+<a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
+<a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
+<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
+<a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
+<a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
+<a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
+<a class="sb-item" href="/dashboard/audit/"><i class="ti ti-list-search"></i>Audit</a>
+<a class="sb-item" href="/dashboard/notifications/"><i class="ti ti-bell"></i>Notifications</a>
+<a class="sb-item act" href="/dashboard/staff/"><i class="ti ti-user-shield"></i>Staff</a>
+<a class="sb-item" href="/dashboard/settings/"><i class="ti ti-settings"></i>Settings</a>
+</nav>
+<div class="sb-ft"><div class="av-sm" id="userAvatar">AO</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">Ahmed Owner</div><div class="sb-ft-role" id="userRole">Owner</div></div><button class="sb-logout" id="btnLogout" title="Logout"><i class="ti ti-logout"></i></button></div>
+</aside>
+
+<div class="main">
+<header class="topbar">
+  <div class="tb-left"><div class="tb-breadcrumb"><span>🏠</span><span class="sep">/</span><span class="current">Staff Management</span></div></div>
+  <div class="tb-right"><div class="gym-name" id="gymName">Fitness Hub</div><div class="gym-name-ar" id="gymNameAr"></div></div>
+</header>
+
+<div class="content">
+  <!-- Owner Guard Banner -->
+  <div class="owner-guard" id="ownerGuard" style="display:none">
+    <div class="guard-icon"><i class="ti ti-lock"></i></div>
+    <h2>Access Restricted</h2>
+    <p>Staff management is available to gym owners only.</p>
+    <a href="/dashboard/" class="guard-btn">Back to Dashboard</a>
+  </div>
+
+  <!-- Page Content (owner only) -->
+  <div id="staffContent">
+    <div class="page-header">
+      <div class="ph-left">
+        <h1 class="page-title"><i class="ti ti-user-shield"></i> Staff Management</h1>
+        <p class="page-subtitle">Manage your team's access, roles, and permissions</p>
+      </div>
+      <div class="ph-right">
+        <button class="btn-add-staff" id="btnAddStaff"><i class="ti ti-user-plus"></i> Add Staff Member</button>
+      </div>
+    </div>
+
+    <!-- Role Stats -->
+    <div class="role-stats" id="roleStats">
+      <div class="role-stat total"><i class="ti ti-users-group"></i><span class="rs-val" id="statTotal">0</span><span class="rs-lbl">Total Staff</span></div>
+      <div class="role-stat owner"><i class="ti ti-crown"></i><span class="rs-val" id="statOwner">0</span><span class="rs-lbl">Owner</span></div>
+      <div class="role-stat manager"><i class="ti ti-briefcase"></i><span class="rs-val" id="statManager">0</span><span class="rs-lbl">Managers</span></div>
+      <div class="role-stat trainer"><i class="ti ti-barbell"></i><span class="rs-val" id="statTrainer">0</span><span class="rs-lbl">Trainers</span></div>
+      <div class="role-stat receptionist"><i class="ti ti-desk"></i><span class="rs-val" id="statReceptionist">0</span><span class="rs-lbl">Reception</span></div>
+    </div>
+
+    <!-- Staff Table -->
+    <div class="table-card">
+      <table class="staff-table">
+        <thead><tr>
+          <th>Staff Member</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Last Login</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="staffBody"><tr><td colspan="7" class="loading-cell"><div class="loader"></div>Loading staff...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- Add Staff Modal -->
+<div class="modal-overlay" id="addModalOverlay">
+  <div class="modal" id="addModalContent"></div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal-overlay" id="resetModalOverlay">
+  <div class="modal modal-sm" id="resetModalContent"></div>
+</div>
+
+<!-- Deactivate Confirm -->
+<div class="modal-overlay" id="deactOverlay">
+  <div class="confirm-dialog" id="deactDialog"></div>
+</div>
+
+<!-- Edit Drawer -->
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer" id="drawerContent"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE=window.API_BASE||'https://localhost:5001/api';
+function getH(){const t=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');const h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;return h;}
+async function apiGet(p){const r=await fetch(API_BASE+p,{headers:getH()});if(r.status===401){window.location.href='/auth/login/';return null;}if(!r.ok)return null;return r.json();}
+async function apiPost(p,b){const r=await fetch(API_BASE+p,{method:'POST',headers:getH(),body:JSON.stringify(b)});const d=await r.json().catch(()=>null);return{ok:r.ok,status:r.status,data:d};}
+async function apiPut(p,b){const r=await fetch(API_BASE+p,{method:'PUT',headers:getH(),body:JSON.stringify(b)});const d=await r.json().catch(()=>null);return{ok:r.ok,status:r.status,data:d};}
+function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
+const user=getUser();if(!user){window.location.href='/auth/login/';}
+const ini=(user.fullName||'U').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+document.getElementById('userAvatar').textContent=ini;
+document.getElementById('userName').textContent=user.fullName||'User';
+document.getElementById('userRole').textContent=user.role||'Staff';
+document.getElementById('btnLogout').addEventListener('click',function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});window.location.href='/auth/login/';});
+// Owner-only guard
+if(user.role!=='Owner'&&user.role!=='owner'){document.getElementById('staffContent').style.display='none';document.getElementById('ownerGuard').style.display='flex';}
+(async()=>{const s=await apiGet('/settings');if(s){document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
+</script>
+<script src="staff-app.js"></script>
+</body>
+</html>

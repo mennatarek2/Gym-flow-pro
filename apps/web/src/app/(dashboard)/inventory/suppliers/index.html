@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GymFlowPro — Suppliers</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link rel="stylesheet" href="suppliers.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+<div class="sb-hdr"><svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<nav class="sb-nav"><a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a></nav>
+<div class="sb-ft"><div class="av-sm" id="userAvatar">—</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">User</div><div class="sb-ft-role" id="userRole">Staff</div></div><button class="sb-logout" id="btnLogout"><i class="ti ti-logout"></i></button></div>
+</aside>
+<div class="main">
+<header class="topbar">
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Suppliers" data-ar="الموردون">Suppliers</span></div></div>
+  <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
+</header>
+<div class="content">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title" data-en="Suppliers" data-ar="الموردون">Suppliers</h1>
+      <p class="page-subtitle" data-en="Who you buy stock from — linked to purchase orders and receipts." data-ar="الجهات اللي بتشتري منها — مرتبطة بأوامر الشراء والاستلام.">Who you buy stock from — linked to purchase orders and receipts.</p>
+    </div>
+    <div id="manageActions" hidden>
+      <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New supplier" data-ar="مورد جديد" data-i18n-text>New supplier</span></button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <label class="chk"><input type="checkbox" id="filterInactive"> <span data-en="Include inactive" data-ar="إظهار غير النشط">Include inactive</span></label>
+    <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
+  </div>
+  <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="supModal" hidden>
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2 id="supModalTitle" data-en="New supplier" data-ar="مورد جديد">New supplier</h2>
+      <button type="button" class="modal-close" data-close="supModal"><i class="ti ti-x"></i></button>
+    </div>
+    <form id="supForm" class="modal-body">
+      <label><span data-en="Name *" data-ar="الاسم *">Name *</span><input id="sName" required maxlength="200"></label>
+      <label><span data-en="Name (AR)" data-ar="الاسم (عربي)">Name (AR)</span><input id="sNameAr" maxlength="200" dir="rtl"></label>
+      <label><span data-en="Phone" data-ar="الهاتف">Phone</span><input id="sPhone" maxlength="40" dir="ltr"></label>
+      <label><span data-en="Email" data-ar="البريد">Email</span><input id="sEmail" type="email" maxlength="120" dir="ltr"></label>
+      <label><span data-en="Payment terms" data-ar="شروط الدفع">Payment terms</span><input id="sTerms" maxlength="120"></label>
+      <label><span data-en="Notes" data-ar="ملاحظات">Notes</span><textarea id="sNotes" rows="2" maxlength="500"></textarea></label>
+      <label class="chk"><input type="checkbox" id="sActive" checked> <span data-en="Active" data-ar="نشط">Active</span></label>
+      <p class="form-hint" id="supHint"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" data-close="supModal" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        <button type="submit" class="btn-create" id="btnSaveSup" data-en="Save" data-ar="حفظ">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="suppliers-app.js"></script>
+</body>
+</html>
