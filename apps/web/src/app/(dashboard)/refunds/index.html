@@ -53,7 +53,7 @@
 
   <div class="page-header">
     <div>
-      <h1 class="page-title"><i class="ti ti-receipt-refund"></i> Refunds &amp; credit</h1>
+      <h1 class="page-title"><i class="ti ti-receipt-refund"></i> Refunds</h1>
       <p class="page-subtitle">Request → approve/reject. Gateway refunds are disabled (<code>GATEWAY_REFUND_UNSUPPORTED</code>). Full retail sale refunds restore stock on approve; <strong>partial amount refunds do not restore stock</strong>.</p>
     </div>
     <button type="button" class="btn primary" id="btnShowRequest" style="display:none"><i class="ti ti-plus"></i> Request refund</button>
@@ -67,7 +67,6 @@
       <label>Method
         <select id="rfMethod">
           <option value="cash">cash</option>
-          <option value="credit">credit (account credit)</option>
           <option value="gateway" disabled>gateway (unsupported)</option>
         </select>
       </label>
@@ -115,16 +114,6 @@
     </div>
   </section>
 
-  <section class="card">
-    <div class="card-h"><h2>Member credit peek</h2></div>
-    <p class="hint">Full ledger lives on the member profile Credits tab. Paste a member ID to refresh balance after an approved credit refund.</p>
-    <div class="row-inline">
-      <input id="peekMemberId" placeholder="memberId" dir="ltr">
-      <button type="button" class="btn secondary" id="btnPeekCredits">Load credits</button>
-      <a class="btn ghost" id="peekProfileLink" href="/dashboard/members/" style="display:none">Open profile</a>
-    </div>
-    <div id="peekResult" class="muted" style="margin-top:10px"></div>
-  </section>
 </div>
 </div>
 </div>

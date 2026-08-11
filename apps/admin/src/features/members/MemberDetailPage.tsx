@@ -13,7 +13,6 @@ import {
   freezeMembership,
   getDisplayMessage,
   getMember,
-  getMemberCredits,
   unfreezeMembership,
 } from '@/lib/api'
 import { displayBilingualText, tLabel } from '@/lib/i18n/bilingual'
@@ -49,17 +48,10 @@ export function MemberDetailPage() {
     enabled: Boolean(id),
   })
 
-  const creditsQuery = useQuery({
-    queryKey: ['member-credits', id],
-    queryFn: () => getMemberCredits(id!),
-    enabled: Boolean(id),
-  })
-
   const invalidate = async () => {
     await Promise.all([
       qc.invalidateQueries({ queryKey: ['member', id] }),
       qc.invalidateQueries({ queryKey: ['members'] }),
-      qc.invalidateQueries({ queryKey: ['member-credits', id] }),
     ])
   }
 
@@ -249,50 +241,6 @@ export function MemberDetailPage() {
                 value={membership.paymentMethod}
               />
             </dl>
-          )}
-        </section>
-
-        <section className="rounded-[var(--rmd)] border border-[var(--lbd)] bg-white p-5">
-          <h2 className="mb-4 font-[family-name:var(--fd)] text-lg font-semibold">
-            {tLabel('Account credit', 'رصيد الحساب', locale)}
-          </h2>
-          {creditsQuery.isLoading ? (
-            <p className="text-sm text-[var(--ltt)]">{tLabel('Loading…', 'جارٍ التحميل…', locale)}</p>
-          ) : creditsQuery.isError ? (
-            <AlertError>{getDisplayMessage(creditsQuery.error, locale)}</AlertError>
-          ) : (
-            <>
-              <p className="mb-3 font-[family-name:var(--fd)] text-2xl font-bold text-[var(--l600)]">
-                {formatMoney(creditsQuery.data?.balance ?? 0, locale)}
-              </p>
-              {(creditsQuery.data?.entries?.length ?? 0) === 0 ? (
-                <p className="text-sm text-[var(--ltt)]">
-                  {tLabel('No credit entries yet.', 'لا توجد حركات رصيد بعد.', locale)}
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-2">
-                  {creditsQuery.data!.entries.slice(0, 8).map((e) => (
-                    <li
-                      key={e.id}
-                      className="flex items-center justify-between gap-3 border-t border-[var(--lbd)] pt-2 text-sm"
-                    >
-                      <div>
-                        <div className="font-medium text-[var(--ltp)]">{e.entryType}</div>
-                        <div className="text-xs text-[var(--ltt)]">
-                          {formatDateTimeUtc(e.createdAtUtc, locale)}
-                          {e.reason ? ` · ${e.reason}` : ''}
-                        </div>
-                      </div>
-                      <div
-                        className={`font-semibold ${e.amount < 0 ? 'text-[var(--dng600)]' : 'text-[var(--l600)]'}`}
-                      >
-                        {formatMoney(e.amount, locale)}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
           )}
         </section>
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
@@ -17,20 +17,23 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Fix" data-ar="تعديل">Fix</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb" id="adjBreadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Adjust quantity" data-ar="تعديل الكمية">Adjust quantity</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 <div class="content">
+  <p id="adjContextBar" class="hint" hidden style="margin:0 0 12px">
+    <a id="adjBackOnHand" href="/dashboard/inventory/stock/"><i class="ti ti-arrow-left"></i> <span data-en="Back to On Hand" data-ar="رجوع للرصيد">Back to On Hand</span></a>
+  </p>
   <div class="page-header">
     <div>
-      <h1 class="page-title" data-en="Fix quantities" data-ar="تعديل الكميات">Fix quantities</h1>
+      <h1 class="page-title" data-en="Adjust quantity" data-ar="تعديل الكمية">Adjust quantity</h1>
       <p class="page-subtitle" data-en="Pick an operational reason, adjust qty (and batch when required), then confirm. Drafts do not change stock until posted." data-ar="اختار سبب تشغيلي، عدّل الكمية (والتشغيلة لو مطلوبة)، بعدين أكّد. المسودة مش بتغيّر الرصيد لحد الترحيل.">Pick an operational reason, adjust qty (and batch when required), then confirm. Drafts do not change stock until posted.</p>
     </div>
   </div>
 
   <div class="grid-2">
     <section class="card">
-      <h2 data-en="New fix" data-ar="تعديل جديد">New fix</h2>
+      <h2 data-en="New adjustment" data-ar="تعديل جديد">New adjustment</h2>
       <form id="createForm">
         <label><span data-en="Warehouse" data-ar="المستودع">Warehouse</span> *
           <select id="aWarehouse" required></select>

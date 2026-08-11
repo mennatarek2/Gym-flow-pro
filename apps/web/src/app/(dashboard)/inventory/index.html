@@ -35,7 +35,7 @@
   <div class="page-header">
     <div class="ph-left">
       <h1 class="page-title" data-en="Inventory pulse" data-ar="نبض المخزون">Inventory pulse</h1>
-      <p class="page-subtitle" data-en="See stock health, then Sell, Restock, Move, Fix, or dig into Insights." data-ar="شوف صحة المخزون، بعدين بيع أو زوّد أو انقل أو عدّل أو افتح الرؤى.">See stock health, then Sell, Restock, Move, Fix, or dig into Insights.</p>
+      <p class="page-subtitle" data-en="See stock health, then open On Hand to manage products." data-ar="شوف صحة المخزون، بعدين افتح الرصيد لإدارة المنتجات.">See stock health, then open On Hand to manage products.</p>
     </div>
     <div class="ph-right">
       <button type="button" class="btn-secondary" id="btnRefresh" data-en="Refresh" data-ar="تحديث">
@@ -61,27 +61,11 @@
 
   <h2 class="section-title" data-en="What do you need to do?" data-ar="محتاج تعمل إيه؟">What do you need to do?</h2>
   <div class="action-grid" id="actionGrid">
-    <a class="action-card primary" href="/dashboard/pos/?mode=retail" id="actSell">
-      <div class="action-ico"><i class="ti ti-shopping-cart"></i></div>
-      <div class="action-body">
-        <div class="action-title" data-en="Sell products" data-ar="بيع منتجات">Sell products</div>
-        <div class="action-sub" data-en="Same Sell app — product mode. Scan and checkout." data-ar="نفس شاشة البيع — وضع المنتجات. امسح وادفع.">Same Sell app — product mode. Scan and checkout.</div>
-      </div>
-      <i class="ti ti-chevron-right action-chev"></i>
-    </a>
-    <a class="action-card" href="/dashboard/inventory/stock/" id="actRestock">
+    <a class="action-card primary" href="/dashboard/inventory/stock/" id="actRestock">
       <div class="action-ico"><i class="ti ti-stack-2"></i></div>
       <div class="action-body">
-        <div class="action-title" data-en="Restock — on hand" data-ar="تزويد — الرصيد">Restock — on hand</div>
-        <div class="action-sub" data-en="See Available, filter low / unsellable, open a product." data-ar="شوف المتاح، فلتر منخفض / غير قابل للبيع، وافتح صنف.">See Available, filter low / unsellable, open a product.</div>
-      </div>
-      <i class="ti ti-chevron-right action-chev"></i>
-    </a>
-    <a class="action-card" href="/dashboard/inventory/purchase-orders/" id="actPo">
-      <div class="action-ico"><i class="ti ti-clipboard-list"></i></div>
-      <div class="action-body">
-        <div class="action-title" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</div>
-        <div class="action-sub" data-en="Purchase orders and supplier receipts." data-ar="أوامر الشراء واستلام من المورد.">Purchase orders and supplier receipts.</div>
+        <div class="action-title" data-en="On Hand" data-ar="الرصيد">On Hand</div>
+        <div class="action-sub" data-en="See Available, open a product, then Buy &amp; receive or Adjust quantity." data-ar="شوف المتاح، افتح منتج، بعدين شراء واستلام أو تعديل الكمية.">See Available, open a product, then Buy &amp; receive or Adjust quantity.</div>
       </div>
       <i class="ti ti-chevron-right action-chev"></i>
     </a>
@@ -90,14 +74,6 @@
       <div class="action-body">
         <div class="action-title" data-en="Move stock" data-ar="نقل مخزون">Move stock</div>
         <div class="action-sub" data-en="Warehouse transfers (FEFO on submit)." data-ar="تحويل بين المخازن (توزيع صلاحية عند الإرسال).">Warehouse transfers (FEFO on submit).</div>
-      </div>
-      <i class="ti ti-chevron-right action-chev"></i>
-    </a>
-    <a class="action-card" href="/dashboard/inventory/adjustments/" id="actAdjust" hidden>
-      <div class="action-ico warn"><i class="ti ti-adjustments"></i></div>
-      <div class="action-body">
-        <div class="action-title" data-en="Fix quantity" data-ar="عدّل الكمية">Fix quantity</div>
-        <div class="action-sub" data-en="Opening, damage, lost, or correction." data-ar="افتتاحي، تالف، فاقد، أو تصحيح.">Opening, damage, lost, or correction.</div>
       </div>
       <i class="ti ti-chevron-right action-chev"></i>
     </a>

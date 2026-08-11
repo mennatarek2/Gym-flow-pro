@@ -8,5 +8,10 @@
     "types": ["node"]
   },
   "include": ["apps/**/*.ts", "packages/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "apps/admin",
+    "apps/platform-console",
+    "apps/**/node_modules"
+  ]
 }

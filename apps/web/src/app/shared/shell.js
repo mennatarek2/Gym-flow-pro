@@ -216,6 +216,17 @@
       var curRetail = curUrl.searchParams.get('mode') === 'retail';
       return itemRetail === curRetail;
     }
+    // Inventory overview is exact-only (do not steal On Hand / nested routes)
+    if (ip === normalizePath('/dashboard/inventory/')) {
+      return cp === ip;
+    }
+    // On Hand stays active for contextual Buy & receive / Adjust quantity workflows
+    if (ip === normalizePath('/dashboard/inventory/stock/')) {
+      if (cp === ip) return true;
+      if (cp.indexOf(normalizePath('/dashboard/inventory/purchase-orders')) === 0) return true;
+      if (cp.indexOf(normalizePath('/dashboard/inventory/adjustments')) === 0) return true;
+      return false;
+    }
     if (cp === ip) return true;
     return cp.indexOf(ip) === 0;
   }

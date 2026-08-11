@@ -4,18 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>GymFlowPro — Point of Sale</title>
-<meta name="description" content="Sell memberships with promo, discounts, split payments, and debt collection.">
+<meta name="description" content="Front desk POS for retail products — cart, payment, and receipt.">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="pos.css?v=desk7">
+<link rel="stylesheet" href="pos.css?v=desk11">
 <script>
-/* Paint retail chrome before pos-app.js so membership blocks never flash */
+/* Sale is retail-only — membership onboarding lives in Members */
 (function () {
-  try {
-    if (new URLSearchParams(location.search).get('mode') === 'retail') {
-      document.documentElement.classList.add('pos-retail');
-    }
-  } catch (e) { /* ignore */ }
+  try { document.documentElement.classList.add('pos-retail'); } catch (e) { /* ignore */ }
 })();
 </script>
 </head>
@@ -55,14 +51,14 @@
 </header>
 
 <div class="content">
-  <div id="shiftGate" class="banner danger" style="display:none">
+  <div id="shiftGate" class="banner danger is-off" hidden>
     <i class="ti ti-lock"></i>
     <div>
       <strong data-en="Open a cash shift first" data-ar="افتح وردية الكاش أولاً">Open a cash shift first</strong>
       <p data-en="Cash sales need an open drawer. Open a shift, then come back here." data-ar="البيع بالكاش محتاج وردية مفتوحة. افتح وردية من الشيفتات وارجع هنا.">Cash sales need an open drawer. Open a shift, then come back here. <a href="/dashboard/shifts/" data-en="Open shift" data-ar="افتح وردية">Open shift</a></p>
     </div>
   </div>
-  <div id="featureDisabled" class="banner warn" style="display:none">
+  <div id="featureDisabled" class="banner warn is-off" hidden>
     <i class="ti ti-flag-off"></i>
     <div>
       <strong data-en="Sales are turned off for this gym" data-ar="المبيعات مقفولة لهذا النادي">Sales are turned off for this gym</strong>
@@ -73,85 +69,33 @@
   <div class="page-header">
     <div>
       <h1 class="page-title"><i class="ti ti-shopping-cart"></i> <span id="pageTitleText" data-en="Point of Sale" data-ar="نقطة البيع">Point of Sale</span></h1>
-      <p class="page-subtitle" id="pageSubtitle" data-en="1) Pick plan  2) Member  3) Pay  4) Finish" data-ar="١) اختار الباقة  ٢) العضو  ٣) ادفع  ٤) خلّص">1) Pick plan  2) Member  3) Pay  4) Finish</p>
+      <p class="page-subtitle" id="pageSubtitle" data-en="1) Products  2) Cart  3) Pay  4) Finish" data-ar="١) المنتجات  ٢) السلة  ٣) ادفع  ٤) خلّص">1) Products  2) Cart  3) Pay  4) Finish</p>
     </div>
     <div class="hdr-actions">
-      <a class="btn secondary" id="btnPromoCodes" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i> <span data-en="Promo codes" data-ar="أكواد خصم">Promo codes</span></a>
+      <a class="btn secondary" id="btnPromoCodes" href="/dashboard/promo-codes/" style="display:none"><i class="ti ti-discount-2"></i> <span data-en="Promo codes" data-ar="أكواد خصم">Promo codes</span></a>
       <button type="button" class="btn secondary" id="btnReset"><i class="ti ti-refresh"></i> <span data-en="New sale" data-ar="بيع جديد">New sale</span></button>
     </div>
   </div>
 
-  <div class="mode-tabs" id="modeTabs" role="tablist">
-    <button type="button" class="mode-tab act retail-tap" data-pos-mode="membership" role="tab" data-en="Membership" data-ar="اشتراك">Membership</button>
-    <button type="button" class="mode-tab retail-tap" data-pos-mode="retail" id="tabRetail" role="tab" style="display:none" data-en="Products" data-ar="منتجات">Products</button>
+  <p class="mode-help muted" id="modeHelp" data-en="Product sales only. Memberships are managed in Members." data-ar="بيع منتجات فقط. الاشتراكات من الأعضاء.">Product sales only. Memberships are managed in Members.</p>
+  <div id="inventoryOffHint" class="muted" style="display:none" data-en="Retail stock sales need the inventory feature for this gym. Create memberships in Members." data-ar="بيع المنتجات يحتاج تفعيل ميزة المخزون لهذا النادي. الاشتراكات من شاشة الأعضاء.">Retail stock sales need the inventory feature for this gym. Create memberships in Members.</div>
+
+  <!-- Hidden stubs for leftover JS IDs (not shown) -->
+  <div id="membershipPanel" hidden aria-hidden="true" style="display:none!important">
+    <select id="planSelect" class="visually-hidden" aria-hidden="true"><option value="">Select plan…</option></select>
+    <div id="planTiles" hidden></div>
+    <div id="planPrice" hidden></div>
+    <div id="plansHint" hidden></div>
+    <input id="promoCode" type="hidden">
+    <input id="saleReferralCode" type="hidden">
+    <input id="discAmount" type="hidden" value="0">
+    <input id="discReason" type="hidden">
+    <div id="promoStatus" hidden></div>
   </div>
-  <p class="mode-help muted" id="modeHelp" data-en="Front desk: Membership for plans · Products for retail stock." data-ar="الديسك: اشتراك للباقات · منتجات لمخزون البيع.">Front desk: Membership for plans · Products for retail stock.</p>
-  <div id="inventoryOffHint" class="muted" style="display:none" data-en="Retail stock sales need the inventory feature for this gym." data-ar="بيع المنتجات يحتاج تفعيل ميزة المخزون لهذا النادي.">Retail stock sales need the inventory feature for this gym.</div>
 
   <div id="posWorkspace">
     <div class="grid-main">
-      <div id="membershipPanel">
-      <div class="membership-desk">
-        <aside class="memb-rail">
-          <section class="card memb-card">
-            <div class="card-h"><h2 data-en="Member" data-ar="العضو">Member</h2></div>
-            <div class="seg" id="membershipMemberSeg">
-              <button type="button" class="seg-btn act retail-tap" data-mode="existing" data-en="Existing" data-ar="موجود">Existing</button>
-              <button type="button" class="seg-btn retail-tap" data-mode="new" data-en="New walk-in" data-ar="زائر جديد">New walk-in</button>
-            </div>
-            <div id="memberFieldsHost">
-              <div id="existingMemberBox">
-                <label><span data-en="Search member" data-ar="ابحث عن عضو">Search member</span>
-                  <input type="search" id="memberSearch" data-en-placeholder="Name, phone, or #" data-ar-placeholder="اسم، موبايل، أو رقم" placeholder="Name, phone, or #"></label>
-                <div class="search-list" id="memberResults"></div>
-                <div class="selected memb-selected" id="selectedMember" data-en="No member selected" data-ar="مفيش عضو متختار">No member selected</div>
-              </div>
-              <div id="newMemberBox" style="display:none" class="form-stack">
-                <label><span data-en="Full name (EN)" data-ar="الاسم (إنجليزي)">Full name (EN)</span><input id="nmName" required></label>
-                <label><span data-en="Full name (AR)" data-ar="الاسم (عربي)">Full name (AR)</span><input id="nmNameAr"></label>
-                <label><span data-en="Phone" data-ar="الموبايل">Phone</span><input id="nmPhone" required dir="ltr"></label>
-                <label><span data-en="Date of birth" data-ar="تاريخ الميلاد">Date of birth</span><input type="date" id="nmDob"></label>
-                <label><span data-en="Referral (optional)" data-ar="إحالة (اختياري)">Referral (optional)</span><input id="nmReferralCode" placeholder="RXXXXXXX" style="text-transform:uppercase" maxlength="20"></label>
-              </div>
-            </div>
-          </section>
-          <details class="card membership-extras" id="membershipExtras">
-            <summary data-en="Optional: promo, discount, referral" data-ar="اختياري: خصم، كود، إحالة">Optional: promo, discount, referral</summary>
-            <div class="extras-body">
-              <label><span data-en="Referral code" data-ar="كود إحالة">Referral code</span><input id="saleReferralCode" placeholder="Optional" style="text-transform:uppercase" maxlength="20"></label>
-              <div class="row-inline">
-                <input id="promoCode" placeholder="PROMO" style="text-transform:uppercase">
-                <button type="button" class="btn secondary" id="btnValidatePromo" data-en="Apply promo" data-ar="طبّق الخصم">Apply promo</button>
-                <button type="button" class="btn ghost" id="btnClearPromo" data-en="Clear" data-ar="مسح">Clear</button>
-              </div>
-              <div class="muted" id="promoStatus" data-en="Optional — leave empty if none." data-ar="اختياري — سيبه فاضي لو مفيش.">Optional — leave empty if none.</div>
-              <div id="discountCard">
-                <div id="discountLocked" class="muted" style="display:none" data-en="Discount needs extra permission." data-ar="الخصم محتاج صلاحية زيادة.">Discount needs extra permission.</div>
-                <div id="discountFields" class="form-stack">
-                  <label><span data-en="Manual discount (EGP)" data-ar="خصم يدوي (ج.م)">Manual discount (EGP)</span><input type="number" id="discAmount" step="0.01" min="0" value="0"></label>
-                  <label><span data-en="Reason" data-ar="السبب">Reason</span><input id="discReason" placeholder="Required if amount > 0"></label>
-                </div>
-              </div>
-            </div>
-          </details>
-        </aside>
-
-        <section class="card memb-card memb-plans">
-          <div class="card-h">
-            <h2 data-en="Plans" data-ar="الباقات">Plans</h2>
-            <span class="muted" id="plansHint" data-en="Loading plans…" data-ar="جاري تحميل الباقات…">Loading plans…</span>
-          </div>
-          <p class="hint" data-en="Tap a plan — price fills payment automatically." data-ar="اضغط باقة — السعر هيتكتب في الدفع لوحده.">Tap a plan — price fills payment automatically.</p>
-          <select id="planSelect" class="visually-hidden" aria-label="Plan"><option value="">Select plan…</option></select>
-          <div class="plan-tiles" id="planTiles" role="listbox" aria-label="Plans">
-            <div class="muted" data-en="Loading…" data-ar="جاري التحميل…">Loading…</div>
-          </div>
-          <div class="price-line memb-price" id="planPrice">—</div>
-        </section>
-      </div>
-      </div><!-- /membershipPanel -->
-
-      <div id="retailPanel" style="display:none">
+      <div id="retailPanel">
       <div id="stockBlockPanel" class="banner stock-block danger" style="display:none" role="alert">
         <i class="ti ti-package-off" aria-hidden="true"></i>
         <div>
@@ -162,17 +106,6 @@
       </div>
       <div class="retail-desk">
         <aside class="retail-rail retail-rail-member">
-          <section class="card retail-card">
-            <div class="card-h"><h2 data-en="Member" data-ar="العضو">Member</h2></div>
-            <p class="hint" data-en="Walk-in OK. Or pick existing / new." data-ar="عابر تمام. أو اختار موجود / جديد.">Walk-in OK. Or pick existing / new.</p>
-            <div class="seg retail-seg" id="retailMemberSeg">
-              <button type="button" class="seg-btn act retail-tap" data-rmode="none" data-en="Walk-in" data-ar="عابر">Walk-in</button>
-              <button type="button" class="seg-btn retail-tap" data-rmode="existing" data-en="Existing" data-ar="موجود">Existing</button>
-              <button type="button" class="seg-btn retail-tap" data-rmode="new" data-en="New" data-ar="جديد">New</button>
-            </div>
-            <div id="retailMemberHint" class="muted" data-en="Walk-in — no member on sale." data-ar="عابر — مفيش عضو على الفاتورة.">Walk-in — no member on sale.</div>
-            <div id="retailMemberFieldsHost"></div>
-          </section>
           <div id="retailDebtHost"></div>
         </aside>
 
@@ -262,7 +195,6 @@
           <option value="fawry">Fawry</option>
           <option value="vodafone">Vodafone Cash</option>
           <option value="instapay">InstaPay</option>
-          <option value="account_credit">Account credit</option>
         </select>
       </label>
       <label><span data-en="Amount" data-ar="المبلغ">Amount</span><input type="number" id="debtAmount" step="0.01" min="0.01"></label>
@@ -286,9 +218,9 @@
   </div>
 </div>
 <script>
-const API_BASE=window.API_BASE||'https://localhost:5001/api';
+const API_BASE=window.API_BASE||'https://reach-lullaby-tighten.ngrok-free.dev/api';
 function getToken(){return localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');}
-function getH(){const t=getToken();const h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;return h;}
+function getH(){const t=getToken();const h={'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};if(t)h['Authorization']='Bearer '+t;return h;}
 function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
 const user=getUser();
 if(!user||!getToken()) location.href='/auth/login/';
@@ -299,6 +231,6 @@ if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.dis
 document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
 (async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
 </script>
-<script src="pos-app.js?v=desk7"></script>
+<script src="pos-app.js?v=desk11"></script>
 </body>
 </html>

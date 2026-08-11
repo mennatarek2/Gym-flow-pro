@@ -1,8 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  Members Page Logic — apps/web/(dashboard)/members/
 //  API: GET /api/members?search=&status=&page=1&pageSize=20
-//  P12-R1: person-primary language + demote membership primary chrome.
-//  Assign/Renew list CTAs unchanged (Frozen Legacy — not enriched).
+//  Member workspace list — person + current membership glance columns.
 // ═══════════════════════════════════════════════════════════════
 (function(){
   const Gfp = window.GfpApi;
@@ -192,10 +191,15 @@
       let rowCls = '';
       if(!info.accountOk) rowCls = 'row-suspended';
 
-      // Frozen Legacy CTAs — deep-link to Memberships only (P12-R2 Opt B; no Members-hosted workflow)
-      const canRenew = canEdit && (info.mem === 'active' || info.mem === 'scheduled' || info.mem === 'expired');
-      const canAssign = canEdit && (info.mem === 'expired' || info.mem === 'cancelled' || info.mem === 'none');
-      const msHref = '/dashboard/memberships/?member='+encodeURIComponent(m.id);
+      const detailHref = '/dashboard/members/'+encodeURIComponent(m.id)+'/';
+      const planName = m.activePlan || m.planName || m.currentPlanName || '—';
+      const expiry = m.expiryDate || m.endDate || null;
+      const remDays = info.days;
+      const sessions = m.sessionsRemaining != null ? m.sessionsRemaining : (m.remainingSessions != null ? m.remainingSessions : null);
+      let remaining = '—';
+      if(sessions != null) remaining = sessions + ' sess';
+      else if(remDays != null) remaining = remDays + 'd';
+      const memLabel = info.mem && info.mem !== 'none' ? info.mem : '';
 
       return `<tr class="${rowCls}">
         <td>
@@ -205,17 +209,22 @@
               <div class="m-num">#${memberNum}</div>
               <div class="m-name">${nameEn}</div>
               ${nameAr ? '<div class="m-name-ar">'+nameAr+'</div>' : ''}
+              ${phone ? '<div class="m-name-ar" style="font-size:11px">'+phone+'</div>' : ''}
             </div>
           </div>
         </td>
-        <td class="td-phone">${phone}</td>
-        <td>${renderPersonStatusCell(info)}</td>
+        <td>
+          ${renderPersonStatusCell(info)}
+          ${memLabel && info.accountOk ? '<div style="margin-top:4px;font-size:11px;color:var(--ltt);text-transform:capitalize">'+memLabel+'</div>' : ''}
+        </td>
+        <td style="font-size:13px;font-weight:500">${planName}</td>
+        <td style="font-size:12px;color:var(--lts)">${expiry ? new Date(expiry).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+        <td style="font-size:12px;font-weight:600">${remaining}</td>
         <td>
           <div class="act-btns">
-            <button class="act-btn" title="View" onclick="window.location.href='/dashboard/members/${m.id}/'"><i class="ti ti-eye"></i></button>
+            <button class="act-btn" title="View" onclick="window.location.href='${detailHref}'"><i class="ti ti-eye"></i></button>
             ${canEdit?`<button class="act-btn" title="Edit" onclick="if(window.openEditDrawer) window.openEditDrawer('${m.id}')"><i class="ti ti-edit"></i></button>`:''}
-            ${canRenew?`<button class="act-btn act-renew" title="Open in Memberships (renew)" onclick="window.location.href='${msHref}'"><i class="ti ti-refresh"></i></button>`:''}
-            ${canAssign?`<button class="act-btn act-assign" title="Open in Memberships (assign)" onclick="window.location.href='${msHref}'"><i class="ti ti-plus"></i></button>`:''}
+            <button class="act-btn act-renew" title="Open member (renew / membership)" onclick="window.location.href='${detailHref}'"><i class="ti ti-refresh"></i></button>
           </div>
         </td>
       </tr>`;

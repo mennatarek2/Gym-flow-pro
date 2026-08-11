@@ -290,16 +290,6 @@
       document.getElementById('fSaleId').value = saleId || refund.saleId;
     }
     await loadList();
-
-    // Re-fetch credits after approval when member is known
-    const mid =
-      document.getElementById('fMemberId').value.trim() ||
-      document.getElementById('peekMemberId').value.trim() ||
-      lastMemberIdForCredits;
-    if (mid) {
-      document.getElementById('peekMemberId').value = mid;
-      await peekCredits();
-    }
   }
 
   document.getElementById('btnRejectCancel').onclick = () => {
@@ -324,33 +314,6 @@
   };
 
   document.getElementById('btnFilter').onclick = () => loadList();
-
-  async function peekCredits() {
-    const mid = document.getElementById('peekMemberId').value.trim();
-    const out = document.getElementById('peekResult');
-    const link = document.getElementById('peekProfileLink');
-    if (!mid) {
-      toast('Enter memberId', 'err');
-      return;
-    }
-    lastMemberIdForCredits = mid;
-    const res = await api('GET', '/members/' + mid + '/credits');
-    if (!res.ok) {
-      out.textContent = problemMessage(res.data, res.status);
-      link.style.display = 'none';
-      return;
-    }
-    const data = res.data || {};
-    out.innerHTML =
-      '<strong>Balance: ' +
-      esc(money(data.balance)) +
-      '</strong> · ' +
-      esc(String((data.entries || []).length)) +
-      ' ledger entries';
-    link.href = '/dashboard/members/' + encodeURIComponent(mid) + '/';
-    link.style.display = 'inline-flex';
-  }
-  document.getElementById('btnPeekCredits').onclick = peekCredits;
 
   loadList();
 })();

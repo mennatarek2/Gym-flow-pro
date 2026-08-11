@@ -338,6 +338,34 @@
     if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
   }
 
+  function syncContextualActionLinks(productId, warehouseId) {
+    var buy = document.getElementById('linkBuyReceive');
+    var fix = document.getElementById('linkFixQty');
+    var q = 'from=on-hand';
+    if (productId) q += '&productId=' + encodeURIComponent(productId);
+    if (warehouseId) q += '&warehouseId=' + encodeURIComponent(warehouseId);
+    if (buy) buy.href = '/dashboard/inventory/purchase-orders/?' + q;
+    if (fix) fix.href = '/dashboard/inventory/adjustments/?' + q;
+  }
+
+  function setStockBreadcrumb(productLabel) {
+    var crumb = document.getElementById('stockBreadcrumb');
+    if (!crumb) return;
+    if (productLabel) {
+      crumb.innerHTML =
+        '<span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span>' +
+        '<a href="/dashboard/inventory/stock/" data-en="On Hand" data-ar="الرصيد">On Hand</a>' +
+        '<span class="sep">/</span><span class="current" id="bcCurrent">' +
+        esc(productLabel) +
+        '</span>';
+    } else {
+      crumb.innerHTML =
+        '<span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span>' +
+        '<span class="current" id="bcCurrent" data-en="On Hand" data-ar="الرصيد">On Hand</span>';
+    }
+    if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
+  }
+
   async function openDetail(productId) {
     selectedProductId = productId;
     renderBoard();
@@ -348,6 +376,7 @@
       '<div class="empty-state">' + esc(t('Loading…', 'جاري التحميل…')) + '</div>';
     document.getElementById('movementsHost').innerHTML = '';
     document.getElementById('qtyValue').textContent = '…';
+    syncContextualActionLinks(productId, document.getElementById('boardWarehouse').value || '');
 
     var br = await Gfp.get(paths.productStock(productId));
     if (!br.ok) {
@@ -356,6 +385,8 @@
       return;
     }
     var data = br.data || {};
+    var productLabel = data.name || data.sku || t('Product', 'منتج');
+    setStockBreadcrumb(productLabel);
     document.getElementById('detailTitle').textContent =
       (data.name || data.sku || '') +
       ' · ' +
@@ -402,6 +433,7 @@
       document.getElementById('boardWarehouse').value ||
       (warehouses[0] && warehouses[0].warehouseId) ||
       '';
+    syncContextualActionLinks(productId, warehouseId);
     if (!warehouseId) {
       document.getElementById('qtyValue').textContent = qtyFmt(
         data.totalAvailable != null ? data.totalAvailable : data.totalOnHand
@@ -491,7 +523,16 @@
   }
 
   document.getElementById('btnRefresh').addEventListener('click', loadBoard);
-  document.getElementById('boardWarehouse').addEventListener('change', loadBoard);
+  document.getElementById('boardWarehouse').addEventListener('change', async function () {
+    await loadBoard();
+    if (selectedProductId) {
+      syncContextualActionLinks(
+        selectedProductId,
+        document.getElementById('boardWarehouse').value || ''
+      );
+      openDetail(selectedProductId);
+    }
+  });
   document.getElementById('boardQ').addEventListener('input', function () {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(loadBoard, 280);
@@ -508,6 +549,8 @@
   document.getElementById('btnCloseDetail').addEventListener('click', function () {
     document.getElementById('detailPanel').hidden = true;
     selectedProductId = null;
+    setStockBreadcrumb(null);
+    syncContextualActionLinks('', document.getElementById('boardWarehouse').value || '');
     renderBoard();
   });
   window.addEventListener('gfp:locale', function () {

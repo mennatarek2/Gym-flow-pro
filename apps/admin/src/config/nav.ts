@@ -13,7 +13,6 @@ import {
   UserCog,
   Wallet,
   DoorOpen,
-  FlaskConical,
   LineChart,
   Banknote,
 } from 'lucide-react'
@@ -29,7 +28,7 @@ import type { FeatureModuleKey } from '@/lib/features/probe'
  * |-----------------|----------------------------------------------------|
  * | Overview        | Dashboard                                          |
  * | Members         | Members, Attendance                                |
- * | Front desk      | POS, Trials, Debtors, Call Sheet                   |
+ * | Front desk      | Sale, Debtors, Call Sheet                          |
  * | Money           | Shifts, Refunds, Promo Codes, Invoices, Reports    |
  * | Catalog         | Plans                                              |
  * | Administration  | Import, Staff, Settings                            |
@@ -104,21 +103,20 @@ export const NAV_CATEGORIES: NavCategory[] = [
     items: [
       {
         key: 'sales',
-        label: 'Point of Sale',
-        labelAr: 'نقطة البيع',
+        label: 'Sell',
+        labelAr: 'بيع',
         path: '/app/sales',
         icon: ShoppingCart,
         access: { kind: 'permission', value: 'sales.sell' },
         featureFlag: 'sales',
       },
       {
-        key: 'trials',
-        label: 'Free Trials',
-        labelAr: 'التجارب المجانية',
-        path: '/app/trials',
-        icon: FlaskConical,
+        key: 'member-orders',
+        label: 'Member Orders',
+        labelAr: 'طلبات الأعضاء',
+        path: '/app/member-orders',
+        icon: Package,
         access: { kind: 'permission', value: 'sales.sell' },
-        featureFlag: 'trials',
       },
       {
         key: 'debtors',

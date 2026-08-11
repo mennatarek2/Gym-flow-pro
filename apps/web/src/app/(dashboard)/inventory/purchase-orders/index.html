@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
@@ -17,10 +17,13 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb" id="poBreadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 <div class="content">
+  <p id="poContextBar" class="hint" hidden style="margin:0 0 12px">
+    <a id="poBackOnHand" href="/dashboard/inventory/stock/"><i class="ti ti-arrow-left"></i> <span data-en="Back to On Hand" data-ar="رجوع للرصيد">Back to On Hand</span></a>
+  </p>
   <div class="page-header">
     <div>
       <h1 class="page-title" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</h1>

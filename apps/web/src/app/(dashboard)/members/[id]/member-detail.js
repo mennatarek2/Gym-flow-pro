@@ -3,7 +3,27 @@
 //  API: GET /api/members/{id} → MemberDetailDto
 // ═══════════════════════════════════════════════════════════════
 (function(){
-  const API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+
+  function t(en, ar){
+    if(window.GfpI18n && typeof window.GfpI18n.tLabel === 'function'){
+      return window.GfpI18n.tLabel(en, ar);
+    }
+    try{
+      const loc = localStorage.getItem('gfp_locale') || 'en';
+      return loc === 'ar' ? ar : en;
+    }catch(e){ return en; }
+  }
+  function applyLocaleBits(root){
+    if(window.GfpI18n && window.GfpI18n.applyDocumentLocale){
+      window.GfpI18n.applyDocumentLocale();
+      return;
+    }
+    const loc = (function(){ try{ return localStorage.getItem('gfp_locale')||'en'; }catch(e){ return 'en'; } })();
+    (root || document).querySelectorAll('[data-en]').forEach(function(el){
+      el.textContent = loc === 'ar' ? (el.getAttribute('data-ar') || el.getAttribute('data-en')) : el.getAttribute('data-en');
+    });
+  }
 
   function getAuthHeaders(){
     const t=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');
@@ -59,6 +79,7 @@
   const memberId=getMemberId();
 
   // ── Helpers ──
+  function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function fmtDate(d){if(!d) return '—';return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
   function fmtTime(d){if(!d) return '—';const dt=new Date(d);return dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
   function calcAge(dob){if(!dob) return '';const d=new Date(dob),now=new Date();let a=now.getFullYear()-d.getFullYear();if(now<new Date(now.getFullYear(),d.getMonth(),d.getDate())) a--;return a;}
@@ -95,10 +116,10 @@
       document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('act'));
       this.classList.add('act');
       document.getElementById(this.dataset.tab).classList.add('act');
-      // Lazy load attendance/history/credits on first open
+      // Lazy load attendance/history on first open
       if(this.dataset.tab==='tabAtt' && !window._attLoaded){loadAttendance();window._attLoaded=true;}
+      if(this.dataset.tab==='tabOrders' && !window._ordersLoaded){loadMemberOrders();window._ordersLoaded=true;}
       if(this.dataset.tab==='tabHist' && !window._histLoaded){loadHistory();window._histLoaded=true;}
-      if(this.dataset.tab==='tabCredits'){loadCredits();}
     });
   });
 
@@ -138,8 +159,6 @@
         return;
       }
       renderMember(r.data);
-      // Credits card on profile (server balance — never invent)
-      refreshCreditChip();
     }catch(e){
       toast('Unable to load member','error');
     }
@@ -226,13 +245,177 @@
     // returns frozen / pending / last expired — reconcile for the panel.
     renderMembership(m.currentMembership||null);
     renderRecentAttendance(Array.isArray(m.recentAttendance)?m.recentAttendance:[]);
+    renderMemberApp(m);
     reconcileCurrentMembership();
 
     document.getElementById('skeletonProfile').style.display='none';
     document.getElementById('skeletonTabs').style.display='none';
     document.getElementById('profileContent').style.display='';
     document.getElementById('tabsContent').style.display='';
+    applyLocaleBits(document.getElementById('memberAppCard'));
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Member App — activation code (staff generates; shown once)
+  //  POST /api/members/{id}/app-activation-code  (members.edit)
+  // ═══════════════════════════════════════════════════════════════
+  function renderMemberApp(m){
+    const statusEl=document.getElementById('memberAppStatus');
+    const btn=document.getElementById('btnGenAppCode');
+    const labelEl=btn&&btn.querySelector('.btn-label');
+    const reveal=document.getElementById('memberAppReveal');
+    if(!statusEl||!btn) return;
+
+    // GET never returns plaintext — clear any previous on-screen code on status refresh
+    if(reveal && !window.__gfpKeepAppCodeReveal){
+      reveal.hidden=true;
+      const codeEl=document.getElementById('memberAppCode');
+      if(codeEl) codeEl.textContent='';
+    }
+
+    const app=m&&m.memberApp?m.memberApp:{};
+    const st=String(app.status||'not_activated').toLowerCase();
+    let statusText=t('Status: Not Activated','الحالة: غير مفعّل');
+    if(st==='pending_code'){
+      const exp=app.pendingCodeExpiresAtUtc?fmtDate(app.pendingCodeExpiresAtUtc):'—';
+      statusText=t('Status: Code pending · expires ','الحالة: كود معلّق · ينتهي ')+exp;
+    } else if(st==='activated'){
+      const when=app.activatedAtUtc?fmtDate(app.activatedAtUtc):'';
+      statusText=when
+        ? t('Status: Activated · ','الحالة: مفعّل · ')+when
+        : t('Status: Activated','الحالة: مفعّل');
+    }
+    statusEl.textContent=statusText;
+
+    const canGen=!!canEdit && !!(m&&m.isActive);
+    btn.hidden=!canGen;
+    btn.disabled=!canGen;
+    if(labelEl){
+      if(st==='pending_code'){
+        labelEl.setAttribute('data-en','Regenerate Code');
+        labelEl.setAttribute('data-ar','إعادة إنشاء الكود');
+        labelEl.textContent=t('Regenerate Code','إعادة إنشاء الكود');
+      } else if(st==='activated'){
+        labelEl.setAttribute('data-en','Generate New Code');
+        labelEl.setAttribute('data-ar','إنشاء كود جديد');
+        labelEl.textContent=t('Generate New Code','إنشاء كود جديد');
+      } else {
+        labelEl.setAttribute('data-en','Generate Activation Code');
+        labelEl.setAttribute('data-ar','إنشاء كود التفعيل');
+        labelEl.textContent=t('Generate Activation Code','إنشاء كود التفعيل');
+      }
+    }
+  }
+
+  function showActivationCodeReveal(payload){
+    const reveal=document.getElementById('memberAppReveal');
+    const codeEl=document.getElementById('memberAppCode');
+    const expEl=document.getElementById('memberAppExpiry');
+    if(!reveal||!codeEl||!expEl) return;
+    const code=payload&&payload.activationCode?String(payload.activationCode):'';
+    codeEl.textContent=code;
+    const mins=payload&&payload.expiresInMinutes!=null?Number(payload.expiresInMinutes):null;
+    const expUtc=payload&&payload.expiresAtUtc?fmtDate(payload.expiresAtUtc)+' '+fmtTime(payload.expiresAtUtc):'—';
+    expEl.textContent=mins!=null&&!Number.isNaN(mins)
+      ? t('Expires ','ينتهي ')+expUtc+' ('+mins+' '+t('min','دقيقة')+')'
+      : t('Expires ','ينتهي ')+expUtc;
+    reveal.hidden=false;
+    applyLocaleBits(reveal);
+  }
+
+  function setGenAppCodeLoading(on){
+    const btn=document.getElementById('btnGenAppCode');
+    if(!btn) return;
+    btn.classList.toggle('loading',!!on);
+    btn.disabled=!!on || !(canEdit && memberData && memberData.isActive);
+    const spin=btn.querySelector('.btn-spinner');
+    if(spin) spin.style.display=on?'inline-block':'none';
+  }
+
+  async function generateMemberAppCode(){
+    if(!canEdit){ toast(t('Missing members.edit permission','صلاحية members.edit مطلوبة'),'error'); return; }
+    if(!memberData||!memberData.isActive){
+      toast(t('Archived members cannot receive an activation code','لا يمكن إنشاء كود لحساب مؤرشف'),'error');
+      return;
+    }
+    if(!Gfp||!memberId){ toast(t('API client missing','عميل الـ API غير موجود'),'error'); return; }
+
+    const app=memberData.memberApp||{};
+    const st=String(app.status||'not_activated').toLowerCase();
+    if(st==='pending_code'||st==='activated'){
+      const ok=confirm(
+        t(
+          'Previous unused code will stop working. Continue?',
+          'الكود السابق غير المستخدم سيتوقف عن العمل. متابعة؟'
+        )
+      );
+      if(!ok) return;
+    }
+
+    setGenAppCodeLoading(true);
+    try{
+      const r=await Gfp.post('/members/'+memberId+'/app-activation-code',{});
+      if(r.status===401){ window.location.href='/auth/login/'; return; }
+      if(r.status===403){
+        toast(t('Missing members.edit permission','صلاحية members.edit مطلوبة'),'error');
+        return;
+      }
+      if(r.status===404){
+        toast(t('Member not found','العضو غير موجود'),'error');
+        return;
+      }
+      if(!r.ok){
+        toast(apiErr(r)||t('Could not generate code','مش قادرين ننشئ الكود'),'error');
+        return;
+      }
+      const payload=r.data||{};
+      toast(t('Activation code generated','تم إنشاء كود التفعيل'));
+      // Refresh status from GET (never re-fetch plaintext code)
+      window.__gfpKeepAppCodeReveal=true;
+      try{
+        await loadMember();
+      }finally{
+        window.__gfpKeepAppCodeReveal=false;
+      }
+      showActivationCodeReveal(payload);
+    }catch(e){
+      toast(t('Could not generate code','مش قادرين ننشئ الكود'),'error');
+    }finally{
+      setGenAppCodeLoading(false);
+    }
+  }
+
+  const btnGenAppCode=document.getElementById('btnGenAppCode');
+  if(btnGenAppCode){
+    btnGenAppCode.addEventListener('click',function(e){
+      e.preventDefault();
+      generateMemberAppCode();
+    });
+  }
+  const btnCopyAppCode=document.getElementById('btnCopyAppCode');
+  if(btnCopyAppCode){
+    btnCopyAppCode.addEventListener('click',async function(){
+      const codeEl=document.getElementById('memberAppCode');
+      const code=codeEl&&codeEl.textContent?codeEl.textContent.trim():'';
+      if(!code) return;
+      try{
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(code);
+        } else {
+          const ta=document.createElement('textarea');
+          ta.value=code; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+        }
+        toast(t('Copied','تم النسخ'));
+      }catch(e){
+        toast(t('Could not copy','تعذّر النسخ'),'error');
+      }
+    });
+  }
+  window.addEventListener('gfp:locale',function(){
+    if(memberData) renderMemberApp(memberData);
+    applyLocaleBits(document.getElementById('memberAppCard'));
+  });
 
   async function reconcileCurrentMembership(){
     if(!Gfp||!memberId) return;
@@ -266,33 +449,15 @@
       }).join('')+'</tbody></table>';
   }
 
-  async function refreshCreditChip(){
-    const el=document.getElementById('profileCreditBal');
-    if(!el||!Gfp) return;
-    try{
-      const r=await Gfp.get('/members/'+memberId+'/credits');
-      if(r.ok&&r.data&&r.data.balance!=null) el.textContent=fmtEGP(Number(r.data.balance));
-      else el.textContent='—';
-    }catch(e){ el.textContent='—'; }
-  }
-
-  function membershipsDeepLink(){
-    return '/dashboard/memberships/?member='+encodeURIComponent(memberId);
-  }
-
   function renderMembership(ms){
     const container=document.getElementById('membershipContent');
     const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
-    // P12-R2 Opt B: commercial actions live in Memberships — deep-link only from Members
-    const openMsBtn=(canMgr||canFreeze)
-      ?`<a class="btn-ms primary" href="${membershipsDeepLink()}"><i class="ti ti-external-link"></i> Open in Memberships</a>`
-      :'';
     if(!ms){
       container.innerHTML=`
         <div class="no-data">
           <i class="ti ti-id-off"></i>
           <p style="margin-bottom:16px">No membership on file</p>
-          ${openMsBtn}
+          ${canMgr?`<button type="button" class="btn-ms primary" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> Assign Membership</button>`:''}
         </div>`;
       return;
     }
@@ -302,6 +467,9 @@
     const pct=total>0?Math.min(100,Math.round((Math.max(0,days)/total)*100)):0;
     const isPending=st==='pending';
     const isExpired=st==='expired';
+    const isFrozen=st==='frozen';
+    const canRenew=canMgr&&(st==='active'||st==='scheduled'||st==='expired'||st==='frozen'||st==='pending');
+    const canAssign=canMgr&&(st==='expired'||st==='cancelled'||!st);
 
     const pendingBanner=isPending?`
       <div class="info-banner" style="margin:12px 0;padding:12px;border-radius:8px;background:var(--wrn100);color:var(--wrn500)">
@@ -312,7 +480,7 @@
 
     const expiredNote=isExpired?`
       <div class="info-banner" style="margin:12px 0;padding:12px;border-radius:8px;background:#FEE2E2;color:var(--dng500);font-size:12px">
-        <i class="ti ti-info-circle"></i> Showing last expired membership (no active plan). Manage plans in Memberships.
+        <i class="ti ti-info-circle"></i> Showing last expired membership (no active plan). Use Assign or Renew below.
       </div>`:'';
 
     const scheduledNote=st==='scheduled'?`
@@ -323,8 +491,10 @@
     const accountOff=memberData&&memberData.isActive===false;
     const accountNote=accountOff&&!isExpired?`
       <div class="info-banner" style="margin:12px 0;padding:12px;border-radius:8px;background:#FEF3C7;color:#B45309;font-size:12px">
-        <i class="ti ti-user-off"></i> Account is archived — use <strong>Activate account</strong> here. Plan lifecycle is managed in Memberships.
+        <i class="ti ti-user-off"></i> Account is archived — use <strong>Activate account</strong> here. Membership actions remain available below.
       </div>`:'';
+
+    const due=ms.amountDue!=null?Number(ms.amountDue):(ms.balanceDue!=null?Number(ms.balanceDue):null);
 
     container.innerHTML=`
       <div class="ms-hero">
@@ -341,13 +511,18 @@
         </div>
         <div class="ms-meta">
           <div class="ms-meta-item"><div class="ms-meta-lbl">Amount Paid</div><div class="ms-meta-val">${fmtEGP(ms.amountPaid)}</div></div>
+          ${due!=null?`<div class="ms-meta-item"><div class="ms-meta-lbl">Amount Due</div><div class="ms-meta-val">${fmtEGP(due)}</div></div>`:''}
           <div class="ms-meta-item"><div class="ms-meta-lbl">Payment</div><div class="ms-meta-val" style="text-transform:capitalize">${ms.paymentMethod||'—'}</div></div>
           ${ms.sessionsRemaining!=null?`<div class="ms-meta-item"><div class="ms-meta-lbl">Sessions Left</div><div class="ms-meta-val">${ms.sessionsRemaining}</div></div>`:''}
           ${ms.frozenUntilDate?`<div class="ms-meta-item"><div class="ms-meta-lbl">Frozen Until</div><div class="ms-meta-val">${fmtDate(ms.frozenUntilDate)}</div></div>`:''}
         </div>
       </div>
       <div class="ms-actions">
-        ${openMsBtn}
+        ${canRenew?`<button type="button" class="btn-ms primary" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> Renew</button>`:''}
+        ${canAssign?`<button type="button" class="btn-ms primary" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> Assign</button>`:''}
+        ${canFreeze&&!isFrozen&&(st==='active'||st==='scheduled')?`<button type="button" class="btn-ms" onclick="openModal('modalFreeze')"><i class="ti ti-snowflake"></i> Freeze</button>`:''}
+        ${canFreeze&&isFrozen?`<button type="button" class="btn-ms" onclick="unfreeze()"><i class="ti ti-sun"></i> Unfreeze</button>`:''}
+        ${isPending?`<button type="button" class="btn-ms" onclick="refreshMembershipStatus()"><i class="ti ti-refresh"></i> Refresh</button>`:''}
       </div>`;
 
     setTimeout(()=>{const f=document.getElementById('progressFill');if(f) f.style.width=pct+'%';},100);
@@ -368,6 +543,71 @@
       loadHistory();
     }catch(e){ toast('Failed to refresh','error'); }
   };
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Member Orders — GET /api/members/{id}/orders (fallback: /member-orders?memberId=)
+  // ═══════════════════════════════════════════════════════════════
+  async function loadMemberOrders(){
+    const tbody=document.getElementById('ordersTbody');
+    const empty=document.getElementById('ordersEmpty');
+    const table=tbody&&tbody.closest('table');
+    if(!tbody) return;
+    tbody.innerHTML='<tr><td colspan="5" style="color:var(--ltt)">Loading…</td></tr>';
+    if(empty) empty.style.display='none';
+    if(table) table.style.display='';
+    if(!Gfp){
+      tbody.innerHTML='';
+      if(table) table.style.display='none';
+      if(empty){ empty.style.display='flex'; empty.querySelector('p').textContent='Unable to load member orders'; }
+      return;
+    }
+    const Mo=window.GfpMemberOrdersApi;
+    try{
+      let r=null;
+      if(Mo&&Mo.paths&&Mo.paths.memberOrders){
+        r=await Gfp.get(Mo.paths.memberOrders(memberId,{page:1,pageSize:20}));
+      }
+      if(!r||r.status===404){
+        r=await Gfp.get('/member-orders?memberId='+encodeURIComponent(memberId)+'&page=1&pageSize=20');
+      }
+      if(r.status===401){window.location.href='/auth/login/';return;}
+      if(!r.ok){
+        tbody.innerHTML='';
+        if(table) table.style.display='none';
+        if(empty){
+          empty.style.display='flex';
+          empty.querySelector('p').textContent=apiErr(r)||'Unable to load member orders';
+        }
+        return;
+      }
+      const paged=Mo&&Mo.extractPaged?Mo.extractPaged(r.data):{items:(r.data&&r.data.items)||(Array.isArray(r.data)?r.data:[])};
+      const items=(paged.items||[]).map(function(raw){ return Mo&&Mo.normalizeOrder?Mo.normalizeOrder(raw):raw; }).filter(Boolean);
+      if(!items.length){
+        tbody.innerHTML='';
+        if(table) table.style.display='none';
+        if(empty){ empty.style.display='flex'; empty.querySelector('p').textContent='No member orders yet'; }
+        return;
+      }
+      if(table) table.style.display='';
+      if(empty) empty.style.display='none';
+      tbody.innerHTML=items.map(function(o){
+        const num=o.orderNumber!=null?('#'+o.orderNumber):(o.id||'').slice(0,8);
+        const total=o.total!=null?Number(o.total).toLocaleString('en-EG',{style:'currency',currency:o.currency||'EGP'}):'—';
+        const st=o.status||'—';
+        return '<tr>'+
+          '<td dir="ltr"><strong>'+escHtml(num)+'</strong></td>'+
+          '<td><strong>'+escHtml(total)+'</strong></td>'+
+          '<td>'+escHtml(st)+'</td>'+
+          '<td>'+escHtml(o.createdAt?fmtDate(o.createdAt):'—')+'</td>'+
+          '<td><a class="btn secondary" style="height:30px;padding:0 8px;font-size:12px" href="/dashboard/member-orders/?orderId='+encodeURIComponent(o.id||'')+'">View</a></td>'+
+          '</tr>';
+      }).join('');
+    }catch(e){
+      tbody.innerHTML='';
+      if(table) table.style.display='none';
+      if(empty){ empty.style.display='flex'; empty.querySelector('p').textContent='Unable to load member orders'; }
+    }
+  }
 
   // ═══════════════════════════════════════════════════════════════
   //  Attendance — GET /api/members/{id}/attendance
@@ -446,72 +686,6 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  Account credit — GET /api/members/{id}/credits
-  // ═══════════════════════════════════════════════════════════════
-  async function loadCredits(){
-    const balEl=document.getElementById('creditBalanceVal');
-    const tbody=document.getElementById('creditsTbody');
-    const empty=document.getElementById('creditsEmpty');
-    const table=document.getElementById('creditsTable');
-    if(!Gfp){
-      balEl.textContent='—';
-      empty.style.display='flex';
-      empty.querySelector('p').textContent='API client missing';
-      return;
-    }
-    try{
-      const r=await Gfp.get('/members/'+memberId+'/credits');
-      if(r.status===401){window.location.href='/auth/login/';return;}
-      if(!r.ok){
-        balEl.textContent='—';
-        tbody.innerHTML='';
-        table.style.display='none';
-        empty.style.display='flex';
-        empty.querySelector('p').textContent=apiErr(r)||'Could not load credits';
-        return;
-      }
-      renderCredits(r.data);
-      const chip=document.getElementById('profileCreditBal');
-      if(chip&&r.data&&r.data.balance!=null) chip.textContent=fmtEGP(Number(r.data.balance));
-    }catch(e){
-      balEl.textContent='—';
-      empty.style.display='flex';
-      empty.querySelector('p').textContent='Could not load credits';
-    }
-  }
-
-  function renderCredits(data){
-    const balEl=document.getElementById('creditBalanceVal');
-    const tbody=document.getElementById('creditsTbody');
-    const empty=document.getElementById('creditsEmpty');
-    const table=document.getElementById('creditsTable');
-    const balance=data&&data.balance!=null?Number(data.balance):0;
-    const entries=Array.isArray(data&&data.entries)?data.entries:[];
-    balEl.textContent=fmtEGP(balance);
-    if(!entries.length){
-      tbody.innerHTML='';
-      table.style.display='none';
-      empty.style.display='flex';
-      empty.querySelector('p').textContent='No credit ledger entries';
-      return;
-    }
-    empty.style.display='none';
-    table.style.display='table';
-    tbody.innerHTML=entries.map(e=>{
-      const amt=Number(e.amount)||0;
-      const sign=amt>0?'+':'';
-      const type=(e.entryType||'').replace(/_/g,' ');
-      return `<tr>
-        <td>${fmtDate(e.createdAtUtc)} ${fmtTime(e.createdAtUtc)}</td>
-        <td><span class="method-badge">${type||'—'}</span></td>
-        <td style="font-weight:600;color:${amt>=0?'var(--suc500)':'var(--dng500)'}">${sign}${fmtEGP(Math.abs(amt))}</td>
-        <td><code style="font-size:11px">${e.referenceId||'—'}</code></td>
-        <td>${e.reason||'—'}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  // ═══════════════════════════════════════════════════════════════
   //  Membership History — GET /api/memberships/{memberId}/history
   // ═══════════════════════════════════════════════════════════════
   let histPage=1;
@@ -559,29 +733,34 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  Actions — expose to global scope for inline onclick
-  //  P12-R2 Opt B: Assign/Renew/Freeze writes removed from Members.
+  //  Actions — Renew / Freeze / Unfreeze / Assign (Member 360)
   // ═══════════════════════════════════════════════════════════════
-  const _openModalInner=openModal;
-  window.openModal=function(id){
-    if(id==='modalRenew'||id==='modalFreeze'){
-      window.location.href=membershipsDeepLink();
-      return;
-    }
-    _openModalInner(id);
-  };
+  window.openModal=openModal;
   window.closeModal=closeModal;
 
-  // Freeze writes removed from Members — deep-link only (P12-R2)
-  window.unfreeze=function(){
-    window.location.href=membershipsDeepLink();
+  window.unfreeze=async function(){
+    if(!canFreeze){ toast('memberships.freeze permission required','error'); return; }
+    if(!Gfp||!memberId) return;
+    if(!confirm('Unfreeze membership?')) return;
+    const r=await Gfp.post('/members/'+memberId+'/unfreeze',{});
+    if(r.ok){ toast('Unfrozen'); loadMember(); loadHistory(); }
+    else toast(apiErr(r)||'Failed to unfreeze','error');
   };
 
   const btnFreezeEl=document.getElementById('btnFreeze');
   if(btnFreezeEl){
-    btnFreezeEl.addEventListener('click',function(e){
+    btnFreezeEl.addEventListener('click',async function(e){
       e.preventDefault();
-      window.location.href=membershipsDeepLink();
+      if(!canFreeze){ toast('memberships.freeze permission required','error'); return; }
+      const until=document.getElementById('freezeUntil');
+      const reason=document.getElementById('freezeReason');
+      if(!until||!until.value){ toast('Select freeze until date','error'); return; }
+      const r=await Gfp.post('/members/'+memberId+'/freeze',{
+        frozenUntil: until.value+'T00:00:00',
+        reason:(reason&&reason.value)||null
+      });
+      if(r.ok){ closeModal('modalFreeze'); toast('Membership frozen'); loadMember(); loadHistory(); }
+      else toast(apiErr(r)||'Failed to freeze','error');
     });
   }
 
@@ -832,10 +1011,51 @@
 
   const btnDoRenew=document.getElementById('btnDoRenew');
   if(btnDoRenew){
-    // P12-R2: renew writes removed from Members — navigate to Memberships
-    btnDoRenew.addEventListener('click',function(e){
+    btnDoRenew.addEventListener('click',async function(e){
       e.preventDefault();
-      window.location.href=membershipsDeepLink();
+      const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
+      if(!canMgr){ toast('Manager or above required','error'); return; }
+      if(!Gfp||!memberId) return;
+      const payEl=document.getElementById('renewPayment');
+      const amtEl=document.getElementById('renewAmount');
+      const errBanner=document.getElementById('renewErrorBanner');
+      const payMethod=payEl?payEl.value:'cash';
+      const amountPaid=amtEl?parseFloat(amtEl.value)||0:0;
+      const body={
+        planId: renewMode==='diff'?(document.getElementById('renewPlanSelect')||{}).value||null:null,
+        paymentMethod: payMethod,
+        amountPaid: amountPaid,
+        transitionMode: getRenewTransitionMode()
+      };
+      if(renewMode==='diff'&&!body.planId){
+        if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent='Select a plan'; }
+        return;
+      }
+      btnDoRenew.disabled=true;
+      try{
+        if(payMethod==='cash'&&amountPaid>0){
+          const sh=await Gfp.get('/shifts/current');
+          if(!sh.ok||!sh.data||!sh.data.id){
+            if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent='Open a shift before accepting cash renewal.'; }
+            btnDoRenew.disabled=false;
+            return;
+          }
+        }
+        const r=await Gfp.post('/memberships/'+memberId+'/renew', body);
+        if(r.ok){
+          closeModal('modalRenew');
+          const pending=r.data&&String(r.data.status||'').toLowerCase()==='pending';
+          toast(pending?'Renewed — waiting for payment. Use Refresh status.':'Renewed');
+          loadMember();
+          loadHistory();
+        } else {
+          if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent=apiErr(r)||'Renew failed'; }
+          toast(apiErr(r)||'Renew failed','error');
+        }
+      }catch(err){
+        toast('Network error','error');
+      }
+      btnDoRenew.disabled=false;
     });
   }
 

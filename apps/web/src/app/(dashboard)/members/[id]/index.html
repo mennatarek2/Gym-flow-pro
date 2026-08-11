@@ -211,10 +211,30 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                 <span class="q-label">Invitation Quota</span>
                 <span class="q-num" id="profileQuota">0</span>
               </div>
-              <div class="quota-chip" id="creditChip" title="Account credit balance">
-                <i class="ti ti-wallet"></i>
-                <span class="q-label">Credits</span>
-                <span class="q-num" id="profileCreditBal">—</span>
+
+              <!-- Member App activation -->
+              <div class="member-app-card" id="memberAppCard">
+                <div class="member-app-hdr">
+                  <i class="ti ti-device-mobile"></i>
+                  <div>
+                    <div class="member-app-title" data-en="Member App" data-ar="تطبيق العضو">Member App</div>
+                    <div class="member-app-status" id="memberAppStatus" data-en="Status: —" data-ar="الحالة: —">Status: —</div>
+                  </div>
+                </div>
+                <div class="member-app-reveal" id="memberAppReveal" hidden>
+                  <div class="member-app-code-row">
+                    <code class="member-app-code" id="memberAppCode"></code>
+                    <button type="button" class="member-app-copy" id="btnCopyAppCode" title="Copy">
+                      <i class="ti ti-copy"></i>
+                    </button>
+                  </div>
+                  <div class="member-app-expiry" id="memberAppExpiry"></div>
+                  <div class="member-app-warn" data-en="Show once to the member — not stored again" data-ar="الكود يظهر مرة واحدة فقط للعضو">Show once to the member — not stored again</div>
+                </div>
+                <button type="button" class="btn-ms primary member-app-btn" id="btnGenAppCode" hidden>
+                  <span class="btn-spinner" style="display:none"></span>
+                  <span class="btn-label" data-en="Generate Activation Code" data-ar="إنشاء كود التفعيل">Generate Activation Code</span>
+                </button>
               </div>
 
               <!-- Quick actions -->
@@ -240,7 +260,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
               <div class="tab-bar">
                 <button class="tab-btn act" data-tab="tabMs"><i class="ti ti-id-badge"></i> Membership</button>
                 <button class="tab-btn" data-tab="tabAtt"><i class="ti ti-door-enter"></i> Attendance</button>
-                <button class="tab-btn" data-tab="tabCredits"><i class="ti ti-wallet"></i> Credits</button>
+                <button class="tab-btn" data-tab="tabOrders"><i class="ti ti-shopping-bag"></i> Orders</button>
                 <button class="tab-btn" data-tab="tabHist"><i class="ti ti-history"></i> History</button>
               </div>
 
@@ -293,30 +313,31 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                 </div>
               </div>
 
-              <!-- TAB 3: Account credit ledger -->
-              <div class="tab-pane" id="tabCredits">
-                <div class="credit-balance" id="creditBalance">
-                  <span class="credit-balance-lbl">Account credit</span>
-                  <span class="credit-balance-val" id="creditBalanceVal">—</span>
+              <!-- TAB 3: Member Orders -->
+              <div class="tab-pane" id="tabOrders">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+                  <div style="font-size:13px;color:var(--ltt)">Orders placed from the Member App</div>
+                  <a class="btn secondary" href="/dashboard/member-orders/" style="height:34px;padding:0 10px;font-size:12px">
+                    <i class="ti ti-shopping-bag"></i> Inbox
+                  </a>
                 </div>
-                <p class="credit-hint">Ledger from refunds (credit method), payment use, and adjustments. Credit-method refunds correctly have null credit-note invoice ids.</p>
                 <div style="overflow-x:auto">
-                  <table class="att-tbl" id="creditsTable">
+                  <table class="att-tbl">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Amount</th>
-                        <th>Reference</th>
-                        <th>Reason</th>
+                        <th>Order #</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th></th>
                       </tr>
                     </thead>
-                    <tbody id="creditsTbody"></tbody>
+                    <tbody id="ordersTbody"></tbody>
                   </table>
                 </div>
-                <div class="no-data" id="creditsEmpty" style="display:none">
-                  <i class="ti ti-wallet"></i>
-                  <p>No credit ledger entries</p>
+                <div class="no-data" id="ordersEmpty" style="display:none">
+                  <i class="ti ti-shopping-bag"></i>
+                  <p>No member orders yet</p>
                 </div>
               </div>
 
@@ -658,7 +679,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="member-detail.js"></script>
+<script src="member-detail.js?v=orders1"></script>
 <script src="../member-modals.js"></script>
 </body>
 </html>

@@ -6,13 +6,12 @@
  * | Category        | Items                                                         |
  * |-----------------|---------------------------------------------------------------|
  * | Overview        | Dashboard                                                     |
- * | Members         | Members, Memberships, Attendance                              |
- * | Front desk      | POS, Trials, Debtors, Call sheet                              |
+ * | Members         | Members, Attendance                                           |
+ * | Front desk      | Sale, Member Orders, Debtors, Call sheet                      |
  * | Money           | Shifts, Refunds, Promo codes, Invoices, Z-Report, Reports     |
  * | Catalog         | Plans                                                         |
- * | Inventory       | Overview, Sell, Restock (on hand), Buy & receive, Move, Fix,   |
- * |                 | Count, Insights — then demoted Catalog/Config (products,        |
- * |                 | suppliers, warehouses)                                          |
+ * | Inventory       | Overview, On Hand, Move, Count, Insights, Products, Suppliers,  |
+ * |                 | Warehouses (Buy/Adjust contextual from On Hand; Sell → Front Desk)|
  * | Administration  | Import, Audit, Notifications, Staff, Settings                 |
  */
 (function (global) {
@@ -74,14 +73,6 @@
           access: { kind: 'permission', value: 'members.view' }
         },
         {
-          key: 'memberships',
-          label: 'Memberships',
-          labelAr: 'العضويات',
-          path: '/dashboard/memberships/',
-          icon: 'ti-id-badge',
-          access: { kind: 'permission', value: 'members.view' }
-        },
-        {
           key: 'attendance',
           label: 'Attendance',
           labelAr: 'الحضور',
@@ -98,22 +89,25 @@
       items: [
         {
           key: 'pos',
-          // A6 Decision Log: one Sell app — Front desk opens membership mode
-          label: 'Sell',
+          // Retail / general sales — membership onboarding lives in Members
+          label: 'Sale',
           labelAr: 'بيع',
-          path: '/dashboard/pos/',
+          path: '/dashboard/pos/?mode=retail',
           icon: 'ti-shopping-cart',
           access: { kind: 'permission', value: 'sales.sell' },
           featureFlag: 'sales'
         },
         {
-          key: 'trials',
-          label: 'Trials',
-          labelAr: 'التجارب',
-          path: '/dashboard/trials/',
-          icon: 'ti-flask',
-          access: { kind: 'permission', value: 'sales.sell' },
-          featureFlag: 'trials'
+          key: 'member-orders',
+          label: 'Member Orders',
+          labelAr: 'طلبات الأعضاء',
+          path: '/dashboard/member-orders/',
+          icon: 'ti-shopping-bag',
+          // Prefer orders.* when backend ships them; sales.sell covers front-desk staff today
+          access: {
+            kind: 'permission',
+            value: ['sales.sell', 'orders.view', 'orders.fulfill', 'memberorders.view', 'memberorders.manage']
+          }
         },
         {
           key: 'debtors',
@@ -229,30 +223,12 @@
           featureFlag: 'inventory'
         },
         {
-          key: 'inv-sell',
-          // A6: same Sell app, products mode — not a second “POS” product
-          label: 'Sell products',
-          labelAr: 'بيع منتجات',
-          path: '/dashboard/pos/?mode=retail',
-          icon: 'ti-shopping-cart',
-          access: { kind: 'permission', value: 'sales.sell' },
-          featureFlags: ['inventory', 'sales']
-        },
-        {
           key: 'inv-stock',
-          label: 'On hand',
+          // Primary stock workspace — Buy & receive / Adjust quantity launch from product detail
+          label: 'On Hand',
           labelAr: 'الرصيد',
           path: '/dashboard/inventory/stock/',
           icon: 'ti-stack-2',
-          access: { kind: 'permission', value: 'inventory.view' },
-          featureFlag: 'inventory'
-        },
-        {
-          key: 'inv-purchase-orders',
-          label: 'Buy & receive',
-          labelAr: 'شراء واستلام',
-          path: '/dashboard/inventory/purchase-orders/',
-          icon: 'ti-clipboard-list',
           access: { kind: 'permission', value: 'inventory.view' },
           featureFlag: 'inventory'
         },
@@ -263,15 +239,6 @@
           path: '/dashboard/inventory/transfers/',
           icon: 'ti-arrows-exchange',
           access: { kind: 'permission', value: 'inventory.transfer' },
-          featureFlag: 'inventory'
-        },
-        {
-          key: 'inv-adjustments',
-          label: 'Fix quantity',
-          labelAr: 'تعديل كمية',
-          path: '/dashboard/inventory/adjustments/',
-          icon: 'ti-adjustments',
-          access: { kind: 'permission', value: 'inventory.adjust' },
           featureFlag: 'inventory'
         },
         {

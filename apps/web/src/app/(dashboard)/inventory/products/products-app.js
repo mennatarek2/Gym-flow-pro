@@ -672,6 +672,7 @@
     document.getElementById('pFractional').checked = false;
     document.getElementById('pSellable').checked = true;
     document.getElementById('pPurchasable').checked = true;
+    document.getElementById('pVisibleToMembers').checked = false;
     document.getElementById('pActive').checked = true;
     document.getElementById('productFormHint').textContent = '';
     syncTrackFlags();
@@ -704,6 +705,9 @@
     document.getElementById('pFractional').checked = !!p.allowFractionalQty;
     document.getElementById('pSellable').checked = !!p.isSellable;
     document.getElementById('pPurchasable').checked = !!p.isPurchasable;
+    document.getElementById('pVisibleToMembers').checked = !!(
+      p.isVisibleToMembers != null ? p.isVisibleToMembers : p.visibleToMembers
+    );
     document.getElementById('pActive').checked = !!p.isActive;
     document.getElementById('productFormHint').textContent = '';
     syncTrackFlags();
@@ -751,6 +755,7 @@
       allowFractionalQty: document.getElementById('pFractional').checked,
       isSellable: document.getElementById('pSellable').checked,
       isPurchasable: document.getElementById('pPurchasable').checked,
+      isVisibleToMembers: document.getElementById('pVisibleToMembers').checked,
       reorderMinQty: Number(document.getElementById('pReorder').value) || 0,
       isActive: document.getElementById('pActive').checked
     };

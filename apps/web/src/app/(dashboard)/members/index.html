@@ -504,8 +504,10 @@
               <thead>
                 <tr>
                   <th>Member</th>
-                  <th>Phone</th>
                   <th>Status</th>
+                  <th>Plan</th>
+                  <th>Expiry</th>
+                  <th>Remaining</th>
                   <th style="width:130px">Actions</th>
                 </tr>
               </thead>
@@ -549,13 +551,20 @@
 
       <!-- Body -->
       <div class="mdl-body">
+        <div id="onboardSteps" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;font-size:12px;font-weight:600;font-family:var(--fd)">
+          <span class="ob-step act" data-step="1" style="padding:6px 10px;border-radius:var(--rmd);background:var(--l100);color:var(--l600)">1. Info</span>
+          <span class="ob-step" data-step="2" style="padding:6px 10px;border-radius:var(--rmd);background:var(--ls2);color:var(--ltt)">2. Membership</span>
+          <span class="ob-step" data-step="3" style="padding:6px 10px;border-radius:var(--rmd);background:var(--ls2);color:var(--ltt)">3. Payment</span>
+          <span class="ob-step" data-step="4" style="padding:6px 10px;border-radius:var(--rmd);background:var(--ls2);color:var(--ltt)">4. Print</span>
+        </div>
         <!-- Error banner -->
         <div class="mdl-error-banner" id="addErrorBanner">
           <i class="ti ti-alert-circle"></i>
           <div><div class="error-text"></div><div class="error-text-ar" style="display:none"></div></div>
         </div>
 
-        <!-- Section 1: Personal Info -->
+        <!-- Step 1: Personal Info -->
+        <div id="onboardStep1">
         <div class="form-section">
           <div class="section-hdr">
             <div class="section-title"><i class="ti ti-user"></i> Personal Information</div>
@@ -625,18 +634,113 @@
             </div>
           </div>
         </div>
+        </div><!-- /onboardStep1 -->
+
+        <!-- Step 2: Membership selection -->
+        <div id="onboardStep2" style="display:none">
+          <div class="form-section">
+            <div class="section-hdr">
+              <div class="section-title"><i class="ti ti-package"></i> Select Membership Plan</div>
+            </div>
+            <div id="onboardPlanLoading" style="display:none;padding:16px;color:var(--ltt)">Loading plans…</div>
+            <div id="onboardPlanCards" style="display:grid;gap:10px"></div>
+            <div class="mdl-form-group" style="margin-top:12px">
+              <label class="mdl-label">Start date</label>
+              <input type="date" class="mdl-input" id="onboardStartDate">
+              <div style="font-size:11px;color:var(--ltt);margin-top:4px">Server confirms final dates from the plan duration.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Payment -->
+        <div id="onboardStep3" style="display:none">
+          <div class="form-section">
+            <div class="section-hdr">
+              <div class="section-title"><i class="ti ti-receipt"></i> Membership Summary</div>
+            </div>
+            <div id="onboardSummary" class="plan-detail-card show" style="display:block;margin-bottom:16px"></div>
+            <div class="section-hdr">
+              <div class="section-title"><i class="ti ti-wallet"></i> Payment</div>
+            </div>
+            <div class="payment-radios" id="onboardPayMethods">
+              <label class="pay-radio"><input type="radio" name="onboardPayment" value="cash" checked><div class="pay-radio-label"><i class="ti ti-cash pay-radio-icon"></i><span class="pay-radio-name">Cash</span></div></label>
+              <label class="pay-radio"><input type="radio" name="onboardPayment" value="paymob"><div class="pay-radio-label"><i class="ti ti-credit-card pay-radio-icon"></i><span class="pay-radio-name">Paymob</span></div></label>
+              <label class="pay-radio"><input type="radio" name="onboardPayment" value="fawry"><div class="pay-radio-label"><i class="ti ti-building-store pay-radio-icon"></i><span class="pay-radio-name">Fawry</span></div></label>
+              <label class="pay-radio"><input type="radio" name="onboardPayment" value="vodafone_cash"><div class="pay-radio-label"><i class="ti ti-device-mobile pay-radio-icon"></i><span class="pay-radio-name">Vodafone Cash</span></div></label>
+            </div>
+            <div class="mdl-form-group" style="margin-top:12px">
+              <label class="mdl-label">Amount paid (EGP)</label>
+              <input type="number" class="mdl-input" id="onboardAmountPaid" min="0" step="0.01">
+            </div>
+            <div class="payment-note show" id="onboardPayNote"><i class="ti ti-info-circle"></i> Cash activates immediately when a shift is open.</div>
+          </div>
+        </div>
+
+        <!-- Step 4: Confirmation + print invoice / barcode card -->
+        <div id="onboardStep4" style="display:none">
+          <div style="text-align:center;padding:4px 8px 12px">
+            <i class="ti ti-circle-check" style="font-size:36px;color:var(--l500);display:block;margin-bottom:8px"></i>
+            <div style="font-family:var(--fd);font-size:18px;font-weight:700;margin-bottom:6px" data-en="Member onboarded" data-ar="تم تسجيل العضو">Member onboarded</div>
+            <div id="onboardConfirmText" style="font-size:13px;color:var(--lts);line-height:1.6"></div>
+          </div>
+
+          <div class="form-section" style="margin-top:8px">
+            <div class="section-hdr">
+              <div class="section-title"><i class="ti ti-file-invoice"></i> <span data-en="Invoice" data-ar="الفاتورة">Invoice</span></div>
+            </div>
+            <p id="onboardInvoiceStatus" class="payment-note show" style="margin-bottom:10px">Preparing invoice…</p>
+            <button type="button" class="mdl-btn primary" id="btnOnboardPrintInvoice" disabled style="width:100%;justify-content:center">
+              <i class="ti ti-printer"></i> <span data-en="Print invoice" data-ar="طباعة الفاتورة">Print invoice</span>
+            </button>
+          </div>
+
+          <div class="form-section" style="margin-top:12px">
+            <div class="section-hdr">
+              <div class="section-title"><i class="ti ti-barcode"></i> <span data-en="Barcode card" data-ar="كارنيه الباركود">Barcode card</span></div>
+            </div>
+            <p id="onboardCardStatus" class="payment-note show" style="margin-bottom:10px">Member access card with barcode.</p>
+            <button type="button" class="mdl-btn primary" id="btnOnboardPrintCard" disabled style="width:100%;justify-content:center">
+              <i class="ti ti-id-badge"></i> <span data-en="Print barcode card" data-ar="طباعة كارنيه الباركود">Print barcode card</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Footer -->
       <div class="mdl-footer">
-        <button class="mdl-btn ghost" onclick="closeOverlay('addMemberModal')">Cancel</button>
+        <button class="mdl-btn ghost" id="btnOnboardCancel" onclick="closeOverlay('addMemberModal')">Cancel</button>
+        <button class="mdl-btn ghost" id="btnOnboardSkip" style="display:none">Skip membership</button>
         <button class="mdl-btn primary" id="btnCreateMember" disabled>
           <span class="btn-spinner"></span>
-          <span class="btn-label"><i class="ti ti-plus"></i> Create Member</span>
+          <span class="btn-label"><i class="ti ti-arrow-right"></i> Continue</span>
         </button>
+        <button type="button" class="mdl-btn ghost" id="btnOnboardDone" style="display:none" onclick="closeOverlay('addMemberModal')">
+          <span data-en="Done" data-ar="تم">Done</span>
+        </button>
+        <a class="mdl-btn primary" id="btnOnboardViewMember" href="#" style="display:none;text-decoration:none"><i class="ti ti-eye"></i> View Member</a>
       </div>
     </div>
   </div>
+
+  <!-- Onboarding print overlay (invoice / access card) -->
+  <div class="pos-print-overlay" id="onboardPrintOverlay" hidden>
+    <div class="pos-print-sheet" role="dialog" aria-modal="true" aria-labelledby="onboardPrintTitle">
+      <div class="pos-print-actions">
+        <button type="button" class="mdl-btn primary" id="btnOnboardPrintDo"><i class="ti ti-printer"></i> Print</button>
+        <button type="button" class="mdl-btn ghost" id="btnOnboardPrintClose"><i class="ti ti-x"></i> Close</button>
+      </div>
+      <p class="pos-print-caption" id="onboardPrintTitle">Print</p>
+      <iframe id="onboardPrintFrame" title="Onboarding print"></iframe>
+    </div>
+  </div>
+  <style>
+    .pos-print-overlay{position:fixed;inset:0;background:rgba(13,13,13,.45);z-index:3000;display:flex;align-items:center;justify-content:center;padding:24px}
+    .pos-print-overlay[hidden]{display:none!important}
+    .pos-print-sheet{background:#fff;border-radius:16px;border:1px solid var(--ls3,#E8E8E8);width:min(480px,100%);max-height:90vh;display:flex;flex-direction:column;padding:14px;gap:10px}
+    .pos-print-actions{display:flex;gap:8px;justify-content:flex-end}
+    .pos-print-caption{font-family:var(--fd);font-weight:700;font-size:14px;margin:0}
+    #onboardPrintFrame{width:100%;min-height:320px;border:1px solid var(--ls3,#E8E8E8);border-radius:10px;background:#F6F7F9}
+  </style>
 
   <!-- ═══════════════════════════════════════════════════════════
        EDIT MEMBER DRAWER — 400px right slide
@@ -736,7 +840,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="members-app.js"></script>
-  <script src="member-modals.js"></script>
+  <script src="member-modals.js?v=onboard-print1"></script>
 </body>
 
 </html>

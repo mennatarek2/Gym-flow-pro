@@ -733,6 +733,13 @@
       '</div>' +
       '<div class="type-selector">' +
       Object.keys(PT)
+        .filter(function (key) {
+          // Trials / PT Credits removed from product — hide except when editing legacy plans
+          if (key === 'trial' || key === 'pt_credits') {
+            return isEdit && key === selType;
+          }
+          return true;
+        })
         .map(function (key) {
           const cfg = PT[key];
           const locked = isEdit && key !== selType;

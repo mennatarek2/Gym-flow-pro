@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
   const PAGE_SIZE = 20;
 
   function getToken() {
@@ -8,7 +8,7 @@
   }
   function getH(opts) {
     const t = getToken();
-    const h = {};
+    const h = { 'ngrok-skip-browser-warning': 'true' };
     if (!(opts && opts.noJson)) h['Content-Type'] = 'application/json';
     if (t) h.Authorization = 'Bearer ' + t;
     return h;

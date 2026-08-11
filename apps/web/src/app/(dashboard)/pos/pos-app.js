@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  const API_BASE = window.API_BASE || 'https://localhost:5001/api';
-  const METHODS = ['cash', 'card_paymob', 'fawry', 'vodafone', 'instapay', 'account_credit'];
+  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const METHODS = ['cash', 'card_paymob', 'fawry', 'vodafone', 'instapay'];
   function methodLabel(code) {
     const map = {
       cash: t('Cash', 'كاش'),
@@ -10,7 +10,6 @@
       fawry: t('Fawry', 'فوري'),
       vodafone: t('Vodafone Cash', 'فودافون كاش'),
       instapay: t('InstaPay', 'إنستا باي'),
-      account_credit: t('Account credit', 'رصيد حساب'),
     };
     return map[code] || code;
   }
@@ -20,7 +19,13 @@
   }
   function getH(extra) {
     const t = getToken();
-    const h = Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+    const h = Object.assign(
+      {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      extra || {}
+    );
     if (t) h.Authorization = 'Bearer ' + t;
     return h;
   }
@@ -56,19 +61,15 @@
   const canOverride = perms.has('sales.discount.override') || /Owner/i.test(role);
 
   let plans = [];
-  let selectedMember = null;
-  let memberMode = 'existing';
   let promoPreview = null;
   let shiftOk = false;
   /** One key per sale attempt; reused on retry until success. */
   let idempotencyKey = null;
-  /** membership | retail */
-  let posMode = 'membership';
+  /** Sale is retail-only — membership workflows live in Members */
+  let posMode = 'retail';
   let inventoryOn = false;
   /** @type {{ productId: string, sku: string, name: string, qty: number, unitPrice: number, allowFractional: boolean }[]} */
   let retailCart = [];
-  /** none | existing | new — for retail walk-in */
-  let retailMemberMode = 'none';
 
   function esc(s) {
     const d = document.createElement('div');
@@ -227,7 +228,16 @@
   async function api(method, path, body, headers) {
     const opts = { method, headers: getH(headers) };
     if (body !== undefined) opts.body = JSON.stringify(body);
-    const res = await fetch(API_BASE + path, opts);
+    let res;
+    try {
+      res = await fetch(API_BASE + path, opts);
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        data: { title: 'NETWORK_ERROR', detail: 'Network error — check API / ngrok tunnel.' }
+      };
+    }
     if (res.status === 401) {
       location.href = '/auth/login/';
       return { ok: false, status: 401, data: null };
@@ -435,51 +445,77 @@
   function setSalesDisabledBanner(on) {
     const el = document.getElementById('featureDisabled');
     if (!el) return;
+    el.classList.toggle('is-off', !on);
+    el.hidden = !on;
     el.style.display = on ? 'flex' : 'none';
+  }
+
+  function setShiftGateBanner(on) {
+    const gate = document.getElementById('shiftGate');
+    if (!gate) return;
+    gate.classList.toggle('is-off', !on);
+    gate.hidden = !on;
+    gate.style.display = on ? 'flex' : 'none';
+  }
+
+  async function probeSalesFeatureLocal() {
+    // Same contract as GfpFeatures sales probe (GET /promo-codes).
+    // Do NOT use /membership-plans — that can be FEATURE_DISABLED while retail sales still work.
+    const res = await api('GET', '/promo-codes?page=1&pageSize=1');
+    if (res.status === 404 && res.data && res.data.title === 'FEATURE_DISABLED') return false;
+    return true; // fail-open on network / other errors
   }
 
   async function refreshSalesFeatureBanner() {
     try {
       const F = window.GfpFeatures;
-      if (!F) return;
-      const reg = F.readCache && F.readCache();
-      if (reg && Object.prototype.hasOwnProperty.call(reg, 'sales')) {
-        setSalesDisabledBanner(reg.sales === false);
-        return;
+      if (F && F.clearCache) F.clearCache();
+      let ok = true;
+      if (F && F.probeModuleAvailable) {
+        ok = await F.probeModuleAvailable('sales');
+      } else {
+        ok = await probeSalesFeatureLocal();
       }
-      if (F.probeModuleAvailable) {
-        const ok = await F.probeModuleAvailable('sales');
-        setSalesDisabledBanner(!ok);
-      }
-    } catch (_) { /* fail-open: do not scare the desk */ }
+      setSalesDisabledBanner(!ok);
+    } catch (_) {
+      setSalesDisabledBanner(false);
+    }
   }
 
   // ── Shift gate ────────────────────────────────────────────────
   async function checkShift() {
-    const gate = document.getElementById('shiftGate');
     const label = document.getElementById('shiftLabel');
     const ws = document.getElementById('posWorkspace');
     const res = await api('GET', '/shifts/current');
-    // Never map shifts FEATURE_DISABLED → "Sales are turned off" (confuses the desk).
-    const open =
-      res.ok && res.data && res.data.status === 'open'
-        ? true
-        : false;
+
+    // Shifts module off — do not pretend there is simply "no open shift".
+    if (res.status === 404 && res.data && res.data.title === 'FEATURE_DISABLED') {
+      shiftOk = false;
+      setShiftGateBanner(true);
+      ws.classList.add('blocked');
+      label.textContent = t('Shifts disabled', 'الورديات مقفولة');
+      document.getElementById('btnSell').disabled = true;
+      return;
+    }
+
+    const open = !!(res.ok && res.data && String(res.data.status).toLowerCase() === 'open');
     if (res.ok && !res.data) {
       shiftOk = false;
     } else if (res.status === 409 || res.status === 404) {
+      shiftOk = false;
+    } else if (res.status === 0) {
       shiftOk = false;
     } else {
       shiftOk = open;
     }
 
     if (!shiftOk) {
-      gate.style.display = 'flex';
+      setShiftGateBanner(true);
       ws.classList.add('blocked');
       label.textContent = t('No open shift', 'مفيش وردية مفتوحة');
       document.getElementById('btnSell').disabled = true;
     } else {
-      gate.style.display = 'none';
+      setShiftGateBanner(false);
       ws.classList.remove('blocked');
       label.textContent =
         t('Open', 'مفتوحة') + ' · ' + (res.data.userName || t('you', 'أنت'));
@@ -539,57 +575,15 @@
 
   function selectPlanById(id) {
     const sel = document.getElementById('planSelect');
-    sel.value = id || '';
-    const p = selectedPlan();
-    document.getElementById('planPrice').textContent = p
-      ? t('Total', 'الإجمالي') + ' ' + money(p.price)
-      : '—';
+    if (sel) sel.value = id || '';
     promoPreview = null;
-    document.getElementById('promoStatus').textContent = t(
-      'Optional — leave empty if none.',
-      'اختياري — سيبه فاضي لو مفيش.'
-    );
-    renderPlanTiles();
     updateEstimate();
     updateSellEnabled();
   }
 
   async function loadPlans() {
-    const hint = document.getElementById('plansHint');
-    const sel = document.getElementById('planSelect');
-    const res = await api('GET', '/membership-plans');
-    if (!res.ok) {
-      hint.textContent = t(
-        'Could not load plans — ask owner for access.',
-        'مش قدرنا نحمّل الباقات — اطلب صلاحية من المالك.'
-      );
-      const tiles = document.getElementById('planTiles');
-      if (tiles) {
-        tiles.innerHTML = '<div class="muted">' + esc(hint.textContent) + '</div>';
-      }
-      return;
-    }
-    plans = Array.isArray(res.data) ? res.data.filter((p) => p.isActive !== false) : [];
-    hint.textContent = plans.length
-      ? plans.length + ' ' + t('plans', 'باقات')
-      : t('No plans', 'مفيش باقات');
-    sel.innerHTML =
-      '<option value="">Select plan…</option>' +
-      plans
-        .map(
-          (p) =>
-            '<option value="' +
-            esc(p.id) +
-            '" data-price="' +
-            esc(String(p.price)) +
-            '">' +
-            esc(p.name) +
-            ' — ' +
-            esc(money(p.price)) +
-            '</option>',
-        )
-        .join('');
-    renderPlanTiles();
+    // Membership plans are no longer sold from Sale — kept as no-op for legacy callers.
+    plans = [];
   }
 
   function selectedPlan() {
@@ -597,128 +591,11 @@
     return plans.find((p) => p.id === id) || null;
   }
 
-  document.getElementById('planSelect').addEventListener('change', () => {
-    selectPlanById(document.getElementById('planSelect').value);
-  });
-
-  // ── Member mode ───────────────────────────────────────────────
-  document.querySelectorAll('#membershipPanel .seg-btn[data-mode]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#membershipPanel .seg-btn[data-mode]').forEach((b) => b.classList.remove('act'));
-      btn.classList.add('act');
-      memberMode = btn.getAttribute('data-mode');
-      document.getElementById('existingMemberBox').style.display =
-        memberMode === 'existing' ? 'block' : 'none';
-      document.getElementById('newMemberBox').style.display = memberMode === 'new' ? 'block' : 'none';
-      promoPreview = null;
-      updateSellEnabled();
+  const planSelectEl = document.getElementById('planSelect');
+  if (planSelectEl) {
+    planSelectEl.addEventListener('change', () => {
+      selectPlanById(document.getElementById('planSelect').value);
     });
-  });
-
-  let searchTimer = null;
-  document.getElementById('memberSearch').addEventListener('input', (e) => {
-    clearTimeout(searchTimer);
-    const q = e.target.value.trim();
-    const box = document.getElementById('memberResults');
-    if (q.length < 2) {
-      box.classList.remove('show');
-      box.innerHTML = '';
-      return;
-    }
-    searchTimer = setTimeout(async () => {
-      const res = await api('GET', '/members?search=' + encodeURIComponent(q) + '&page=1&pageSize=10');
-      const items = (res.data && res.data.items) || [];
-      if (!items.length) {
-        box.innerHTML = '<button type="button" disabled>No matches</button>';
-        box.classList.add('show');
-        return;
-      }
-      box.innerHTML = items
-        .map(
-          (m) =>
-            '<button type="button" data-id="' +
-            esc(m.id) +
-            '" data-name="' +
-            esc(m.fullName) +
-            '" data-phone="' +
-            esc(m.phone) +
-            '">' +
-            esc(m.fullName) +
-            ' · ' +
-            esc(m.phone) +
-            ' · ' +
-            esc(m.memberNumber) +
-            '</button>',
-        )
-        .join('');
-      box.classList.add('show');
-      box.querySelectorAll('button[data-id]').forEach((b) => {
-        b.addEventListener('click', () => {
-          selectedMember = {
-            id: b.getAttribute('data-id'),
-            fullName: b.getAttribute('data-name'),
-            phone: b.getAttribute('data-phone'),
-          };
-          const selEl = document.getElementById('selectedMember');
-          selEl.textContent = selectedMember.fullName + ' · ' + selectedMember.phone;
-          selEl.classList.add('has-member');
-          box.classList.remove('show');
-          updateSellEnabled();
-        });
-      });
-    }, 280);
-  });
-
-  // ── Promo ─────────────────────────────────────────────────────
-  document.getElementById('btnValidatePromo').addEventListener('click', async () => {
-    const code = document.getElementById('promoCode').value.trim();
-    const plan = selectedPlan();
-    if (!code || !plan) {
-      toast('Select a plan and enter a code.', 'err');
-      return;
-    }
-    if (memberMode !== 'existing' || !selectedMember) {
-      toast('Promo validate needs an existing member. For walk-ins, code is applied at submit.', 'err');
-      return;
-    }
-    const res = await api('POST', '/sales/validate-promo', {
-      code,
-      planId: plan.id,
-      memberId: selectedMember.id,
-    });
-    if (!res.ok) {
-      promoPreview = null;
-      document.getElementById('promoStatus').textContent = problemMessage(res.data, res.status);
-      toast(problemMessage(res.data, res.status), 'err');
-      updateEstimate();
-      return;
-    }
-    promoPreview = res.data;
-    if (!promoPreview.isValid) {
-      document.getElementById('promoStatus').textContent =
-        'Invalid: ' + (promoPreview.failureReason || 'unknown');
-      promoPreview = null;
-    } else {
-      document.getElementById('promoStatus').textContent =
-        'Valid · discount ' +
-        money(promoPreview.discountAmount) +
-        ' · final ' +
-        money(promoPreview.finalPrice);
-    }
-    updateEstimate();
-  });
-
-  document.getElementById('btnClearPromo').addEventListener('click', () => {
-    document.getElementById('promoCode').value = '';
-    promoPreview = null;
-    document.getElementById('promoStatus').textContent = 'Promo cleared.';
-    updateEstimate();
-  });
-
-  // ── Discount UI ───────────────────────────────────────────────
-  if (!canDiscount) {
-    document.getElementById('discountFields').style.display = 'none';
-    document.getElementById('discountLocked').style.display = 'block';
   }
 
   // ── Payment legs ──────────────────────────────────────────────
@@ -768,31 +645,12 @@
     document.getElementById('paidSum').textContent = money(sum);
   }
 
-  // ── POS mode: membership | retail ─────────────────────────────
-  function placeMemberBoxes(hostId) {
-    const host = document.getElementById(hostId);
-    if (!host) return;
-    const existing = document.getElementById('existingMemberBox');
-    const neu = document.getElementById('newMemberBox');
-    if (existing) host.appendChild(existing);
-    if (neu) host.appendChild(neu);
-  }
-
-  function desiredUrlMode() {
-    try {
-      return new URLSearchParams(window.location.search).get('mode') === 'retail'
-        ? 'retail'
-        : 'membership';
-    } catch (_) {
-      return 'membership';
-    }
-  }
-
-  function syncUrlMode(mode) {
+  // ── POS layout: retail-only ───────────────────────────────────
+  function syncUrlMode() {
     try {
       const url = new URL(window.location.href);
-      if (mode === 'retail') url.searchParams.set('mode', 'retail');
-      else url.searchParams.delete('mode');
+      url.searchParams.set('mode', 'retail');
+      // Drop legacy membership mode query if present
       const next = url.pathname + url.search + url.hash;
       const cur = window.location.pathname + window.location.search + window.location.hash;
       if (next !== cur) window.history.replaceState({}, '', next);
@@ -802,61 +660,44 @@
     } catch (_) { /* ignore */ }
   }
 
-  function setPosMode(mode, opts) {
+  function setPosMode(_mode, opts) {
     opts = opts || {};
-    const wantRetail = mode === 'retail';
-    if (wantRetail && !inventoryOn && !opts.force) {
-      toast(t('Inventory feature required for retail.', 'ميزة المخزون مطلوبة لبيع المنتجات.'), 'err');
-      mode = 'membership';
-    }
-    posMode = mode === 'retail' ? 'retail' : 'membership';
-    const isRetail = posMode === 'retail';
-
-    document.querySelectorAll('[data-pos-mode]').forEach(function (btn) {
-      btn.classList.toggle('act', btn.getAttribute('data-pos-mode') === posMode);
-    });
+    posMode = 'retail';
+    const isRetail = true;
 
     const memb = document.getElementById('membershipPanel');
     const retail = document.getElementById('retailPanel');
     if (memb) {
-      memb.hidden = isRetail;
-      memb.style.display = isRetail ? 'none' : '';
-      memb.setAttribute('aria-hidden', isRetail ? 'true' : 'false');
+      memb.hidden = true;
+      memb.style.display = 'none';
+      memb.setAttribute('aria-hidden', 'true');
     }
     if (retail) {
-      retail.hidden = !isRetail;
-      retail.style.display = isRetail ? '' : 'none';
-      retail.setAttribute('aria-hidden', isRetail ? 'false' : 'true');
+      retail.hidden = false;
+      retail.style.display = '';
+      retail.setAttribute('aria-hidden', 'false');
     }
 
     const ws = document.getElementById('posWorkspace');
-    if (ws) ws.classList.toggle('pos-retail', isRetail);
-    document.body.classList.toggle('pos-retail', isRetail);
-    document.documentElement.classList.toggle('pos-retail', isRetail);
+    if (ws) ws.classList.add('pos-retail');
+    document.body.classList.add('pos-retail');
+    document.documentElement.classList.add('pos-retail');
 
     const debtCard = document.getElementById('debtPayCard');
     const debtHost = document.getElementById('retailDebtHost');
-    const debtReturn = document.getElementById('debtPayReturnHost');
     if (debtCard) {
       debtCard.hidden = false;
       debtCard.style.display = '';
-      debtCard.classList.toggle('retail-debt-compact', isRetail);
-      if (isRetail && debtHost) debtHost.appendChild(debtCard);
-      else if (debtReturn) debtReturn.appendChild(debtCard);
+      debtCard.classList.add('retail-debt-compact');
+      if (debtHost) debtHost.appendChild(debtCard);
     }
 
     const payMount = document.getElementById('retailPayMount');
     const payCard = document.getElementById('paymentsCard');
     const submitCard = document.getElementById('submitCard');
-    const gridMain = document.querySelector('#posWorkspace .grid-main');
-    if (payCard && submitCard) {
-      if (isRetail && payMount) {
-        payMount.appendChild(payCard);
-        payMount.appendChild(submitCard);
-      } else if (gridMain && ws) {
-        gridMain.appendChild(payCard);
-        ws.appendChild(submitCard);
-      }
+    if (payCard && submitCard && payMount) {
+      payMount.appendChild(payCard);
+      payMount.appendChild(submitCard);
     }
 
     const quickPay = document.getElementById('retailQuickPay');
@@ -866,103 +707,50 @@
 
     const finishTotalRow = document.getElementById('finishTotalRow');
     if (finishTotalRow) {
-      finishTotalRow.hidden = !isRetail;
-      finishTotalRow.style.display = isRetail ? '' : 'none';
+      finishTotalRow.hidden = false;
+      finishTotalRow.style.display = '';
     }
     const retailHint = document.getElementById('retailSubmitHint');
     if (retailHint) {
-      retailHint.hidden = !isRetail;
-      retailHint.style.display = isRetail ? '' : 'none';
+      retailHint.hidden = false;
+      retailHint.style.display = '';
     }
 
     const titleEl = document.getElementById('pageTitleText');
-    if (titleEl) {
-      titleEl.textContent = isRetail
-        ? t('Sell products', 'بيع منتجات')
-        : t('Point of Sale', 'نقطة البيع');
-    }
+    if (titleEl) titleEl.textContent = t('Point of Sale', 'نقطة البيع');
     const crumb = document.getElementById('posBreadcrumb');
-    if (crumb) {
-      crumb.textContent = isRetail
-        ? t('Sell products', 'بيع منتجات')
-        : t('Point of Sale', 'نقطة البيع');
-    }
+    if (crumb) crumb.textContent = t('Point of Sale', 'نقطة البيع');
 
     const sub = document.getElementById('pageSubtitle');
     if (sub) {
-      sub.textContent = isRetail
-        ? t('Member · Products · Cart — Cash or Card to finish', 'عضو · منتجات · سلة — كاش أو بطاقة للإنهاء')
-        : t('Member · Plan · Cash or Card', 'عضو · باقة · كاش أو بطاقة');
+      sub.textContent = t(
+        '1) Products  2) Cart  3) Pay  4) Finish',
+        '١) المنتجات  ٢) السلة  ٣) ادفع  ٤) خلّص'
+      );
     }
 
     const promoBtn = document.getElementById('btnPromoCodes');
-    if (promoBtn) promoBtn.style.display = isRetail ? 'none' : '';
+    if (promoBtn) promoBtn.style.display = 'none';
 
     const sellBtn = document.getElementById('btnSell');
     if (sellBtn) {
-      sellBtn.classList.toggle('retail-tap', isRetail);
+      sellBtn.classList.add('retail-tap');
       sellBtn.innerHTML =
         '<i class="ti ti-check"></i> <span>' +
-        esc(isRetail ? t('Complete retail sale', 'تمّم بيع المنتجات') : t('Complete sale', 'تمّم البيع')) +
+        esc(t('Complete sale', 'تمّم البيع')) +
         '</span>';
     }
 
-    if (!opts.skipUrl) syncUrlMode(posMode);
+    if (!opts.skipUrl) syncUrlMode();
     else if (window.GfpShell && typeof window.GfpShell.renderShellNav === 'function') {
       window.GfpShell.renderShellNav();
     }
 
-    if (isRetail) {
-      placeMemberBoxes('retailMemberFieldsHost');
-      applyRetailMemberMode();
-      loadQuickProducts();
-    } else {
-      placeMemberBoxes('memberFieldsHost');
-      const existing = document.getElementById('existingMemberBox');
-      const neu = document.getElementById('newMemberBox');
-      if (existing) existing.style.display = memberMode === 'existing' ? 'block' : 'none';
-      if (neu) neu.style.display = memberMode === 'new' ? 'block' : 'none';
-    }
+    if (inventoryOn) loadQuickProducts();
     updateEstimate();
     updateSellEnabled();
     applyLocaleBits();
   }
-
-  function applyRetailMemberMode() {
-    const hint = document.getElementById('retailMemberHint');
-    document.querySelectorAll('#retailMemberSeg [data-rmode]').forEach(function (btn) {
-      btn.classList.toggle('act', btn.getAttribute('data-rmode') === retailMemberMode);
-    });
-    if (retailMemberMode === 'none') {
-      hint.style.display = 'block';
-      hint.textContent = t('Walk-in — no member on sale.', 'عابر — مفيش عضو على الفاتورة.');
-      document.getElementById('existingMemberBox').style.display = 'none';
-      document.getElementById('newMemberBox').style.display = 'none';
-    } else if (retailMemberMode === 'existing') {
-      hint.style.display = 'none';
-      document.getElementById('existingMemberBox').style.display = 'block';
-      document.getElementById('newMemberBox').style.display = 'none';
-    } else {
-      hint.style.display = 'none';
-      document.getElementById('existingMemberBox').style.display = 'none';
-      document.getElementById('newMemberBox').style.display = 'block';
-    }
-    updateSellEnabled();
-    applyLocaleBits();
-  }
-
-  document.querySelectorAll('[data-pos-mode]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      setPosMode(btn.getAttribute('data-pos-mode'));
-    });
-  });
-
-  document.querySelectorAll('#retailMemberSeg [data-rmode]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      retailMemberMode = btn.getAttribute('data-rmode') || 'none';
-      applyRetailMemberMode();
-    });
-  });
 
   function updateCartCount() {
     const el = document.getElementById('cartCount');
@@ -1194,16 +982,17 @@
   async function probeInventoryAndUi() {
     const res = await api('GET', '/inventory/categories');
     inventoryOn = !(res.status === 404 && res.data && res.data.title === 'FEATURE_DISABLED');
-    const tab = document.getElementById('tabRetail');
     const hint = document.getElementById('inventoryOffHint');
+    const ws = document.getElementById('posWorkspace');
     if (inventoryOn) {
-      tab.style.display = '';
-      hint.style.display = 'none';
+      if (hint) hint.style.display = 'none';
+      if (ws) ws.classList.remove('inventory-off');
       await loadWarehouses();
+      loadQuickProducts();
     } else {
-      tab.style.display = 'none';
-      hint.style.display = 'block';
-      if (posMode === 'retail') setPosMode('membership');
+      if (hint) hint.style.display = 'block';
+      if (ws) ws.classList.add('inventory-off');
+      // Stay on retail — do not fall back to membership mode (removed from Sale)
     }
   }
 
@@ -1301,20 +1090,10 @@
   });
 
   function estimateTotal() {
-    if (posMode === 'retail') {
-      return retailCart.reduce(function (s, l) {
-        return s + Number(l.qty) * Number(l.unitPrice);
-      }, 0);
-    }
-    const plan = selectedPlan();
-    if (!plan) return null;
-    if (promoPreview && promoPreview.finalPrice != null) return Number(promoPreview.finalPrice);
-    let total = Number(plan.price) || 0;
-    if (canDiscount) {
-      const d = Number(document.getElementById('discAmount').value) || 0;
-      total = Math.max(0, total - d);
-    }
-    return total;
+    if (!retailCart.length) return null;
+    return retailCart.reduce(function (s, l) {
+      return s + Number(l.qty) * Number(l.unitPrice);
+    }, 0);
   }
 
   function updateEstimate() {
@@ -1334,7 +1113,8 @@
   }
 
   document.getElementById('btnAddLeg').onclick = () => addLeg('cash', '');
-  document.getElementById('discAmount').addEventListener('input', updateEstimate);
+  const discAmtEl = document.getElementById('discAmount');
+  if (discAmtEl) discAmtEl.addEventListener('input', updateEstimate);
   document.getElementById('partialOpt').addEventListener('change', (e) => {
     document.getElementById('dueDateWrap').style.display = e.target.checked ? 'flex' : 'none';
   });
@@ -1346,41 +1126,20 @@
       if (cash) cash.disabled = disabled;
       if (card) card.disabled = disabled;
     }
-    if (!canSell || !shiftOk) {
+    if (!canSell || !shiftOk || !inventoryOn) {
       document.getElementById('btnSell').disabled = true;
       setQuick(true);
       return;
     }
-    if (posMode === 'retail') {
-      const cartOk = retailCart.length > 0 && retailCart.every(function (l) {
-        return l.qty > 0 && document.getElementById('warehouseSelect').value;
+    const wh = document.getElementById('warehouseSelect');
+    const cartOk =
+      retailCart.length > 0 &&
+      retailCart.every(function (l) {
+        return l.qty > 0 && wh && wh.value;
       });
-      let memberOk = true;
-      if (retailMemberMode === 'existing') memberOk = !!selectedMember;
-      if (retailMemberMode === 'new') {
-        memberOk = !!(
-          document.getElementById('nmName').value.trim() &&
-          document.getElementById('nmPhone').value.trim()
-        );
-      }
-      const ok = !!(cartOk && memberOk);
-      document.getElementById('btnSell').disabled = !ok;
-      setQuick(!ok);
-      return;
-    }
-    const plan = selectedPlan();
-    const memberOk =
-      memberMode === 'existing'
-        ? !!selectedMember
-        : !!(document.getElementById('nmName').value.trim() && document.getElementById('nmPhone').value.trim());
-    const ok = !!(plan && memberOk);
-    document.getElementById('btnSell').disabled = !ok;
-    setQuick(!ok);
+    document.getElementById('btnSell').disabled = !cartOk;
+    setQuick(!cartOk);
   }
-
-  ['nmName', 'nmPhone'].forEach((id) => {
-    document.getElementById(id).addEventListener('input', updateSellEnabled);
-  });
 
   function setSinglePayment(method, amount) {
     const wrap = document.getElementById('payLegs');
@@ -1391,126 +1150,51 @@
     updatePaidSum();
   }
 
-  // ── Submit sale ───────────────────────────────────────────────
+  // ── Submit retail sale ────────────────────────────────────────
   async function submitSale() {
     if (!shiftOk) {
       toast(t('Open a cash shift first.', 'افتح وردية كاش الأول.'), 'err');
       return;
+    }
+    if (!inventoryOn) {
+      toast(t('Inventory feature required for retail.', 'ميزة المخزون مطلوبة لبيع المنتجات.'), 'err');
+      return;
+    }
+    if (!retailCart.length) {
+      toast(t('Add products to the cart.', 'ضيف منتجات للسلة.'), 'err');
+      return;
+    }
+    const warehouseId = document.getElementById('warehouseSelect').value;
+    if (!warehouseId) {
+      toast(t('Select a warehouse.', 'اختار مستودع.'), 'err');
+      return;
+    }
+    for (let i = 0; i < retailCart.length; i++) {
+      const l = retailCart[i];
+      if (!l.allowFractional && Math.floor(l.qty) !== Number(l.qty)) {
+        toast(l.sku + ': ' + t('fractional qty not allowed', 'الكسور مش مسموحة'), 'err');
+        return;
+      }
     }
 
     const payments = readPayments();
     const partial = document.getElementById('partialOpt').checked;
     const dueDate = document.getElementById('dueDate').value;
 
-    let body;
-
-    if (posMode === 'retail') {
-      if (!inventoryOn) {
-        toast(t('Inventory feature required for retail.', 'ميزة المخزون مطلوبة لبيع المنتجات.'), 'err');
-        return;
-      }
-      if (!retailCart.length) {
-        toast(t('Add products to the cart.', 'ضيف منتجات للسلة.'), 'err');
-        return;
-      }
-      const warehouseId = document.getElementById('warehouseSelect').value;
-      if (!warehouseId) {
-        toast(t('Select a warehouse.', 'اختار مستودع.'), 'err');
-        return;
-      }
-      for (let i = 0; i < retailCart.length; i++) {
-        const l = retailCart[i];
-        if (!l.allowFractional && Math.floor(l.qty) !== Number(l.qty)) {
-          toast(l.sku + ': ' + t('fractional qty not allowed', 'الكسور مش مسموحة'), 'err');
-          return;
-        }
-      }
-      body = {
-        warehouseId: warehouseId,
-        lines: retailCart.map(function (l) {
-          return {
-            lineType: 'retail',
-            productId: l.productId,
-            qty: Number(l.qty),
-            unitPrice: Number(l.unitPrice)
-          };
-        }),
-        payments: payments
-      };
-      if (retailMemberMode === 'existing') {
-        if (!selectedMember) {
-          toast(t('Pick a member or use Walk-in.', 'اختار عضو أو عابر.'), 'err');
-          return;
-        }
-        body.memberId = selectedMember.id;
-      } else if (retailMemberMode === 'new') {
-        body.newMember = {
-          fullName: document.getElementById('nmName').value.trim(),
-          fullNameAr: document.getElementById('nmNameAr').value.trim() || null,
-          phoneNumber: document.getElementById('nmPhone').value.trim(),
-          dateOfBirth: document.getElementById('nmDob').value || null
+    // Anonymous retail sale — no memberId / newMember from POS
+    const body = {
+      warehouseId: warehouseId,
+      lines: retailCart.map(function (l) {
+        return {
+          lineType: 'retail',
+          productId: l.productId,
+          qty: Number(l.qty),
+          unitPrice: Number(l.unitPrice)
         };
-      }
-    } else {
-      // membership path — original handler continues below via fallthrough structure
-      return submitMembershipSale(payments, partial, dueDate);
-    }
-
-    if (!payments.length) {
-      toast(t('Add a payment amount.', 'ضيف مبلغ الدفع.'), 'err');
-      return;
-    }
-    if (partial) {
-      if (!dueDate) {
-        toast(t('Due date required for partial payment.', 'تاريخ الاستحقاق مطلوب للدفع الجزئي.'), 'err');
-        return;
-      }
-      body.partialPayment = { dueDate: dueDate };
-    }
-
-    await postSale(body);
-  }
-
-  async function submitMembershipSale(payments, partial, dueDate) {
-    const plan = selectedPlan();
-    if (!plan) {
-      toast(t('Select a plan.', 'اختار باقة.'), 'err');
-      return;
-    }
-    let body = {
-      planId: plan.id,
+      }),
       payments: payments
     };
-    if (memberMode === 'existing') {
-      if (!selectedMember) {
-        toast(t('Select a member.', 'اختار عضو.'), 'err');
-        return;
-      }
-      body.memberId = selectedMember.id;
-    } else {
-      body.newMember = {
-        fullName: document.getElementById('nmName').value.trim(),
-        fullNameAr: document.getElementById('nmNameAr').value.trim() || null,
-        phoneNumber: document.getElementById('nmPhone').value.trim(),
-        dateOfBirth: document.getElementById('nmDob').value || null,
-        referralCode: document.getElementById('nmReferralCode').value.trim() || null
-      };
-    }
-    const promo = document.getElementById('promoCode').value.trim();
-    if (promo) body.promoCode = promo;
-    const ref = document.getElementById('saleReferralCode').value.trim();
-    if (ref) body.referralCode = ref;
-    if (canDiscount) {
-      const amount = Number(document.getElementById('discAmount').value) || 0;
-      const reason = document.getElementById('discReason').value.trim();
-      if (amount > 0) {
-        if (!reason) {
-          toast(t('Discount reason required.', 'سبب الخصم مطلوب.'), 'err');
-          return;
-        }
-        body.manualDiscount = { amount: amount, reason: reason };
-      }
-    }
+
     if (!payments.length) {
       toast(t('Add a payment amount.', 'ضيف مبلغ الدفع.'), 'err');
       return;
@@ -1522,6 +1206,7 @@
       }
       body.partialPayment = { dueDate: dueDate };
     }
+
     await postSale(body);
   }
 
@@ -1549,7 +1234,7 @@
       }
       if (title === 'OPEN_SHIFT_REQUIRED') {
         shiftOk = false;
-        document.getElementById('shiftGate').style.display = 'flex';
+        setShiftGateBanner(true);
         document.getElementById('posWorkspace').classList.add('blocked');
       }
       if (title === 'FEATURE_DISABLED') {
@@ -1572,9 +1257,6 @@
     clearIdemKey();
     const due = sale.totals && Number(sale.totals.amountDue);
     const warnList = (sale.warnings || []).filter(Boolean);
-    const isRetailSale = posMode === 'retail';
-    const cardMemberId =
-      !isRetailSale && selectedMember && selectedMember.id ? selectedMember.id : null;
     box.className = 'result desk-receipt' + (warnList.length ? ' warn' : '');
     box.innerHTML =
       '<div class="receipt-ok"><i class="ti ti-circle-check"></i> <strong>' +
@@ -1603,87 +1285,41 @@
         : '') +
       '</div>' +
       (warnList.length ? '<div class="muted">' + esc(warnList.join(' · ')) + '</div>' : '') +
-      (isRetailSale
-        ? '<div id="invoiceReadyLine" class="muted">' +
-          esc(t('Preparing invoice for print…', 'بنحضّر الفاتورة للطباعة…')) +
-          '</div>' +
-          '<div class="receipt-print-row">' +
-          '<button type="button" class="btn primary full" id="btnPrintReceipt" disabled>' +
-          '<i class="ti ti-printer"></i> ' +
-          esc(t('Print receipt', 'اطبع الإيصال')) +
-          '</button>' +
-          '<button type="button" class="btn secondary full" id="btnStartNextSale">' +
-          esc(t('Next sale', 'بيع جديد')) +
-          '</button></div>'
-        : (due > 0
-            ? '<div class="receipt-due-next">' +
-              esc(
-                t(
-                  'Balance left — collect it below, or later from Debtors.',
-                  'في باقي — حصه تحت، أو بعدين من المدينين.'
-                )
-              ) +
-              '</div>'
-            : '') +
-          '<div class="receipt-print-row">' +
-          (cardMemberId
-            ? '<button type="button" class="btn primary full" id="btnPrintMemberCard">' +
-              '<i class="ti ti-barcode"></i> ' +
-              esc(t('Print member card', 'اطبع كارنيه العضو')) +
-              '</button>'
-            : '') +
-          '<button type="button" class="btn secondary full" id="btnStartNextSale">' +
-          esc(t('Start next sale', 'ابدأ بيع جديد')) +
-          '</button></div>');
+      '<div id="invoiceReadyLine" class="muted">' +
+      esc(t('Preparing invoice for print…', 'بنحضّر الفاتورة للطباعة…')) +
+      '</div>' +
+      '<div class="receipt-print-row">' +
+      '<button type="button" class="btn primary full" id="btnPrintReceipt" disabled>' +
+      '<i class="ti ti-printer"></i> ' +
+      esc(t('Print receipt', 'اطبع الإيصال')) +
+      '</button>' +
+      '<button type="button" class="btn secondary full" id="btnStartNextSale">' +
+      esc(t('Next sale', 'بيع جديد')) +
+      '</button></div>';
 
-    if (isRetailSale) {
-      retailCart = [];
-      renderRetailCart();
-      if (sale.invoiceStatus === 'skipped' || sale.invoiceStatus === 'not_applicable') {
-        const statusEl = document.getElementById('invoiceReadyLine');
-        const printBtn = document.getElementById('btnPrintReceipt');
-        if (statusEl) {
-          statusEl.textContent = t('No invoice for this sale (nothing to print).', 'مفيش فاتورة للبيع ده (مفيش طباعة).');
-        }
-        if (printBtn) printBtn.disabled = true;
-        const nextBtn = document.getElementById('btnStartNextSale');
-        if (nextBtn) {
-          nextBtn.onclick = function () {
-            document.getElementById('btnReset').click();
-          };
-        }
-      } else {
-        wireRetailPrintActions(sale);
+    retailCart = [];
+    renderRetailCart();
+    if (sale.invoiceStatus === 'skipped' || sale.invoiceStatus === 'not_applicable') {
+      const statusEl = document.getElementById('invoiceReadyLine');
+      const printBtn = document.getElementById('btnPrintReceipt');
+      if (statusEl) {
+        statusEl.textContent = t('No invoice for this sale (nothing to print).', 'مفيش فاتورة للبيع ده (مفيش طباعة).');
       }
-    } else {
-      const cardBtn = document.getElementById('btnPrintMemberCard');
-      if (cardBtn && cardMemberId) {
-        cardBtn.onclick = function () {
-          openMemberCardPrint(cardMemberId, true);
-        };
-        // Auto-offer print after membership sale (MAC-P0 Phase 1)
-        openMemberCardPrint(cardMemberId, true);
-      }
+      if (printBtn) printBtn.disabled = true;
       const nextBtn = document.getElementById('btnStartNextSale');
       if (nextBtn) {
         nextBtn.onclick = function () {
           document.getElementById('btnReset').click();
         };
       }
+    } else {
+      wireRetailPrintActions(sale);
     }
 
     if (due > 0) {
       document.getElementById('debtSaleId').value = sale.saleId;
       const debtAmt = document.getElementById('debtAmount');
       if (debtAmt && !debtAmt.value) debtAmt.value = String(Number(due.toFixed(2)));
-      const debtCard = document.getElementById('debtPayCard');
-      if (debtCard && !isRetailSale) {
-        debtCard.hidden = false;
-        debtCard.style.display = '';
-        try {
-          debtCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } catch (_) {}
-      }
     }
     toast(
       sale.isReplay
@@ -1725,19 +1361,14 @@
     closePosPrint();
     clearIdemKey();
     clearStockBlock();
-    selectedMember = null;
     promoPreview = null;
     retailCart = [];
-    retailMemberMode = 'none';
-    document.getElementById('selectedMember').textContent = t('No member selected', 'مفيش عضو متختار');
-    document.getElementById('selectedMember').classList.remove('has-member');
-    document.getElementById('promoCode').value = '';
-    document.getElementById('promoStatus').textContent = t(
-      'Optional — leave empty if none.',
-      'اختياري — سيبه فاضي لو مفيش.'
-    );
-    document.getElementById('discAmount').value = '0';
-    document.getElementById('discReason').value = '';
+    const promoEl = document.getElementById('promoCode');
+    if (promoEl) promoEl.value = '';
+    const discEl = document.getElementById('discAmount');
+    if (discEl) discEl.value = '0';
+    const discReason = document.getElementById('discReason');
+    if (discReason) discReason.value = '';
     document.getElementById('partialOpt').checked = false;
     document.getElementById('dueDateWrap').style.display = 'none';
     document.getElementById('payLegs').innerHTML = '';
@@ -1747,9 +1378,7 @@
     addLeg('cash', '');
     document.getElementById('saleResult').style.display = 'none';
     ensureIdemKey();
-    selectPlanById('');
     renderRetailCart();
-    if (posMode === 'retail') applyRetailMemberMode();
     updateEstimate();
     updateSellEnabled();
   });
@@ -1811,28 +1440,21 @@
     toast(t('Payment recorded.', 'اتسجلت الدفعة.'), 'ok');
   });
 
-  // boot — paint requested mode immediately; settle URL + nav after probes
+  // boot — retail-only POS
   if (!canSell) {
     toast(t('You need permission to sell.', 'محتاج صلاحية البيع.'), 'err');
     document.getElementById('btnSell').disabled = true;
   }
   addLeg('cash', '');
   ensureIdemKey();
-  if (desiredUrlMode() === 'retail') {
-    inventoryOn = true;
-    setPosMode('retail', { force: true, skipUrl: true });
-  } else {
-    setPosMode('membership', { skipUrl: true });
-  }
-  Promise.all([checkShift(), loadPlans(), probeInventoryAndUi(), refreshSalesFeatureBanner()])
+  setPosMode('retail', { skipUrl: true });
+  Promise.all([checkShift(), probeInventoryAndUi(), refreshSalesFeatureBanner()])
     .then(function () {
-      if (desiredUrlMode() === 'retail' && inventoryOn) setPosMode('retail');
-      else setPosMode('membership');
+      setPosMode('retail');
       applyLocaleBits();
     })
     .catch(function () {
-      if (desiredUrlMode() === 'retail' && inventoryOn) setPosMode('retail');
-      else setPosMode('membership');
+      setPosMode('retail');
       applyLocaleBits();
     });
 
@@ -1845,16 +1467,13 @@
       });
       sel.value = v;
     });
-    if (posMode === 'retail') {
-      applyRetailMemberMode();
-      renderRetailCart();
-      const sellBtn = document.getElementById('btnSell');
-      if (sellBtn) {
-        sellBtn.innerHTML =
-          '<i class="ti ti-check"></i> <span>' +
-          esc(t('Complete retail sale', 'تمّم بيع المنتجات')) +
-          '</span>';
-      }
+    renderRetailCart();
+    const sellBtn = document.getElementById('btnSell');
+    if (sellBtn) {
+      sellBtn.innerHTML =
+        '<i class="ti ti-check"></i> <span>' +
+        esc(t('Complete sale', 'تمّم البيع')) +
+        '</span>';
     }
   });
 })();

@@ -110,6 +110,8 @@ var settings = Shell.NAV_ITEMS.find(function (n) { return n.key === 'settings'; 
 var pos = Shell.NAV_ITEMS.find(function (n) { return n.key === 'pos'; });
 var call = Shell.NAV_ITEMS.find(function (n) { return n.key === 'call-sheet'; });
 var staff = Shell.NAV_ITEMS.find(function (n) { return n.key === 'staff'; });
+var invHome = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-home'; });
+var invStock = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-stock'; });
 var invProducts = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-products'; });
 var invAdjust = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-adjustments'; });
 
@@ -117,14 +119,16 @@ var allOn = {
   sales: true, shifts: true, trials: true, refunds: true, debtors: true, imports: true, inventory: true
 };
 
-assert(!!plans && !!pos && !!invProducts, 'nav items resolved by key');
+assert(!!plans && !!pos && !!invHome && !!invStock && !!invProducts, 'nav items resolved by key');
+assert(!invAdjust, 'Adjustments stay removed from Inventory nav registry');
 assert(!Shell.isNavItemVisible(plans, allOn), 'Receptionist hides Plans');
 assert(!Shell.isNavItemVisible(settings, allOn), 'Receptionist hides Settings');
 assert(!Shell.isNavItemVisible(staff, allOn), 'Receptionist hides Staff');
 assert(Shell.isNavItemVisible(pos, allOn), 'Receptionist sees POS when sales enabled');
 assert(Shell.isNavItemVisible(call, allOn), 'Receptionist sees Call sheet (no feature flag)');
-assert(Shell.isNavItemVisible(invProducts, allOn), 'Receptionist sees Inventory Products');
-assert(!Shell.isNavItemVisible(invAdjust, allOn), 'Receptionist hides Inventory Adjustments');
+assert(Shell.isNavItemVisible(invHome, allOn), 'Receptionist sees Inventory Overview');
+assert(Shell.isNavItemVisible(invStock, allOn), 'Receptionist sees On Hand');
+assert(!Shell.isNavItemVisible(invProducts, allOn), 'Receptionist hides Inventory Products (no manage/purchase)');
 
 // FEATURE_DISABLED
 var salesOff = Object.assign({}, allOn, { sales: false });
@@ -132,7 +136,7 @@ assert(!Shell.isNavItemVisible(pos, salesOff), 'FEATURE_DISABLED hides POS');
 assert(Shell.isNavItemVisible(call, salesOff), 'Call sheet stays when sales flag off');
 
 var invOff = Object.assign({}, allOn, { inventory: false });
-assert(!Shell.isNavItemVisible(invProducts, invOff), 'FEATURE_DISABLED inventory hides Products');
+assert(!Shell.isNavItemVisible(invStock, invOff), 'FEATURE_DISABLED inventory hides On Hand');
 
 // Pending probe (null registry) — feature modules must NOT be clickable
 assert(!Shell.isNavItemVisible(pos, null), 'Pending probe hides feature-gated POS');
@@ -153,7 +157,7 @@ storage.gfp_access_token = fakeJwt({
 storage.gfp_user = JSON.stringify({ role: 'Owner' });
 assert(Shell.isNavItemVisible(plans, allOn), 'Owner sees Plans');
 assert(Shell.isNavItemVisible(settings, allOn), 'Owner sees Settings');
-assert(Shell.isNavItemVisible(invAdjust, allOn), 'Owner sees Inventory Adjustments');
+assert(Shell.isNavItemVisible(invStock, allOn), 'Owner sees On Hand');
 
 // ── Manager: no plans.manage, not Owner ──
 storage.gfp_access_token = fakeJwt({
@@ -166,7 +170,7 @@ storage.gfp_access_token = fakeJwt({
 storage.gfp_user = JSON.stringify({ role: 'Manager' });
 assert(!Shell.isNavItemVisible(plans, allOn), 'Manager hides Plans (no plans.manage)');
 assert(!Shell.isNavItemVisible(settings, allOn), 'Manager hides Settings (not Owner)');
-assert(Shell.isNavItemVisible(invAdjust, allOn), 'Manager sees Inventory Adjustments');
+assert(Shell.isNavItemVisible(invStock, allOn), 'Manager sees On Hand');
 // ── Bilingual ──
 assert(I18n.pickBilingual('Hello', 'مرحبا', 'ar') === 'مرحبا', 'pickBilingual prefers ar');
 assert(I18n.displayBilingualText({ message: 'Open shift', messageAr: 'افتح الوردية' }, 'ar').indexOf('افتح') === 0, 'message/messageAr');

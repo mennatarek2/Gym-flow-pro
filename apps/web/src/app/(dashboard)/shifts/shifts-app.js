@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
 
   /** Four distinct 409 titles from ShiftFailureCode (+ bilingual-friendly copy). */
   const SHIFT_409 = {
@@ -16,7 +16,10 @@
   }
   function getH() {
     const t = getToken();
-    const h = { 'Content-Type': 'application/json' };
+    const h = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    };
     if (t) h.Authorization = 'Bearer ' + t;
     return h;
   }
@@ -113,7 +116,16 @@
   async function api(method, path, body) {
     const opts = { method, headers: getH() };
     if (body !== undefined) opts.body = JSON.stringify(body);
-    const res = await fetch(API_BASE + path, opts);
+    let res;
+    try {
+      res = await fetch(API_BASE + path, opts);
+    } catch (e) {
+      return {
+        ok: false,
+        status: 0,
+        data: { title: 'NETWORK_ERROR', detail: 'Network error — check API / ngrok tunnel.' }
+      };
+    }
     if (res.status === 401) {
       window.location.href = '/auth/login/';
       return { ok: false, status: 401, data: null };
@@ -129,6 +141,38 @@
     return { ok: res.ok, status: res.status, data };
   }
 
+  function setShiftsDisabledBanner(on) {
+    const banner = document.getElementById('featureDisabled');
+    if (!banner) return;
+    banner.classList.toggle('is-off', !on);
+    banner.hidden = !on;
+    banner.style.display = on ? 'flex' : 'none';
+  }
+
+  function markShiftsFeatureDisabled() {
+    setShiftsDisabledBanner(true);
+    const body = document.getElementById('currentBody');
+    if (body) body.innerHTML = '<p class="muted">Module unavailable — enable the <code>shifts</code> feature flag for this tenant on the backend.</p>';
+    const actions = document.getElementById('actionsBody');
+    if (actions) actions.innerHTML = '<p class="muted">Shifts are disabled for this gym.</p>';
+    const summary = document.getElementById('summaryBody');
+    if (summary) summary.innerHTML = '<p class="muted">Shifts feature is disabled for this tenant.</p>';
+    const summaryTotal = document.getElementById('summaryTotal');
+    if (summaryTotal) summaryTotal.textContent = '';
+    const movCard = document.getElementById('movementsCard');
+    if (movCard) movCard.style.display = 'none';
+    const histCard = document.getElementById('historyCard');
+    if (histCard) histCard.style.display = 'none';
+    currentShift = null;
+    if (window.GfpFeatures && window.GfpFeatures.clearCache) {
+      window.GfpFeatures.clearCache();
+    }
+  }
+
+  function clearShiftsDisabledBanner() {
+    setShiftsDisabledBanner(false);
+  }
+
   // ── Current shift ─────────────────────────────────────────────
   async function loadCurrent() {
     const body = document.getElementById('currentBody');
@@ -139,16 +183,13 @@
     const res = await api('GET', '/shifts/current');
 
     if (res.status === 404 && res.data && res.data.title === 'FEATURE_DISABLED') {
-      document.getElementById('featureDisabled').style.display = 'flex';
-      body.innerHTML = '<p class="muted">Module unavailable.</p>';
-      actions.innerHTML = '';
-      movCard.style.display = 'none';
-      currentShift = null;
+      markShiftsFeatureDisabled();
       return;
     }
 
-    // No open shift
+    // No open shift — module is available
     if (res.status === 404 || res.status === 409 || (res.ok && !res.data)) {
+      clearShiftsDisabledBanner();
       const code = (res.data && res.data.title) || 'NO_OPEN_SHIFT';
       currentShift = null;
       document.getElementById('shiftStatus').textContent = 'none';
@@ -168,6 +209,7 @@
       return;
     }
 
+    clearShiftsDisabledBanner();
     currentShift = res.data;
     renderCurrent(currentShift);
     renderOpenActions(actions, currentShift);
@@ -355,10 +397,16 @@
     }
     card.style.display = 'block';
     const res = await api('GET', '/shifts/open-summary');
+    // Do not flip the whole page to "disabled" from summary alone — /shifts/current is source of truth.
+    if (res.status === 404 && res.data && res.data.title === 'FEATURE_DISABLED') {
+      document.getElementById('summaryBody').textContent = problemMessage(res.data, res.status);
+      return;
+    }
     if (!res.ok) {
       document.getElementById('summaryBody').textContent = problemMessage(res.data, res.status);
       return;
     }
+    clearShiftsDisabledBanner();
     const data = res.data || {};
     document.getElementById('summaryTotal').textContent =
       'Total in drawers: ' + money(data.totalCashInDrawers);

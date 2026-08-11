@@ -307,11 +307,41 @@
         })
       : [];
     document.getElementById('linesHost').innerHTML = '';
-    addLineRow();
+    var params = new URLSearchParams(window.location.search);
+    var prefillPid = params.get('productId') || '';
+    var prefillWh = params.get('warehouseId') || '';
+    var fromOnHand = params.get('from') === 'on-hand';
+    if (fromOnHand) {
+      var back =
+        '/dashboard/inventory/stock/' +
+        (prefillPid ? '?productId=' + encodeURIComponent(prefillPid) : '');
+      var bar = document.getElementById('adjContextBar');
+      var backLink = document.getElementById('adjBackOnHand');
+      var crumb = document.getElementById('adjBreadcrumb');
+      if (bar) bar.hidden = false;
+      if (backLink) backLink.href = back;
+      if (crumb) {
+        crumb.innerHTML =
+          '<span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span>' +
+          '<a href="' +
+          back.replace(/"/g, '&quot;') +
+          '" data-en="On Hand" data-ar="الرصيد">On Hand</a>' +
+          '<span class="sep">/</span>' +
+          '<span class="current" data-en="Adjust quantity" data-ar="تعديل الكمية">Adjust quantity</span>';
+      }
+      window.__gfpAdjReturnTo = back;
+    }
+    if (prefillWh) {
+      var whEl = document.getElementById('aWarehouse');
+      if (whEl) whEl.value = prefillWh;
+    }
+    if (prefillPid) addLineRow({ productId: prefillPid });
+    else addLineRow();
     loadRecent();
 
-    var qid = new URLSearchParams(window.location.search).get('id');
+    var qid = params.get('id');
     if (qid) loadDetail(qid);
+    if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
   }
 
   document.getElementById('btnAddLine').addEventListener('click', function () {
@@ -523,6 +553,11 @@
         current = r.data;
         renderDetail();
         loadRecent();
+        if (window.__gfpAdjReturnTo) {
+          setTimeout(function () {
+            location.href = window.__gfpAdjReturnTo;
+          }, 600);
+        }
       });
     }
     var cancelBtn = document.getElementById('btnCancelAdj');

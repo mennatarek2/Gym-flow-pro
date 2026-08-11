@@ -1,5 +1,8 @@
 (function () {
   'use strict';
+  // Trials removed from GymFlow Pro product IA
+  window.location.replace('/dashboard/');
+  return;
   const API_BASE = window.API_BASE || 'https://localhost:5001/api';
 
   function getToken() {

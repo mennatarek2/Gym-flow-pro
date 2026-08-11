@@ -88,7 +88,6 @@
       vodafone: ['pay-voda', 'Vodafone'],
       vodafone_cash: ['pay-voda', 'Vodafone'],
       instapay: ['pay-paymob', 'Instapay'],
-      account_credit: ['pay-cash', 'Credit'],
     };
     const v = map[key] || ['pay-cash', m || '—'];
     return '<span class="pay-chip ' + v[0] + '">' + v[1] + '</span>';
@@ -102,14 +101,13 @@
 
   // Financial sections: gate with blur (Trainers see non-money analytics)
   if (!canFinance) {
-    ['blurOverview', 'blurRevChart', 'blurTrials', 'blurRevenue', 'blurRetention'].forEach((id) => {
+    ['blurOverview', 'blurRevChart', 'blurRevenue', 'blurRetention'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'flex';
     });
   }
 
   document.getElementById('btnApply').addEventListener('click', loadLive);
-  document.getElementById('trialMonth').addEventListener('change', loadTrials);
   document.querySelectorAll('.rev-filters .ftab').forEach((btn) => {
     btn.addEventListener('click', function () {
       document.querySelectorAll('.rev-filters .ftab').forEach((b) => b.classList.remove('active'));
@@ -409,35 +407,6 @@
     }
   }
 
-  async function loadTrials() {
-    if (!canFinance) return;
-    const month = document.getElementById('trialMonth').value;
-    if (!month) {
-      toast('Trial month required (YYYY-MM)', 'error');
-      return;
-    }
-    try {
-      const data = await apiGet('/analytics/trials?month=' + encodeURIComponent(month));
-      if (!data) return;
-      renderFunnel(
-        document.getElementById('trialFunnel'),
-        [
-          { l: 'Issued', v: data.issued || 0 },
-          { l: 'Converted', v: data.converted || 0 },
-          { l: 'Expired', v: data.expired || 0 },
-          {
-            l: 'Conversion',
-            v: data.conversionRate || 0,
-            display: (data.conversionRate || 0).toFixed(1) + '%',
-          },
-        ],
-        'No trials in ' + month,
-      );
-    } catch (e) {
-      document.getElementById('trialFunnel').innerHTML = emptyHtml('Could not load trials');
-    }
-  }
-
   function loadSnapshots() {
     // One-shot — no interval polling for §16
     loadOverview();
@@ -445,7 +414,6 @@
     loadStatusPie();
     loadHeatmap();
     loadInvitations();
-    loadTrials();
   }
 
   // ═══════════════════════════════════════════════════════════

@@ -124,7 +124,7 @@ assertShape(
   {
     overview: ['dashboard'],
     members: ['members', 'attendance'],
-    'front-desk': ['sales', 'trials', 'debtors', 'call-sheet'],
+    'front-desk': ['sales', 'member-orders', 'debtors', 'call-sheet'],
     money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'reports'],
     catalog: ['plans'],
     administration: ['imports', 'staff', 'settings'],
@@ -144,7 +144,7 @@ assertShape(
   {
     overview: ['dashboard'],
     members: ['members', 'attendance'],
-    'front-desk': ['sales', 'trials', 'debtors', 'call-sheet'],
+    'front-desk': ['sales', 'member-orders', 'debtors', 'call-sheet'],
     money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'reports'],
     // catalog dropped — no plans.manage
     // administration: no imports (settings.manage), no staff/settings (OwnerOnly)
@@ -180,13 +180,13 @@ assertShape(
   {
     overview: ['dashboard'],
     members: ['members', 'attendance'],
-    'front-desk': ['sales', 'trials', 'debtors', 'call-sheet'],
+    'front-desk': ['sales', 'member-orders', 'debtors', 'call-sheet'],
     money: ['shifts', 'refunds', 'promo-codes', 'reports'],
     // no invoices (reports.financial.view), no catalog, no administration
   },
 )
 
-// ── FEATURE_DISABLED sales: hide POS (+ promo); Call Sheet stays; trials/debtors use own flags ──
+// ── FEATURE_DISABLED sales: hide POS (+ promo); Call Sheet stays; debtors use own flag ──
 {
   const cats = filterVisibleNav(NAV_CATEGORIES, {
     accessToken: FIXTURES.Receptionist.token,
@@ -198,7 +198,8 @@ assertShape(
   const keys = front!.items.map((i) => i.key)
   assert(!keys.includes('sales'), 'FEATURE_DISABLED sales hides POS')
   assert(keys.includes('call-sheet'), 'Call Sheet never feature-flag-gated')
-  assert(keys.includes('trials') && keys.includes('debtors'), 'trials/debtors use their own flags')
+  assert(keys.includes('debtors'), 'debtors use their own flag')
+  assert(!keys.includes('trials'), 'trials removed from product IA')
   const money = cats.find((c) => c.key === 'money')
   assert(money && !money.items.some((i) => i.key === 'promo-codes'), 'promo flagged with sales')
 }

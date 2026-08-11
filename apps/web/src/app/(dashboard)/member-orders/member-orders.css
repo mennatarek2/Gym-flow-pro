@@ -1,0 +1,46 @@
+/* Member Orders — reuses GymFlow Pro tokens from pos.css / shell */
+.filter-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.filter-chips .chip{
+  height:34px;padding:0 12px;border:1px solid var(--ls3,#E8E8E8);border-radius:var(--rmd,10px);
+  background:#fff;font:inherit;font-size:13px;font-weight:600;color:var(--lts,#4A4A4A);cursor:pointer
+}
+.filter-chips .chip.act{border-color:var(--l500,#7ACC00);background:rgba(122,204,0,.12);color:var(--l600,#5FA000)}
+.table-wrap{overflow:auto;border:1px solid var(--ls3,#E8E8E8);border-radius:var(--rmd,10px);background:#fff}
+table.mo{width:100%;border-collapse:collapse;font-size:13px}
+table.mo th{
+  text-align:left;padding:10px 12px;background:var(--ls2,#F5F5F5);
+  font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ltt,#8C8C8C)
+}
+table.mo td{padding:10px 12px;border-top:1px solid var(--ls3,#E8E8E8);vertical-align:middle}
+.mo-status{
+  display:inline-flex;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;background:var(--ls2,#F5F5F5)
+}
+.mo-status.Pending{background:#FEF3C7;color:#92400E}
+.mo-status.Accepted{background:#DBEAFE;color:#1E40AF}
+.mo-status.Ready{background:#DCFCE7;color:#166534}
+.mo-status.Completed{background:#E5E7EB;color:#374151}
+.mo-status.Rejected{background:#FEE2E2;color:#991B1B}
+.mo-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,360px);gap:14px;align-items:start}
+@media(max-width:980px){.mo-layout{grid-template-columns:1fr}}
+.mo-detail{position:sticky;top:12px}
+.mo-detail .muted{color:var(--ltt,#8C8C8C);font-size:13px}
+.mo-detail .kv{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.mo-detail .kv-row{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.mo-detail .kv-row strong{font-family:var(--fd,'Space Grotesk',sans-serif)}
+.mo-lines{list-style:none;padding:0;margin:12px 0;border:1px solid var(--ls3,#E8E8E8);border-radius:var(--rmd,10px)}
+.mo-lines li{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-top:1px solid var(--ls3,#E8E8E8);font-size:13px}
+.mo-lines li:first-child{border-top:0}
+.mo-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.mo-actions .btn{min-height:40px}
+.pager{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ltt,#8C8C8C)}
+.pager .btn{height:32px;padding:0 10px}
+.mo-empty,.mo-error,.mo-loading{padding:28px 16px;text-align:center;color:var(--ltt,#8C8C8C);font-size:14px}
+.mo-error{color:#991B1B}
+.mo-signal{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ltt,#8C8C8C)}
+.mo-signal .dot{width:8px;height:8px;border-radius:50%;background:#9CA3AF}
+.mo-signal .dot.on{background:#16A34A}
+.mo-signal .dot.poll{background:#D97706}
+.reject-box{margin-top:10px;display:none;flex-direction:column;gap:8px}
+.reject-box.show{display:flex}
+.reject-box input{height:40px;border:1px solid var(--ls3,#E8E8E8);border-radius:var(--rmd,10px);padding:0 10px;font:inherit}
+.row-sel{background:rgba(122,204,0,.08)}

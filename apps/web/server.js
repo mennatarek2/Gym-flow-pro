@@ -15,6 +15,7 @@ const SHARED_SCRIPTS = [
   '/shared/i18n.js',
   '/shared/nav.js',
   '/shared/inventory-api.js',
+  '/shared/member-orders-api.js',
   '/shared/shell.js',
 ];
 

@@ -77,15 +77,20 @@ export default function App() {
           path="sales"
           element={
             <RequireAccess permission="sales.sell" featureModule="sales">
-              <PlaceholderPage titleEn="Point of Sale" titleAr="نقطة البيع" />
+              <PlaceholderPage titleEn="Sell" titleAr="بيع" />
             </RequireAccess>
           }
         />
         <Route
-          path="trials"
+          path="member-orders"
           element={
-            <RequireAccess permission="sales.sell" featureModule="trials">
-              <PlaceholderPage titleEn="Free Trials" titleAr="التجارب المجانية" />
+            <RequireAccess permission="sales.sell">
+              <PlaceholderPage
+                titleEn="Member Orders"
+                titleAr="طلبات الأعضاء"
+                hintEn="Staff fulfillment inbox lives in the web console (/dashboard/member-orders/). Admin shell is a stub until the React port ships."
+                hintAr="شاشة تنفيذ طلبات الأعضاء موجودة في واجهة الويب (/dashboard/member-orders/)."
+              />
             </RequireAccess>
           }
         />

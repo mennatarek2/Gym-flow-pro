@@ -98,17 +98,14 @@
   })();
 
   function gateActions() {
-    var canSell = Authz.useCan('sales.sell');
     var canAdjust = Authz.useCan('inventory.adjust');
     var canTransfer = Authz.useCan('inventory.transfer');
     var canCatalog =
       Authz.useCan('inventory.manage') || Authz.useCan('inventory.purchase');
     var canWh = Authz.useCan('inventory.manage');
 
-    var sell = document.getElementById('actSell');
-    if (sell) sell.hidden = !canSell;
-    var adj = document.getElementById('actAdjust');
-    if (adj) adj.hidden = !canAdjust;
+    // Sell / Buy & receive / Adjust quantity are not Overview shortcuts —
+    // Sell → Front Desk; Buy/Adjust → On Hand product context.
     var count = document.getElementById('actCount');
     if (count) count.hidden = !canAdjust;
     var move = document.getElementById('actMove');

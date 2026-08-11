@@ -50,6 +50,7 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .banner{display:flex;gap:12px;padding:14px 16px;border-radius:var(--rmd);font-size:13px;align-items:flex-start}
 .banner.danger{background:var(--dng100);color:#991b1b;border:1px solid rgba(239,68,68,.35)}
 .banner.warn{background:var(--wrn100);color:var(--wrnTxt);border:1px solid rgba(245,158,11,.35)}
+.banner.is-off,[hidden].banner{display:none!important}
 .banner a{color:inherit;font-weight:700}
 .stock-block{margin:0 0 14px}
 .stock-block p{margin:6px 0 0;font-size:13px;line-height:1.45}
@@ -191,8 +192,7 @@ html:not(.pos-retail) #retailSubmitHint,
 body:not(.pos-retail) #retailSubmitHint{display:none!important}
 html.pos-retail #btnPromoCodes,
 body.pos-retail #btnPromoCodes{display:none!important}
-html.pos-retail #modeHelp,
-body.pos-retail #modeHelp{display:none!important}
+/* modeHelp stays visible in retail — explains product-only Sale */
 
 /* Membership front desk */
 .visually-hidden{

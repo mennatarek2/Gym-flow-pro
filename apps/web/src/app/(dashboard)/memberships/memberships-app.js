@@ -1,4 +1,14 @@
-// ── Memberships App — Core (§4 list + select current) ──
+// Memberships standalone screen removed from IA — lifecycle lives in Members / Member 360.
+(function () {
+  var q = new URLSearchParams(window.location.search || '');
+  var mid = q.get('member');
+  window.location.replace(
+    mid
+      ? '/dashboard/members/' + encodeURIComponent(mid) + '/'
+      : '/dashboard/members/'
+  );
+})();
+/* legacy below kept inert after redirect */
 let state = { filter: 'all', search: '', page: 1, pageSize: 20, members: [], totalCount: 0, loading: true, selectedId: null };
 let selMember = null,
   selMs = null,

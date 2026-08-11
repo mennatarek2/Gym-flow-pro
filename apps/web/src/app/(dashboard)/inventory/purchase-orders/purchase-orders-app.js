@@ -534,7 +534,8 @@
     await loadDetail(current.id);
   });
 
-  document.getElementById('btnCreate').addEventListener('click', async function () {
+  async function openCreatePoModal(prefill) {
+    prefill = prefill || {};
     if (!canManage) return;
     if (!suppliers.length || !warehouses.length) await loadLookups();
     var ss = document.getElementById('poSupplier');
@@ -567,11 +568,16 @@
           );
         })
         .join('');
+    if (prefill.warehouseId) ws.value = prefill.warehouseId;
     document.getElementById('poNotes').value = '';
     document.getElementById('poHint').textContent = '';
     document.getElementById('poLines').innerHTML = '';
-    addPoLineRow();
+    addPoLineRow(prefill.productId ? { productId: prefill.productId, qtyOrdered: 1 } : undefined);
     openModal('poModal');
+  }
+
+  document.getElementById('btnCreate').addEventListener('click', function () {
+    openCreatePoModal();
   });
 
   document.getElementById('btnAddLine').addEventListener('click', function () {
@@ -614,7 +620,37 @@
   document.getElementById('btnRefresh').addEventListener('click', loadList);
   document.getElementById('filterStatus').addEventListener('change', loadList);
 
+  function applyOnHandContext() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('from') !== 'on-hand') return { fromOnHand: false };
+      var productId = params.get('productId') || '';
+      var warehouseId = params.get('warehouseId') || '';
+      var back =
+        '/dashboard/inventory/stock/' +
+        (productId ? '?productId=' + encodeURIComponent(productId) : '');
+      var bar = document.getElementById('poContextBar');
+      var backLink = document.getElementById('poBackOnHand');
+      var crumb = document.getElementById('poBreadcrumb');
+      if (bar) bar.hidden = false;
+      if (backLink) backLink.href = back;
+      if (crumb) {
+        crumb.innerHTML =
+          '<span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span>' +
+          '<a href="' +
+          back.replace(/"/g, '&quot;') +
+          '" data-en="On Hand" data-ar="الرصيد">On Hand</a>' +
+          '<span class="sep">/</span>' +
+          '<span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span>';
+      }
+      return { fromOnHand: true, productId: productId, warehouseId: warehouseId, back: back };
+    } catch (e) {
+      return { fromOnHand: false };
+    }
+  }
+
   (async function boot() {
+    var ctx = applyOnHandContext();
     await loadLookups();
     await loadList();
     if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
@@ -622,6 +658,12 @@
       var params = new URLSearchParams(window.location.search);
       var openId = params.get('id');
       if (openId) await loadDetail(openId);
+      else if (ctx.fromOnHand && ctx.productId && canManage) {
+        await openCreatePoModal({
+          productId: ctx.productId,
+          warehouseId: ctx.warehouseId
+        });
+      }
     } catch (e) {
       /* ignore */
     }

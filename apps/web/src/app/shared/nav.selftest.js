@@ -61,16 +61,11 @@ const ALL_PERMS = [
   INV_TRANSFER
 ];
 
-const INV_VIEW_KEYS = [
-  'inv-home',
-  'inv-sell',
-  'inv-stock',
-  'inv-purchase-orders',
-  'inv-reports'
-];
+// Inventory IA: Sell / Buy & receive / Fix removed from nav (contextual or Front Desk).
+// Move, Count, Insights, Products, Suppliers, Warehouses restored.
+const INV_VIEW_KEYS = ['inv-home', 'inv-stock', 'inv-reports'];
 
 const INV_ALL_KEYS = INV_VIEW_KEYS.concat([
-  'inv-adjustments',
   'inv-transfers',
   'inv-counts',
   'inv-products',
@@ -78,14 +73,11 @@ const INV_ALL_KEYS = INV_VIEW_KEYS.concat([
   'inv-warehouses'
 ]).sort();
 
-// Stable order as registered in nav.js (workflow-first, then demoted catalog/config)
+// Stable order as registered in nav.js
 const INV_OWNER_KEYS = [
   'inv-home',
-  'inv-sell',
   'inv-stock',
-  'inv-purchase-orders',
   'inv-transfers',
-  'inv-adjustments',
   'inv-counts',
   'inv-reports',
   'inv-products',
@@ -220,8 +212,8 @@ assert(
 
 assertShape('Owner', runFixture('Owner', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'memberships', 'attendance'],
-  'front-desk': ['pos', 'trials', 'debtors', 'call-sheet'],
+  members: ['members', 'attendance'],
+  'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
   money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'z-report', 'reports'],
   catalog: ['plans'],
   inventory: INV_OWNER_KEYS.slice(),
@@ -230,8 +222,8 @@ assertShape('Owner', runFixture('Owner', ALL_ON), {
 
 assertShape('Manager', runFixture('Manager', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'memberships', 'attendance'],
-  'front-desk': ['pos', 'trials', 'debtors', 'call-sheet'],
+  members: ['members', 'attendance'],
+  'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
   money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'z-report', 'reports'],
   inventory: INV_OWNER_KEYS.slice(),
   administration: ['notifications']
@@ -245,35 +237,39 @@ assertShape('Trainer', runFixture('Trainer', ALL_ON), {
 
 assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'memberships', 'attendance'],
-  'front-desk': ['pos', 'trials', 'debtors', 'call-sheet'],
+  members: ['members', 'attendance'],
+  'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
   money: ['shifts', 'refunds', 'promo-codes', 'reports'],
   inventory: INV_VIEW_KEYS.slice(),
   administration: ['notifications']
 });
 
-// Receptionist: daily ops only — no adjust/transfer/counts; catalog/config demoted away
+// Receptionist: daily ops — no adjust/transfer/counts/catalog; Sell/Buy/Fix not in nav
 {
   const inv = runFixture('Receptionist', ALL_ON).inventory || [];
-  assert(!inv.includes('inv-adjustments'), 'Receptionist hides Adjustments');
-  assert(!inv.includes('inv-transfers'), 'Receptionist hides Transfers');
-  assert(!inv.includes('inv-counts'), 'Receptionist hides Counts');
+  assert(!inv.includes('inv-adjustments'), 'Receptionist hides Adjustments nav');
+  assert(!inv.includes('inv-transfers'), 'Receptionist hides Transfers nav');
+  assert(!inv.includes('inv-counts'), 'Receptionist hides Counts nav');
   assert(!inv.includes('inv-products'), 'Receptionist hides demoted Products');
   assert(!inv.includes('inv-warehouses'), 'Receptionist hides demoted Warehouses');
   assert(!inv.includes('inv-suppliers'), 'Receptionist hides demoted Suppliers');
-  assert(inv.includes('inv-sell'), 'Receptionist sees Sell products');
-  assert(inv.includes('inv-stock'), 'Receptionist sees On hand / Restock');
+  assert(!inv.includes('inv-sell'), 'Sell products removed from Inventory nav');
+  assert(!inv.includes('inv-purchase-orders'), 'Buy & receive removed from Inventory nav');
+  assert(inv.includes('inv-stock'), 'Receptionist sees On Hand');
+  assert(inv.includes('inv-home'), 'Receptionist sees Inventory Overview');
+  assert(inv.includes('inv-reports'), 'Receptionist sees Insights');
 }
 
-// FEATURE_DISABLED sales — inventory Sell link hidden; POS hidden from front desk
+// FEATURE_DISABLED sales — POS hidden from front desk; Inventory unchanged
 {
   const actual = runFixture('Receptionist', function (k) {
     return k !== 'sales';
   });
-  assert(!actual['front-desk'].includes('pos'), 'sales flag hides Sell');
+  assert(!actual['front-desk'].includes('pos'), 'sales flag hides Sale');
+  assert(actual['front-desk'].includes('debtors'), 'debtors use their own flag');
   assert(
-    !(actual.inventory || []).includes('inv-sell'),
-    'sales flag hides inventory Sell products'
+    (actual.inventory || []).includes('inv-stock'),
+    'Inventory On Hand stays when sales flag off'
   );
   assert(actual['front-desk'].includes('call-sheet'), 'Call sheet never flag-gated');
   assert(!actual.money.includes('promo-codes'), 'promo uses sales flag');
@@ -311,7 +307,7 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   });
   assert(
     inventory && inventory.items.length === INV_OWNER_KEYS.length,
-    'full inventory perms show all inventory nav items'
+    'full inventory perms show restored inventory nav items'
   );
   const admin = cats.find(function (c) {
     return c.key === 'administration';

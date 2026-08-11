@@ -84,7 +84,7 @@
   }
 
   // ══════════════════════════════════════════════════════════════
-  //  1. ADD MEMBER MODAL
+  //  1. ADD MEMBER ONBOARDING (Info → Membership → Payment → Done)
   // ══════════════════════════════════════════════════════════════
   function initAddMemberModal(){
     const overlay=document.getElementById('addMemberModal');
@@ -103,6 +103,251 @@
     const btnCreate=overlay.querySelector('#btnCreateMember');
     const errorBanner=overlay.querySelector('#addErrorBanner');
     const phoneWrap=overlay.querySelector('#addPhoneWrap');
+    let onboardStep=1;
+    let createdMember=null;
+    let selectedPlan=null;
+    let onboardPlans=[];
+    let onboardSale=null;
+    let onboardInvoiceId=null;
+    let onboardInvoiceNumber=null;
+
+    function setOnboardStep(step){
+      onboardStep=step;
+      ['1','2','3','4'].forEach(function(s){
+        const el=overlay.querySelector('#onboardStep'+s);
+        if(el) el.style.display=String(step)===s?'':'none';
+      });
+      overlay.querySelectorAll('.ob-step').forEach(function(chip){
+        const act=Number(chip.getAttribute('data-step'))===step;
+        chip.style.background=act?'var(--l100)':'var(--ls2)';
+        chip.style.color=act?'var(--l600)':'var(--ltt)';
+      });
+      const btnSkip=overlay.querySelector('#btnOnboardSkip');
+      const btnView=overlay.querySelector('#btnOnboardViewMember');
+      const btnCancel=overlay.querySelector('#btnOnboardCancel');
+      const btnDone=overlay.querySelector('#btnOnboardDone');
+      const label=btnCreate&&btnCreate.querySelector('.btn-label');
+      if(btnSkip) btnSkip.style.display=(step===2)?'':'none';
+      if(btnView) btnView.style.display=(step===4)?'inline-flex':'none';
+      if(btnDone) btnDone.style.display=(step===4)?'':'none';
+      if(btnCreate) btnCreate.style.display=(step===4)?'none':'';
+      if(btnCancel) btnCancel.style.display=(step===4)?'none':'';
+      if(label){
+        if(step===1) label.innerHTML='<i class="ti ti-arrow-right"></i> Continue';
+        else if(step===2) label.innerHTML='<i class="ti ti-arrow-right"></i> Continue';
+        else if(step===3) label.innerHTML='<i class="ti ti-check"></i> Complete payment';
+      }
+      if(btnCreate) btnCreate.disabled=step===1?!validateAddForm():(step===2?!selectedPlan:false);
+    }
+
+    function onboardApiBase(){
+      return (window.API_BASE || API_BASE || '').replace(/\/$/,'');
+    }
+    async function onboardFetchHtml(path){
+      const token=(Gfp&&Gfp.tokens?Gfp.tokens.getAccess():null)
+        ||localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');
+      const headers={ 'ngrok-skip-browser-warning':'true' };
+      if(token) headers.Authorization='Bearer '+token;
+      const res=await fetch(onboardApiBase()+path,{ method:'GET', headers:headers });
+      if(res.status===401){ window.location.href='/auth/login/'; return { ok:false, status:401, text:'' }; }
+      const text=await res.text();
+      return { ok:res.ok, status:res.status, text:text };
+    }
+    function closeOnboardPrint(){
+      const ov=document.getElementById('onboardPrintOverlay');
+      if(ov) ov.hidden=true;
+      const frame=document.getElementById('onboardPrintFrame');
+      if(frame) frame.srcdoc='';
+    }
+    async function openOnboardPrintHtml(title, htmlPath, autoPrint){
+      const overlay=document.getElementById('onboardPrintOverlay');
+      const frame=document.getElementById('onboardPrintFrame');
+      const titleEl=document.getElementById('onboardPrintTitle');
+      if(!overlay||!frame){ toast('Print view not available','error'); return; }
+      if(titleEl) titleEl.textContent=title||'Print';
+      overlay.hidden=false;
+      frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#666">Loading…</p>';
+      const res=await onboardFetchHtml(htmlPath);
+      if(!res.ok){
+        const msg='Could not load print view'+(res.status?' (HTTP '+res.status+')':'');
+        toast(msg,'error');
+        frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#991b1b">'+msg+'</p>';
+        return;
+      }
+      frame.srcdoc=res.text||'';
+      if(autoPrint){
+        setTimeout(function(){
+          try{ frame.contentWindow.focus(); frame.contentWindow.print(); }
+          catch(e){ toast('Allow pop-ups / try Print again','error'); }
+        }, 450);
+      }
+    }
+    async function resolveOnboardInvoice(sale){
+      if(!sale||!Gfp) return null;
+      const readyId=sale.invoiceId||sale.InvoiceId||null;
+      const readyNum=sale.invoiceNumber||sale.InvoiceNumber||null;
+      if(readyId) return { invoiceId:readyId, invoiceNumber:readyNum };
+      const saleId=sale.saleId||sale.id||sale.SaleId;
+      if(!saleId) return null;
+      for(let i=0;i<8;i++){
+        const r=await Gfp.get('/sales/'+encodeURIComponent(saleId)+'/invoice');
+        if(r.ok&&r.data&&(r.data.invoiceId||r.data.InvoiceId)){
+          return {
+            invoiceId: r.data.invoiceId||r.data.InvoiceId,
+            invoiceNumber: r.data.invoiceNumber||r.data.InvoiceNumber||null
+          };
+        }
+        await new Promise(function(resolve){ setTimeout(resolve, 500); });
+      }
+      return null;
+    }
+    async function prepareOnboardPrintStep(result){
+      onboardSale=result&&result.sale?result.sale:null;
+      onboardInvoiceId=null;
+      onboardInvoiceNumber=null;
+      const invStatus=document.getElementById('onboardInvoiceStatus');
+      const btnInv=document.getElementById('btnOnboardPrintInvoice');
+      const btnCard=document.getElementById('btnOnboardPrintCard');
+      const cardStatus=document.getElementById('onboardCardStatus');
+
+      if(btnCard&&createdMember&&createdMember.id){
+        btnCard.disabled=false;
+        if(cardStatus) cardStatus.textContent='Ready — print the member barcode card.';
+      } else if(btnCard){
+        btnCard.disabled=true;
+        if(cardStatus) cardStatus.textContent='Member id missing — card unavailable.';
+      }
+
+      if(!onboardSale){
+        if(invStatus) invStatus.textContent='No sale invoice (membership assigned without POS sale).';
+        if(btnInv) btnInv.disabled=true;
+        return;
+      }
+      const skipped=onboardSale.invoiceStatus==='skipped'||onboardSale.invoiceStatus==='not_applicable';
+      if(skipped){
+        if(invStatus) invStatus.textContent='No invoice for this sale.';
+        if(btnInv) btnInv.disabled=true;
+        return;
+      }
+      if(invStatus) invStatus.textContent='Preparing invoice…';
+      if(btnInv) btnInv.disabled=true;
+      const inv=await resolveOnboardInvoice(onboardSale);
+      if(inv&&inv.invoiceId){
+        onboardInvoiceId=inv.invoiceId;
+        onboardInvoiceNumber=inv.invoiceNumber;
+        if(invStatus){
+          invStatus.textContent=onboardInvoiceNumber
+            ?('Invoice '+onboardInvoiceNumber+' ready to print')
+            :'Invoice ready to print';
+        }
+        if(btnInv) btnInv.disabled=false;
+      } else {
+        if(invStatus) invStatus.textContent='Invoice not ready yet — try Print again in a moment.';
+        if(btnInv) btnInv.disabled=false; // allow retry via click handler re-resolve
+      }
+    }
+
+    function addDaysIso(iso, days){
+      const d=new Date(iso+'T00:00:00');
+      d.setDate(d.getDate()+days);
+      return d.toISOString().slice(0,10);
+    }
+    function fmtObDate(iso){
+      if(!iso) return '—';
+      return new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    }
+
+    async function loadOnboardPlans(){
+      const host=overlay.querySelector('#onboardPlanCards');
+      const loading=overlay.querySelector('#onboardPlanLoading');
+      if(loading) loading.style.display='block';
+      if(host) host.innerHTML='';
+      try{
+        if(!Gfp) throw new Error('API missing');
+        const r=await Gfp.get('/membership-plans');
+        if(!r.ok) throw new Error(apiMsg(r,'Failed to load plans'));
+        onboardPlans=(Array.isArray(r.data)?r.data:[]).filter(function(p){
+          return p&&p.isActive!==false&&String(p.planType||'').toLowerCase()!=='trial';
+        });
+        if(!onboardPlans.length){
+          if(host) host.innerHTML='<div class="mdl-error-banner show"><i class="ti ti-alert-circle"></i><div class="error-text">No active membership plans</div></div>';
+        } else if(host){
+          host.innerHTML=onboardPlans.map(function(p){
+            return '<button type="button" class="plan-card" data-plan-id="'+p.id+'" style="text-align:left;width:100%;border:1px solid var(--ls3);background:var(--ls1);border-radius:var(--rmd);padding:12px;cursor:pointer">'
+              +'<div style="display:flex;justify-content:space-between;gap:8px"><strong>'+(p.name||'')+'</strong><span>EGP '+(p.price||0).toLocaleString()+'</span></div>'
+              +'<div style="font-size:12px;color:var(--ltt);margin-top:4px">'+(p.durationDays||0)+' days'
+              +(p.sessionCount?' · '+p.sessionCount+' sessions':'')+'</div></button>';
+          }).join('');
+          host.querySelectorAll('[data-plan-id]').forEach(function(btn){
+            btn.addEventListener('click',function(){
+              host.querySelectorAll('[data-plan-id]').forEach(function(b){ b.style.borderColor='var(--ls3)'; b.style.boxShadow='none'; });
+              btn.style.borderColor='var(--l500)';
+              btn.style.boxShadow='0 0 0 1px var(--l500)';
+              selectedPlan=onboardPlans.find(function(p){ return p.id===btn.getAttribute('data-plan-id'); })||null;
+              if(btnCreate) btnCreate.disabled=!selectedPlan;
+            });
+          });
+        }
+      }catch(e){
+        if(host) host.innerHTML='<div class="mdl-error-banner show"><i class="ti ti-alert-circle"></i><div class="error-text">'+(e.message||'Cannot load plans (plans.manage may be required)')+'</div></div>';
+      }
+      if(loading) loading.style.display='none';
+    }
+
+    function renderOnboardSummary(){
+      const box=overlay.querySelector('#onboardSummary');
+      const startEl=overlay.querySelector('#onboardStartDate');
+      const amtEl=overlay.querySelector('#onboardAmountPaid');
+      if(!box||!selectedPlan||!createdMember) return;
+      const start=(startEl&&startEl.value)||new Date().toISOString().slice(0,10);
+      const end=addDaysIso(start, Number(selectedPlan.durationDays)||0);
+      box.innerHTML=
+        '<div class="plan-detail-row"><span class="plan-detail-label">Member</span><span class="plan-detail-val">'+(createdMember.fullName||'')+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">Plan</span><span class="plan-detail-val">'+(selectedPlan.name||'')+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">Start</span><span class="plan-detail-val">'+fmtObDate(start)+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">End</span><span class="plan-detail-val">'+fmtObDate(end)+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">Price</span><span class="plan-price"><span class="currency">EGP</span> '+(selectedPlan.price||0).toLocaleString()+'</span></div>';
+      if(amtEl && (amtEl.value===''||amtEl.value==null)) amtEl.value=String(selectedPlan.price||0);
+    }
+
+    async function completeOnboardPayment(){
+      if(!createdMember||!selectedPlan||!Gfp) return false;
+      const pay=(overlay.querySelector('input[name="onboardPayment"]:checked')||{}).value||'cash';
+      const amount=Number((overlay.querySelector('#onboardAmountPaid')||{}).value)||0;
+      const canSell=Authz?Authz.useCan('sales.sell'):false;
+      const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
+
+      if(canSell){
+        const map={ cash:'cash', paymob:'card_paymob', fawry:'fawry', vodafone_cash:'vodafone' };
+        const method=map[pay]||'cash';
+        const body={
+          planId: selectedPlan.id,
+          memberId: createdMember.id,
+          payments:[{ method: method, amount: amount }]
+        };
+        if(method==='cash'&&amount>0){
+          const sh=await Gfp.get('/shifts/current');
+          if(!sh.ok||!sh.data||!sh.data.id){
+            showAddError('Open a shift before accepting cash payment.');
+            return false;
+          }
+        }
+        const key=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('ob-'+Date.now());
+        const r=await Gfp.post('/sales', body, { headers: { 'X-Idempotency-Key': key } });
+        if(!r.ok){ showAddError(apiMsg(r,'Sale failed')); return false; }
+        return { sale:r.data, payMethod:pay, amount:amount };
+      }
+      if(canMgr){
+        const r=await Gfp.post('/memberships/'+createdMember.id+'/assign',{
+          planId: selectedPlan.id,
+          paymentMethod: pay==='vodafone_cash'?'fawry':pay
+        });
+        if(!(r.ok||r.status===201)){ showAddError(apiMsg(r,'Assign failed')); return false; }
+        return { membership:r.data, payMethod:pay, amount:amount };
+      }
+      showAddError('Missing sales.sell or manager permission to complete membership payment');
+      return false;
+    }
 
     // Collapsible section
     const toggleBtn=overlay.querySelector('#addSectionToggle');
@@ -162,7 +407,7 @@
         && form.nameAr&&form.nameAr.value.trim()
         && form.phone&&validatePhone(form.phone.value.replace(/[\s\-()]/g,''))
         && form.dob&&validateDob(form.dob.value);
-      if(btnCreate) btnCreate.disabled=!valid;
+      if(btnCreate && onboardStep===1) btnCreate.disabled=!valid;
       return !!valid;
     }
 
@@ -186,47 +431,87 @@
       });
     });
 
-    // Submit
+    // Multi-step Continue / Complete
     if(btnCreate){
       btnCreate.addEventListener('click',async function(){
-        if(!validateAddForm()) return;
+        errorBanner&&errorBanner.classList.remove('show');
         btnCreate.classList.add('loading');
         btnCreate.disabled=true;
-        errorBanner&&errorBanner.classList.remove('show');
-
-        const body={
-          fullName: form.nameEn.value.trim(),
-          fullNameAr: form.nameAr.value.trim(),
-          phone: formatPhoneForApi(form.phone.value),
-          dateOfBirth: form.dob.value,
-        };
-        if(form.email&&form.email.value.trim()) body.email=form.email.value.trim();
-        if(form.nationalId&&form.nationalId.value.trim()) body.nationalId=form.nationalId.value.trim();
-        if(form.emergency&&form.emergency.value.trim()) body.emergencyContact=formatPhoneForApi(form.emergency.value);
-        if(form.notes&&form.notes.value.trim()) body.notes=form.notes.value.trim();
-        if(form.referralCode&&form.referralCode.value.trim())
-          body.referralCode=form.referralCode.value.trim().toUpperCase();
-
         try{
-          if(!canCreate()){ showAddError('Missing members.create permission'); return; }
-          if(!Gfp){ showAddError('API client missing'); return; }
-          const r=await Gfp.post('/members', body);
-          if(r.ok){
-            toast('Member created successfully');
-            closeOverlay('addMemberModal');
-            resetAddForm();
-            // Re-fetch list — ActivePlan/MembershipStatus are server-derived
+          if(onboardStep===1){
+            if(!validateAddForm()) return;
+            if(!canCreate()){ showAddError('Missing members.create permission'); return; }
+            if(!Gfp){ showAddError('API client missing'); return; }
+            const body={
+              fullName: form.nameEn.value.trim(),
+              fullNameAr: form.nameAr.value.trim(),
+              phone: formatPhoneForApi(form.phone.value),
+              dateOfBirth: form.dob.value,
+            };
+            if(form.email&&form.email.value.trim()) body.email=form.email.value.trim();
+            if(form.nationalId&&form.nationalId.value.trim()) body.nationalId=form.nationalId.value.trim();
+            if(form.emergency&&form.emergency.value.trim()) body.emergencyContact=formatPhoneForApi(form.emergency.value);
+            if(form.notes&&form.notes.value.trim()) body.notes=form.notes.value.trim();
+            if(form.referralCode&&form.referralCode.value.trim())
+              body.referralCode=form.referralCode.value.trim().toUpperCase();
+            const r=await Gfp.post('/members', body);
+            if(!r.ok){ showAddError(apiMsg(r,'Failed to create member')); return; }
+            createdMember=r.data||{};
+            if(!createdMember.id&&r.data) createdMember=r.data;
+            // Some APIs return only id string / nested member / PascalCase Id
+            if(!createdMember.id&&createdMember.Id) createdMember.id=createdMember.Id;
+            if(!createdMember.id&&typeof r.data==='string') createdMember={ id:r.data, fullName:body.fullName };
+            if(!createdMember.fullName) createdMember.fullName=body.fullName||createdMember.FullName;
+            toast('Member created — select a membership');
+            const startEl=overlay.querySelector('#onboardStartDate');
+            if(startEl&&!startEl.value) startEl.value=new Date().toISOString().slice(0,10);
+            setOnboardStep(2);
+            await loadOnboardPlans();
             if(typeof window.loadMembers==='function') window.loadMembers();
             if(typeof window.loadStats==='function') window.loadStats();
-          } else {
-            showAddError(apiMsg(r,'Failed to create member'));
+          } else if(onboardStep===2){
+            if(!selectedPlan){ showAddError('Select a membership plan'); return; }
+            renderOnboardSummary();
+            setOnboardStep(3);
+          } else if(onboardStep===3){
+            const result=await completeOnboardPayment();
+            if(!result) return;
+            const startEl=overlay.querySelector('#onboardStartDate');
+            const start=(startEl&&startEl.value)||new Date().toISOString().slice(0,10);
+            const end=addDaysIso(start, Number(selectedPlan.durationDays)||0);
+            const conf=overlay.querySelector('#onboardConfirmText');
+            if(conf){
+              conf.innerHTML=
+                '<div><strong>'+(createdMember.fullName||'')+'</strong></div>'+
+                '<div>'+(selectedPlan.name||'')+'</div>'+
+                '<div>'+fmtObDate(start)+' → '+fmtObDate(end)+'</div>'+
+                '<div>Paid: EGP '+(result.amount||0).toLocaleString()+' ('+result.payMethod+')</div>';
+            }
+            const view=overlay.querySelector('#btnOnboardViewMember');
+            if(view&&createdMember.id) view.href='/dashboard/members/'+encodeURIComponent(createdMember.id)+'/';
+            setOnboardStep(4);
+            toast('Onboarding complete — print invoice & card');
+            await prepareOnboardPrintStep(result);
+            if(typeof window.loadMembers==='function') window.loadMembers();
           }
         }catch(e){
           showAddError('Network error — please try again');
+        } finally {
+          btnCreate.classList.remove('loading');
+          if(onboardStep===1) validateAddForm();
+          else if(onboardStep===2) btnCreate.disabled=!selectedPlan;
+          else if(onboardStep===3) btnCreate.disabled=false;
         }
-        btnCreate.classList.remove('loading');
-        btnCreate.disabled=false;
-        validateAddForm();
+      });
+    }
+
+    const btnSkip=overlay.querySelector('#btnOnboardSkip');
+    if(btnSkip){
+      btnSkip.addEventListener('click',function(){
+        closeOverlay('addMemberModal');
+        resetAddForm();
+        toast('Member created without membership');
+        if(typeof window.loadMembers==='function') window.loadMembers();
       });
     }
 
@@ -246,7 +531,69 @@
       errorBanner.classList.add('show');
     }
 
+    const btnPrintInvoice=document.getElementById('btnOnboardPrintInvoice');
+    if(btnPrintInvoice){
+      btnPrintInvoice.addEventListener('click',async function(){
+        if(!onboardInvoiceId&&onboardSale){
+          const inv=await resolveOnboardInvoice(onboardSale);
+          if(inv&&inv.invoiceId){
+            onboardInvoiceId=inv.invoiceId;
+            onboardInvoiceNumber=inv.invoiceNumber;
+          }
+        }
+        if(!onboardInvoiceId){
+          toast('Invoice not ready yet','error');
+          return;
+        }
+        await openOnboardPrintHtml(
+          onboardInvoiceNumber?('Invoice '+onboardInvoiceNumber):'Invoice',
+          '/invoices/'+encodeURIComponent(onboardInvoiceId)+'/receipt-html',
+          true
+        );
+      });
+    }
+    const btnPrintCard=document.getElementById('btnOnboardPrintCard');
+    if(btnPrintCard){
+      btnPrintCard.addEventListener('click',async function(){
+        if(!createdMember||!createdMember.id){
+          toast('Member id missing','error');
+          return;
+        }
+        await openOnboardPrintHtml(
+          'Member card',
+          '/members/'+encodeURIComponent(createdMember.id)+'/access-card-html',
+          true
+        );
+      });
+    }
+    const btnPrintDo=document.getElementById('btnOnboardPrintDo');
+    if(btnPrintDo){
+      btnPrintDo.addEventListener('click',function(){
+        const frame=document.getElementById('onboardPrintFrame');
+        try{ if(frame&&frame.contentWindow){ frame.contentWindow.focus(); frame.contentWindow.print(); } }
+        catch(e){ toast('Allow pop-ups / try Print again','error'); }
+      });
+    }
+    const btnPrintClose=document.getElementById('btnOnboardPrintClose');
+    if(btnPrintClose) btnPrintClose.addEventListener('click',closeOnboardPrint);
+    const printOv=document.getElementById('onboardPrintOverlay');
+    if(printOv){
+      printOv.addEventListener('click',function(e){ if(e.target===printOv) closeOnboardPrint(); });
+    }
+
     function resetAddForm(){
+      createdMember=null; selectedPlan=null; onboardPlans=[];
+      onboardSale=null; onboardInvoiceId=null; onboardInvoiceNumber=null;
+      closeOnboardPrint();
+      const invStatus=document.getElementById('onboardInvoiceStatus');
+      const cardStatus=document.getElementById('onboardCardStatus');
+      const btnInv=document.getElementById('btnOnboardPrintInvoice');
+      const btnCard=document.getElementById('btnOnboardPrintCard');
+      if(invStatus) invStatus.textContent='Preparing invoice…';
+      if(cardStatus) cardStatus.textContent='Member access card with barcode.';
+      if(btnInv) btnInv.disabled=true;
+      if(btnCard) btnCard.disabled=true;
+      setOnboardStep(1);
       Object.values(form).forEach(el=>{if(el){el.value='';el.classList.remove('error');}});
       overlay.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));
       errorBanner&&errorBanner.classList.remove('show');
@@ -475,10 +822,24 @@
     return document.getElementById('modalAssign')||document.getElementById('assignMembershipModal');
   }
 
-  window.openAssignModal=function(memberId){
-    // P12-R2 Opt B: Assign workflow owned by Memberships — deep-link only from Members
+  window.openAssignModal=async function(memberId){
     if(!memberId){ toast('Member id required','error'); return; }
-    window.location.href='/dashboard/memberships/?member='+encodeURIComponent(memberId);
+    const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
+    if(!canMgr){ toast('Manager or above required to assign','error'); return; }
+    assignMemberId=memberId;
+    const overlay=assignModalEl();
+    if(!overlay){ toast('Assign modal missing','error'); return; }
+    overlay.classList.add('open');
+    const err=overlay.querySelector('#assignErrorBanner');
+    if(err) err.classList.remove('show');
+    const sel=overlay.querySelector('#assignPlanSelect');
+    if(sel) sel.value='';
+    const detail=overlay.querySelector('#planDetailCard');
+    if(detail) detail.classList.remove('show');
+    overlay.querySelectorAll('input[name="assignPayment"]').forEach(function(r){ r.checked=false; });
+    const btn=overlay.querySelector('#btnAssignMembership');
+    if(btn) btn.disabled=true;
+    await loadPlans();
   };
 
   async function loadPlans(){
@@ -505,7 +866,7 @@
       }
       if(select){
         select.innerHTML='<option value="">— Select a plan —</option>';
-        (plansCache||[]).filter(p=>p&&p.isActive!==false).forEach(p=>{
+        (plansCache||[]).filter(p=>p&&p.isActive!==false&&String(p.planType||'').toLowerCase()!=='trial').forEach(p=>{
           const opt=document.createElement('option');
           opt.value=p.id;
           opt.textContent=`${p.name} — EGP ${p.price} (${p.durationDays} days)`;
@@ -574,16 +935,10 @@
       return !!(planOk&&payOk);
     }
 
-    // Submit
+    // Submit — POST /memberships/{id}/assign (ManagerOrAbove)
     if(btnAssign){
       btnAssign.addEventListener('click',async function(){
-        // P12-R2: never POST assign from Members-hosted modal
-        if(assignMemberId){
-          window.location.href='/dashboard/memberships/?member='+encodeURIComponent(assignMemberId);
-          return;
-        }
-        window.location.href='/dashboard/memberships/';
-        return;
+        if(!assignMemberId||!validateAssignForm()) return;
         btnAssign.classList.add('loading');
         btnAssign.disabled=true;
         errorBanner&&errorBanner.classList.remove('show');
@@ -604,12 +959,15 @@
           }
           if(res.status===201||res.ok){
             const pending=res.data&&String(res.data.status||'').toLowerCase()==='pending';
-            const statusMsg=payMethod==='cash'
-              ?'Membership assigned & activated!'
-              :'Assigned — waiting for payment. Refresh the membership panel (no live push).';
-            toast(statusMsg, pending?'error':'success');
+            toast(
+              payMethod==='cash'
+                ?'Membership assigned & activated!'
+                :'Assigned — waiting for payment. Refresh the membership panel (no live push).',
+              pending?'error':'success'
+            );
             closeOverlay(overlay.id);
             if(typeof window.loadMember==='function') window.loadMember();
+            if(typeof window.loadMembers==='function') window.loadMembers();
           } else if(res.status===409){
             const msg=(res.data&&(res.data.message||res.data.error))||'Already has an active membership — cannot assign another.';
             if(errorBanner){
