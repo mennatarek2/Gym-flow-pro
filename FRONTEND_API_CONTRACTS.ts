@@ -1463,7 +1463,7 @@ export interface ProductDto {
   imageUrl?: string | null;
   unitOfMeasure: string;
   sellPrice: number;
-  /** Null when caller lacks manage/purchase/financial.view (Critical Close C4). */
+  /** Null when caller lacks manage/purchase/reports.financial.view (Critical Close C4). */
   costPrice?: number | null;
   currency: string;
   taxable: boolean;
@@ -1705,8 +1705,13 @@ export interface SupplierDto {
   email?: string | null;
   paymentTerms?: string | null;
   notes?: string | null;
+  address?: string | null;
   isActive: boolean;
   createdAtUtc: string;
+  /** Null when caller lacks manage/purchase/reports.financial.view */
+  purchasesTotal?: number | null;
+  paidTotal?: number | null;
+  dueTotal?: number | null;
 }
 export interface CreateSupplierRequest {
   name: string;
@@ -1715,7 +1720,39 @@ export interface CreateSupplierRequest {
   email?: string | null;
   paymentTerms?: string | null;
   notes?: string | null;
+  address?: string | null;
   isActive?: boolean;
+  openingAmount?: number | null;
+  /** true = owed to supplier (له); false = عليه */
+  openingOwedToSupplier?: boolean | null;
+}
+export interface UpdateSupplierRequest extends CreateSupplierRequest {}
+export interface SupplierBalanceDto {
+  supplierId: string;
+  purchasesTotal: number;
+  paidTotal: number;
+  openingTotal: number;
+  dueTotal: number;
+}
+export interface SupplierLedgerEntryDto {
+  id: string;
+  amount: number;
+  reason: string;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  note?: string | null;
+  createdAtUtc: string;
+}
+export interface PostSupplierOpeningRequest {
+  amount: number;
+  owedToSupplier?: boolean;
+  note?: string | null;
+}
+export interface PostSupplierPaymentRequest {
+  amount: number;
+  method?: string | null;
+  note?: string | null;
+  paidAtUtc?: string | null;
 }
 export interface PurchaseOrderLineDto {
   id: string;
@@ -1725,6 +1762,7 @@ export interface PurchaseOrderLineDto {
   qtyOrdered: number;
   qtyReceived: number;
   qtyRemaining: number;
+  /** May be redacted (0/hidden client-side) without manage/purchase/reports.financial.view. */
   unitCost: number;
 }
 export interface PurchaseOrderDto {
@@ -1772,15 +1810,19 @@ export interface GoodsReceiptDto {
 }
 
 export const INVENTORY_PURCHASING_ENDPOINTS = {
-  listSuppliers: { method: "GET", path: "/api/inventory/suppliers?includeInactive=" }, // inventory.view
+  listSuppliers: { method: "GET", path: "/api/inventory/suppliers?includeInactive=" }, // inventory.view ; money totals redacted without manage/purchase/reports.financial.view
   getSupplier: { method: "GET", path: "/api/inventory/suppliers/{id}" }, // inventory.view
-  createSupplier: { method: "POST", path: "/api/inventory/suppliers" }, // inventory.manage
+  createSupplier: { method: "POST", path: "/api/inventory/suppliers" }, // inventory.manage ; optional openingAmount
   updateSupplier: { method: "PUT", path: "/api/inventory/suppliers/{id}" }, // inventory.manage
+  getSupplierBalance: { method: "GET", path: "/api/inventory/suppliers/{id}/balance" }, // inventory.view + CanSeeCost
+  listSupplierLedger: { method: "GET", path: "/api/inventory/suppliers/{id}/ledger?fromUtc=&toUtc=" }, // inventory.view + CanSeeCost ; X-Gfp-Truncated/Take
+  postSupplierOpening: { method: "POST", path: "/api/inventory/suppliers/{id}/opening" }, // inventory.purchase
+  postSupplierPayment: { method: "POST", path: "/api/inventory/suppliers/{id}/payments" }, // inventory.purchase
   listPurchaseOrders: {
     method: "GET",
     path: "/api/inventory/purchase-orders?status=",
-  }, // inventory.view ; body List<PO>; headers X-Gfp-Truncated, X-Gfp-Take when capped at 200
-  getPurchaseOrder: { method: "GET", path: "/api/inventory/purchase-orders/{id}" }, // inventory.view
+  }, // inventory.view ; body List<PO>; headers X-Gfp-Truncated, X-Gfp-Take when capped at 200; cost redacted without manage/purchase/reports.financial.view
+  getPurchaseOrder: { method: "GET", path: "/api/inventory/purchase-orders/{id}" }, // inventory.view ; cost redacted without manage/purchase/reports.financial.view
   createPurchaseOrder: { method: "POST", path: "/api/inventory/purchase-orders" }, // inventory.manage
   createPurchaseOrderFromSuggestions: {
     method: "POST",

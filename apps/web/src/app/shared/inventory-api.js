@@ -101,6 +101,18 @@
     supplier: function (id) {
       return '/inventory/suppliers/' + encodeURIComponent(id);
     },
+    supplierBalance: function (id) {
+      return '/inventory/suppliers/' + encodeURIComponent(id) + '/balance';
+    },
+    supplierLedger: function (id, params) {
+      return '/inventory/suppliers/' + encodeURIComponent(id) + '/ledger' + q(params);
+    },
+    supplierOpening: function (id) {
+      return '/inventory/suppliers/' + encodeURIComponent(id) + '/opening';
+    },
+    supplierPayments: function (id) {
+      return '/inventory/suppliers/' + encodeURIComponent(id) + '/payments';
+    },
     purchaseOrders: function (params) {
       return '/inventory/purchase-orders' + q(params);
     },

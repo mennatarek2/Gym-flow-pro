@@ -1,5 +1,5 @@
 /**
- * Suppliers (FE-INVS-5). Real /api/inventory/suppliers* only.
+ * Suppliers (FE-INVS-5 + PAP-P0 AP-1). Ledger money is server-owned only.
  */
 (function () {
   'use strict';
@@ -30,8 +30,13 @@
   }
 
   var canManage = Authz.useCan('inventory.manage');
+  var canPurchase = Authz.useCan('inventory.purchase');
+  var canSeeMoney =
+    canManage || canPurchase || Authz.useCan('reports.financial.view');
   var rows = [];
   var editingId = null;
+  var paySupplierId = null;
+  var stmtSupplierId = null;
 
   function t(en, ar) {
     if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
@@ -41,6 +46,10 @@
     var d = document.createElement('div');
     d.textContent = s == null ? '' : String(s);
     return d.innerHTML;
+  }
+  function money(n) {
+    if (n == null || Number.isNaN(Number(n))) return '—';
+    return new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(Number(n));
   }
   function toast(msg, type) {
     var el = document.getElementById('toast');
@@ -62,12 +71,12 @@
   function applyLocale() {
     if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
   }
-  function openModal() {
-    document.getElementById('supModal').hidden = false;
+  function openModal(id) {
+    document.getElementById(id).hidden = false;
     applyLocale();
   }
-  function closeModal() {
-    document.getElementById('supModal').hidden = true;
+  function closeModal(id) {
+    document.getElementById(id).hidden = true;
   }
   function setModalTitle(en, ar) {
     var el = document.getElementById('supModalTitle');
@@ -75,9 +84,21 @@
     el.setAttribute('data-ar', ar);
     el.textContent = t(en, ar);
   }
+  function reasonLabel(r) {
+    var map = {
+      purchase: ['Purchase', 'شراء'],
+      payment: ['Payment', 'دفعة'],
+      opening: ['Opening', 'افتتاحي'],
+      return_credit: ['Return credit', 'مرتجع']
+    };
+    var p = map[r];
+    return p ? t(p[0], p[1]) : r;
+  }
 
-  document.querySelectorAll('[data-close="supModal"]').forEach(function (b) {
-    b.addEventListener('click', closeModal);
+  document.querySelectorAll('[data-close]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      closeModal(b.getAttribute('data-close'));
+    });
   });
 
   (function chrome() {
@@ -114,21 +135,68 @@
     document.getElementById('sPhone').value = (s && s.phone) || '';
     document.getElementById('sEmail').value = (s && s.email) || '';
     document.getElementById('sTerms').value = (s && s.paymentTerms) || '';
+    document.getElementById('sAddress').value = (s && s.address) || '';
     document.getElementById('sNotes').value = (s && s.notes) || '';
     document.getElementById('sActive').checked = !s || s.isActive !== false;
+    document.getElementById('sOpeningAmt').value = '0';
+    document.getElementById('sOpeningSign').value = '1';
     document.getElementById('supHint').textContent = '';
+    var showOpening = !s && canPurchase;
+    document.getElementById('openingBlock').hidden = !showOpening;
   }
 
   function readForm() {
-    return {
+    var body = {
       name: document.getElementById('sName').value.trim(),
       nameAr: document.getElementById('sNameAr').value.trim() || null,
       phone: document.getElementById('sPhone').value.trim() || null,
       email: document.getElementById('sEmail').value.trim() || null,
       paymentTerms: document.getElementById('sTerms').value.trim() || null,
+      address: document.getElementById('sAddress').value.trim() || null,
       notes: document.getElementById('sNotes').value.trim() || null,
       isActive: document.getElementById('sActive').checked
     };
+    if (!editingId && canPurchase) {
+      var amt = Number(document.getElementById('sOpeningAmt').value) || 0;
+      if (amt > 0) {
+        body.openingAmount = amt;
+        body.openingOwedToSupplier = document.getElementById('sOpeningSign').value === '1';
+      }
+    }
+    return body;
+  }
+
+  function renderKpis() {
+    var host = document.getElementById('kpiHost');
+    if (!canSeeMoney) {
+      host.hidden = true;
+      host.innerHTML = '';
+      return;
+    }
+    var total = rows.length;
+    var active = rows.filter(function (s) {
+      return s.isActive !== false;
+    }).length;
+    var due = rows.reduce(function (sum, s) {
+      return sum + (s.dueTotal != null ? Number(s.dueTotal) : 0);
+    }, 0);
+    host.hidden = false;
+    host.innerHTML =
+      '<div class="kpi-card"><div class="label">' +
+      esc(t('Total suppliers', 'إجمالي الموردين')) +
+      '</div><div class="value">' +
+      esc(total) +
+      '</div></div>' +
+      '<div class="kpi-card"><div class="label">' +
+      esc(t('Active', 'نشط')) +
+      '</div><div class="value">' +
+      esc(active) +
+      '</div></div>' +
+      '<div class="kpi-card"><div class="label">' +
+      esc(t('Total dues', 'إجمالي المستحقات')) +
+      '</div><div class="value due">' +
+      esc(money(due)) +
+      '</div></div>';
   }
 
   async function loadList() {
@@ -150,12 +218,22 @@
   }
 
   function render() {
+    renderKpis();
     var host = document.getElementById('tableHost');
     if (!rows.length) {
       host.innerHTML =
         '<div class="empty-state"><p>' + esc(t('No suppliers', 'لا موردين')) + '</p></div>';
       return;
     }
+    var moneyHeads = canSeeMoney
+      ? '<th>' +
+        esc(t('Purchases', 'المشتريات')) +
+        '</th><th>' +
+        esc(t('Paid', 'المدفوع')) +
+        '</th><th>' +
+        esc(t('Due', 'المستحق')) +
+        '</th>'
+      : '';
     host.innerHTML =
       '<table class="inv"><thead><tr><th>' +
       esc(t('Name', 'الاسم')) +
@@ -165,20 +243,50 @@
       esc(t('Email', 'البريد')) +
       '</th><th>' +
       esc(t('Terms', 'الشروط')) +
-      '</th><th>' +
+      '</th>' +
+      moneyHeads +
+      '<th>' +
       esc(t('Status', 'الحالة')) +
       '</th><th></th></tr></thead><tbody>' +
       rows
         .map(function (s) {
-          var actions = '';
+          var actions = '<div class="row-actions">';
           if (canManage) {
-            actions =
-              '<div class="row-actions"><button type="button" class="btn-link" data-edit="' +
+            actions +=
+              '<button type="button" class="btn-link" data-edit="' +
               esc(s.id) +
               '">' +
               esc(t('Edit', 'تعديل')) +
-              '</button></div>';
+              '</button>';
           }
+          if (canSeeMoney) {
+            actions +=
+              '<button type="button" class="btn-link" data-stmt="' +
+              esc(s.id) +
+              '">' +
+              esc(t('Statement', 'كشف حساب')) +
+              '</button>';
+          }
+          if (canPurchase) {
+            actions +=
+              '<button type="button" class="btn-link" data-pay="' +
+              esc(s.id) +
+              '">' +
+              esc(t('Pay', 'دفعة')) +
+              '</button>';
+          }
+          actions += '</div>';
+          var moneyCells = canSeeMoney
+            ? '<td>' +
+              esc(money(s.purchasesTotal)) +
+              '</td><td>' +
+              esc(money(s.paidTotal)) +
+              '</td><td class="' +
+              (Number(s.dueTotal) > 0 ? 'money-due' : 'money-ok') +
+              '">' +
+              esc(money(s.dueTotal)) +
+              '</td>'
+            : '';
           return (
             '<tr><td>' +
             esc(s.name) +
@@ -191,7 +299,9 @@
             esc(s.email || '—') +
             '</td><td>' +
             esc(s.paymentTerms || '—') +
-            '</td><td>' +
+            '</td>' +
+            moneyCells +
+            '<td>' +
             (s.isActive
               ? '<span class="badge badge-ok">' + esc(t('Active', 'نشط')) + '</span>'
               : '<span class="badge badge-off">' + esc(t('Inactive', 'غير نشط')) + '</span>') +
@@ -213,16 +323,109 @@
         editingId = id;
         setModalTitle('Edit supplier', 'تعديل مورد');
         fillForm(s);
-        openModal();
+        openModal('supModal');
       });
     });
+    host.querySelectorAll('[data-pay]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openPay(btn.getAttribute('data-pay'));
+      });
+    });
+    host.querySelectorAll('[data-stmt]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openStatement(btn.getAttribute('data-stmt'));
+      });
+    });
+  }
+
+  function openPay(id) {
+    var s = rows.find(function (x) {
+      return x.id === id;
+    });
+    if (!s || !canPurchase) return;
+    paySupplierId = id;
+    document.getElementById('paySupplierName').textContent = s.name;
+    document.getElementById('payAmt').value = '';
+    document.getElementById('payMethod').value = 'cash';
+    document.getElementById('payNote').value = '';
+    document.getElementById('payHint').textContent = '';
+    openModal('payModal');
+  }
+
+  async function openStatement(id) {
+    var s = rows.find(function (x) {
+      return x.id === id;
+    });
+    if (!s || !canSeeMoney) return;
+    stmtSupplierId = id;
+    document.getElementById('stmtSupplierName').textContent = s.name;
+    document.getElementById('stmtBal').textContent = t('Loading…', 'جاري التحميل…');
+    document.getElementById('stmtHost').innerHTML = '';
+    openModal('stmtModal');
+    var bal = await Gfp.get(paths.supplierBalance(id));
+    var led = await Gfp.get(paths.supplierLedger(id));
+    if (bal.ok && bal.data) {
+      document.getElementById('stmtBal').textContent =
+        t('Due', 'المستحق') +
+        ': ' +
+        money(bal.data.dueTotal) +
+        ' · ' +
+        t('Purchases', 'المشتريات') +
+        ': ' +
+        money(bal.data.purchasesTotal) +
+        ' · ' +
+        t('Paid', 'المدفوع') +
+        ': ' +
+        money(bal.data.paidTotal);
+    } else {
+      document.getElementById('stmtBal').textContent = apiError(bal);
+    }
+    if (!led.ok) {
+      document.getElementById('stmtHost').innerHTML =
+        '<div class="error-state"><p>' + esc(apiError(led)) + '</p></div>';
+      return;
+    }
+    var entries = Array.isArray(led.data) ? led.data : [];
+    if (!entries.length) {
+      document.getElementById('stmtHost').innerHTML =
+        '<div class="empty-state"><p>' + esc(t('No ledger entries', 'لا قيود')) + '</p></div>';
+      return;
+    }
+    document.getElementById('stmtHost').innerHTML =
+      '<table class="inv"><thead><tr><th>' +
+      esc(t('Date', 'التاريخ')) +
+      '</th><th>' +
+      esc(t('Reason', 'السبب')) +
+      '</th><th>' +
+      esc(t('Amount', 'المبلغ')) +
+      '</th><th>' +
+      esc(t('Note', 'ملاحظة')) +
+      '</th></tr></thead><tbody>' +
+      entries
+        .map(function (e) {
+          return (
+            '<tr><td>' +
+            esc(e.createdAtUtc ? new Date(e.createdAtUtc).toLocaleString() : '—') +
+            '</td><td>' +
+            esc(reasonLabel(e.reason)) +
+            '</td><td class="' +
+            (Number(e.amount) > 0 ? 'money-due' : 'money-ok') +
+            '">' +
+            esc(money(e.amount)) +
+            '</td><td>' +
+            esc(e.note || '—') +
+            '</td></tr>'
+          );
+        })
+        .join('') +
+      '</tbody></table>';
   }
 
   document.getElementById('btnCreate').addEventListener('click', function () {
     editingId = null;
     setModalTitle('New supplier', 'مورد جديد');
     fillForm(null);
-    openModal();
+    openModal('supModal');
   });
 
   document.getElementById('supForm').addEventListener('submit', async function (e) {
@@ -250,8 +453,34 @@
         : t('Supplier created.', 'تم إنشاء المورد.'),
       'ok'
     );
-    closeModal();
+    closeModal('supModal');
     await loadList();
+  });
+
+  document.getElementById('payForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!canPurchase || !paySupplierId) return;
+    var amount = Number(document.getElementById('payAmt').value);
+    if (!(amount > 0)) {
+      document.getElementById('payHint').textContent = t('Enter amount > 0.', 'أدخل مبلغاً أكبر من صفر.');
+      return;
+    }
+    var r = await Gfp.post(paths.supplierPayments(paySupplierId), {
+      amount: amount,
+      method: document.getElementById('payMethod').value,
+      note: document.getElementById('payNote').value.trim() || null
+    });
+    if (!r.ok) {
+      document.getElementById('payHint').textContent = apiError(r);
+      toast(apiError(r), 'err');
+      return;
+    }
+    toast(t('Payment recorded.', 'تم تسجيل الدفعة.'), 'ok');
+    closeModal('payModal');
+    await loadList();
+    if (stmtSupplierId === paySupplierId && !document.getElementById('stmtModal').hidden) {
+      await openStatement(paySupplierId);
+    }
   });
 
   document.getElementById('btnRefresh').addEventListener('click', loadList);

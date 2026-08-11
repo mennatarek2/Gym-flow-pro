@@ -39,6 +39,8 @@
   var warehouses = [];
   /** @type {Record<string, any>} */
   var productById = {};
+  var listTruncated = false;
+  var listTake = '200';
 
   function t(en, ar) {
     if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
@@ -70,9 +72,12 @@
     if (detail && detail.indexOf(' / ') !== -1) detail = detail.split(' / ')[0].trim();
     return detail || t('Request failed', 'فشل الطلب') + ' (' + r.status + ')';
   }
+  function applyLocale() {
+    if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
+  }
   function openModal(id) {
     document.getElementById(id).hidden = false;
-    if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
+    applyLocale();
   }
   function closeModal(id) {
     document.getElementById(id).hidden = true;
@@ -166,7 +171,12 @@
         );
       })
       .join('');
-    return '<option value="">Product…</option>' + opts;
+    return (
+      '<option value="">' +
+      esc(t('Product…', 'المنتج…')) +
+      '</option>' +
+      opts
+    );
   }
 
   function addPoLineRow(pre) {
@@ -174,16 +184,24 @@
     var row = document.createElement('div');
     row.className = 'line-row';
     row.innerHTML =
-      '<label>Product<select class="pl-product" required>' +
+      '<label>' +
+      esc(t('Product', 'المنتج')) +
+      '<select class="pl-product" required>' +
       purchasableOptionsHtml() +
       '</select></label>' +
-      '<label>Qty<input type="number" class="pl-qty" min="0.001" step="any" required value="' +
+      '<label>' +
+      esc(t('Qty', 'الكمية')) +
+      '<input type="number" class="pl-qty" min="0.001" step="any" required value="' +
       esc((pre && pre.qtyOrdered) || 1) +
       '"></label>' +
-      '<label>Unit cost<input type="number" class="pl-cost" min="0" step="0.01" required value="' +
+      '<label>' +
+      esc(t('Unit cost', 'تكلفة الوحدة')) +
+      '<input type="number" class="pl-cost" min="0" step="0.01" required value="' +
       esc((pre && pre.unitCost) != null ? pre.unitCost : 0) +
       '"></label>' +
-      '<button type="button" class="btn-link pl-remove">Remove</button>';
+      '<button type="button" class="btn-link pl-remove">' +
+      esc(t('Remove', 'حذف')) +
+      '</button>';
     if (pre && pre.productId) row.querySelector('.pl-product').value = pre.productId;
     row.querySelector('.pl-remove').addEventListener('click', function () {
       row.remove();
@@ -204,12 +222,14 @@
       return;
     }
     list = Array.isArray(r.data) ? r.data : [];
-    var trunc =
-      r.headers &&
-      String(r.headers.get('X-Gfp-Truncated') || r.headers.get('x-gfp-truncated') || '').toLowerCase() ===
-        'true';
-    var takeHdr = (r.headers && (r.headers.get('X-Gfp-Take') || r.headers.get('x-gfp-take'))) || '200';
-    renderList(trunc, takeHdr);
+    listTruncated =
+      !!(
+        r.headers &&
+        String(r.headers.get('X-Gfp-Truncated') || r.headers.get('x-gfp-truncated') || '').toLowerCase() ===
+          'true'
+      );
+    listTake = (r.headers && (r.headers.get('X-Gfp-Take') || r.headers.get('x-gfp-take'))) || '200';
+    renderList(listTruncated, listTake);
   }
 
   function renderList(truncated, take) {
@@ -436,40 +456,50 @@
         div.className = 'recv-line';
         div.setAttribute('data-line-id', l.id);
         div.setAttribute('data-remaining', String(l.qtyRemaining));
+        var reqParts = [];
+        if (needBatch) reqParts.push(t('batch', 'تشغيلة'));
+        if (needExpiry) reqParts.push(t('expiry', 'صلاحية'));
+        var reqHint =
+          needBatch || needExpiry
+            ? t('Product requires: ', 'المنتج يتطلب: ') + reqParts.join(t(' + ', ' + '))
+            : t('No batch/expiry required', 'لا يلزم تشغيلة/صلاحية');
         div.innerHTML =
           '<h4>' +
           esc(l.productSku || '') +
           ' — ' +
           esc(l.productName || '') +
-          ' <span class="muted">(remaining ' +
+          ' <span class="muted">(' +
+          esc(t('remaining', 'متبقي')) +
+          ' ' +
           esc(l.qtyRemaining) +
           ')</span></h4>' +
-          '<label>Qty to receive<input type="number" class="rv-qty" min="0" step="any" max="' +
+          '<label>' +
+          esc(t('Qty to receive', 'الكمية المستلمة')) +
+          '<input type="number" class="rv-qty" min="0" step="any" max="' +
           esc(l.qtyRemaining) +
           '" value="0"></label>' +
-          '<label>Unit cost<input type="number" class="rv-cost" min="0" step="0.01" value="' +
+          '<label>' +
+          esc(t('Unit cost', 'تكلفة الوحدة')) +
+          '<input type="number" class="rv-cost" min="0" step="0.01" value="' +
           esc(l.unitCost) +
           '"></label>' +
           (needBatch
-            ? '<label>Batch #<input class="rv-batch" required maxlength="80" ' +
-              (needBatch ? '' : '') +
-              '></label>'
+            ? '<label>' +
+              esc(t('Batch #', 'رقم التشغيلة')) +
+              '<input class="rv-batch" required maxlength="80"></label>'
             : '<input type="hidden" class="rv-batch">') +
           (needExpiry
-            ? '<label>Expires on<input type="date" class="rv-exp" required></label>'
+            ? '<label>' +
+              esc(t('Expires on', 'تاريخ الصلاحية')) +
+              '<input type="date" class="rv-exp" required></label>'
             : '<input type="hidden" class="rv-exp">') +
           '<div class="muted" style="grid-column:1/-1">' +
-          (needBatch || needExpiry
-            ? 'Product requires: ' +
-              (needBatch ? 'batch' : '') +
-              (needBatch && needExpiry ? ' + ' : '') +
-              (needExpiry ? 'expiry' : '')
-            : 'No batch/expiry required') +
+          esc(reqHint) +
           '</div>';
         host.appendChild(div);
       });
     if (!host.children.length) {
-      toast('Nothing left to receive.', 'err');
+      toast(t('Nothing left to receive.', 'لا يوجد ما يُستلم.'), 'err');
       return;
     }
     openModal('recvModal');
@@ -485,7 +515,7 @@
       if (!(qty > 0)) return;
       var remaining = Number(row.getAttribute('data-remaining'));
       if (qty > remaining) {
-        err = 'Qty exceeds remaining for a line.';
+        err = t('Qty exceeds remaining for a line.', 'الكمية أكبر من المتبقي لبند.');
         return;
       }
       var batchEl = row.querySelector('.rv-batch');
@@ -498,11 +528,13 @@
       });
       var p = poLine ? productById[poLine.productId] : null;
       if (p && p.trackBatch && !batchNumber) {
-        err = 'Batch number required for ' + (p.sku || 'product');
+        err =
+          t('Batch number required for ', 'رقم التشغيلة مطلوب لـ ') + (p.sku || t('product', 'منتج'));
         return;
       }
       if (p && p.trackExpiry && !expiresOn) {
-        err = 'Expiry date required for ' + (p.sku || 'product');
+        err =
+          t('Expiry date required for ', 'تاريخ الصلاحية مطلوب لـ ') + (p.sku || t('product', 'منتج'));
         return;
       }
       var unitCost = Number(row.querySelector('.rv-cost').value);
@@ -519,7 +551,10 @@
       return;
     }
     if (!lines.length) {
-      document.getElementById('recvHint').textContent = 'Enter qty > 0 on at least one line.';
+      document.getElementById('recvHint').textContent = t(
+        'Enter qty > 0 on at least one line.',
+        'أدخل كمية أكبر من صفر في بند واحد على الأقل.'
+      );
       return;
     }
     var r = await Gfp.post(paths.purchaseOrderReceive(current.id), { lines: lines });
@@ -529,7 +564,7 @@
       return;
     }
     closeModal('recvModal');
-    toast('Goods received — stock updated.', 'ok');
+    toast(t('Goods received — stock updated.', 'تم الاستلام — تم تحديث المخزون.'), 'ok');
     await loadList();
     await loadDetail(current.id);
   });
@@ -540,8 +575,11 @@
     if (!suppliers.length || !warehouses.length) await loadLookups();
     var ss = document.getElementById('poSupplier');
     var ws = document.getElementById('poWarehouse');
+    var selectPh = esc(t('Select…', 'اختَر…'));
     ss.innerHTML =
-      '<option value="">Select…</option>' +
+      '<option value="">' +
+      selectPh +
+      '</option>' +
       suppliers
         .filter(function (s) {
           return s.isActive !== false;
@@ -551,7 +589,9 @@
         })
         .join('');
     ws.innerHTML =
-      '<option value="">Select…</option>' +
+      '<option value="">' +
+      selectPh +
+      '</option>' +
       warehouses
         .filter(function (w) {
           return w.isActive !== false;
@@ -596,7 +636,10 @@
       lines.push({ productId: productId, qtyOrdered: qtyOrdered, unitCost: unitCost });
     });
     if (!lines.length) {
-      document.getElementById('poHint').textContent = 'Add at least one valid line.';
+      document.getElementById('poHint').textContent = t(
+        'Add at least one valid line.',
+        'أضف بنداً صالحاً واحداً على الأقل.'
+      );
       return;
     }
     var body = {
@@ -612,7 +655,7 @@
       return;
     }
     closeModal('poModal');
-    toast('Draft PO created.', 'ok');
+    toast(t('Draft PO created.', 'تم إنشاء مسودة أمر الشراء.'), 'ok');
     await loadList();
     if (r.data && r.data.id) await loadDetail(r.data.id);
   });
@@ -649,11 +692,21 @@
     }
   }
 
+  window.addEventListener('gfp:locale', function () {
+    applyLocale();
+    renderList(listTruncated, listTake);
+    if (current) renderDetail();
+    else {
+      document.getElementById('detailHost').innerHTML =
+        '<p class="muted">' + esc(t('Select a purchase order.', 'اختار أمر شراء.')) + '</p>';
+    }
+  });
+
   (async function boot() {
     var ctx = applyOnHandContext();
     await loadLookups();
     await loadList();
-    if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
+    applyLocale();
     try {
       var params = new URLSearchParams(window.location.search);
       var openId = params.get('id');

@@ -1,20 +1,24 @@
 ---
-description: Inventory Feature Freeze — Guardian Mode bound to Official Product Decision Log
+description: Inventory Feature Freeze — Guardian Mode bound to Official Product Decision Log (+ PAP-P0 AP-1 carve-out)
 alwaysApply: true
 ---
 
-# Inventory Guardian (Phase 1 Frozen + Category A)
+# Inventory Guardian (Phase 1 Frozen + Category A + PAP AP-1 carve-out)
 
 Inventory Phase 1 is **feature-frozen** until the supervised pilot completes and Product unlocks Phase 2 via the Official Product Decision Log.
+
+**Carve-out (2026-08-11):** Purchasing **AP-1** only, under Accepted [PAP-P0](canvases/purchasing-ap-product-decision-log.canvas.tsx) and the AP-1 execution pack. Inventory Decision Log **A2** carve-out + **C9** promote. Do **not** treat this as unlock for other Category B/C/D work.
 
 ## Binding Source of Truth
 
 - Official Decision Log: `canvases/inventory-product-decision-log.canvas.tsx`
+- Purchasing AP SoT: `canvases/purchasing-ap-product-decision-log.canvas.tsx` (PAP-P0 ACCEPTED)
+- AP-1 pack: `canvases/purchasing-ap-ap1-authorized-execution-pack.canvas.tsx`
 - Category A pack: `canvases/inventory-category-a-pilot-pack.canvas.tsx`
 - Companion: `canvases/inventory-pilot-readiness.canvas.tsx`
 - Closure: `canvases/inventory-phase1-closure-report.canvas.tsx`
 
-**Any proposal that conflicts with the Decision Log must cite the conflicting ID (A/B/C/D) and request a formal Product revision before implementation.**
+**Any proposal that conflicts with the Decision Log must cite the conflicting ID (A/B/C/D or PAP G/P/R) and request a formal Product revision before implementation.**
 
 ## Accept only
 
@@ -28,14 +32,16 @@ Inventory Phase 1 is **feature-frozen** until the supervised pilot completes and
 - Logging / monitoring improvements
 - Documentation improvements
 - **Approved Category A** pilot-readiness work already decided in the Decision Log (A1–A8)
+- **PAP-P0 AP-1** tasks listed in the AP-1 Authorized Execution Pack only (balance read, opening, payment, statement HTML, money columns, optional address) — server-owned AP math; no client dues invention
 
 ## Reject (do not implement)
 
-- Category **B** (after pilot) — including full IA collapse, Buy/Fix shortcuts, thin helpers as a program, N.1, returns, refund behavior change
-- Category **C** productization (hide/gate/Advanced IA) until Product revises the log — engines may remain as shipped
+- Category **B** (after pilot) — including full IA collapse, Buy/Fix shortcuts, thin helpers as a program, N.1, returns, refund behavior change — **except** do not block PAP AP-1 money layer
+- Category **C** productization (hide/gate/Advanced IA) until Product revises the log — engines may remain as shipped — **except C9 AP-1 as authorized**
 - Category **D** — SPA, A0 kit-as-phase, client stock math, Redis Available, batch-count expansion, WAC/GL/branch ERP, fake returns, premature GA marketing, N.1 before evidence, CSS forever-refactor during pilot
-- New features, workflows, or screens not listed as Category A
-- Auto-continuing into Phase 2 after Category A completes
+- PAP **AP-2 / AP-3** (Buy-docs PDF/filters/allocation, returns credit, multi-branch AP) until further Product go
+- New features, workflows, or screens not listed as Category A or PAP AP-1 pack
+- Auto-continuing into other Phase 2 after Category A or after AP-1 completes
 
 ## Correctness invariants (never weaken)
 
@@ -43,10 +49,16 @@ Inventory Phase 1 is **feature-frozen** until the supervised pilot completes and
 - No client-invented stock math
 - Available excludes expired (Cairo today); OnHand is physical
 - Ledger is sole writer of balances/movements
+- Supplier AP balance is server-owned (`supplier_ledger_entries`); FE must not invent dues
 - CostPrice/UnitCost not leaked to inventory.view-only roles
 - Counts reject TrackBatch/TrackExpiry SKUs (use Fix)
 - Posted adjustments: no edit/reverse API — compensating Fix only
+- Payments never change on-hand stock
 
 ## After Category A
 
-Stop. Report completion. Do not start Phase 2 builds automatically. Pilot ops (deploy tag, migrations, war-room) are human go-live steps in the Category A pack.
+Stop on Inventory feature expansion outside the PAP AP-1 carve-out. Report completion. Do not start other Phase 2 builds automatically. Pilot ops (deploy tag, migrations, war-room) are human go-live steps in the Category A pack.
+
+## After PAP AP-1
+
+Stop. Report completion. Do not auto-start AP-2/AP-3 or Inventory B6 returns.

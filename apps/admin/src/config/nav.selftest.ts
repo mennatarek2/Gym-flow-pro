@@ -46,6 +46,8 @@ const ALL_PERMS = [
   'plans.manage',
   'reports.financial.view',
   'settings.manage',
+  'member_orders.view',
+  'member_orders.manage',
 ] as const
 
 /** Mirrors DefaultPermissionProvider server defaults. */
@@ -79,6 +81,8 @@ const FIXTURES = {
       'payments.refund.request',
       'shift.open',
       'shift.close',
+      'member_orders.view',
+      'member_orders.manage',
     ]),
   },
 } as const

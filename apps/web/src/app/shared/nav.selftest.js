@@ -58,7 +58,9 @@ const ALL_PERMS = [
   INV_MANAGE,
   INV_ADJUST,
   INV_PURCHASE,
-  INV_TRANSFER
+  INV_TRANSFER,
+  'member_orders.view',
+  'member_orders.manage'
 ];
 
 // Inventory IA: Sell / Buy & receive / Fix removed from nav (contextual or Front Desk).
@@ -107,7 +109,9 @@ const FIXTURES = {
       'payments.refund.request',
       'shift.open',
       'shift.close',
-      INV_VIEW
+      INV_VIEW,
+      'member_orders.view',
+      'member_orders.manage'
     ]
   }
 };
