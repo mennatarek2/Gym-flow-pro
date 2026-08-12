@@ -29,6 +29,8 @@
   }
 
   var canManage = Authz.useCan('inventory.manage');
+  var canAdjust = Authz.useCan('inventory.adjust');
+  var canPurchase = Authz.useCan('inventory.purchase');
   var canSeeCost =
     Authz.useCan('inventory.manage') ||
     Authz.useCan('inventory.purchase') ||
@@ -37,11 +39,16 @@
   var categories = [];
   var products = [];
   var editingId = null;
+  var localPreviewUrl = null;
   var searchTimer = null;
   var VIEW_KEY = 'gfp_inv_products_view';
   var viewMode = 'table';
   var stockByProduct = {};
   var stockHydrating = false;
+  /** Pro+ Stock Management hub available (nav). Products desk always keeps Add stock / Fix qty. */
+  var hasStockManagement = false;
+  var stockDrawerMode = 'add'; // 'add' | 'fix'
+  var stockDrawerProductId = null;
   /** '' | 'low' | 'oos' — from ?alert= on inventory home deep-links */
   var stockAlert = '';
   try {
@@ -77,6 +84,82 @@
     var detail = e.message || d.detail || d.error || d.message || e.title || d.title || '';
     if (detail && detail.indexOf(' / ') !== -1) detail = detail.split(' / ')[0].trim();
     return detail || ('Request failed (' + r.status + ')');
+  }
+
+  function isSimpleDesk() {
+    // Products is always the sellable-items desk (Add stock / Fix qty / Sell).
+    // Stock Management hub (Move / Count / On Hand board) stays Pro-only in the sidebar.
+    return true;
+  }
+
+  function productAllowsSimpleStock(p) {
+    return !!(p && p.trackStock && !p.trackBatch && !p.trackExpiry && !p.isArchived);
+  }
+
+  function applyPackagingChrome() {
+    var chips = document.getElementById('stockChips');
+    var sub = document.getElementById('pageSubtitle');
+    var crumbInv = document.querySelector(
+      '.tb-breadcrumb [data-en="Inventory"], .tb-breadcrumb [data-en="Catalog"]'
+    );
+    if (chips) chips.hidden = false;
+    if (sub) {
+      if (hasStockManagement) {
+        sub.setAttribute(
+          'data-en',
+          'Products, qty left, and simple stock here. Open Stock Management for Move, Count, and the On Hand board.'
+        );
+        sub.setAttribute(
+          'data-ar',
+          'المنتجات والكمية وتعديل الرصيد هنا. إدارة المخزون للنقل والجرد ولوحة الرصيد.'
+        );
+        sub.innerHTML =
+          'Products, qty left, and simple stock here. ' +
+          '<a href="/dashboard/inventory/stock-management/">Open Stock Management</a> for Move, Count, and the On Hand board.';
+      } else {
+        sub.setAttribute(
+          'data-en',
+          'Your sellable items — add products, see qty left, put stock in, and sell from Sale.'
+        );
+        sub.setAttribute(
+          'data-ar',
+          'منتجاتك — ضيف، شوف الكمية، زوّد رصيد، وبيع من شاشة البيع.'
+        );
+        sub.textContent =
+          'Your sellable items — add products, see qty left, put stock in, and sell from Sale.';
+      }
+    }
+    if (crumbInv) {
+      crumbInv.setAttribute('data-en', 'Catalog');
+      crumbInv.setAttribute('data-ar', 'الكتالوج');
+      crumbInv.textContent = 'Catalog';
+    }
+    document.querySelectorAll('#stockChips .chip').forEach(function (b) {
+      b.classList.toggle('act', (b.getAttribute('data-alert') || '') === stockAlert);
+    });
+  }
+
+  async function resolveStockManagementFlag() {
+    var Features = window.GfpFeatures;
+    hasStockManagement = false;
+    if (Features) {
+      try {
+        var reg = (Features.readCache && Features.readCache()) || null;
+        if (!reg && Features.probeAllModules) {
+          reg = await Features.probeAllModules(false);
+        }
+        if (reg && reg.stock_management === true) {
+          hasStockManagement = true;
+        } else if (Features.probeModuleAvailable) {
+          // Explicit check — FEATURE_DISABLED must keep hub link hidden
+          var on = await Features.probeModuleAvailable('stock_management');
+          hasStockManagement = on === true;
+        }
+      } catch (e) {
+        hasStockManagement = false;
+      }
+    }
+    applyPackagingChrome();
   }
   function openModal(id) {
     document.getElementById(id).hidden = false;
@@ -134,7 +217,8 @@
     var I18n = window.GfpI18n;
     var allLabel =
       I18n && I18n.tLabel ? I18n.tLabel('All categories', 'كل التصنيفات') : 'All categories';
-    var noneLabel = I18n && I18n.tLabel ? I18n.tLabel('— None —', '— بدون —') : '— None —';
+    var noneLabel =
+      I18n && I18n.tLabel ? I18n.tLabel('-- No category --', '-- بدون تصنيف --') : '-- No category --';
     var filter = document.getElementById('filterCategory');
     var formSel = document.getElementById('pCategory');
     var curF = filter.value;
@@ -232,13 +316,34 @@
     renderProducts();
   }
 
+  function mediaUrl(url) {
+    if (!url) return '';
+    var u = String(url).trim();
+    if (!u) return '';
+    if (/^(https?:|blob:|data:)/i.test(u)) return u;
+    var origin = String(window.API_BASE || (Gfp && Gfp.apiBase && Gfp.apiBase()) || '')
+      .replace(/\/api\/?$/i, '');
+    if (!origin && Gfp && typeof Gfp.apiBase === 'function') {
+      origin = String(Gfp.apiBase()).replace(/\/api\/?$/i, '');
+    }
+    if (!origin) {
+      try {
+        origin = new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+      } catch (e) {
+        origin = 'https://localhost:5001';
+      }
+    }
+    return origin + (u.charAt(0) === '/' ? u : '/' + u);
+  }
+
   function thumbHtml(url, large) {
-    if (url) {
+    var resolved = mediaUrl(url);
+    if (resolved) {
       return (
         '<img class="' +
         (large ? '' : 'thumb') +
         '" src="' +
-        esc(url) +
+        esc(resolved) +
         '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
         (large
           ? '<div class="ph" hidden><i class="ti ti-photo-off"></i><span>Broken link</span></div>'
@@ -316,32 +421,48 @@
         openProductDetail(b.getAttribute('data-open'));
       });
     });
+    host.querySelectorAll('[data-stock-add]').forEach(function (b) {
+      b.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        openStockDrawer(b.getAttribute('data-stock-add'), 'add');
+      });
+    });
+    host.querySelectorAll('[data-stock-fix]').forEach(function (b) {
+      b.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        openStockDrawer(b.getAttribute('data-stock-fix'), 'fix');
+      });
+    });
   }
 
   function productActionsHtml(p) {
-    var html = '<div class="icon-actions">';
-    if (canManage) {
+    var html = '<div class="row-actions">';
+    if (canAdjust && productAllowsSimpleStock(p)) {
       html +=
-        '<button type="button" class="btn-icon-sq edit" data-edit="' +
+        '<button type="button" class="primary" data-stock-add="' +
         esc(p.id) +
-        '" title="تعديل"><i class="ti ti-pencil"></i></button>';
+        '">Add stock</button>';
+      html +=
+        '<button type="button" data-stock-fix="' + esc(p.id) + '">Fix qty</button>';
     }
-    html +=
-      '<a class="btn-icon-sq stock" href="/dashboard/inventory/stock/?productId=' +
-      encodeURIComponent(p.id) +
-      '" title="المخزون / Stock"><i class="ti ti-arrows-exchange"></i></a>';
+    if (canManage && !p.isArchived && p.isPurchasable !== false) {
+      html +=
+        '<a href="/dashboard/inventory/purchase-orders/?from=products&productId=' +
+        encodeURIComponent(p.id) +
+        '">Buy</a>';
+    }
     if (canManage) {
+      html += '<button type="button" data-edit="' + esc(p.id) + '">Edit</button>';
       if (p.isArchived) {
         html +=
-          '<button type="button" class="btn-icon-sq unarch" data-unarchive="' +
-          esc(p.id) +
-          '" title="استعادة"><i class="ti ti-archive-off"></i></button>';
+          '<button type="button" data-unarchive="' + esc(p.id) + '">Restore</button>';
       } else {
         html +=
-          '<button type="button" class="btn-icon-sq arch" data-archive="' +
-          esc(p.id) +
-          '" title="أرشفة"><i class="ti ti-trash"></i></button>';
+          '<button type="button" data-archive="' + esc(p.id) + '">Archive</button>';
       }
+    }
+    if (p.isSellable !== false) {
+      html += '<a href="/dashboard/pos/">Sell</a>';
     }
     html += '</div>';
     return html;
@@ -374,7 +495,7 @@
           ? '…'
           : '—';
     var img = p.imageUrl
-      ? '<img class="detail-hero-img" src="' + esc(p.imageUrl) + '" alt="">'
+      ? '<img class="detail-hero-img" src="' + esc(mediaUrl(p.imageUrl)) + '" alt="">'
       : '<div class="detail-hero-ph"><i class="ti ti-photo"></i></div>';
     document.getElementById('detailTitle').textContent = p.nameAr || p.name || 'المنتج';
     document.getElementById('detailBody').innerHTML =
@@ -426,14 +547,25 @@
       '</div></div>' +
       '</div>' +
       '<div class="detail-actions">' +
+      (canAdjust && productAllowsSimpleStock(p)
+        ? '<button type="button" class="btn-create" data-stock-add="' +
+          esc(p.id) +
+          '"><i class="ti ti-package-import"></i> Add stock</button>' +
+          '<button type="button" class="btn-secondary" data-stock-fix="' +
+          esc(p.id) +
+          '"><i class="ti ti-adjustments"></i> Fix qty</button>'
+        : '') +
+      (canManage && !p.isArchived && p.isPurchasable !== false
+        ? '<a class="btn-secondary" href="/dashboard/inventory/purchase-orders/?from=products&productId=' +
+          encodeURIComponent(p.id) +
+          '" style="text-decoration:none"><i class="ti ti-truck"></i> Buy from supplier</a>'
+        : '') +
       (canManage
         ? '<button type="button" class="btn-create" data-edit="' +
           esc(p.id) +
-          '"><i class="ti ti-pencil"></i> تعديل</button>'
+          '"><i class="ti ti-pencil"></i> Edit</button>'
         : '') +
-      '<a class="btn-secondary" href="/dashboard/inventory/stock/?productId=' +
-      encodeURIComponent(p.id) +
-      '" style="text-decoration:none"><i class="ti ti-history"></i> حركات المخزون</a>' +
+      '<a class="btn-secondary" href="/dashboard/pos/" style="text-decoration:none"><i class="ti ti-shopping-cart"></i> Sell</a>' +
       '</div>';
     document.getElementById('detailDrawer').hidden = false;
     var editBtn = document.querySelector('#detailBody [data-edit]');
@@ -443,6 +575,135 @@
         openProductEditor(p.id);
       });
     }
+    var addBtn = document.querySelector('#detailBody [data-stock-add]');
+    if (addBtn) {
+      addBtn.addEventListener('click', function () {
+        document.getElementById('detailDrawer').hidden = true;
+        openStockDrawer(p.id, 'add');
+      });
+    }
+    var fixBtn = document.querySelector('#detailBody [data-stock-fix]');
+    if (fixBtn) {
+      fixBtn.addEventListener('click', function () {
+        document.getElementById('detailDrawer').hidden = true;
+        openStockDrawer(p.id, 'fix');
+      });
+    }
+  }
+
+  function openStockDrawer(id, mode) {
+    var p = products.find(function (x) {
+      return x.id === id;
+    });
+    if (!p || !canAdjust) return;
+    if (!productAllowsSimpleStock(p)) {
+      toast(
+        'Batch/expiry items need Pro Stock Management or Fix quantities desk.',
+        'err'
+      );
+      return;
+    }
+    stockDrawerProductId = id;
+    stockDrawerMode = mode === 'fix' ? 'fix' : 'add';
+    var sellable = stockEntrySellable(stockByProduct[p.id]);
+    var qty =
+      sellable != null
+        ? String(sellable)
+        : Object.prototype.hasOwnProperty.call(stockByProduct, p.id)
+          ? '0'
+          : '…';
+    document.getElementById('stockDrawerTitle').textContent = p.nameAr || p.name || 'Product';
+    document.getElementById('stockDrawerMeta').textContent =
+      (p.sku || '') + (p.categoryName ? ' · ' + p.categoryName : '');
+    document.getElementById('stockDrawerQty').textContent = qty;
+    var input = document.getElementById('stockInputQty');
+    var label = document.getElementById('stockInputLabel');
+    var submitLabel = document.getElementById('btnStockSubmitLabel');
+    var hint = document.getElementById('stockDrawerHint');
+    if (stockDrawerMode === 'fix') {
+      label.textContent = 'Correct qty left';
+      submitLabel.textContent = 'Save qty';
+      input.value = sellable != null ? String(sellable) : '';
+      input.min = '0';
+      hint.textContent = 'Sets sellable qty to this number (posts a fix).';
+    } else {
+      label.textContent = 'Add stock';
+      submitLabel.textContent = 'Put stock in';
+      input.value = '';
+      input.min = '1';
+      hint.textContent = 'Adds this amount to qty left (opening-style put-in).';
+    }
+    document.getElementById('stockDrawer').hidden = false;
+    input.focus();
+  }
+
+  async function postSimpleStockDelta(productId, qtyDelta, reasonCode, note) {
+    if (!canAdjust || !qtyDelta) return { ok: true, skipped: true };
+    var whPath = paths.warehouseDefault ? paths.warehouseDefault() : '/inventory/warehouses/default';
+    var wh = await Gfp.get(whPath);
+    if (!wh.ok || !wh.data || !wh.data.id) {
+      return { ok: false, error: 'No default warehouse' };
+    }
+    var body = {
+      warehouseId: wh.data.id,
+      reasonCode: reasonCode,
+      lines: [{ productId: productId, qtyDelta: qtyDelta }]
+    };
+    if (note) body.note = note;
+    var create = await Gfp.post(paths.adjustments(), body);
+    if (!create.ok) return { ok: false, error: apiError(create) };
+    var adjId = create.data && create.data.id;
+    if (!adjId) return { ok: false, error: 'Draft created without id' };
+    var posted = await Gfp.post(paths.adjustmentPost(adjId), {});
+    if (!posted.ok) return { ok: false, error: apiError(posted) };
+    return { ok: true };
+  }
+
+  async function submitStockDrawer() {
+    var p = products.find(function (x) {
+      return x.id === stockDrawerProductId;
+    });
+    if (!p || !canAdjust) return;
+    var raw = Number(document.getElementById('stockInputQty').value);
+    if (Number.isNaN(raw) || raw < 0) {
+      toast('Enter a valid quantity', 'err');
+      return;
+    }
+    var btn = document.getElementById('btnStockSubmit');
+    btn.disabled = true;
+    var res;
+    if (stockDrawerMode === 'fix') {
+      var current = stockEntrySellable(stockByProduct[p.id]);
+      if (current == null) current = 0;
+      var delta = raw - current;
+      if (Math.abs(delta) < 1e-9) {
+        btn.disabled = false;
+        toast('Qty unchanged', 'ok');
+        document.getElementById('stockDrawer').hidden = true;
+        return;
+      }
+      res = await postSimpleStockDelta(
+        p.id,
+        delta,
+        'manual_count',
+        'Fix qty from Products desk'
+      );
+    } else {
+      if (raw <= 0) {
+        btn.disabled = false;
+        toast('Add stock needs qty > 0', 'err');
+        return;
+      }
+      res = await postSimpleStockDelta(p.id, raw, 'opening', 'Add stock from Products desk');
+    }
+    btn.disabled = false;
+    if (!res.ok) {
+      toast(res.error || 'Stock update failed', 'err');
+      return;
+    }
+    toast(stockDrawerMode === 'fix' ? 'Qty fixed' : 'Stock added', 'ok');
+    document.getElementById('stockDrawer').hidden = true;
+    await loadProducts();
   }
 
   function matchesStockAlert(p) {
@@ -491,11 +752,56 @@
     document.getElementById('statTotal').textContent = String(list.length);
     document.getElementById('statActive').textContent = String(active);
     document.getElementById('statArchived').textContent = String(archived);
+
+    var lowCount = 0;
+    var outCount = 0;
+    products.forEach(function (p) {
+      if (!p.trackStock || p.isArchived) return;
+      var q = stockEntrySellable(stockByProduct[p.id]);
+      if (q == null || Number.isNaN(q)) return;
+      if (q <= 0) outCount += 1;
+      else {
+        var min = Number(p.reorderMinQty) || 0;
+        if (min > 0 && q <= min) lowCount += 1;
+      }
+    });
+    var lowPill = document.getElementById('statLowPill');
+    var outPill = document.getElementById('statOutPill');
+    var activePill = document.getElementById('statActivePill');
+    var archivedPill = document.getElementById('statArchivedPill');
+    if (isSimpleDesk()) {
+      if (activePill) activePill.hidden = true;
+      if (archivedPill) archivedPill.hidden = true;
+      if (lowPill) {
+        lowPill.hidden = !lowCount;
+        document.getElementById('statLow').textContent = String(lowCount);
+      }
+      if (outPill) {
+        outPill.hidden = !outCount;
+        document.getElementById('statOut').textContent = String(outCount);
+      }
+    } else {
+      if (activePill) activePill.hidden = false;
+      if (archivedPill) archivedPill.hidden = false;
+      if (lowPill) lowPill.hidden = true;
+      if (outPill) outPill.hidden = true;
+    }
+
     renderAlertBanner();
 
     if (!products.length) {
       host.innerHTML =
-        '<div class="empty-state table-wrap"><i class="ti ti-box-off" style="font-size:32px"></i><p>لا منتجات بعد</p><p style="font-size:13px;margin-top:6px">أضف منتجاً والصق رابط صورة ليظهر في القائمة.</p></div>';
+        '<div class="empty-state table-wrap"><i class="ti ti-box-off" style="font-size:32px"></i>' +
+        '<p><strong>No products yet</strong></p>' +
+        '<p style="font-size:13px;margin-top:6px">Add your first item (water, protein, snacks). You can set opening qty when you create it.</p>' +
+        (canManage
+          ? '<div style="margin-top:14px"><button type="button" class="btn-create" id="btnEmptyCreate"><i class="ti ti-plus"></i> New product</button></div>'
+          : '') +
+        '</div>';
+      var emptyBtn = document.getElementById('btnEmptyCreate');
+      if (emptyBtn) emptyBtn.addEventListener('click', function () {
+        openProductEditor(null);
+      });
       return;
     }
 
@@ -529,10 +835,10 @@
                 ? '<div class="product-card-name-ar" dir="rtl">' + esc(p.nameAr) + '</div>'
                 : '') +
               '<div class="product-card-meta"><span class="cat-tag">' +
-              esc(p.categoryName || 'بدون') +
+              esc(p.categoryName || '—') +
               '</span></div>' +
               '<div class="product-card-prices">' +
-              (canSeeCost
+              (canSeeCost && !isSimpleDesk()
                 ? '<span class="product-card-cost">شراء ' + money(p.costPrice) + '</span>'
                 : '') +
               '<span class="product-card-price">' +
@@ -540,7 +846,7 @@
               '</span></div>' +
               '<div class="product-card-foot">' +
               stockBadgeHtml(p) +
-              statusBadge(p) +
+              (isSimpleDesk() ? '' : statusBadge(p)) +
               '</div>' +
               productActionsHtml(p) +
               '</div></article>'
@@ -552,8 +858,35 @@
       return;
     }
 
+    var simple = isSimpleDesk();
     var rows = list
       .map(function (p) {
+        if (simple) {
+          return (
+            '<tr class="' +
+            (p.isArchived ? 'archived' : '') +
+            '">' +
+            '<td><div class="prod-cell">' +
+            thumbHtml(p.imageUrl, false) +
+            '<div><button type="button" class="prod-link" data-open="' +
+            esc(p.id) +
+            '">' +
+            esc(p.name) +
+            '</button>' +
+            '<div class="sku">' +
+            esc(p.sku || p.barcode || '') +
+            '</div></div></div></td>' +
+            '<td class="price-sell">' +
+            money(p.sellPrice) +
+            '</td>' +
+            '<td>' +
+            stockBadgeHtml(p) +
+            '</td>' +
+            '<td>' +
+            productActionsHtml(p) +
+            '</td></tr>'
+          );
+        }
         return (
           '<tr class="' +
           (p.isArchived ? 'archived' : '') +
@@ -596,17 +929,23 @@
       })
       .join('');
 
-    host.innerHTML =
-      '<div class="table-wrap"><table class="inv"><thead><tr>' +
-      '<th>صورة</th><th>الباركود</th><th>المنتج</th><th>التصنيف</th><th>سعر الشراء</th><th>سعر البيع</th><th>المخزون</th><th>الحالة</th><th>إجراءات</th>' +
-      '</tr></thead><tbody>' +
-      rows +
-      '</tbody></table></div>';
+    host.innerHTML = simple
+      ? '<div class="table-wrap"><table class="inv"><thead><tr>' +
+        '<th>Product</th><th>Sell price</th><th>Qty left</th><th>Actions</th>' +
+        '</tr></thead><tbody>' +
+        rows +
+        '</tbody></table></div>'
+      : '<div class="table-wrap"><table class="inv"><thead><tr>' +
+        '<th>صورة</th><th>الباركود</th><th>المنتج</th><th>التصنيف</th><th>سعر الشراء</th><th>سعر البيع</th><th>المخزون</th><th>الحالة</th><th>إجراءات</th>' +
+        '</tr></thead><tbody>' +
+        rows +
+        '</tbody></table></div>';
     bindProductActions(host);
   }
 
   function updateImagePreview() {
-    var url = (document.getElementById('pImage').value || '').trim();
+    var raw = (document.getElementById('pImage').value || '').trim() || localPreviewUrl;
+    var url = mediaUrl(raw) || raw;
     var box = document.getElementById('pImagePreview');
     if (!box) return;
     if (!url) {
@@ -617,6 +956,96 @@
       '<img src="' +
       esc(url) +
       '" alt="Preview" onerror="this.parentNode.innerHTML=\'<i class=\\\'ti ti-photo-off\\\'></i><span>Broken link</span>\'">';
+  }
+
+  async function uploadProductImage(file) {
+    var fd = new FormData();
+    fd.append('file', file, file.name || 'product.jpg');
+    var token =
+      (Gfp && Gfp.tokens && Gfp.tokens.getAccess && Gfp.tokens.getAccess()) ||
+      localStorage.getItem('gfp_access_token') ||
+      sessionStorage.getItem('gfp_access_token');
+    var base = window.API_BASE || (Gfp && Gfp.apiBase && Gfp.apiBase()) || 'https://localhost:5001/api';
+    var res = await fetch(base + '/inventory/products/image', {
+      method: 'POST',
+      headers: {
+        Authorization: token ? 'Bearer ' + token : '',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: fd
+    });
+    var data = null;
+    var ct = res.headers.get('content-type') || '';
+    if (ct.includes('json')) data = await res.json().catch(function () { return null; });
+    if (!res.ok) {
+      var msg =
+        (data && (data.error || data.message || data.detail)) ||
+        'Image upload failed (' + res.status + ')';
+      return { ok: false, error: msg };
+    }
+    // Prefer relative path so images work across localhost/ngrok hosts via mediaUrl().
+    return {
+      ok: true,
+      imageUrl: data && (data.relativeUrl || data.imageUrl)
+    };
+  }
+
+  function updateProfit() {
+    var box = document.getElementById('pProfit');
+    if (!box) return;
+    var sell = Number(document.getElementById('pSell').value) || 0;
+    var cost = Number(document.getElementById('pCost').value) || 0;
+    var profit = sell - cost;
+    var pct = sell > 0 ? (profit / sell) * 100 : 0;
+    box.textContent =
+      profit.toFixed(2) + ' (' + (Number.isFinite(pct) ? pct.toFixed(0) : '0') + '%)';
+    box.classList.toggle('neg', profit < 0);
+  }
+
+  function ensureUomOption(uom) {
+    var sel = document.getElementById('pUom');
+    if (!uom) return;
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === uom) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) sel.appendChild(new Option(uom, uom));
+    sel.value = uom;
+  }
+
+  function autoSkuFromName(name) {
+    // SKU column is VARCHAR — ASCII only. Arabic names must not become "??????".
+    var base = String(name || '')
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 12);
+    if (!base) base = 'PRD';
+    var suffix = Date.now().toString(36).slice(-5).toUpperCase();
+    return (base + '-' + suffix).slice(0, 64);
+  }
+
+  function setCreateModeUi(isCreate) {
+    var openWrap = document.getElementById('pOpeningWrap');
+    if (openWrap) openWrap.style.display = isCreate ? '' : 'none';
+    var title = document.getElementById('productModalTitle');
+    if (isCreate) {
+      title.innerHTML =
+        '<i class="ti ti-plus" style="color:var(--l500)"></i> New product / إضافة منتج';
+    } else {
+      title.textContent = 'Edit product';
+    }
+    if (!canSeeCost) {
+      document.getElementById('pCostWrap').style.display = 'none';
+      document.getElementById('pProfitWrap').style.display = 'none';
+    } else {
+      document.getElementById('pCostWrap').style.display = '';
+      document.getElementById('pProfitWrap').style.display = '';
+    }
   }
 
   function renderTable() {
@@ -649,22 +1078,24 @@
 
   function resetProductForm() {
     editingId = null;
-    document.getElementById('productModalTitle').textContent = 'New product';
+    localPreviewUrl = null;
     document.getElementById('pSku').value = '';
     document.getElementById('pBarcode').value = '';
     document.getElementById('pName').value = '';
     document.getElementById('pNameAr').value = '';
     document.getElementById('pCategory').value = '';
     document.getElementById('pBrand').value = '';
-    document.getElementById('pUom').value = 'pcs';
+    ensureUomOption('pcs');
     document.getElementById('pCurrency').value = 'EGP';
     document.getElementById('pSell').value = '0';
     document.getElementById('pCost').value = '0';
     document.getElementById('pVat').value = '';
-    document.getElementById('pReorder').value = '0';
+    document.getElementById('pReorder').value = '5';
+    document.getElementById('pOpeningQty').value = '0';
     document.getElementById('pDesc').value = '';
     document.getElementById('pDescAr').value = '';
     document.getElementById('pImage').value = '';
+    document.getElementById('pImageFile').value = '';
     document.getElementById('pTaxable').checked = true;
     document.getElementById('pTrackStock').checked = true;
     document.getElementById('pTrackBatch').checked = false;
@@ -675,29 +1106,38 @@
     document.getElementById('pVisibleToMembers').checked = false;
     document.getElementById('pActive').checked = true;
     document.getElementById('productFormHint').textContent = '';
+    document.getElementById('advancedDetails').open = false;
     syncTrackFlags();
+    updateProfit();
     updateImagePreview();
+    setCreateModeUi(true);
   }
 
   function fillProductForm(p) {
     editingId = p.id;
-    document.getElementById('productModalTitle').textContent = 'Edit product';
-    document.getElementById('pSku').value = p.sku || '';
+    localPreviewUrl = null;
+    document.getElementById('pSku').value = isBrokenSku(p.sku) ? autoSkuFromName(p.name) : p.sku || '';
+    if (isBrokenSku(p.sku)) {
+      var hint = document.getElementById('productFormHint');
+      if (hint) hint.textContent = 'Broken SKU will be replaced with ASCII on Save / سيتم استبدال الكود التالف';
+    }
     document.getElementById('pBarcode').value = p.barcode || '';
     document.getElementById('pName').value = p.name || '';
     document.getElementById('pNameAr').value = p.nameAr || '';
     document.getElementById('pCategory').value = p.categoryId || '';
     document.getElementById('pBrand').value = p.brand || '';
-    document.getElementById('pUom').value = p.unitOfMeasure || 'pcs';
+    ensureUomOption(p.unitOfMeasure || 'pcs');
     document.getElementById('pCurrency').value = p.currency || 'EGP';
     document.getElementById('pSell').value = p.sellPrice != null ? p.sellPrice : 0;
     document.getElementById('pCost').value = p.costPrice != null ? p.costPrice : 0;
     document.getElementById('pVat').value =
       p.vatRatePercent != null && p.vatRatePercent !== '' ? p.vatRatePercent : '';
     document.getElementById('pReorder').value = p.reorderMinQty != null ? p.reorderMinQty : 0;
+    document.getElementById('pOpeningQty').value = '0';
     document.getElementById('pDesc').value = p.description || '';
     document.getElementById('pDescAr').value = p.descriptionAr || '';
     document.getElementById('pImage').value = p.imageUrl || '';
+    document.getElementById('pImageFile').value = '';
     document.getElementById('pTaxable').checked = !!p.taxable;
     document.getElementById('pTrackStock').checked = !!p.trackStock;
     document.getElementById('pTrackBatch').checked = !!p.trackBatch;
@@ -710,8 +1150,19 @@
     );
     document.getElementById('pActive').checked = !!p.isActive;
     document.getElementById('productFormHint').textContent = '';
+    var needsAdvanced =
+      !!p.trackBatch ||
+      !!p.trackExpiry ||
+      !!p.allowFractionalQty ||
+      !!p.brand ||
+      !!p.description ||
+      !!p.descriptionAr ||
+      !!p.nameAr;
+    document.getElementById('advancedDetails').open = needsAdvanced;
     syncTrackFlags();
+    updateProfit();
     updateImagePreview();
+    setCreateModeUi(false);
   }
 
   async function openProductEditor(id) {
@@ -731,13 +1182,21 @@
     openModal('productModal');
   }
 
+  function isBrokenSku(sku) {
+    return !sku || /[?]/.test(sku) || /[^\x20-\x7E]/.test(sku);
+  }
+
   function readProductBody() {
     var vatRaw = document.getElementById('pVat').value.trim();
+    var sku = document.getElementById('pSku').value.trim();
+    var name = document.getElementById('pName').value.trim();
+    // Create: auto-SKU. Edit: heal legacy Arabic→?????? SKUs from older builds.
+    if (!sku || isBrokenSku(sku)) sku = autoSkuFromName(name);
     return {
       categoryId: document.getElementById('pCategory').value || null,
-      sku: document.getElementById('pSku').value.trim(),
+      sku: sku,
       barcode: document.getElementById('pBarcode').value.trim() || null,
-      name: document.getElementById('pName').value.trim(),
+      name: name,
       nameAr: document.getElementById('pNameAr').value.trim() || null,
       description: document.getElementById('pDesc').value.trim() || null,
       descriptionAr: document.getElementById('pDescAr').value.trim() || null,
@@ -745,7 +1204,7 @@
       imageUrl: document.getElementById('pImage').value.trim() || null,
       unitOfMeasure: document.getElementById('pUom').value.trim() || 'pcs',
       sellPrice: Number(document.getElementById('pSell').value),
-      costPrice: Number(document.getElementById('pCost').value),
+      costPrice: Number(document.getElementById('pCost').value) || 0,
       currency: (document.getElementById('pCurrency').value.trim() || 'EGP').toUpperCase(),
       taxable: document.getElementById('pTaxable').checked,
       vatRatePercent: vatRaw === '' ? null : Number(vatRaw),
@@ -755,20 +1214,43 @@
       allowFractionalQty: document.getElementById('pFractional').checked,
       isSellable: document.getElementById('pSellable').checked,
       isPurchasable: document.getElementById('pPurchasable').checked,
-      isVisibleToMembers: document.getElementById('pVisibleToMembers').checked,
+      visibleToMembers: document.getElementById('pVisibleToMembers').checked,
       reorderMinQty: Number(document.getElementById('pReorder').value) || 0,
       isActive: document.getElementById('pActive').checked
     };
   }
 
   function validateProductClient(body) {
-    if (!body.sku) return 'SKU is required';
-    if (!body.name) return 'Name is required';
+    if (!body.name) return 'Product name is required / اسم المنتج مطلوب';
+    if (!body.sku) return 'SKU is required / كود المنتج مطلوب';
     if (body.sellPrice < 0 || body.costPrice < 0) return 'Prices must be ≥ 0';
+    if (body.imageUrl && body.imageUrl.length > 500)
+      return 'Image URL too long (max 500). Use a short public link.';
     if (body.trackExpiry && !body.trackBatch) return 'Track expiry requires track batch';
     if (!body.trackStock && (body.trackBatch || body.trackExpiry))
       return 'Batch/expiry require track stock';
     return null;
+  }
+
+  async function postOpeningStock(productId, qty, unitCost) {
+    if (!canAdjust || !qty || qty <= 0) return { ok: true, skipped: true };
+    var whPath = paths.warehouseDefault ? paths.warehouseDefault() : '/inventory/warehouses/default';
+    var wh = await Gfp.get(whPath);
+    if (!wh.ok || !wh.data || !wh.data.id) {
+      return { ok: false, error: 'No default warehouse for opening stock' };
+    }
+    var create = await Gfp.post(paths.adjustments(), {
+      warehouseId: wh.data.id,
+      reasonCode: 'opening',
+      note: 'Opening stock from new product',
+      lines: [{ productId: productId, qtyDelta: qty, unitCost: unitCost }]
+    });
+    if (!create.ok) return { ok: false, error: apiError(create) };
+    var adjId = create.data && create.data.id;
+    if (!adjId) return { ok: false, error: 'Opening draft created without id' };
+    var posted = await Gfp.post(paths.adjustmentPost(adjId), {});
+    if (!posted.ok) return { ok: false, error: apiError(posted) };
+    return { ok: true };
   }
 
   document.getElementById('productForm').addEventListener('submit', async function (ev) {
@@ -782,18 +1264,45 @@
       return;
     }
     hint.textContent = '';
+    var openingQty = Number(document.getElementById('pOpeningQty').value) || 0;
+    if (!editingId && openingQty > 0 && !canAdjust) {
+      hint.textContent =
+        'Initial qty needs inventory.adjust — save without stock, or ask a manager.';
+      return;
+    }
+    if (!editingId && openingQty > 0 && (body.trackBatch || body.trackExpiry)) {
+      hint.textContent =
+        'Initial qty on create is for simple stock only. Turn off batch/expiry, or set opening in Fix quantities.';
+      return;
+    }
     var btn = document.getElementById('btnSaveProduct');
     btn.disabled = true;
     var r = editingId
       ? await Gfp.put(paths.product(editingId), body)
       : await Gfp.post('/inventory/products', body);
-    btn.disabled = false;
     if (!r.ok) {
+      btn.disabled = false;
       hint.textContent = apiError(r);
       toast(apiError(r), 'err');
       return;
     }
-    toast(editingId ? 'Product updated' : 'Product created', 'ok');
+    var created = r.data;
+    if (!editingId && openingQty > 0 && created && created.id) {
+      var openRes = await postOpeningStock(created.id, openingQty, body.costPrice);
+      btn.disabled = false;
+      if (!openRes.ok) {
+        toast(
+          'Product saved, but opening stock failed: ' + (openRes.error || 'error'),
+          'err'
+        );
+        closeModal('productModal');
+        await loadProducts();
+        return;
+      }
+    } else {
+      btn.disabled = false;
+    }
+    toast(editingId ? 'Product updated' : 'Product saved', 'ok');
     closeModal('productModal');
     await loadProducts();
   });
@@ -923,7 +1432,96 @@
       setViewMode(btn.getAttribute('data-view'));
     });
   });
-  document.getElementById('pImage').addEventListener('input', updateImagePreview);
+  document.getElementById('pImage').addEventListener('input', function () {
+    localPreviewUrl = null;
+    updateImagePreview();
+  });
+  document.getElementById('pSell').addEventListener('input', updateProfit);
+  document.getElementById('pCost').addEventListener('input', updateProfit);
+  document.getElementById('pImageFile').addEventListener('change', async function () {
+    var file = this.files && this.files[0];
+    var hint = document.getElementById('productFormHint');
+    if (localPreviewUrl && String(localPreviewUrl).indexOf('blob:') === 0) {
+      try {
+        URL.revokeObjectURL(localPreviewUrl);
+      } catch (e) { /* ignore */ }
+    }
+    localPreviewUrl = null;
+    if (!file) {
+      updateImagePreview();
+      return;
+    }
+    localPreviewUrl = URL.createObjectURL(file);
+    updateImagePreview();
+    hint.textContent = 'Uploading photo…';
+    var up = await uploadProductImage(file);
+    if (!up.ok) {
+      hint.textContent = up.error || 'Upload failed';
+      toast(up.error || 'Upload failed', 'err');
+      return;
+    }
+    document.getElementById('pImage').value = up.imageUrl;
+    localPreviewUrl = null;
+    updateImagePreview();
+    hint.textContent = '';
+    toast('Photo uploaded', 'ok');
+  });
+  document.getElementById('btnScanBarcode').addEventListener('click', async function () {
+    var hint = document.getElementById('productFormHint');
+    if (!navigator.mediaDevices || !window.BarcodeDetector) {
+      hint.textContent =
+        'Camera barcode scan needs Chrome/Edge with BarcodeDetector — or type the barcode.';
+      document.getElementById('pBarcode').focus();
+      return;
+    }
+    try {
+      var stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+      var video = document.createElement('video');
+      video.srcObject = stream;
+      video.setAttribute('playsinline', 'true');
+      video.style.cssText =
+        'position:fixed;inset:0;z-index:400;width:100%;height:100%;object-fit:cover;background:#000';
+      var stopBtn = document.createElement('button');
+      stopBtn.type = 'button';
+      stopBtn.textContent = 'Close scanner';
+      stopBtn.style.cssText =
+        'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:401;padding:12px 20px;border:none;border-radius:12px;font-weight:700;background:#7ACC00;cursor:pointer';
+      document.body.appendChild(video);
+      document.body.appendChild(stopBtn);
+      await video.play();
+      var detector = new window.BarcodeDetector({
+        formats: ['ean_13', 'ean_8', 'code_128', 'qr_code', 'upc_a', 'upc_e']
+      });
+      var alive = true;
+      function cleanup() {
+        alive = false;
+        stream.getTracks().forEach(function (t) {
+          t.stop();
+        });
+        video.remove();
+        stopBtn.remove();
+      }
+      stopBtn.onclick = cleanup;
+      async function tick() {
+        if (!alive) return;
+        try {
+          var codes = await detector.detect(video);
+          if (codes && codes[0] && codes[0].rawValue) {
+            document.getElementById('pBarcode').value = codes[0].rawValue;
+            hint.textContent = '';
+            cleanup();
+            return;
+          }
+        } catch (e) { /* keep scanning */ }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    } catch (e) {
+      hint.textContent = 'Camera permission denied or unavailable.';
+    }
+  });
   document.querySelectorAll('.view-btn').forEach(function (b) {
     b.classList.toggle('act', b.getAttribute('data-view') === viewMode);
   });
@@ -939,6 +1537,36 @@
       if (ev.target === detailOverlay) detailOverlay.hidden = true;
     });
   }
+  var closeStock = document.getElementById('btnCloseStockDrawer');
+  if (closeStock) {
+    closeStock.addEventListener('click', function () {
+      document.getElementById('stockDrawer').hidden = true;
+    });
+  }
+  var stockOverlay = document.getElementById('stockDrawer');
+  if (stockOverlay) {
+    stockOverlay.addEventListener('click', function (ev) {
+      if (ev.target === stockOverlay) stockOverlay.hidden = true;
+    });
+  }
+  var btnStockSubmit = document.getElementById('btnStockSubmit');
+  if (btnStockSubmit) btnStockSubmit.addEventListener('click', submitStockDrawer);
+
+  document.querySelectorAll('#stockChips .chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      stockAlert = chip.getAttribute('data-alert') || '';
+      document.querySelectorAll('#stockChips .chip').forEach(function (b) {
+        b.classList.toggle('act', (b.getAttribute('data-alert') || '') === stockAlert);
+      });
+      try {
+        var u = new URL(window.location.href);
+        if (stockAlert) u.searchParams.set('alert', stockAlert);
+        else u.searchParams.delete('alert');
+        window.history.replaceState({}, '', u.pathname + u.search);
+      } catch (e) { /* ignore */ }
+      renderProducts();
+    });
+  });
 
   async function getByBarcode(code) {
     if (!code) return { ok: false, error: 'code required' };
@@ -947,12 +1575,15 @@
   if (Inv) Inv.getByBarcode = getByBarcode;
 
   (async function boot() {
+    applyPackagingChrome();
+    await resolveStockManagementFlag();
     await loadCategories();
     await loadProducts();
   })();
 
   window.addEventListener('gfp:locale', function () {
     fillCategorySelects();
+    applyPackagingChrome();
     renderAlertBanner();
   });
 })();

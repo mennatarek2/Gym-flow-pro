@@ -60,6 +60,27 @@
 
   function findNavConfig(pathname) {
     var p = normalizePath(pathname);
+    // Stock Management hub owns legacy On Hand / Move / Count + Buy/Fix deep links
+    var stockHubRoots = [
+      '/dashboard/inventory/stock-management/',
+      '/dashboard/inventory/stock/',
+      '/dashboard/inventory/transfers/',
+      '/dashboard/inventory/counts/',
+      '/dashboard/inventory/purchase-orders/',
+      '/dashboard/inventory/adjustments/'
+    ];
+    var i;
+    for (i = 0; i < stockHubRoots.length; i++) {
+      var root = normalizePath(stockHubRoots[i]);
+      if (p === root || p.indexOf(root) === 0) {
+        var hub = null;
+        getNavItems().forEach(function (item) {
+          if (item.key === 'inv-stock-hub') hub = item;
+        });
+        if (hub) return hub;
+        break;
+      }
+    }
     var best = null;
     getNavItems().forEach(function (item) {
       var ip = normalizePath(item.path);
@@ -220,7 +241,17 @@
     if (ip === normalizePath('/dashboard/inventory/')) {
       return cp === ip;
     }
-    // On Hand stays active for contextual Buy & receive / Adjust quantity workflows
+    // Stock Management hub — active for hub + legacy stock/move/count + Buy/Fix deep links
+    if (ip === normalizePath('/dashboard/inventory/stock-management/')) {
+      if (cp === ip) return true;
+      if (cp.indexOf(normalizePath('/dashboard/inventory/stock')) === 0) return true;
+      if (cp.indexOf(normalizePath('/dashboard/inventory/transfers')) === 0) return true;
+      if (cp.indexOf(normalizePath('/dashboard/inventory/counts')) === 0) return true;
+      if (cp.indexOf(normalizePath('/dashboard/inventory/purchase-orders')) === 0) return true;
+      if (cp.indexOf(normalizePath('/dashboard/inventory/adjustments')) === 0) return true;
+      return false;
+    }
+    // Legacy On Hand path (redirects to hub) — keep Buy/Fix highlight
     if (ip === normalizePath('/dashboard/inventory/stock/')) {
       if (cp === ip) return true;
       if (cp.indexOf(normalizePath('/dashboard/inventory/purchase-orders')) === 0) return true;
@@ -425,7 +456,8 @@
       } catch (e) {
         registry = {};
         (global.GfpFeatures.FEATURE_MODULES || []).forEach(function (k) {
-          registry[k] = true;
+          // stock_management is packaging — never fail-open onto Pro hub
+          registry[k] = k !== 'stock_management';
         });
       }
     } else {
@@ -454,19 +486,34 @@
       global.GfpI18n.applyDocumentLocale();
     }
 
+    if (global.GfpBranding && typeof global.GfpBranding.load === 'function') {
+      try {
+        await global.GfpBranding.load();
+      } catch (e) { /* branding is non-blocking */ }
+    }
+
     var cached = (global.GfpFeatures && global.GfpFeatures.readCache()) || null;
     renderShellNav(cached);
     enforceRouteAccess(cached);
+
+    if (global.GfpBranding && typeof global.GfpBranding.reapply === 'function') {
+      try {
+        await global.GfpBranding.reapply();
+      } catch (e) { /* ignore */ }
+    }
 
     if (global.GfpFeatures) {
       try {
         var registry = await global.GfpFeatures.probeAllModules(false);
         renderShellNav(registry);
         enforceRouteAccess(registry);
+        if (global.GfpBranding && global.GfpBranding.reapply) {
+          await global.GfpBranding.reapply();
+        }
       } catch (e) {
         var open = {};
         (global.GfpFeatures.FEATURE_MODULES || []).forEach(function (k) {
-          open[k] = true;
+          open[k] = k !== 'stock_management';
         });
         renderShellNav(open);
         enforceRouteAccess(open);
@@ -488,6 +535,7 @@
     var prevLogout = global.GfpApi.logout.bind(global.GfpApi);
     global.GfpApi.logout = function () {
       if (global.GfpFeatures) global.GfpFeatures.clearCache();
+      if (global.GfpBranding && global.GfpBranding.clear) global.GfpBranding.clear();
       return prevLogout();
     };
   }

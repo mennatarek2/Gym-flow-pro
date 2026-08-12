@@ -68,8 +68,8 @@
   }
   var STATUS_LABELS = {
     draft: ['Draft', 'مسودة'],
-    submitted: ['Submitted', 'مقدّم'],
-    approved: ['Approved', 'معتمد'],
+    submitted: ['Waiting approval', 'في انتظار الموافقة'],
+    approved: ['Approved', 'تمت الموافقة'],
     cancelled: ['Cancelled', 'ملغى']
   };
   function statusLabel(st) {

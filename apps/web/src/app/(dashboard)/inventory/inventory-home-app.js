@@ -217,7 +217,7 @@
           oos > 0
             ? t('Shelves empty — reorder or receive goods', 'الرف فاضي — اطلب أو استلم بضاعة')
             : t('All tracked items have stock', 'كل الأصناف المتتبعة عليها رصيد'),
-        href: '/dashboard/inventory/stock/?filter=oos',
+        href: '/dashboard/inventory/stock-management/?tab=on-hand&filter=oos',
         linkLabel: t('Review', 'راجع')
       }) +
       pulseCard({
@@ -228,7 +228,7 @@
           low > 0
             ? t('At or below reorder minimum', 'عند أو تحت حد إعادة الطلب')
             : t('Above reorder levels', 'فوق حدود إعادة الطلب'),
-        href: '/dashboard/inventory/stock/?filter=low',
+        href: '/dashboard/inventory/stock-management/?tab=on-hand&filter=low',
         linkLabel: t('Needs order', 'يحتاج طلب')
       }) +
       valueCard +
@@ -262,7 +262,7 @@
         label: t('In transit', 'قيد النقل'),
         value: String(s.inTransitTransferCount != null ? s.inTransitTransferCount : 0),
         hint: t('Warehouse transfers not yet received', 'تحويلات لم تُستلم بعد'),
-        href: '/dashboard/inventory/transfers/',
+        href: '/dashboard/inventory/stock-management/?tab=move',
         linkLabel: t('Transfers', 'التحويلات')
       });
 

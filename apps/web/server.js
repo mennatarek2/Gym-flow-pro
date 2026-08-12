@@ -11,12 +11,13 @@ const SHARED_SCRIPTS = [
   '/shared/api-config.js',
   '/shared/api-client.js',
   '/shared/authz.js',
-  '/shared/features.js',
+  '/shared/features.js?v=3',
   '/shared/i18n.js',
   '/shared/nav.js',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
-  '/shared/shell.js',
+  '/shared/gfp-branding.js?v=4',
+  '/shared/shell.js?v=6',
 ];
 
 const SHARED_STYLES = ['/shared/rtl.css'];
@@ -47,7 +48,7 @@ function sendHtml(res, filePath) {
   const parts = [];
   if (needEarly) {
     parts.push(
-      '<script data-gfp-early-locale>(function(){try{var l=localStorage.getItem("gfp_locale");if(l!=="ar"&&l!=="en")l="en";var h=document.documentElement;h.lang=l;h.dir=l==="ar"?"rtl":"ltr";}catch(e){}})();</script>'
+      '<script data-gfp-early-locale>(function(){try{var l=localStorage.getItem("gfp_locale");if(l!=="ar"&&l!=="en")l="en";var h=document.documentElement;h.lang=l;h.dir=l==="ar"?"rtl":"ltr";var u=JSON.parse(localStorage.getItem("gfp_user")||"null");var tid=u&&(u.tenantId||u.TenantId);var raw=tid&&localStorage.getItem("gfp_branding:"+tid);if(!raw)raw=localStorage.getItem("gfp_branding");if(!raw)return;var b=JSON.parse(raw);var p=b.primaryColor||b.PrimaryColor||"#7ACC00";var a=b.accentColor||b.AccentColor||"#A0E040";h.style.setProperty("--gfp-brand-primary",p);h.style.setProperty("--gfp-brand-accent",a);h.style.setProperty("--l500",p);h.style.setProperty("--l400",a);h.style.setProperty("--l600",p);h.style.setProperty("--l300",a);}catch(e){}})();</script>'
     );
   }
   missingCss.forEach((href) => parts.push(`<link rel="stylesheet" href="${href}">`));

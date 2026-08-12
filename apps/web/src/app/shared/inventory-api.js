@@ -62,6 +62,9 @@
     productUnarchive: function (id) {
       return '/inventory/products/' + encodeURIComponent(id) + '/unarchive';
     },
+    productImageUpload: function () {
+      return '/inventory/products/image';
+    },
     productStock: function (id) {
       return '/inventory/products/' + encodeURIComponent(id) + '/stock';
     },
@@ -130,6 +133,12 @@
     },
     purchaseOrderReceive: function (id) {
       return '/inventory/purchase-orders/' + encodeURIComponent(id) + '/receipts';
+    },
+    goodsReceipts: function (params) {
+      return '/inventory/goods-receipts' + q(params);
+    },
+    goodsReceipt: function (id) {
+      return '/inventory/goods-receipts/' + encodeURIComponent(id);
     },
     transfers: function (params) {
       return '/inventory/transfers' + q(params);

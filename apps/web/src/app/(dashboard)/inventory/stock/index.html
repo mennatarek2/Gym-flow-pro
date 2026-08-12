@@ -6,7 +6,9 @@
 <title>GymFlowPro — On Hand</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="stock.css">
+<link rel="stylesheet" href="../stock-ops-shared.css?v=2">
+<link rel="stylesheet" href="stock.css?v=sm2">
+<script src="../stock-ops-embed.js?v=1"></script>
 </head>
 <body>
 <div class="app">
@@ -17,14 +19,14 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb" id="stockBreadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" id="bcCurrent" data-en="On Hand" data-ar="الرصيد">On Hand</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb" id="stockBreadcrumb"><span data-en="Stock Management" data-ar="إدارة المخزون">Stock Management</span><span class="sep">/</span><span class="current" id="bcCurrent" data-en="On Hand" data-ar="الرصيد">On Hand</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 <div class="content">
   <div class="page-header">
     <div>
       <h1 class="page-title" data-en="On Hand" data-ar="الرصيد">On Hand</h1>
-      <p class="page-subtitle" data-en="Available-first board. Open a product for warehouses, history, Buy &amp; receive, or Adjust quantity." data-ar="لوحة المتاح أولاً. افتح منتج للمستودعات والحركة وشراء واستلام أو تعديل الكمية.">Available-first board. Open a product for warehouses, history, Buy &amp; receive, or Adjust quantity.</p>
+      <p class="page-subtitle" data-en="See what you can sell right now. Tap a product for details, buy &amp; receive, or fix quantity." data-ar="شوف اللي تقدر تبيعه دلوقتي. اضغط منتج للتفاصيل أو شراء واستلام أو تعديل الكمية.">See what you can sell right now. Tap a product for details, buy &amp; receive, or fix quantity.</p>
     </div>
     <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
   </div>
@@ -40,7 +42,7 @@
     <div class="filter-chips" role="group">
       <button type="button" class="chip act" data-filter="all" data-en="All" data-ar="الكل">All</button>
       <button type="button" class="chip" data-filter="low" data-en="Low" data-ar="منخفض">Low</button>
-      <button type="button" class="chip" data-filter="oos" data-en="Unsellable" data-ar="غير قابل للبيع">Unsellable</button>
+      <button type="button" class="chip" data-filter="oos" data-en="Can't sell" data-ar="مش بيتباع">Can't sell</button>
       <button type="button" class="chip" data-filter="expired" data-en="Expired" data-ar="منتهي">Expired</button>
       <button type="button" class="chip" data-filter="ok" data-en="OK" data-ar="تمام">OK</button>
     </div>
@@ -74,6 +76,6 @@
 </div>
 </div>
 <div class="toast" id="toast"></div>
-<script src="stock-app.js?v=ia2"></script>
+<script src="stock-app.js?v=sm2"></script>
 </body>
 </html>

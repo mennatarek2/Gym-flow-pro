@@ -564,7 +564,22 @@
       return;
     }
     closeModal('recvModal');
-    toast(t('Goods received — stock updated.', 'تم الاستلام — تم تحديث المخزون.'), 'ok');
+    var grnId = r.data && r.data.id;
+    var cta =
+      grnId
+        ? ' <a href="/dashboard/invoices/?tab=buy&grnId=' +
+          encodeURIComponent(grnId) +
+          '">' +
+          t('Open purchase invoice', 'فتح فاتورة الشراء') +
+          '</a>'
+        : '';
+    var el = document.getElementById('toast');
+    el.className = 'toast show ok';
+    el.innerHTML =
+      esc(t('Goods received — stock updated.', 'تم الاستلام — تم تحديث المخزون.')) + cta;
+    setTimeout(function () {
+      el.classList.remove('show');
+    }, 6000);
     await loadList();
     await loadDetail(current.id);
   });
@@ -663,32 +678,63 @@
   document.getElementById('btnRefresh').addEventListener('click', loadList);
   document.getElementById('filterStatus').addEventListener('change', loadList);
 
-  function applyOnHandContext() {
+  function applyBuyDeepLinkContext() {
     try {
       var params = new URLSearchParams(window.location.search);
-      if (params.get('from') !== 'on-hand') return { fromOnHand: false };
+      var from = params.get('from') || '';
+      if (from !== 'on-hand' && from !== 'products') return { openCreate: false };
       var productId = params.get('productId') || '';
       var warehouseId = params.get('warehouseId') || '';
       var back =
-        '/dashboard/inventory/stock/' +
-        (productId ? '?productId=' + encodeURIComponent(productId) : '');
+        from === 'products'
+          ? '/dashboard/inventory/products/' +
+            (productId ? '?focus=' + encodeURIComponent(productId) : '')
+          : '/dashboard/inventory/stock/' +
+            (productId ? '?productId=' + encodeURIComponent(productId) : '');
+      var backLabelEn = from === 'products' ? 'Back to Products' : 'Back to On Hand';
+      var backLabelAr = from === 'products' ? 'رجوع للمنتجات' : 'رجوع للرصيد';
       var bar = document.getElementById('poContextBar');
       var backLink = document.getElementById('poBackOnHand');
       var crumb = document.getElementById('poBreadcrumb');
       if (bar) bar.hidden = false;
-      if (backLink) backLink.href = back;
-      if (crumb) {
-        crumb.innerHTML =
-          '<span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span>' +
-          '<a href="' +
-          back.replace(/"/g, '&quot;') +
-          '" data-en="On Hand" data-ar="الرصيد">On Hand</a>' +
-          '<span class="sep">/</span>' +
-          '<span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span>';
+      if (backLink) {
+        backLink.href = back;
+        backLink.innerHTML =
+          '<i class="ti ti-arrow-left"></i> <span data-en="' +
+          backLabelEn +
+          '" data-ar="' +
+          backLabelAr +
+          '">' +
+          backLabelEn +
+          '</span>';
       }
-      return { fromOnHand: true, productId: productId, warehouseId: warehouseId, back: back };
+      if (crumb) {
+        if (from === 'products') {
+          crumb.innerHTML =
+            '<span data-en="Catalog" data-ar="الكتالوج">Catalog</span><span class="sep">/</span>' +
+            '<a href="' +
+            back.replace(/"/g, '&quot;') +
+            '" data-en="Products" data-ar="المنتجات">Products</a>' +
+            '<span class="sep">/</span>' +
+            '<span class="current" data-en="Buy from supplier" data-ar="شراء من مورد">Buy from supplier</span>';
+        } else {
+          crumb.innerHTML =
+            '<span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span>' +
+            '<a href="' +
+            back.replace(/"/g, '&quot;') +
+            '" data-en="On Hand" data-ar="الرصيد">On Hand</a>' +
+            '<span class="sep">/</span>' +
+            '<span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span>';
+        }
+      }
+      return {
+        openCreate: !!productId,
+        productId: productId,
+        warehouseId: warehouseId,
+        back: back
+      };
     } catch (e) {
-      return { fromOnHand: false };
+      return { openCreate: false };
     }
   }
 
@@ -703,7 +749,7 @@
   });
 
   (async function boot() {
-    var ctx = applyOnHandContext();
+    var ctx = applyBuyDeepLinkContext();
     await loadLookups();
     await loadList();
     applyLocale();
@@ -711,7 +757,7 @@
       var params = new URLSearchParams(window.location.search);
       var openId = params.get('id');
       if (openId) await loadDetail(openId);
-      else if (ctx.fromOnHand && ctx.productId && canManage) {
+      else if (ctx.openCreate && ctx.productId && canManage) {
         await openCreatePoModal({
           productId: ctx.productId,
           warehouseId: ctx.warehouseId

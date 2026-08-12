@@ -236,7 +236,7 @@
       '<div class="stat-pill danger">' +
       esc(String(oos)) +
       ' ' +
-      esc(t('unsellable', 'غير قابل للبيع')) +
+      esc(t("can't sell", 'مش بيتباع')) +
       (expired ? ' · ' + expired + ' ' + esc(t('expired', 'منتهي')) : '') +
       '</div>' +
       '<div class="stat-pill warn">' +

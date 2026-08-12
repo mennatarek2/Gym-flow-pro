@@ -1,15 +1,27 @@
 /**
  * GymFlowPro — feature-flag module probe + cached registry (§0.8).
  * FEATURE_DISABLED (404 ProblemDetails title) → module unavailable (hide from nav).
- * Network errors fail-open (assume available).
+ * Network errors: fail-open for core modules; fail-closed for stock_management (Growth desk).
  */
 (function (global) {
   'use strict';
 
-  var CACHE_KEY = 'gfp_feature_modules_v1';
+  var CACHE_KEY = 'gfp_feature_modules_v3';
   var CACHE_TTL_MS = 10 * 60 * 1000;
 
-  var FEATURE_MODULES = ['sales', 'shifts', 'trials', 'refunds', 'debtors', 'imports', 'inventory'];
+  var FEATURE_MODULES = [
+    'sales',
+    'shifts',
+    'trials',
+    'refunds',
+    'debtors',
+    'imports',
+    'inventory',
+    'stock_management'
+  ];
+
+  /** Modules that must stay OFF when probe fails (tier packaging, not core POS). */
+  var FAIL_CLOSED = { stock_management: true };
 
   var PROBES = {
     sales: { method: 'GET', path: '/promo-codes?page=1&pageSize=1' },
@@ -19,7 +31,9 @@
     debtors: { method: 'GET', path: '/debtors?page=1&pageSize=1' },
     imports: { method: 'GET', path: '/imports/template.xlsx', raw: true },
     // INVS: cheapest inventory read — FEATURE_DISABLED → hide Inventory nav
-    inventory: { method: 'GET', path: '/inventory/categories' }
+    inventory: { method: 'GET', path: '/inventory/categories' },
+    // Pro+ Move/Count engines — Growth/Starter Products desk only
+    stock_management: { method: 'GET', path: '/inventory/transfers' }
   };
 
   function readCache() {
@@ -43,6 +57,8 @@
 
   function clearCache() {
     try { global.sessionStorage.removeItem(CACHE_KEY); } catch (e) { /* ignore */ }
+    try { global.sessionStorage.removeItem('gfp_feature_modules_v2'); } catch (e) { /* ignore */ }
+    try { global.sessionStorage.removeItem('gfp_feature_modules_v1'); } catch (e) { /* ignore */ }
   }
 
   function isFeatureDisabled(result) {
@@ -57,10 +73,10 @@
 
   async function probeModuleAvailable(module) {
     var probe = PROBES[module];
-    if (!probe) return true;
+    if (!probe) return !FAIL_CLOSED[module];
     try {
       var Gfp = global.GfpApi;
-      if (!Gfp) return true;
+      if (!Gfp) return !FAIL_CLOSED[module];
       var opts = { auth: true };
       if (probe.raw) opts.raw = true;
       var r;
@@ -88,7 +104,7 @@
       if (isFeatureDisabled(r)) return false;
       return true;
     } catch (e) {
-      return true; // fail-open
+      return !FAIL_CLOSED[module];
     }
   }
 

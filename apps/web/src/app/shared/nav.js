@@ -10,8 +10,9 @@
  * | Front desk      | Sale, Member Orders, Debtors, Call sheet                      |
  * | Money           | Shifts, Refunds, Promo codes, Invoices, Z-Report, Reports     |
  * | Catalog         | Plans                                                         |
- * | Inventory       | Overview, On Hand, Move, Count, Insights, Products, Suppliers,  |
- * |                 | Warehouses (Buy/Adjust contextual from On Hand; Sell → Front Desk)|
+ * | Stock Management| Stock Management (hub: On Hand / Move / Count)               |
+ * | Inventory       | Overview, Insights, Products, Suppliers, Warehouses           |
+ * |                 | (Buy/Adjust contextual from On Hand; Sell → Front Desk)       |
  * | Administration  | Import, Audit, Notifications, Staff, Settings                 |
  */
 (function (global) {
@@ -33,8 +34,8 @@
    *   path: string,
    *   icon: string,
    *   access: NavAccess,
-   *   featureFlag?: 'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory',
-   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'>
+   *   featureFlag?: 'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management',
+   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'>
    * }} NavItem
    */
 
@@ -170,6 +171,7 @@
           labelAr: 'الفواتير',
           path: '/dashboard/invoices/',
           icon: 'ti-file-invoice',
+          // Finance hub (PAP AP-2): Sell tabs + Buy GRN docs. Buy also needs inventory.view at API.
           access: { kind: 'permission', value: 'reports.financial.view' }
         },
         {
@@ -205,6 +207,31 @@
           path: '/dashboard/plans/',
           icon: 'ti-package',
           access: { kind: 'permission', value: 'plans.manage' }
+        },
+        {
+          key: 'inv-products',
+          label: 'Products',
+          labelAr: 'المنتجات',
+          path: '/dashboard/inventory/products/',
+          icon: 'ti-box',
+          access: { kind: 'permission', value: ['inventory.manage', 'inventory.purchase'] },
+          featureFlag: 'inventory'
+        }
+      ]
+    },
+    {
+      key: 'stock-management',
+      label: 'Stock Management',
+      labelAr: 'إدارة المخزون',
+      items: [
+        {
+          key: 'inv-stock-hub',
+          label: 'Stock Management',
+          labelAr: 'إدارة المخزون',
+          path: '/dashboard/inventory/stock-management/',
+          icon: 'ti-stack-2',
+          access: { kind: 'permission', value: 'inventory.view' },
+          featureFlags: ['inventory', 'stock_management']
         }
       ]
     },
@@ -220,35 +247,7 @@
           path: '/dashboard/inventory/',
           icon: 'ti-gauge',
           access: { kind: 'permission', value: 'inventory.view' },
-          featureFlag: 'inventory'
-        },
-        {
-          key: 'inv-stock',
-          // Primary stock workspace — Buy & receive / Adjust quantity launch from product detail
-          label: 'On Hand',
-          labelAr: 'الرصيد',
-          path: '/dashboard/inventory/stock/',
-          icon: 'ti-stack-2',
-          access: { kind: 'permission', value: 'inventory.view' },
-          featureFlag: 'inventory'
-        },
-        {
-          key: 'inv-transfers',
-          label: 'Move stock',
-          labelAr: 'نقل مخزون',
-          path: '/dashboard/inventory/transfers/',
-          icon: 'ti-arrows-exchange',
-          access: { kind: 'permission', value: 'inventory.transfer' },
-          featureFlag: 'inventory'
-        },
-        {
-          key: 'inv-counts',
-          label: 'Count stock',
-          labelAr: 'جرد',
-          path: '/dashboard/inventory/counts/',
-          icon: 'ti-clipboard-check',
-          access: { kind: 'permission', value: 'inventory.adjust' },
-          featureFlag: 'inventory'
+          featureFlags: ['inventory', 'stock_management']
         },
         {
           key: 'inv-reports',
@@ -257,16 +256,7 @@
           path: '/dashboard/inventory/reports/',
           icon: 'ti-chart-histogram',
           access: { kind: 'permission', value: 'inventory.view' },
-          featureFlag: 'inventory'
-        },
-        {
-          key: 'inv-products',
-          label: 'Products',
-          labelAr: 'المنتجات',
-          path: '/dashboard/inventory/products/',
-          icon: 'ti-box',
-          access: { kind: 'permission', value: ['inventory.manage', 'inventory.purchase'] },
-          featureFlag: 'inventory'
+          featureFlags: ['inventory', 'stock_management']
         },
         {
           key: 'inv-suppliers',
@@ -275,7 +265,7 @@
           path: '/dashboard/inventory/suppliers/',
           icon: 'ti-truck',
           access: { kind: 'permission', value: ['inventory.purchase', 'inventory.manage'] },
-          featureFlag: 'inventory'
+          featureFlags: ['inventory', 'stock_management']
         },
         {
           key: 'inv-warehouses',
@@ -284,7 +274,7 @@
           path: '/dashboard/inventory/warehouses/',
           icon: 'ti-building-warehouse',
           access: { kind: 'permission', value: 'inventory.manage' },
-          featureFlag: 'inventory'
+          featureFlags: ['inventory', 'stock_management']
         }
       ]
     },

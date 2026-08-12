@@ -69,8 +69,8 @@
   }
   var STATUS_LABELS = {
     pending: ['Pending', 'معلّق'],
-    in_transit: ['In transit', 'في الطريق'],
-    completed: ['Completed', 'مكتمل'],
+    in_transit: ['On the way', 'في الطريق'],
+    completed: ['Done', 'تم'],
     cancelled: ['Cancelled', 'ملغى']
   };
   function statusLabel(st) {

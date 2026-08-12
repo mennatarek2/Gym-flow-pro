@@ -614,8 +614,19 @@
   async function loadGymName() {
     var gn = global.document.getElementById('gymName');
     var ga = global.document.getElementById('gymNameAr');
-    // Full settings = Owner (settings.manage); gym-code is any-auth but returns code only
-    var r = await apiGet('/settings');
+    // Prefer staff-readable branding (any auth) — Owner-only /settings fails for Receptionist.
+    var r = await apiGet('/settings/branding');
+    if (r.ok && r.data) {
+      if (gn) gn.textContent = r.data.gymName || '';
+      if (ga) ga.textContent = r.data.gymNameAr || '';
+      if (global.GfpBranding && typeof global.GfpBranding.apply === 'function') {
+        try {
+          await global.GfpBranding.apply(r.data);
+        } catch (e) { /* ignore */ }
+      }
+      return;
+    }
+    r = await apiGet('/settings');
     if (r.ok && r.data) {
       if (gn) gn.textContent = r.data.gymName || '';
       if (ga) ga.textContent = r.data.gymNameAr || '';

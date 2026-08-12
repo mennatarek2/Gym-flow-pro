@@ -119,9 +119,9 @@ export interface IdempotencyHeader {
   "X-Idempotency-Key"?: string;
 }
 
-/** Feature flags live in Tenant.Settings JSON under "feature_flags" and gate 6 modules via
- *  [FeatureFlag("...")] on the controller class. All default to true — a tenant with no explicit
- *  config has every module enabled. A disabled module returns 404 with title "FEATURE_DISABLED". */
+/** Feature flags live in Tenant.Settings JSON under "feature_flags" and gate modules via
+ *  [FeatureFlag("...")] on the controller class. Tier map is authoritative for plan packaging;
+ *  Settings deny overlay can still force false. A disabled module returns 404 with title "FEATURE_DISABLED". */
 export interface FeatureFlagsDto {
   sales: boolean;
   shifts: boolean;
@@ -130,12 +130,15 @@ export interface FeatureFlagsDto {
   debtors: boolean;
   imports: boolean;
   inventory: boolean;
+  /** Pro+ On Hand / Move / Count hub. Starter/Growth use Products desk only. */
+  stock_management: boolean;
 }
 /** Controllers actually decorated with [FeatureFlag(...)]: SalesController("sales"),
  *  ShiftsController("shifts"), TrialController("trials"), RefundsController("refunds"),
- *  DebtorsController("debtors"), ImportsController("imports"). NOTE: CallSheetController has NO
- *  [FeatureFlag] attribute despite being an operational sibling of these — call-sheet endpoints
- *  are NOT gated by any flag. */
+ *  DebtorsController("debtors"), ImportsController("imports"), inventory controllers
+ *  ("inventory"), InventoryTransfersController + InventoryCountsController ("stock_management").
+ *  NOTE: CallSheetController has NO [FeatureFlag] attribute despite being an operational sibling
+ *  of these — call-sheet endpoints are NOT gated by any flag. */
 
 /** Role policies (ASP.NET named policies, distinct from the fine-grained perm system below):
  *  OwnerOnly, ManagerOrAbove (Owner|Manager), AnyStaff (Owner|Manager|Trainer|Receptionist),
@@ -885,6 +888,8 @@ export interface InvoiceQueryRequest {
   memberId?: string | null;
   status?: "issued" | "voided" | null;
   type?: "invoice" | "credit_note" | null;
+  /** SaleLine.LineType filter for Finance hub Sell tabs */
+  lineType?: "membership" | "retail" | "trial" | "day_pass" | "fee" | string | null;
   page?: number; // default 1
   pageSize?: number; // default 20
 }
@@ -1293,9 +1298,17 @@ export interface TenantSettingsDto {
   gymName: string;
   gymNameAr: string;
   gymCode: string;
+  shortName?: string | null;
   logoUrl?: string | null;
   phoneNumber?: string | null;
+  email?: string | null;
+  website?: string | null;
   address?: string | null;
+  primaryColor?: string; // default #7ACC00
+  secondaryColor?: string; // default #148F8F
+  accentColor?: string; // default #A0E040
+  cardPrimaryColor?: string;
+  showGymLogoOnCard?: boolean; // default true
   isActive: boolean;
   createdAtUtc: string;
   updatedAtUtc?: string | null;
@@ -1303,9 +1316,28 @@ export interface TenantSettingsDto {
 export interface UpdateTenantSettingsRequest {
   gymName: string;
   gymNameAr: string;
+  shortName?: string | null;
   logoUrl?: string | null;
   phoneNumber?: string | null;
+  email?: string | null;
+  website?: string | null;
   address?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+  accentColor?: string | null;
+  cardPrimaryColor?: string | null;
+  showGymLogoOnCard?: boolean | null;
+}
+export interface TenantBrandingDto {
+  gymName: string;
+  gymNameAr: string;
+  shortName?: string | null;
+  logoUrl?: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  cardPrimaryColor: string;
+  showGymLogoOnCard: boolean;
 }
 export interface TaxSettingsDto {
   vatEnabled: boolean;
@@ -1319,6 +1351,9 @@ export type UpdateTaxSettingsRequest = TaxSettingsDto;
 export const TENANT_SETTINGS_ENDPOINTS = {
   get: { method: "GET", path: "/api/settings" }, // policy OwnerOnly -> TenantSettingsDto
   update: { method: "PUT", path: "/api/settings" }, // policy OwnerOnly ; body: UpdateTenantSettingsRequest
+  branding: { method: "GET", path: "/api/settings/branding" }, // [Authorize] any staff -> TenantBrandingDto (tenant from context)
+  uploadLogo: { method: "POST", path: "/api/settings/logo" }, // OwnerOnly ; multipart file -> { logoUrl, relativeUrl, settings }
+  deleteLogo: { method: "DELETE", path: "/api/settings/logo" }, // OwnerOnly -> TenantSettingsDto
   gymCode: { method: "GET", path: "/api/settings/gym-code" }, // [Authorize] any staff -> { gymCode: string }
   qrPoster: { method: "GET", path: "/api/settings/qr-poster" }, // [Authorize] any staff -> { qrPosterUrl: string }
   tax: { method: "GET", path: "/api/settings/tax" }, // policy OwnerOnly -> TaxSettingsDto
@@ -1523,6 +1558,7 @@ export const INVENTORY_ENDPOINTS = {
   getByBarcode: { method: "GET", path: "/api/inventory/products/by-barcode/{code}" }, // inventory.view ; 404 if archived/inactive
   createProduct: { method: "POST", path: "/api/inventory/products" }, // inventory.manage
   updateProduct: { method: "PUT", path: "/api/inventory/products/{id}" }, // inventory.manage
+  uploadProductImage: { method: "POST", path: "/api/inventory/products/image" }, // inventory.manage ; multipart file → { imageUrl, relativeUrl }
   archiveProduct: { method: "POST", path: "/api/inventory/products/{id}/archive" }, // inventory.manage
   unarchiveProduct: { method: "POST", path: "/api/inventory/products/{id}/unarchive" }, // inventory.manage
   listWarehouses: { method: "GET", path: "/api/inventory/warehouses?includeInactive=" }, // inventory.view
@@ -1797,16 +1833,36 @@ export interface GoodsReceiptDto {
   purchaseOrderId: string;
   warehouseId: string;
   receivedAtUtc: string;
+  supplierId?: string | null;
+  supplierName?: string | null;
+  warehouseCode?: string | null;
+  totalAmount?: number | null; // null when cost-redacted
+  status?: "received";
+  docKind?: "purchase_doc";
   lines: {
     id: string;
     purchaseOrderLineId: string;
     productId: string;
     qty: number;
-    unitCost: number;
+    unitCost?: number | null;
     batchNumber?: string | null;
     expiresOn?: string | null;
     productBatchId?: string | null;
   }[];
+}
+
+/** AP-2 Buy docs list row — presentation over GoodsReceipt (not a PurchaseInvoice). */
+export interface GoodsReceiptListItemDto {
+  id: string;
+  purchaseOrderId: string;
+  supplierId: string;
+  supplierName?: string | null;
+  warehouseId: string;
+  warehouseCode?: string | null;
+  receivedAtUtc: string;
+  totalAmount?: number | null;
+  status: "received";
+  docKind: "purchase_doc";
 }
 
 export const INVENTORY_PURCHASING_ENDPOINTS = {
@@ -1831,6 +1887,11 @@ export const INVENTORY_PURCHASING_ENDPOINTS = {
   approvePurchaseOrder: { method: "POST", path: "/api/inventory/purchase-orders/{id}/approve" }, // inventory.purchase
   cancelPurchaseOrder: { method: "POST", path: "/api/inventory/purchase-orders/{id}/cancel" }, // inventory.purchase
   receivePurchaseOrder: { method: "POST", path: "/api/inventory/purchase-orders/{id}/receipts" }, // inventory.purchase
+  listGoodsReceipts: {
+    method: "GET",
+    path: "/api/inventory/goods-receipts?fromUtc=&toUtc=&supplierId=",
+  }, // inventory.view ; List<GoodsReceiptListItemDto>; X-Gfp-Truncated/Take; totalAmount redacted without CanSeeCost
+  getGoodsReceipt: { method: "GET", path: "/api/inventory/goods-receipts/{id}" }, // inventory.view ; GoodsReceiptDto
 } as const;
 
 // § 22b continued — Warehouse transfers (INVS-8)

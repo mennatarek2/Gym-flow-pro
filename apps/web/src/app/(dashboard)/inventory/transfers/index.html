@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GymFlowPro — Transfers</title>
+<title>GymFlowPro — Move stock</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="transfers.css">
+<link rel="stylesheet" href="../stock-ops-shared.css?v=2">
+<link rel="stylesheet" href="transfers.css?v=sm2">
+<script src="../stock-ops-embed.js?v=1"></script>
 </head>
 <body>
 <div class="app">
@@ -17,15 +19,14 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Move" data-ar="نقل">Move</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Stock Management" data-ar="إدارة المخزون">Stock Management</span><span class="sep">/</span><span class="current" data-en="Move stock" data-ar="نقل مخزون">Move stock</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 <div class="content">
   <div class="page-header">
     <div>
       <h1 class="page-title" data-en="Move stock" data-ar="نقل المخزون">Move stock</h1>
-      <p class="page-subtitle" data-en="Move stock between warehouses: pending → in transit → receive. Reject sends stock back." data-ar="انقل الرصيد بين المستودعات: معلّق ← في الطريق ← استلام. الرفض يرجع الرصيد.">Move stock between warehouses: pending → in transit → receive. Reject sends stock back.</p>
-      <p id="xferBatchCaveat" class="hint" data-en="On submit, the server silently FEFO-allocates sellable lots (same rules as retail sale). Expired stock stays at the source." data-ar="عند الإرسال، السيرفر بيوزّع التشغيلات تلقائيًا بالأقرب لانتهاء الصلاحية (نفس قواعد البيع). الرصيد المنتهي بيفضل في المصدر.">On submit, the server silently FEFO-allocates sellable lots (same rules as retail sale). Expired stock stays at the source.</p>
+      <p class="page-subtitle" data-en="Send products from one warehouse to another. Create → send → receive at the other side." data-ar="ابعت منتجات من مستودع لمستودع. أنشئ ← أرسل ← استلم في الجانب التاني.">Send products from one warehouse to another. Create → send → receive at the other side.</p>
     </div>
     <div>
       <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New transfer" data-ar="تحويل جديد" data-i18n-text>New transfer</span></button>
@@ -37,17 +38,17 @@
         <label><span data-en="Status" data-ar="الحالة">Status</span>
           <select id="filterStatus">
             <option value="" data-en="All" data-ar="الكل">All</option>
-            <option value="pending">pending</option>
-            <option value="in_transit">in_transit</option>
-            <option value="completed">completed</option>
-            <option value="cancelled">cancelled</option>
+            <option value="pending" data-en="Pending" data-ar="معلّق">Pending</option>
+            <option value="in_transit" data-en="On the way" data-ar="في الطريق">On the way</option>
+            <option value="completed" data-en="Done" data-ar="تم">Done</option>
+            <option value="cancelled" data-en="Cancelled" data-ar="ملغي">Cancelled</option>
           </select>
         </label>
         <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
       </div>
       <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
     </div>
-    <div class="detail-card" id="detailHost"><p class="muted" data-en="Select a transfer." data-ar="اختار تحويلاً.">Select a transfer.</p></div>
+    <div class="detail-card" id="detailHost"><p class="muted" data-en="Pick a transfer on the left to see next steps." data-ar="اختار تحويل من الشمال عشان تشوف الخطوة الجاية.">Pick a transfer on the left to see next steps.</p></div>
   </div>
 </div>
 </div>
@@ -83,6 +84,6 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-<script src="transfers-app.js"></script>
+<script src="transfers-app.js?v=sm2"></script>
 </body>
 </html>

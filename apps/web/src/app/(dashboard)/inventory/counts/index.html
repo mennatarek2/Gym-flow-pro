@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GymFlowPro — Stock counts</title>
+<title>GymFlowPro — Count stock</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="counts.css">
+<link rel="stylesheet" href="../stock-ops-shared.css?v=2">
+<link rel="stylesheet" href="counts.css?v=sm2">
+<script src="../stock-ops-embed.js?v=1"></script>
 </head>
 <body>
 <div class="app">
@@ -17,14 +19,14 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Count" data-ar="جرد">Count</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Stock Management" data-ar="إدارة المخزون">Stock Management</span><span class="sep">/</span><span class="current" data-en="Count stock" data-ar="جرد">Count stock</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 <div class="content">
   <div class="page-header">
     <div>
-      <h1 class="page-title" data-en="Stock counts" data-ar="جرد المخزون">Stock counts</h1>
-      <p class="page-subtitle" data-en="Freeze on-hand qty, count shelves, submit, then approve to post differences." data-ar="ثبّت الرصيد في النظام، عُدّ الرف، قدّم، ثم وافق لتسجيل الفرق.">Freeze on-hand qty, count shelves, submit, then approve to post differences.</p>
+      <h1 class="page-title" data-en="Count stock" data-ar="جرد المخزون">Count stock</h1>
+      <p class="page-subtitle" data-en="Count shelves, then approve to fix the system numbers." data-ar="عُدّ الرف، وبعدين وافق عشان النظام يتظبط على العدد الحقيقي.">Count shelves, then approve to fix the system numbers.</p>
     </div>
     <div>
       <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New count" data-ar="جرد جديد" data-i18n-text>New count</span></button>
@@ -36,17 +38,17 @@
         <label><span data-en="Status" data-ar="الحالة">Status</span>
           <select id="filterStatus">
             <option value="" data-en="All" data-ar="الكل">All</option>
-            <option value="draft">draft</option>
-            <option value="submitted">submitted</option>
-            <option value="approved">approved</option>
-            <option value="cancelled">cancelled</option>
+            <option value="draft" data-en="Draft" data-ar="مسودة">Draft</option>
+            <option value="submitted" data-en="Waiting approval" data-ar="في انتظار الموافقة">Waiting approval</option>
+            <option value="approved" data-en="Approved" data-ar="تمت الموافقة">Approved</option>
+            <option value="cancelled" data-en="Cancelled" data-ar="ملغي">Cancelled</option>
           </select>
         </label>
         <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
       </div>
       <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
     </div>
-    <div class="detail-card" id="detailHost"><p class="muted" data-en="Select a count." data-ar="اختار جرداً.">Select a count.</p></div>
+    <div class="detail-card" id="detailHost"><p class="muted" data-en="Pick a count on the left to enter numbers or approve." data-ar="اختار جرد من الشمال عشان تدخل الأعداد أو توافق.">Pick a count on the left to enter numbers or approve.</p></div>
   </div>
 </div>
 </div>
@@ -63,7 +65,7 @@
         <select id="ctWarehouse" required><option value="">…</option></select>
       </label>
       <label><span data-en="Note" data-ar="ملاحظة">Note</span><textarea id="ctNote" rows="2" maxlength="500"></textarea></label>
-      <p class="muted" data-en="Creates a snapshot of on-hand qty for all trackable products in the warehouse." data-ar="ينشئ لقطة من الرصيد لكل المنتجات المتتبعة في المستودع.">Creates a snapshot of on-hand qty for all trackable products in the warehouse.</p>
+      <p class="muted" data-en="Starts a list of every tracked product in that warehouse so you can type the real shelf count." data-ar="بيجهّز قائمة بكل المنتجات المتتبعة في المستودع عشان تكتب العدد الحقيقي على الرف.">Starts a list of every tracked product in that warehouse so you can type the real shelf count.</p>
       <p class="form-hint" id="ctHint"></p>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" data-close="ctModal" data-en="Cancel" data-ar="إلغاء">Cancel</button>
@@ -73,6 +75,6 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
-<script src="counts-app.js"></script>
+<script src="counts-app.js?v=sm2"></script>
 </body>
 </html>
