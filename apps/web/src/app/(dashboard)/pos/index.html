@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GymFlowPro — Point of Sale</title>
-<meta name="description" content="Front desk POS for retail products — cart, payment, and receipt.">
+<title>GymFlowPro — Sale</title>
+<meta name="description" content="Front desk sale for retail products — cart, payment, and receipt.">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="pos.css?v=desk11">
+<link rel="stylesheet" href="pos.css?v=desk13">
 <script>
 /* Sale is retail-only — membership onboarding lives in Members */
 (function () {
@@ -46,7 +46,7 @@
 
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span>🏠</span><span class="sep">/</span><span class="current" id="posBreadcrumb">Point of Sale</span></div></div>
+      <div class="tb-left"><div class="tb-breadcrumb"><span>🏠</span><span class="sep">/</span><span class="current" id="posBreadcrumb">Sale</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">Gym</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 
@@ -68,8 +68,8 @@
 
   <div class="page-header">
     <div>
-      <h1 class="page-title"><i class="ti ti-shopping-cart"></i> <span id="pageTitleText" data-en="Point of Sale" data-ar="نقطة البيع">Point of Sale</span></h1>
-      <p class="page-subtitle" id="pageSubtitle" data-en="1) Products  2) Cart  3) Pay  4) Finish" data-ar="١) المنتجات  ٢) السلة  ٣) ادفع  ٤) خلّص">1) Products  2) Cart  3) Pay  4) Finish</p>
+      <h1 class="page-title"><i class="ti ti-shopping-cart"></i> <span id="pageTitleText" data-en="Sale" data-ar="البيع">Sale</span></h1>
+      <p class="page-subtitle" id="pageSubtitle" data-en="Sell retail products at the desk — scan or tap, pay, print receipt. Memberships stay in Members." data-ar="بيع منتجات من المكتب — امسح أو اضغط، ادفع، اطبع الإيصال. الاشتراكات من الأعضاء.">Sell retail products at the desk — scan or tap, pay, print receipt. Memberships stay in Members.</p>
     </div>
     <div class="hdr-actions">
       <a class="btn secondary" id="btnPromoCodes" href="/dashboard/promo-codes/" style="display:none"><i class="ti ti-discount-2"></i> <span data-en="Promo codes" data-ar="أكواد خصم">Promo codes</span></a>
@@ -77,8 +77,18 @@
     </div>
   </div>
 
-  <p class="mode-help muted" id="modeHelp" data-en="Product sales only. Memberships are managed in Members." data-ar="بيع منتجات فقط. الاشتراكات من الأعضاء.">Product sales only. Memberships are managed in Members.</p>
-  <div id="inventoryOffHint" class="muted" style="display:none" data-en="Retail stock sales need the inventory feature for this gym. Create memberships in Members." data-ar="بيع المنتجات يحتاج تفعيل ميزة المخزون لهذا النادي. الاشتراكات من شاشة الأعضاء.">Retail stock sales need the inventory feature for this gym. Create memberships in Members.</div>
+  <div class="status-strip" id="posStatusStrip" aria-live="polite">
+    <span class="status-chip" id="statusShiftChip"><i class="ti ti-cash"></i> <span id="statusShiftText">Checking shift…</span></span>
+    <span class="status-chip" id="statusWhChip" hidden><i class="ti ti-building-warehouse"></i> <span id="statusWhText">—</span></span>
+    <span class="status-chip status-link"><a href="/dashboard/debtors/" data-en="Outstanding balances → Debtors" data-ar="المديونيات → المدينون">Outstanding balances → Debtors</a></span>
+  </div>
+  <div id="inventoryOffHint" class="banner warn is-off" hidden style="display:none" role="status">
+    <i class="ti ti-package-off" aria-hidden="true"></i>
+    <div>
+      <strong data-en="Inventory is off for this gym" data-ar="المخزون مقفول لهذا النادي">Inventory is off for this gym</strong>
+      <p data-en="Retail stock sales need the inventory feature. Memberships are managed in Members." data-ar="بيع المنتجات يحتاج تفعيل المخزون. الاشتراكات من شاشة الأعضاء.">Retail stock sales need the inventory feature. Memberships are managed in Members.</p>
+    </div>
+  </div>
 
   <!-- Hidden stubs for leftover JS IDs (not shown) -->
   <div id="membershipPanel" hidden aria-hidden="true" style="display:none!important">
@@ -105,10 +115,6 @@
         </div>
       </div>
       <div class="retail-desk">
-        <aside class="retail-rail retail-rail-member">
-          <div id="retailDebtHost"></div>
-        </aside>
-
         <section class="card retail-card retail-catalog">
           <div class="card-h retail-catalog-h">
             <h2 data-en="Products" data-ar="المنتجات">Products</h2>
@@ -134,7 +140,7 @@
               <span data-en="Cart" data-ar="السلة">Cart</span>
               <span class="cart-count" id="cartCount">0</span>
             </div>
-            <div id="retailCart" class="retail-cart"><div class="muted empty-cart" data-en="Cart empty — scan or tap a product." data-ar="السلة فاضية — امسح أو اضغط منتج.">Cart empty — scan or tap a product.</div></div>
+            <div id="retailCart" class="retail-cart"><div class="muted empty-cart" data-en="Cart is empty — scan a barcode or tap a product to start this sale." data-ar="السلة فاضية — امسح باركود أو اضغط منتج عشان تبدأ البيع.">Cart is empty — scan a barcode or tap a product to start this sale.</div></div>
           </section>
           <div id="retailPayMount"></div>
         </aside>
@@ -142,7 +148,7 @@
       </div><!-- /retailPanel -->
 
       <section class="card" id="paymentsCard">
-        <div class="card-h"><h2 data-en="Pay" data-ar="الدفع">Pay</h2></div>
+        <div class="card-h"><h2 data-en="Pay &amp; finish" data-ar="الدفع والإنهاء">Pay &amp; finish</h2></div>
         <div class="retail-quick-pay" id="retailQuickPay">
           <button type="button" class="btn qp-cash retail-tap" id="btnPayCash" disabled>
             <i class="ti ti-cash"></i> <span data-en="Cash" data-ar="كاش">Cash</span>
@@ -166,7 +172,6 @@
     </div>
 
     <aside class="card sticky-side" id="submitCard">
-      <div class="card-h"><h2 data-en="Finish" data-ar="إنهاء">Finish</h2></div>
       <div class="kv">
         <div class="kv-row desk-tech" id="idemKeyRow" hidden>
           <span>Idempotency</span><code id="idemKey" class="tiny">—</code>
@@ -177,31 +182,9 @@
         </div>
       </div>
       <button type="button" class="btn primary full" id="btnSell" disabled><i class="ti ti-check"></i> <span data-en="Complete sale" data-ar="تمّم البيع">Complete sale</span></button>
-      <p class="hint retail-only-hint" id="retailSubmitHint" hidden data-en="Double-check the cart and cash before tapping Finish." data-ar="راجِع السلة والكاش قبل ما تضغط إنهاء.">Double-check the cart and cash before tapping Finish.</p>
+      <p class="hint retail-only-hint" id="retailSubmitHint" hidden data-en="Double-check the cart and cash before completing." data-ar="راجِع السلة والكاش قبل ما تتمّم.">Double-check the cart and cash before completing.</p>
       <div id="saleResult" class="result" style="display:none"></div>
     </aside>
-  </div>
-
-  <div id="debtPayReturnHost">
-  <section class="card" id="debtPayCard">
-    <div class="card-h"><h2><i class="ti ti-receipt-2"></i> <span data-en="Collect balance on an older sale" data-ar="تحصيل باقي فاتورة قديمة">Collect balance on an older sale</span></h2></div>
-    <p class="hint" data-en="Use the sale number from the receipt when a member returns to pay the rest." data-ar="استخدم رقم الفاتورة من الإيصال لما العضو يرجع يكمّل الدفع.">Use the sale number from the receipt when a member returns to pay the rest.</p>
-    <div class="debt-form">
-      <label><span data-en="Sale number" data-ar="رقم الفاتورة">Sale number</span><input id="debtSaleId" data-en-placeholder="From receipt" data-ar-placeholder="من الإيصال" placeholder="From receipt" dir="ltr"></label>
-      <label><span data-en="Method" data-ar="طريقة الدفع">Method</span>
-        <select id="debtMethod">
-          <option value="cash">Cash</option>
-          <option value="card_paymob">Card</option>
-          <option value="fawry">Fawry</option>
-          <option value="vodafone">Vodafone Cash</option>
-          <option value="instapay">InstaPay</option>
-        </select>
-      </label>
-      <label><span data-en="Amount" data-ar="المبلغ">Amount</span><input type="number" id="debtAmount" step="0.01" min="0.01"></label>
-      <button type="button" class="btn primary" id="btnDebtPay"><span data-en="Record payment" data-ar="سجّل الدفعة">Record payment</span></button>
-    </div>
-    <div id="debtResult" class="result" style="display:none"></div>
-  </section>
   </div>
 </div>
 </div>
@@ -231,6 +214,6 @@ if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.dis
 document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
 (async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
 </script>
-<script src="pos-app.js?v=desk11"></script>
+<script src="pos-app.js?v=desk13"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
 <title>GymFlowPro — Products</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="products.css?v=4">
+<link rel="stylesheet" href="products.css?v=6">
 </head>
 <body>
 <div class="app">
@@ -112,6 +112,72 @@
       <div class="detail-actions">
         <button type="button" class="btn-create" id="btnStockSubmit"><i class="ti ti-package-import"></i> <span id="btnStockSubmitLabel">Put stock in</span></button>
         <a class="btn-secondary" id="btnStockSell" href="/dashboard/pos/" style="text-decoration:none"><i class="ti ti-shopping-cart"></i> Sell</a>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Simple desk: Buy from supplier (no warehouse UI — uses default behind the scenes) -->
+<div class="drawer-overlay" id="buyDrawer" hidden>
+  <aside class="drawer stock-drawer" role="dialog" aria-labelledby="buyDrawerTitle">
+    <div class="drawer-hdr">
+      <div>
+        <h2 id="buyDrawerTitle">Buy</h2>
+        <div class="stock-drawer-meta" id="buyDrawerMeta"></div>
+      </div>
+      <button type="button" class="modal-close" id="btnCloseBuyDrawer"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="drawer-body">
+      <p class="field-hint" style="margin-top:0" data-en="Buys stock from a supplier and puts it on the shelf in one step. No warehouse pick." data-ar="اشتري من المورد ويزوّد الرصيد في خطوة واحدة — من غير اختيار مستودع.">Buys stock from a supplier and puts it on the shelf in one step. No warehouse pick.</p>
+      <label class="ef-field">
+        <span data-en="Supplier *" data-ar="المورد *">Supplier *</span>
+        <select id="buySupplier"><option value="">…</option></select>
+      </label>
+      <label class="ef-field" id="buyNewSupplierWrap" hidden>
+        <span data-en="Or type a new supplier name" data-ar="أو اكتب اسم مورد جديد">Or type a new supplier name</span>
+        <input type="text" id="buyNewSupplier" maxlength="150" placeholder="e.g. Cairo Wholesale" autocomplete="off">
+      </label>
+      <label class="ef-field">
+        <span data-en="Qty bought *" data-ar="الكمية المشتراة *">Qty bought *</span>
+        <input type="number" id="buyQty" min="0.001" step="0.001" placeholder="e.g. 24">
+      </label>
+      <label class="ef-field" id="buyCostWrap">
+        <span data-en="Unit cost *" data-ar="سعر الوحدة *">Unit cost *</span>
+        <input type="number" id="buyUnitCost" min="0" step="0.01" value="0">
+      </label>
+      <div class="buy-money-box" id="buyMoneyBox">
+        <div class="buy-money-row"><span data-en="Purchase total" data-ar="إجمالي الشراء">Purchase total</span><strong id="buyTotalPreview">—</strong></div>
+        <label class="ef-field" style="margin:10px 0 0">
+          <span data-en="Paid now" data-ar="مدفوع دلوقتي">Paid now</span>
+          <input type="number" id="buyPaidNow" min="0" step="0.01" value="0" placeholder="0 = on account">
+        </label>
+        <label class="ef-field" id="buyPayMethodWrap">
+          <span data-en="Payment method" data-ar="طريقة الدفع">Payment method</span>
+          <select id="buyPayMethod">
+            <option value="cash">Cash / نقدي</option>
+            <option value="card">Card / بطاقة</option>
+            <option value="transfer">Transfer / تحويل</option>
+            <option value="other">Other / أخرى</option>
+          </select>
+        </label>
+        <p class="field-hint" style="margin:8px 0 0" data-en="Unpaid amount stays as due on the supplier. Full pay → due 0." data-ar="اللي متدفعش بيفضل مستحق على المورد. لو دفعت الكل → المستحق صفر.">Unpaid amount stays as due on the supplier. Full pay → due 0.</p>
+      </div>
+      <label class="ef-field" id="buyBatchWrap" hidden>
+        <span data-en="Batch #" data-ar="رقم التشغيلة">Batch #</span>
+        <input type="text" id="buyBatch" maxlength="80" autocomplete="off">
+      </label>
+      <label class="ef-field" id="buyExpiryWrap" hidden>
+        <span data-en="Expires on" data-ar="تاريخ الصلاحية">Expires on</span>
+        <input type="date" id="buyExpiry">
+      </label>
+      <label class="ef-field">
+        <span data-en="Notes" data-ar="ملاحظات">Notes</span>
+        <input type="text" id="buyNotes" maxlength="200" placeholder="optional">
+      </label>
+      <p class="field-hint" id="buyDrawerHint"></p>
+      <div id="buyResultPanel" class="buy-result" hidden></div>
+      <div class="detail-actions" id="buyActions">
+        <button type="button" class="btn-create" id="btnBuySubmit"><i class="ti ti-truck"></i> <span data-en="Buy, record & put on shelf" data-ar="اشتري وسجّل وحط على الرف">Buy, record & put on shelf</span></button>
       </div>
     </div>
   </aside>
@@ -246,6 +312,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="products-app.js?v=5"></script>
+<script src="products-app.js?v=7"></script>
 </body>
 </html>

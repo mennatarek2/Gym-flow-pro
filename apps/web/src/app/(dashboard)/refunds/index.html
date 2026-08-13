@@ -133,7 +133,7 @@
 <script>
 const API_BASE=window.API_BASE||'https://localhost:5001/api';
 function getToken(){return localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');}
-function getH(){const t=getToken();const h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;return h;}
+function getH(){const t=getToken();const h={'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};if(t)h['Authorization']='Bearer '+t;return h;}
 function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
 const user=getUser();
 if(!user||!getToken()) location.href='/auth/login/';
@@ -141,8 +141,14 @@ document.getElementById('userAvatar').textContent=(user.fullName||'U').split(' '
 document.getElementById('userName').textContent=user.fullName||'User';
 document.getElementById('userRole').textContent=user.role||'Staff';
 if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.display='';
-document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
-(async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';}})();
+document.getElementById('btnLogout').onclick=function(){if(window.GfpBranding&&window.GfpBranding.clear)window.GfpBranding.clear();['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
+(async()=>{
+  try{
+    if(window.GfpBranding&&window.GfpBranding.load){await window.GfpBranding.load();return;}
+  }catch(e){}
+  const r=await fetch(API_BASE+'/settings/branding',{headers:getH()});
+  if(r.ok){const s=await r.json();const el=document.getElementById('gymName');if(el)el.textContent=s.gymName||'';}
+})();
 </script>
 <script src="refunds-app.js"></script>
 </body>

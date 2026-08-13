@@ -143,6 +143,9 @@ var stockMgmtOff = Object.assign({}, allOn, { stock_management: false });
 assert(!Shell.isNavItemVisible(invStock, stockMgmtOff), 'stock_management off hides hub');
 assert(!Shell.isNavItemVisible(invHome, stockMgmtOff), 'stock_management off hides Overview');
 
+assert(!Features.PHASE_HIDE_STOCK_MANAGEMENT, 'phase hide Stock Management is off');
+assert(Features.isModuleAvailable('stock_management', allOn), 'stock_management available when probe registry on');
+
 // Pending probe (null registry) — feature modules must NOT be clickable
 assert(!Shell.isNavItemVisible(pos, null), 'Pending probe hides feature-gated POS');
 assert(Shell.isNavItemVisible(call, null), 'Call sheet visible while probes pending');

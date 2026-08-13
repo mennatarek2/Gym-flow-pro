@@ -59,6 +59,12 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .qty-hero-v{font-family:var(--fd);font-size:32px;font-weight:700;color:#3f6212;margin:2px 0}
 .qty-hero-h{font-size:12px;color:var(--lts)}
 .stock-drawer-meta{font-size:12px;color:var(--ltt);margin-top:2px}
+.buy-money-box{background:var(--ls2);border:1px solid var(--ls3);border-radius:var(--rmd);padding:12px;margin:4px 0 12px}
+.buy-money-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--lts)}
+.buy-money-row strong{font-family:var(--fd);font-size:16px;color:var(--ltp)}
+.buy-result{background:var(--suc100);border:1px solid rgba(34,197,94,.35);border-radius:var(--rmd);padding:12px;margin:12px 0;font-size:13px;line-height:1.55}
+.buy-result .buy-result-title{font-family:var(--fd);font-weight:700;margin-bottom:6px;color:#166534}
+.buy-result a{color:#166534;font-weight:700}
 .stat-pill.warn{background:var(--wrn100);color:#92400e;border-color:rgba(245,158,11,.35)}
 .stat-pill.danger{background:var(--dng100);color:#991B1B;border-color:#FECACA}
 .btn-create,.btn-secondary{height:40px;padding:0 18px;border-radius:var(--rlg);font-family:var(--fb);font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border:none;transition:all var(--tf)}

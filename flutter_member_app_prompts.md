@@ -1,5 +1,9 @@
 # GymFlow Pro — Flutter Member App Developer Prompt Pack
 
+> **SUPERSEDED for auth + identity:** use [`FLUTTER_MEMBER_APP_PROMPT.md`](./FLUTTER_MEMBER_APP_PROMPT.md).  
+> This pack still documents OTP + a `member_id` JWT claim — both are **obsolete / incorrect** vs production  
+> (`POST /api/auth/member-activate`, JWT `sub` only). Keep for historical sprint structure only.
+>
 > All API routes, JWT claim names, request/response shapes, and error codes  
 > are taken directly from the **production codebase** — do not invent endpoints.
 >

@@ -483,6 +483,51 @@
   }
 
   // ── Shift gate ────────────────────────────────────────────────
+  function syncStatusShift(text, ok) {
+    const chip = document.getElementById('statusShiftChip');
+    const statusText = document.getElementById('statusShiftText');
+    if (statusText) {
+      statusText.textContent = text;
+      statusText.removeAttribute('data-en');
+      statusText.removeAttribute('data-ar');
+    }
+    if (chip) {
+      chip.classList.toggle('is-ok', ok === true);
+      chip.classList.toggle('is-bad', ok === false);
+      chip.dataset.shiftLabel = text || '';
+      chip.dataset.shiftOk = ok === true ? '1' : ok === false ? '0' : '';
+    }
+  }
+
+  function setInventoryHintVisible(on) {
+    const hint = document.getElementById('inventoryOffHint');
+    if (!hint) return;
+    if (on) {
+      hint.hidden = false;
+      hint.classList.remove('is-off');
+      hint.style.display = 'flex';
+    } else {
+      hint.hidden = true;
+      hint.classList.add('is-off');
+      hint.style.display = 'none';
+    }
+  }
+
+  function syncStatusWarehouse() {
+    const sel = document.getElementById('warehouseSelect');
+    const chip = document.getElementById('statusWhChip');
+    const text = document.getElementById('statusWhText');
+    if (!sel || !chip || !text) return;
+    const opt = sel.options[sel.selectedIndex];
+    const label = opt && opt.value ? String(opt.textContent || '').trim() : '';
+    if (!label || !opt.value) {
+      chip.hidden = true;
+      return;
+    }
+    text.textContent = label;
+    chip.hidden = false;
+  }
+
   async function checkShift() {
     const label = document.getElementById('shiftLabel');
     const ws = document.getElementById('posWorkspace');
@@ -492,8 +537,10 @@
     if (res.status === 404 && res.data && res.data.title === 'FEATURE_DISABLED') {
       shiftOk = false;
       setShiftGateBanner(true);
-      ws.classList.add('blocked');
-      label.textContent = t('Shifts disabled', 'الورديات مقفولة');
+      if (ws) ws.classList.add('blocked');
+      const msg = t('Shifts disabled', 'الورديات مقفولة');
+      if (label) label.textContent = msg;
+      syncStatusShift(msg, false);
       document.getElementById('btnSell').disabled = true;
       return;
     }
@@ -511,14 +558,20 @@
 
     if (!shiftOk) {
       setShiftGateBanner(true);
-      ws.classList.add('blocked');
-      label.textContent = t('No open shift', 'مفيش وردية مفتوحة');
+      if (ws) ws.classList.add('blocked');
+      const msg = t('No open shift', 'مفيش وردية مفتوحة');
+      if (label) label.textContent = msg;
+      syncStatusShift(msg, false);
       document.getElementById('btnSell').disabled = true;
     } else {
       setShiftGateBanner(false);
-      ws.classList.remove('blocked');
-      label.textContent =
-        t('Open', 'مفتوحة') + ' · ' + (res.data.userName || t('you', 'أنت'));
+      if (ws) ws.classList.remove('blocked');
+      const msg =
+        t('Shift open', 'وردية مفتوحة') +
+        ' · ' +
+        (res.data.userName || t('you', 'أنت'));
+      if (label) label.textContent = t('Open', 'مفتوحة') + ' · ' + (res.data.userName || t('you', 'أنت'));
+      syncStatusShift(msg, true);
       updateSellEnabled();
     }
   }
@@ -683,15 +736,6 @@
     document.body.classList.add('pos-retail');
     document.documentElement.classList.add('pos-retail');
 
-    const debtCard = document.getElementById('debtPayCard');
-    const debtHost = document.getElementById('retailDebtHost');
-    if (debtCard) {
-      debtCard.hidden = false;
-      debtCard.style.display = '';
-      debtCard.classList.add('retail-debt-compact');
-      if (debtHost) debtHost.appendChild(debtCard);
-    }
-
     const payMount = document.getElementById('retailPayMount');
     const payCard = document.getElementById('paymentsCard');
     const submitCard = document.getElementById('submitCard');
@@ -717,15 +761,15 @@
     }
 
     const titleEl = document.getElementById('pageTitleText');
-    if (titleEl) titleEl.textContent = t('Point of Sale', 'نقطة البيع');
+    if (titleEl) titleEl.textContent = t('Sale', 'البيع');
     const crumb = document.getElementById('posBreadcrumb');
-    if (crumb) crumb.textContent = t('Point of Sale', 'نقطة البيع');
+    if (crumb) crumb.textContent = t('Sale', 'البيع');
 
     const sub = document.getElementById('pageSubtitle');
     if (sub) {
       sub.textContent = t(
-        '1) Products  2) Cart  3) Pay  4) Finish',
-        '١) المنتجات  ٢) السلة  ٣) ادفع  ٤) خلّص'
+        'Sell retail products at the desk — scan or tap, pay, print receipt. Memberships stay in Members.',
+        'بيع منتجات من المكتب — امسح أو اضغط، ادفع، اطبع الإيصال. الاشتراكات من الأعضاء.'
       );
     }
 
@@ -763,7 +807,10 @@
     if (!retailCart.length) {
       host.innerHTML =
         '<div class="muted empty-cart">' +
-        esc(t('Cart empty — scan or tap a product.', 'السلة فاضية — امسح أو اضغط منتج.')) +
+        esc(t(
+          'Cart is empty — scan a barcode or tap a product to start this sale.',
+          'السلة فاضية — امسح باركود أو اضغط منتج عشان تبدأ البيع.'
+        )) +
         '</div>';
       updateEstimate();
       updateSellEnabled();
@@ -974,23 +1021,29 @@
       })
       .join('');
     sel.onchange = function () {
+      syncStatusWarehouse();
       updateSellEnabled();
     };
+    syncStatusWarehouse();
     updateSellEnabled();
   }
 
   async function probeInventoryAndUi() {
     const res = await api('GET', '/inventory/categories');
     inventoryOn = !(res.status === 404 && res.data && res.data.title === 'FEATURE_DISABLED');
-    const hint = document.getElementById('inventoryOffHint');
+    // If products already answer, trust that over a flaky categories probe
+    if (!inventoryOn) {
+      const probe = await api('GET', '/inventory/products?page=1&pageSize=1');
+      if (probe.ok) inventoryOn = true;
+    }
     const ws = document.getElementById('posWorkspace');
     if (inventoryOn) {
-      if (hint) hint.style.display = 'none';
+      setInventoryHintVisible(false);
       if (ws) ws.classList.remove('inventory-off');
       await loadWarehouses();
       loadQuickProducts();
     } else {
-      if (hint) hint.style.display = 'block';
+      setInventoryHintVisible(true);
       if (ws) ws.classList.add('inventory-off');
       // Stay on retail — do not fall back to membership mode (removed from Sale)
     }
@@ -1281,7 +1334,15 @@
           esc(t('Still due', 'الباقي')) +
           ' <strong class="due-amt">' +
           esc(money(due)) +
-          '</strong>'
+          '</strong>' +
+          '<div class="muted" style="margin-top:6px">' +
+          esc(t(
+            'Outstanding balances are listed under Debtors.',
+            'المديونيات ظاهرة في شاشة المدينون.'
+          )) +
+          ' <a href="/dashboard/debtors/">' +
+          esc(t('Open Debtors', 'افتح المدينون')) +
+          '</a></div>'
         : '') +
       '</div>' +
       (warnList.length ? '<div class="muted">' + esc(warnList.join(' · ')) + '</div>' : '') +
@@ -1316,11 +1377,6 @@
       wireRetailPrintActions(sale);
     }
 
-    if (due > 0) {
-      document.getElementById('debtSaleId').value = sale.saleId;
-      const debtAmt = document.getElementById('debtAmount');
-      if (debtAmt && !debtAmt.value) debtAmt.value = String(Number(due.toFixed(2)));
-    }
     toast(
       sale.isReplay
         ? t('Already recorded — not charged twice.', 'متسجلة قبل كده — متتحسبتش مرتين.')
@@ -1404,41 +1460,8 @@
     });
   }
 
-  // ── Debt payment ──────────────────────────────────────────────
-  document.getElementById('btnDebtPay').addEventListener('click', async () => {
-    const saleId = document.getElementById('debtSaleId').value.trim();
-    const method = document.getElementById('debtMethod').value;
-    const amount = Number(document.getElementById('debtAmount').value);
-    const out = document.getElementById('debtResult');
-    if (!saleId || !(amount > 0)) {
-      toast(t('Sale number and amount are required.', 'رقم الفاتورة والمبلغ مطلوبين.'), 'err');
-      return;
-    }
-    if (!shiftOk && method === 'cash') {
-      toast(t('Cash collections need an open shift.', 'تحصيل الكاش محتاج وردية مفتوحة.'), 'err');
-      return;
-    }
-    const res = await api('POST', '/sales/' + saleId + '/payments', { method, amount });
-    out.style.display = 'block';
-    if (!res.ok) {
-      out.className = 'result err';
-      out.textContent = problemMessage(res.data, res.status);
-      toast(problemMessage(res.data, res.status), 'err');
-      return;
-    }
-    const sale = res.data;
-    out.className = 'result';
-    out.innerHTML =
-      esc(t('Payment recorded', 'اتسجلت الدفعة')) +
-      ' · ' +
-      esc(t('Still due', 'الباقي')) +
-      ' ' +
-      esc(money(sale.totals && sale.totals.amountDue)) +
-      (sale.receiptUrl
-        ? '<br><a href="' + esc(sale.receiptUrl) + '" target="_blank">' + esc(t('Receipt', 'إيصال')) + '</a>'
-        : '');
-    toast(t('Payment recorded.', 'اتسجلت الدفعة.'), 'ok');
-  });
+  // Debt / older-sale balance collection UI removed from Sale.
+  // Backend POST /api/sales/{id}/payments remains for Debtors / future ownership.
 
   // boot — retail-only POS
   if (!canSell) {
@@ -1452,6 +1475,14 @@
     .then(function () {
       setPosMode('retail');
       applyLocaleBits();
+      const chip = document.getElementById('statusShiftChip');
+      if (chip && chip.dataset.shiftLabel) {
+        syncStatusShift(
+          chip.dataset.shiftLabel,
+          chip.dataset.shiftOk === '1' ? true : chip.dataset.shiftOk === '0' ? false : null
+        );
+      }
+      syncStatusWarehouse();
     })
     .catch(function () {
       setPosMode('retail');
@@ -1460,6 +1491,14 @@
 
   window.addEventListener('gfp:locale', function () {
     applyLocaleBits();
+    const chip = document.getElementById('statusShiftChip');
+    if (chip && chip.dataset.shiftLabel) {
+      syncStatusShift(
+        chip.dataset.shiftLabel,
+        chip.dataset.shiftOk === '1' ? true : chip.dataset.shiftOk === '0' ? false : null
+      );
+    }
+    syncStatusWarehouse();
     document.querySelectorAll('#payLegs .pay-leg select').forEach(function (sel) {
       const v = sel.value;
       Array.from(sel.options).forEach(function (opt) {

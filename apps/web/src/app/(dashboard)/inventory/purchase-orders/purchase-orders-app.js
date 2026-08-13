@@ -624,6 +624,17 @@
         })
         .join('');
     if (prefill.warehouseId) ws.value = prefill.warehouseId;
+    if (!ws.value) {
+      var def = warehouses.find(function (w) {
+        return w.isDefault && w.isActive !== false;
+      });
+      if (!def) {
+        def = warehouses.find(function (w) {
+          return w.isActive !== false;
+        });
+      }
+      if (def) ws.value = def.id;
+    }
     document.getElementById('poNotes').value = '';
     document.getElementById('poHint').textContent = '';
     document.getElementById('poLines').innerHTML = '';
@@ -657,9 +668,28 @@
       );
       return;
     }
+    var warehouseId = document.getElementById('poWarehouse').value;
+    if (!warehouseId) {
+      var defWh = warehouses.find(function (w) {
+        return w.isDefault && w.isActive !== false;
+      });
+      if (!defWh) {
+        defWh = warehouses.find(function (w) {
+          return w.isActive !== false;
+        });
+      }
+      if (defWh) warehouseId = defWh.id;
+    }
+    if (!warehouseId) {
+      document.getElementById('poHint').textContent = t(
+        'No default stock location. Create a warehouse once.',
+        'مفيش مكان تخزين افتراضي. أنشئ مستودعاً مرة واحدة.'
+      );
+      return;
+    }
     var body = {
       supplierId: document.getElementById('poSupplier').value,
-      warehouseId: document.getElementById('poWarehouse').value,
+      warehouseId: warehouseId,
       notes: document.getElementById('poNotes').value.trim() || null,
       lines: lines
     };
@@ -716,7 +746,7 @@
             back.replace(/"/g, '&quot;') +
             '" data-en="Products" data-ar="المنتجات">Products</a>' +
             '<span class="sep">/</span>' +
-            '<span class="current" data-en="Buy from supplier" data-ar="شراء من مورد">Buy from supplier</span>';
+            '<span class="current" data-en="Buy" data-ar="شراء">Buy</span>';
         } else {
           crumb.innerHTML =
             '<span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span>' +
@@ -724,7 +754,7 @@
             back.replace(/"/g, '&quot;') +
             '" data-en="On Hand" data-ar="الرصيد">On Hand</a>' +
             '<span class="sep">/</span>' +
-            '<span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span>';
+            '<span class="current" data-en="Buy" data-ar="شراء">Buy</span>';
         }
       }
       return {

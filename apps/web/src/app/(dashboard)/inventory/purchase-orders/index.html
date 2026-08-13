@@ -17,7 +17,7 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb" id="poBreadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb" id="poBreadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Purchases" data-ar="المشتريات">Purchases</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 <div class="content">
@@ -26,8 +26,8 @@
   </p>
   <div class="page-header">
     <div>
-      <h1 class="page-title" data-en="Buy & receive" data-ar="شراء واستلام">Buy & receive</h1>
-      <p class="page-subtitle" data-en="Order from a supplier, approve, then receive into a warehouse." data-ar="اطلب من المورد، وافق، ثم استلم في المستودع.">Order from a supplier, approve, then receive into a warehouse.</p>
+      <h1 class="page-title" data-en="Purchases" data-ar="المشتريات">Purchases</h1>
+      <p class="page-subtitle" data-en="Orders from suppliers. Stock lands on your default shelf automatically." data-ar="طلبات من الموردين. الرصيد بيروح تلقائي على الرف الافتراضي.">Orders from suppliers. Stock lands on your default shelf automatically.</p>
     </div>
     <div id="manageActions" hidden>
       <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New PO" data-ar="أمر جديد" data-i18n-text>New PO</span></button>
@@ -69,9 +69,11 @@
       <label><span data-en="Supplier *" data-ar="المورد *">Supplier *</span>
         <select id="poSupplier" required><option value="">…</option></select>
       </label>
-      <label><span data-en="Warehouse *" data-ar="المستودع *">Warehouse *</span>
-        <select id="poWarehouse" required><option value="">…</option></select>
+      <label id="poWarehouseField" hidden>
+        <span data-en="Warehouse" data-ar="المستودع">Warehouse</span>
+        <select id="poWarehouse"><option value="">…</option></select>
       </label>
+      <p class="muted" id="poWarehouseHint" style="margin:0 0 8px;font-size:12px" data-en="Stock goes to your default shelf — no warehouse pick needed." data-ar="الرصيد بيروح على الرف الافتراضي — من غير اختيار مستودع.">Stock goes to your default shelf — no warehouse pick needed.</p>
       <label><span data-en="Notes" data-ar="ملاحظات">Notes</span><textarea id="poNotes" rows="2" maxlength="500"></textarea></label>
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -108,6 +110,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="purchase-orders-app.js"></script>
+<script src="purchase-orders-app.js?v=2"></script>
 </body>
 </html>

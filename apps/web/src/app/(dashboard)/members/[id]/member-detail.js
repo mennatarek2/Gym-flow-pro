@@ -174,6 +174,7 @@
       document.getElementById('profileAv').innerHTML=`<img src="${m.profilePhotoUrl}" alt="${m.fullName}">`;
     }
     document.getElementById('profileMemberNum').textContent='#'+m.memberNumber;
+    renderAccessBarcode(m.memberNumber);
     document.getElementById('profileNameEn').textContent=m.fullName;
     document.getElementById('profileNameAr').textContent=m.fullNameAr||'';
     document.getElementById('profilePhone').href='tel:'+m.phone;
@@ -254,6 +255,167 @@
     document.getElementById('tabsContent').style.display='';
     applyLocaleBits(document.getElementById('memberAppCard'));
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Access barcode + reprint card
+  //  GET /api/members/{id}/access-card-html  (members.view)
+  //  Barcode value = MemberNumber (desk barcode-checkin)
+  // ═══════════════════════════════════════════════════════════════
+  function renderAccessBarcode(memberNumber){
+    const svg=document.getElementById('accessBarcodeSvg');
+    const numEl=document.getElementById('accessBarcodeNum');
+    const code=String(memberNumber||'').trim();
+    if(numEl) numEl.textContent=code?('#'+code):'—';
+    if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    if(!code){
+      svg.setAttribute('width','0');
+      svg.setAttribute('height','0');
+      return;
+    }
+    if(typeof JsBarcode!=='function'){
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x','10'); t.setAttribute('y','28');
+      t.setAttribute('font-size','12'); t.textContent=code;
+      svg.appendChild(t);
+      return;
+    }
+    try{
+      JsBarcode(svg, code, {
+        format:'CODE128',
+        displayValue:false,
+        margin:8,
+        height:48,
+        width:2,
+        background:'#ffffff',
+        lineColor:'#0D0D0D'
+      });
+    }catch(e){
+      if(numEl) numEl.textContent=code+' (barcode unavailable)';
+    }
+  }
+
+  function closeAccessPrint(){
+    const ov=document.getElementById('accessPrintOverlay');
+    if(ov) ov.hidden=true;
+    const frame=document.getElementById('accessPrintFrame');
+    if(frame) frame.srcdoc='';
+  }
+
+  function accessApiBase(){
+    if(window.GfpApi && typeof window.GfpApi.apiBase==='function'){
+      return String(window.GfpApi.apiBase()).replace(/\/$/,'');
+    }
+    return String(window.API_BASE || API_BASE || 'https://localhost:5001/api').replace(/\/$/,'');
+  }
+
+  async function fetchAccessCardHtml(){
+    if(!memberId) return { ok:false, status:0, text:'', error:'Missing member id' };
+    const path='/members/'+encodeURIComponent(memberId)+'/access-card-html';
+    const url=accessApiBase()+path;
+    const headers={};
+    const token=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');
+    if(token) headers['Authorization']='Bearer '+token;
+    // ngrok free interstitial otherwise can hang / return HTML warning page
+    headers['ngrok-skip-browser-warning']='true';
+    headers['Accept']='text/html';
+
+    const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
+    const timer=ctrl?setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, 15000):null;
+    try{
+      const res=await fetch(url,{ method:'GET', headers:headers, signal:ctrl?ctrl.signal:undefined });
+      if(timer) clearTimeout(timer);
+      if(res.status===401){ window.location.href='/auth/login/'; return { ok:false, status:401, text:'' }; }
+      const text=await res.text();
+      return { ok:res.ok, status:res.status, text:text, url:url };
+    }catch(e){
+      if(timer) clearTimeout(timer);
+      const aborted=e && (e.name==='AbortError' || String(e.message||'').indexOf('abort')>=0);
+      return {
+        ok:false,
+        status:0,
+        text:'',
+        url:url,
+        error: aborted
+          ? t('Request timed out — check API / ngrok','انتهت المهلة — تأكد من الـ API / ngrok')
+          : t('Network error — check API / ngrok tunnel','خطأ شبكة — تأكد من الـ API / ngrok')
+      };
+    }
+  }
+
+  async function openAccessCardPrint(autoPrint){
+    const overlay=document.getElementById('accessPrintOverlay');
+    const frame=document.getElementById('accessPrintFrame');
+    const titleEl=document.getElementById('accessPrintTitle');
+    if(!overlay||!frame){ toast(t('Print view not available','عرض الطباعة غير متاح'),'error'); return; }
+    if(titleEl){
+      titleEl.setAttribute('data-en','Barcode card');
+      titleEl.setAttribute('data-ar','كارنيه الباركود');
+      titleEl.textContent=t('Barcode card','كارنيه الباركود');
+    }
+    overlay.hidden=false;
+    frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#666">'+t('Loading card…','جاري تحميل الكارنيه…')+'</p>';
+    let res;
+    try{
+      res=await fetchAccessCardHtml();
+    }catch(e){
+      res={ ok:false, status:0, error:String(e&&e.message||e) };
+    }
+    if(!res || !res.ok){
+      let msg=res && res.error
+        ? res.error
+        : t('Could not load barcode card','تعذر تحميل كارنيه الباركود');
+      if(res && res.status===404){
+        msg=t(
+          'Card endpoint missing (404). Restart the API after Access Cards deploy.',
+          'مسار الكارنيه مش موجود (404). أعد تشغيل الـ API.'
+        );
+      } else if(res && res.status){
+        msg+=' (HTTP '+res.status+')';
+      }
+      toast(msg,'error');
+      frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#991b1b">'+msg+
+        (res&&res.url?'<br><small style="color:#666">'+String(res.url).replace(/</g,'')+'</small>':'')+
+        '</p>';
+      return;
+    }
+    if(!res.text || !String(res.text).trim()){
+      const msg=t('Card returned empty HTML','الكارنيه رجع فاضي');
+      toast(msg,'error');
+      frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#991b1b">'+msg+'</p>';
+      return;
+    }
+    frame.srcdoc=res.text;
+    if(autoPrint){
+      setTimeout(function(){
+        try{ frame.contentWindow.focus(); frame.contentWindow.print(); }
+        catch(e){ toast(t('Allow pop-ups / try Print again','اسمح بالنوافذ المنبثقة أو اضغط طباعة'),'error'); }
+      }, 450);
+    }
+  }
+
+  function wireAccessCardButtons(){
+    const reprint=function(){ openAccessCardPrint(true); };
+    const b1=document.getElementById('btnReprintCard');
+    const b2=document.getElementById('btnReprintCard2');
+    if(b1) b1.addEventListener('click', reprint);
+    if(b2) b2.addEventListener('click', reprint);
+    const close1=document.getElementById('btnAccessPrintClose');
+    const close2=document.getElementById('btnAccessPrintClose2');
+    if(close1) close1.addEventListener('click', closeAccessPrint);
+    if(close2) close2.addEventListener('click', closeAccessPrint);
+    const doPrint=document.getElementById('btnAccessPrintDo');
+    if(doPrint){
+      doPrint.addEventListener('click', function(){
+        const frame=document.getElementById('accessPrintFrame');
+        try{ if(frame&&frame.contentWindow){ frame.contentWindow.focus(); frame.contentWindow.print(); } }
+        catch(e){ toast(t('Allow pop-ups / try Print again','اسمح بالنوافذ المنبثقة أو اضغط طباعة'),'error'); }
+      });
+    }
+    const ov=document.getElementById('accessPrintOverlay');
+    if(ov) ov.addEventListener('click', function(e){ if(e.target===ov) closeAccessPrint(); });
+  }
+  wireAccessCardButtons();
 
   // ═══════════════════════════════════════════════════════════════
   //  Member App — activation code (staff generates; shown once)

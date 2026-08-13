@@ -158,6 +158,20 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .qr-pdf-title{font-size:14px;font-weight:600;color:var(--ltp)}
 .qr-pdf-link{font-size:12px;font-weight:600;color:var(--l600);text-decoration:underline}
 .qr-pdf-frame{width:100%;max-width:420px;height:480px;border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls2)}
+.qr-poster-live{
+  width:100%;max-width:300px;margin:0 auto;padding:28px 20px 24px;background:#fff;
+  border:1px solid var(--ls3);border-radius:14px;text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,.06)
+}
+.qr-poster-live .poster-brand{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--c900);margin-bottom:6px}
+.qr-poster-live .poster-sub{font-size:12px;color:var(--ltt);margin-bottom:16px}
+.qr-poster-live canvas,.qr-poster-live img.qr-img{width:220px;height:220px;margin:0 auto;display:block}
+.qr-poster-live .poster-code{
+  margin-top:14px;font-family:ui-monospace,monospace;font-size:15px;font-weight:700;
+  letter-spacing:.08em;color:var(--l600);background:var(--c900);display:inline-block;
+  padding:8px 14px;border-radius:8px
+}
+.qr-poster-live .poster-hint{margin-top:12px;font-size:11px;color:var(--ltt);line-height:1.4}
 
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;padding:14px 24px;border-radius:var(--rmd);font-size:13px;font-weight:600;z-index:300;transform:translateY(100px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px}
@@ -165,3 +179,46 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .toast.success{background:var(--suc100);color:var(--suc500);border:1px solid rgba(34,197,94,.3)}
 .toast.error{background:var(--dng100);color:var(--dng500);border:1px solid rgba(239,68,68,.3)}
 .toast i{font-size:18px}
+
+/* -- Gym Identity Phase A -- */
+.opt{font-weight:500;color:var(--ltt);font-size:11px}
+.brand-block{margin-top:8px;padding-top:18px;border-top:1px solid var(--ls3)}
+.brand-block-title{font-family:var(--fd);font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.brand-block-title i{color:var(--l500)}
+.brand-reset-row{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:4px 0 14px}
+.brand-reset-row .hint{flex:1;min-width:180px;margin:0;line-height:1.4}
+.btn-reset-brand{
+  height:36px;padding:0 14px;border-radius:var(--rmd);font:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--lts);
+  border:1px solid var(--ls3)
+}
+.btn-reset-brand:hover{border-color:var(--l500);color:var(--ltp)}
+.btn-reset-brand:disabled{opacity:.55;cursor:not-allowed}
+.footer-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.color-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
+@media(max-width:720px){.color-row{grid-template-columns:1fr 1fr}}
+.color-fg input[type=color]{width:100%;height:44px;border:1px solid var(--ls3);border-radius:var(--rmd);padding:4px;background:#fff;cursor:pointer}
+.check-row{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--lts);margin:8px 0 14px}
+.check-row input{accent-color:var(--l500)}
+.brand-live{border:1px solid var(--ls3);border-radius:var(--rlg);overflow:hidden;background:var(--ls2);margin-bottom:14px}
+.brand-live-bar{height:44px;background:#fff;border-bottom:1px solid var(--ls3);display:flex;align-items:center;gap:10px;padding:0 12px}
+.brand-live-mark{width:22px;height:22px;border-radius:6px;background:var(--l500)}
+.brand-live-actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px}
+.brand-live-cta,.brand-live-sec{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:10px;font-size:12px;font-weight:700;color:#0D0D0D}
+.brand-live-cta{background:var(--l500)}
+.brand-live-sec{background:#148F8F;color:#fff}
+.brand-live-acc{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--l400);font-size:11px;font-weight:600;background:#fff}
+.card-preview-label{font-size:12px;font-weight:600;color:var(--ltt);margin-bottom:8px}
+.cr80{width:min(100%,320px);aspect-ratio:86/54;background:#fff;border:1px solid var(--ls3);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;box-shadow:var(--sh2)}
+.cr80-hdr{display:flex;align-items:flex-start;gap:10px}
+.cr80-mark{width:28px;height:28px;border-radius:7px;background:var(--l500);flex-shrink:0}
+.cr80-logo{width:28px;height:28px;border-radius:7px;object-fit:contain;border:1px solid var(--ls3);background:#fff}
+.cr80-product{font-weight:700;font-size:13px}
+.cr80-gym{font-size:11px;font-weight:600;color:var(--lts);margin-top:2px}
+.cr80-gym-ar{font-size:10px;color:var(--ltt);direction:rtl}
+.cr80-id{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px}
+.cr80-name{font-weight:700;font-size:15px}
+.cr80-num{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.04em}
+.cr80-bars{height:28px;width:85%;margin:0 auto;background:repeating-linear-gradient(90deg,#111 0 2px,transparent 2px 4px);border-radius:2px}
+.logo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.logo-btn.outline{background:#fff;border:1px solid var(--ls3);color:var(--ltp)}

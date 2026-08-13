@@ -51,13 +51,13 @@
 
 <div class="content">
   <div class="page-header">
-    <h1 class="page-title"><i class="ti ti-settings"></i> Gym Settings</h1>
-    <p class="page-subtitle">Gym profile, tax/VAT, and front-desk QR check-in poster</p>
+    <h1 class="page-title"><i class="ti ti-building-store"></i> Gym Identity &amp; Settings</h1>
+    <p class="page-subtitle">Your gym name, logo, brand colors, tax/VAT, and front-desk QR check-in</p>
   </div>
 
   <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-btn active" data-tab="info" id="tabBtnInfo"><i class="ti ti-building"></i> Gym Information</button>
+    <button class="tab-btn active" data-tab="info" id="tabBtnInfo"><i class="ti ti-palette"></i> Gym Identity</button>
     <button class="tab-btn" data-tab="qr"><i class="ti ti-qrcode"></i> QR Code & Check-in</button>
     <button class="tab-btn" data-tab="tax" id="tabBtnTax"><i class="ti ti-receipt-tax"></i> Tax &amp; VAT</button>
     <button class="tab-btn" data-tab="invAlerts" id="tabBtnInvAlerts" style="display:none"><i class="ti ti-bell-ringing"></i> <span data-en="Inventory alerts" data-ar="تنبيهات المخزون" data-i18n-text>Inventory alerts</span></button>
@@ -68,12 +68,12 @@
     <div class="settings-layout">
       <div class="settings-main">
         <div class="card">
-          <div class="card-header"><h2><i class="ti ti-info-circle"></i> Basic Information</h2></div>
+          <div class="card-header"><h2><i class="ti ti-info-circle"></i> Gym Identity</h2></div>
           <div class="owner-gate" id="infoOwnerGate" style="display:none">
             <i class="ti ti-lock"></i>
             <div>
               <strong>Owner only</strong>
-              <p>Gym profile editing requires Owner. Use <em>QR Code &amp; Check-in</em> for the front-desk gym code and poster.</p>
+              <p>Gym identity editing requires Owner. Use <em>QR Code &amp; Check-in</em> for the front-desk gym code and poster.</p>
             </div>
           </div>
           <form id="infoForm">
@@ -83,7 +83,7 @@
               <div class="fg"><label>Gym Name (Arabic) <span class="req">*</span></label><input name="gymNameAr" id="gymNameAr" required placeholder="فتنس هب" dir="rtl" style="font-family:var(--fa)"></div>
             </div>
             <div class="form-row">
-              <div class="fg"><label>Phone Number</label><input name="phone" id="gymPhone" placeholder="+20 123 456 7890"><div class="hint">Format: +20 xxx xxx xxxx</div></div>
+              <div class="fg"><label>Short Name <span class="opt">(optional)</span></label><input name="shortName" id="gymShortName" placeholder="FH" maxlength="40"></div>
               <div class="fg"><label>Gym Code</label>
                 <div class="code-chip-wrap">
                   <div class="code-chip" id="gymCodeChip">—</div>
@@ -92,20 +92,67 @@
                 <div class="hint">System-generated, read-only — not sent on save</div>
               </div>
             </div>
-            <div class="fg"><label>Address</label><textarea name="address" id="gymAddress" placeholder="123 Main Street, Cairo, Egypt" rows="2"></textarea></div>
-            <div class="fg"><label>Logo URL</label>
-              <input name="logoUrl" id="gymLogoUrl" placeholder="https://…/logo.png">
-              <div class="hint">Optional HTTPS URL stored on the tenant profile</div>
+            <div class="form-row">
+              <div class="fg"><label>Phone Number</label><input name="phone" id="gymPhone" placeholder="+20 123 456 7890"><div class="hint">Format: +20 xxx xxx xxxx</div></div>
+              <div class="fg"><label>Email</label><input name="email" id="gymEmail" type="email" placeholder="hello@gym.eg"></div>
             </div>
-            <div class="fg"><label>Logo preview</label>
+            <div class="fg"><label>Website <span class="opt">(optional)</span></label><input name="website" id="gymWebsite" type="text" inputmode="url" placeholder="https://…" autocomplete="url"></div>
+            <div class="fg"><label>Address</label><textarea name="address" id="gymAddress" placeholder="123 Main Street, Cairo, Egypt" rows="2"></textarea></div>
+            <div class="fg"><label>Logo</label>
+              <input name="logoUrl" id="gymLogoUrl" type="hidden">
               <div class="logo-upload" id="logoUpload">
                 <div class="logo-preview" id="logoPreview"><i class="ti ti-photo"></i></div>
                 <div class="logo-info">
-                  <div class="logo-title">Preview from URL</div>
-                  <div class="logo-hint">Paste a logo URL above, or choose a local file to preview (save still uses the URL field)</div>
-                  <input type="file" id="logoFile" accept="image/*" style="display:none">
-                  <button type="button" class="logo-btn" id="logoBrowse"><i class="ti ti-upload"></i> Preview File</button>
+                  <div class="logo-title">Upload gym logo</div>
+                  <div class="logo-hint">JPEG/PNG/WebP/GIF · max 2MB · stored for this gym only</div>
+                  <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+                  <div class="logo-actions">
+                    <button type="button" class="logo-btn" id="logoBrowse"><i class="ti ti-upload"></i> Choose file</button>
+                    <button type="button" class="logo-btn outline" id="logoClear" style="display:none"><i class="ti ti-trash"></i> Remove</button>
+                  </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="brand-block">
+              <h3 class="brand-block-title"><i class="ti ti-palette"></i> Brand colors</h3>
+              <div class="color-row">
+                <div class="fg color-fg"><label>Primary</label><input type="color" id="brandPrimary" value="#7ACC00"></div>
+                <div class="fg color-fg"><label>Secondary</label><input type="color" id="brandSecondary" value="#148F8F"></div>
+                <div class="fg color-fg"><label>Accent</label><input type="color" id="brandAccent" value="#A0E040"></div>
+                <div class="fg color-fg"><label>Card mark</label><input type="color" id="cardPrimary" value="#7ACC00"></div>
+              </div>
+              <label class="check-row"><input type="checkbox" id="showGymLogoOnCard" checked> Show logo on membership access card</label>
+              <div class="brand-reset-row">
+                <button type="button" class="btn-reset-brand" id="btnResetBrand" title="Restore GymFlowPro default colors">
+                  <i class="ti ti-restore"></i> Reset to defaults
+                </button>
+                <span class="hint">Restores primary / secondary / accent / card colors to GymFlowPro lime. Does not change gym name or logo.</span>
+              </div>
+              <div class="brand-live" id="brandLive">
+                <div class="brand-live-bar"><span class="brand-live-mark" id="brandLiveMark"></span><strong id="brandLiveName">Fitness Hub</strong></div>
+                <div class="brand-live-actions">
+                  <span class="brand-live-cta" id="brandLiveCta">Primary</span>
+                  <span class="brand-live-sec" id="brandLiveSec">Secondary</span>
+                  <span class="brand-live-acc" id="brandLiveAcc">Accent</span>
+                </div>
+              </div>
+              <div class="card-preview-label">Membership card preview (CR80)</div>
+              <div class="cr80" id="cr80Preview">
+                <div class="cr80-hdr">
+                  <img class="cr80-logo" id="cr80Logo" alt="" hidden>
+                  <div class="cr80-mark" id="cr80Mark"></div>
+                  <div class="cr80-brand">
+                    <div class="cr80-product">GymFlowPro</div>
+                    <div class="cr80-gym" id="cr80Gym">Fitness Hub</div>
+                    <div class="cr80-gym-ar" id="cr80GymAr">فتنس هب</div>
+                  </div>
+                </div>
+                <div class="cr80-id">
+                  <div class="cr80-name">Sample Member</div>
+                  <div class="cr80-num">GYM-018</div>
+                </div>
+                <div class="cr80-bars" aria-hidden="true"></div>
               </div>
             </div>
           </div>
@@ -114,7 +161,12 @@
               <span id="metaCreated"></span>
               <span id="metaUpdated"></span>
             </div>
-            <button type="submit" class="btn-save" id="btnSave"><i class="ti ti-device-floppy"></i> Save Changes</button>
+            <div class="footer-actions">
+              <button type="button" class="btn-reset-brand" id="btnResetBrandFooter">
+                <i class="ti ti-restore"></i> Reset defaults
+              </button>
+              <button type="submit" class="btn-save" id="btnSave"><i class="ti ti-device-floppy"></i> Save Changes</button>
+            </div>
           </div>
           </form>
         </div>
@@ -147,7 +199,7 @@
           <div class="instruction-list">
             <div class="instr-item"><div class="instr-num">1</div><div><strong>Print the QR poster</strong><p>Download and print the poster in A4 or A3 size for best visibility.</p></div></div>
             <div class="instr-item"><div class="instr-num">2</div><div><strong>Display at entrance</strong><p>Place the printed poster at your gym entrance where members can easily scan.</p></div></div>
-            <div class="instr-item"><div class="instr-num">3</div><div><strong>Members scan to check in</strong><p>Members open the GymFlowPro app and scan the QR code to register their attendance.</p></div></div>
+            <div class="instr-item"><div class="instr-num">3</div><div><strong>Members scan to check in</strong><p>Members open the GymFlowPro app, scan this QR (it encodes your gym code), and attendance is registered.</p></div></div>
           </div>
         </div>
       </div>
@@ -230,19 +282,108 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API_BASE=window.API_BASE||'https://localhost:5001/api';
-function getH(){const t=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');const h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;return h;}
-async function apiGet(p){const r=await fetch(API_BASE+p,{headers:getH()});if(r.status===401){window.location.href='/auth/login/';return null;}if(!r.ok)return null;return r.json();}
-async function apiPut(p,b){const r=await fetch(API_BASE+p,{method:'PUT',headers:getH(),body:JSON.stringify(b)});const d=await r.json().catch(()=>null);return{ok:r.ok,status:r.status,data:d};}
-function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
-const user=getUser();if(!user){window.location.href='/auth/login/';}
-const ini=(user.fullName||'U').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-document.getElementById('userAvatar').textContent=ini;
-document.getElementById('userName').textContent=user.fullName||'User';
-document.getElementById('userRole').textContent=user.role||'Staff';
-if(user.role==='Owner'||user.role==='owner')document.getElementById('navStaff').style.display='flex';
-document.getElementById('btnLogout').addEventListener('click',function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});window.location.href='/auth/login/';});
+(function () {
+  // Prefer shared api-config (ngrok/local); keep trailing /api
+  var API_BASE = (window.API_BASE || 'https://localhost:5001/api').replace(/\/?$/, '');
+  window.API_BASE = API_BASE;
+
+  function getH(json) {
+    var t = localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
+    var h = { 'ngrok-skip-browser-warning': 'true' };
+    if (json !== false) h['Content-Type'] = 'application/json';
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    return h;
+  }
+
+  async function apiGet(p) {
+    var r = await fetch(API_BASE + p, { headers: getH(false) });
+    if (r.status === 401) {
+      window.location.href = '/auth/login/';
+      return null;
+    }
+    if (!r.ok) return null;
+    return r.json().catch(function () { return null; });
+  }
+
+  async function apiPut(p, b) {
+    var r = await fetch(API_BASE + p, {
+      method: 'PUT',
+      headers: getH(true),
+      body: JSON.stringify(b)
+    });
+    var d = await r.json().catch(function () { return null; });
+    return { ok: r.ok, status: r.status, data: d };
+  }
+
+  async function apiDelete(p) {
+    var r = await fetch(API_BASE + p, { method: 'DELETE', headers: getH(false) });
+    var d = await r.json().catch(function () { return null; });
+    return { ok: r.ok, status: r.status, data: d };
+  }
+
+  async function apiUpload(p, file) {
+    var t = localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
+    var fd = new FormData();
+    fd.append('file', file, file.name || 'logo.jpg');
+    var r = await fetch(API_BASE + p, {
+      method: 'POST',
+      headers: {
+        Authorization: t ? 'Bearer ' + t : '',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      body: fd
+    });
+    var d = await r.json().catch(function () { return null; });
+    return { ok: r.ok, status: r.status, data: d };
+  }
+
+  window.apiGet = apiGet;
+  window.apiPut = apiPut;
+  window.apiDelete = apiDelete;
+  window.apiUpload = apiUpload;
+
+  function getUser() {
+    try {
+      return JSON.parse(localStorage.getItem('gfp_user') || sessionStorage.getItem('gfp_user'));
+    } catch (e) {
+      return null;
+    }
+  }
+  var user = getUser();
+  if (!user) {
+    window.location.href = '/auth/login/';
+    return;
+  }
+  window.__gfpSettingsUser = user;
+  var ini = (user.fullName || 'U')
+    .split(' ')
+    .map(function (w) { return w[0]; })
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+  var av = document.getElementById('userAvatar');
+  var un = document.getElementById('userName');
+  var ur = document.getElementById('userRole');
+  if (av) av.textContent = ini;
+  if (un) un.textContent = user.fullName || 'User';
+  if (ur) ur.textContent = user.role || 'Staff';
+  if ((user.role === 'Owner' || user.role === 'owner') && document.getElementById('navStaff')) {
+    document.getElementById('navStaff').style.display = 'flex';
+  }
+  var btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function () {
+      if (window.GfpBranding && window.GfpBranding.clear) window.GfpBranding.clear();
+      ['gfp_access_token', 'gfp_refresh_token', 'gfp_user', 'gfp_expires_at'].forEach(function (k) {
+        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
+      });
+      window.location.href = '/auth/login/';
+    });
+  }
+})();
 </script>
-<script src="/dashboard/settings/settings-app.js?v=21"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="/dashboard/settings/settings-app.js?v=27"></script>
 </body>
 </html>

@@ -128,6 +128,7 @@ function loadShared() {
 
   sandbox.GfpFeatures.isModuleAvailable = function (key, registry) {
     if (!key) return true;
+    if (key === 'stock_management' && sandbox.GfpFeatures.PHASE_HIDE_STOCK_MANAGEMENT) return false;
     if (registry == null) return false;
     return !!registry[key];
   };

@@ -1,5 +1,9 @@
 .inv-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
 @media(max-width:1100px){.inv-layout{grid-template-columns:1fr}}
+.hub-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.hub-tab{height:36px;padding:0 14px;border:2px solid var(--ls3);border-radius:var(--rmd);background:#fff;font:inherit;font-weight:600;cursor:pointer;color:var(--lts)}
+.hub-tab:hover{border-color:var(--l600)}
+.hub-tab.active{background:rgba(160,224,64,.2);border-color:var(--l600);color:#0d0d0d}
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .filters input,.filters select{height:36px;border:2px solid var(--ls3);border-radius:var(--rmd);padding:0 10px;font:inherit}
 .table-wrap{overflow:auto;border:1px solid var(--ls3);border-radius:var(--rmd)}
@@ -10,11 +14,12 @@ tbody tr{cursor:pointer}
 tbody tr:hover{background:rgba(160,224,64,.08)}
 tbody tr.sel{background:rgba(160,224,64,.16)}
 .st{display:inline-flex;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;background:var(--ls2)}
-.st.issued{background:#DCFCE7;color:#166534}
+.st.issued,.st.received{background:#DCFCE7;color:#166534}
 .st.voided{background:#FEE2E2;color:#991B1B}
 .tp{display:inline-flex;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:var(--ls2)}
 .tp.credit_note{background:#DBEAFE;color:#1e40af}
 .tp.invoice{background:var(--ls2);color:var(--lts)}
+.tp.purchase_doc{background:#FEF3C7;color:#92400E}
 .pdf-ready a{font-weight:700;color:var(--l600)}
 .pdf-pending{color:var(--wrnTxt);font-size:12px}
 .pager{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ltt)}
@@ -37,3 +42,4 @@ tbody tr.sel{background:rgba(160,224,64,.16)}
 .btn.danger{background:var(--dng500);border-color:var(--dng500);color:#fff}
 .receipt-frame-wrap{margin-top:10px;border:1px solid var(--ls3);border-radius:var(--rmd);background:#fafafa;height:420px;overflow:auto}
 #receiptFrame{width:80mm;max-width:100%;height:100%;border:0;display:block;margin:0 auto;background:#fff}
+.toast a{color:inherit;font-weight:700;text-decoration:underline;margin-inline-start:8px}

@@ -85,7 +85,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .btn-action.outline:hover{border-color:var(--l500);color:var(--l600)}
 .btn-action i{font-size:16px}
 </style>
-<link rel="stylesheet" href="member-detail.css">
+<link rel="stylesheet" href="member-detail.css?v=barcode1">
 <link rel="stylesheet" href="../member-modals.css">
 </head>
 <body>
@@ -158,6 +158,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
           <a class="back-btn" href="/dashboard/members/"><i class="ti ti-arrow-left"></i> Back to Members</a>
         </div>
         <div class="action-bar-right">
+          <button class="btn-action outline" id="btnReprintCard" type="button"><i class="ti ti-printer"></i> <span data-en="Reprint card" data-ar="إعادة طباعة الكارنيه">Reprint card</span></button>
           <button class="btn-action outline" id="btnNotify"><i class="ti ti-bell"></i> Send Notification</button>
           <button class="btn-action primary" id="btnEdit"><i class="ti ti-edit"></i> Edit Member</button>
         </div>
@@ -201,6 +202,29 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                 <div class="info-row"><i class="ti ti-mail"></i><a href="mailto:" id="profileEmail">—</a></div>
                 <div class="info-row"><i class="ti ti-cake"></i><span class="info-val" id="profileDob">—</span></div>
                 <div class="info-row"><i class="ti ti-calendar-plus"></i><span>Joined <span class="info-val" id="profileJoin">—</span></span></div>
+              </div>
+
+              <div class="p-divider"></div>
+
+              <!-- Access barcode (MemberNumber — desk barcode check-in) -->
+              <div class="access-card-block" id="accessCardBlock">
+                <div class="access-card-hdr">
+                  <i class="ti ti-barcode"></i>
+                  <div>
+                    <div class="access-card-title" data-en="Access barcode" data-ar="باركود الدخول">Access barcode</div>
+                    <div class="access-card-sub" data-en="Same code as the printed card — desk scan check-in" data-ar="نفس كود الكارنيه — للمسح عند الاستقبال">Same code as the printed card — desk scan check-in</div>
+                  </div>
+                </div>
+                <div class="access-barcode-wrap">
+                  <svg id="accessBarcodeSvg" aria-label="Member barcode"></svg>
+                  <div class="access-barcode-num" id="accessBarcodeNum">—</div>
+                </div>
+                <div class="access-card-actions">
+                  <button type="button" class="btn-ms primary" id="btnReprintCard2">
+                    <i class="ti ti-printer"></i>
+                    <span data-en="Reprint barcode card" data-ar="إعادة طباعة كارنيه الباركود">Reprint barcode card</span>
+                  </button>
+                </div>
               </div>
 
               <div class="p-divider"></div>
@@ -676,10 +700,34 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
   </div>
 </div>
 
+<!-- Access card print overlay -->
+<div class="pos-print-overlay" id="accessPrintOverlay" hidden>
+  <div class="pos-print-panel">
+    <div class="pos-print-hdr">
+      <strong id="accessPrintTitle" data-en="Barcode card" data-ar="كارنيه الباركود">Barcode card</strong>
+      <button type="button" class="mdl-btn ghost" id="btnAccessPrintClose"><i class="ti ti-x"></i></button>
+    </div>
+    <iframe id="accessPrintFrame" title="Member barcode card"></iframe>
+    <div class="pos-print-actions">
+      <button type="button" class="mdl-btn ghost" id="btnAccessPrintClose2" data-en="Close" data-ar="إغلاق">Close</button>
+      <button type="button" class="mdl-btn primary" id="btnAccessPrintDo"><i class="ti ti-printer"></i> <span data-en="Print" data-ar="طباعة">Print</span></button>
+    </div>
+  </div>
+</div>
+<style>
+.pos-print-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
+.pos-print-overlay[hidden]{display:none!important}
+.pos-print-panel{background:var(--ls1,#fff);border-radius:16px;width:min(560px,100%);padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.pos-print-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-family:var(--fd)}
+#accessPrintFrame{width:100%;min-height:360px;border:1px solid var(--ls3,#E8E8E8);border-radius:10px;background:#F6F7F9}
+.pos-print-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+</style>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="member-detail.js?v=orders1"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="member-detail.js?v=barcode2"></script>
 <script src="../member-modals.js"></script>
 </body>
 </html>

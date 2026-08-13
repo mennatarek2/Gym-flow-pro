@@ -49,6 +49,10 @@
   var hasStockManagement = false;
   var stockDrawerMode = 'add'; // 'add' | 'fix'
   var stockDrawerProductId = null;
+  var buyDrawerProductId = null;
+  var buySuppliers = [];
+  /** Owner can buy if manage or purchase (receive needs purchase — Owner has both). */
+  var canBuy = canManage || canPurchase;
   /** '' | 'low' | 'oos' — from ?alert= on inventory home deep-links */
   var stockAlert = '';
   try {
@@ -433,6 +437,12 @@
         openStockDrawer(b.getAttribute('data-stock-fix'), 'fix');
       });
     });
+    host.querySelectorAll('[data-buy]').forEach(function (b) {
+      b.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        openBuyDrawer(b.getAttribute('data-buy'));
+      });
+    });
   }
 
   function productActionsHtml(p) {
@@ -445,11 +455,9 @@
       html +=
         '<button type="button" data-stock-fix="' + esc(p.id) + '">Fix qty</button>';
     }
-    if (canManage && !p.isArchived && p.isPurchasable !== false) {
+    if (canBuy && !p.isArchived && p.isPurchasable !== false) {
       html +=
-        '<a href="/dashboard/inventory/purchase-orders/?from=products&productId=' +
-        encodeURIComponent(p.id) +
-        '">Buy</a>';
+        '<button type="button" data-buy="' + esc(p.id) + '">Buy</button>';
     }
     if (canManage) {
       html += '<button type="button" data-edit="' + esc(p.id) + '">Edit</button>';
@@ -555,10 +563,10 @@
           esc(p.id) +
           '"><i class="ti ti-adjustments"></i> Fix qty</button>'
         : '') +
-      (canManage && !p.isArchived && p.isPurchasable !== false
-        ? '<a class="btn-secondary" href="/dashboard/inventory/purchase-orders/?from=products&productId=' +
-          encodeURIComponent(p.id) +
-          '" style="text-decoration:none"><i class="ti ti-truck"></i> Buy from supplier</a>'
+      (canBuy && !p.isArchived && p.isPurchasable !== false
+        ? '<button type="button" class="btn-secondary" data-buy="' +
+          esc(p.id) +
+          '"><i class="ti ti-truck"></i> Buy</button>'
         : '') +
       (canManage
         ? '<button type="button" class="btn-create" data-edit="' +
@@ -587,6 +595,13 @@
       fixBtn.addEventListener('click', function () {
         document.getElementById('detailDrawer').hidden = true;
         openStockDrawer(p.id, 'fix');
+      });
+    }
+    var buyBtn = document.querySelector('#detailBody [data-buy]');
+    if (buyBtn) {
+      buyBtn.addEventListener('click', function () {
+        document.getElementById('detailDrawer').hidden = true;
+        openBuyDrawer(p.id);
       });
     }
   }
@@ -703,6 +718,299 @@
     }
     toast(stockDrawerMode === 'fix' ? 'Qty fixed' : 'Stock added', 'ok');
     document.getElementById('stockDrawer').hidden = true;
+    await loadProducts();
+  }
+
+  async function loadBuySuppliers() {
+    var r = await Gfp.get(paths.suppliers());
+    buySuppliers = r.ok && Array.isArray(r.data) ? r.data : [];
+    var sel = document.getElementById('buySupplier');
+    if (!sel) return;
+    var active = buySuppliers.filter(function (s) {
+      return s.isActive !== false;
+    });
+    sel.innerHTML =
+      '<option value="">' +
+      (active.length ? 'Select supplier…' : 'No suppliers yet') +
+      '</option>' +
+      active
+        .map(function (s) {
+          return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>';
+        })
+        .join('') +
+      '<option value="__new__">+ New supplier…</option>';
+    var wrap = document.getElementById('buyNewSupplierWrap');
+    if (wrap) wrap.hidden = active.length > 0;
+    if (!active.length) {
+      sel.value = '__new__';
+      if (wrap) wrap.hidden = false;
+    }
+  }
+
+  function syncBuyNewSupplierField() {
+    var sel = document.getElementById('buySupplier');
+    var wrap = document.getElementById('buyNewSupplierWrap');
+    if (!sel || !wrap) return;
+    var activeCount = buySuppliers.filter(function (s) {
+      return s.isActive !== false;
+    }).length;
+    wrap.hidden = !(sel.value === '__new__' || activeCount === 0);
+  }
+
+  async function openBuyDrawer(id) {
+    var p = products.find(function (x) {
+      return x.id === id;
+    });
+    if (!p || !canBuy) return;
+    if (p.isPurchasable === false) {
+      toast('This product is not purchasable', 'err');
+      return;
+    }
+    buyDrawerProductId = id;
+    document.getElementById('buyDrawerTitle').textContent = p.nameAr || p.name || 'Buy';
+    document.getElementById('buyDrawerMeta').textContent =
+      (p.sku || '') + (p.categoryName ? ' · ' + p.categoryName : '');
+    document.getElementById('buyQty').value = '';
+    document.getElementById('buyUnitCost').value =
+      p.costPrice != null && !Number.isNaN(Number(p.costPrice)) ? String(p.costPrice) : '0';
+    document.getElementById('buyPaidNow').value = '';
+    document.getElementById('buyPayMethod').value = 'cash';
+    document.getElementById('buyNotes').value = '';
+    document.getElementById('buyBatch').value = '';
+    document.getElementById('buyExpiry').value = '';
+    document.getElementById('buyDrawerHint').textContent =
+      'Purchase posts to the supplier account. Stock goes to your default shelf.';
+    document.getElementById('buyBatchWrap').hidden = !p.trackBatch;
+    document.getElementById('buyExpiryWrap').hidden = !p.trackExpiry;
+    document.getElementById('buyCostWrap').hidden = !canSeeCost;
+    document.getElementById('buyMoneyBox').hidden = !canSeeCost;
+    var result = document.getElementById('buyResultPanel');
+    if (result) {
+      result.hidden = true;
+      result.innerHTML = '';
+    }
+    var actions = document.getElementById('buyActions');
+    if (actions) actions.hidden = false;
+    await loadBuySuppliers();
+    syncBuyNewSupplierField();
+    updateBuyTotalPreview();
+    document.getElementById('buyDrawer').hidden = false;
+    document.getElementById('buyQty').focus();
+  }
+
+  function updateBuyTotalPreview() {
+    var el = document.getElementById('buyTotalPreview');
+    if (!el) return;
+    var qty = Number(document.getElementById('buyQty').value);
+    var unit = Number(document.getElementById('buyUnitCost').value);
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(unit) || unit < 0) {
+      el.textContent = '—';
+      return;
+    }
+    el.textContent = money(qty * unit);
+  }
+
+  async function resolveBuySupplierId() {
+    var sel = document.getElementById('buySupplier');
+    var val = sel ? sel.value : '';
+    if (val && val !== '__new__') return { ok: true, id: val };
+    var name = (document.getElementById('buyNewSupplier').value || '').trim();
+    if (!name) {
+      return {
+        ok: false,
+        error: 'Pick a supplier or type a new name / اختار مورد أو اكتب اسم جديد'
+      };
+    }
+    var created = await Gfp.post(paths.suppliers(), {
+      name: name,
+      isActive: true
+    });
+    if (!created.ok || !created.data || !created.data.id) {
+      return { ok: false, error: apiError(created) };
+    }
+    return { ok: true, id: created.data.id };
+  }
+
+  async function submitBuyDrawer() {
+    var p = products.find(function (x) {
+      return x.id === buyDrawerProductId;
+    });
+    if (!p || !canBuy) return;
+    var qty = Number(document.getElementById('buyQty').value);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      toast('Enter qty bought / أدخل الكمية', 'err');
+      return;
+    }
+    if (p.trackBatch && !(document.getElementById('buyBatch').value || '').trim()) {
+      toast('Batch # required / رقم التشغيلة مطلوب', 'err');
+      return;
+    }
+    if (p.trackExpiry && !document.getElementById('buyExpiry').value) {
+      toast('Expiry date required / تاريخ الصلاحية مطلوب', 'err');
+      return;
+    }
+    var unitCost = Number(document.getElementById('buyUnitCost').value);
+    if (!Number.isFinite(unitCost) || unitCost < 0) unitCost = 0;
+    if (canSeeCost && unitCost <= 0) {
+      if (
+        !window.confirm(
+          'Unit cost is 0 — supplier purchase total will be 0. Continue?\nسعر الوحدة صفر — إجمالي الشراء عند المورد هيبقى صفر. تكمل؟'
+        )
+      ) {
+        return;
+      }
+    }
+    var paidNow = Number(document.getElementById('buyPaidNow').value);
+    if (!Number.isFinite(paidNow) || paidNow < 0) paidNow = 0;
+    var purchaseTotal = qty * unitCost;
+    if (paidNow > purchaseTotal + 0.001) {
+      toast('Paid now cannot exceed purchase total / المدفوع أكبر من الإجمالي', 'err');
+      return;
+    }
+    var payMethod = document.getElementById('buyPayMethod').value || 'cash';
+    var notes = (document.getElementById('buyNotes').value || '').trim() || null;
+    var hint = document.getElementById('buyDrawerHint');
+    var btn = document.getElementById('btnBuySubmit');
+    btn.disabled = true;
+    hint.textContent = 'Saving…';
+
+    var whPath = paths.warehouseDefault ? paths.warehouseDefault() : '/inventory/warehouses/default';
+    var wh = await Gfp.get(whPath);
+    if (!wh.ok || !wh.data || !wh.data.id) {
+      btn.disabled = false;
+      hint.textContent = '';
+      toast('No default stock location yet. Create one warehouse once in settings/inventory.', 'err');
+      return;
+    }
+
+    var supplier = await resolveBuySupplierId();
+    if (!supplier.ok) {
+      btn.disabled = false;
+      hint.textContent = '';
+      toast(supplier.error, 'err');
+      return;
+    }
+
+    var created = await Gfp.post(paths.purchaseOrders(), {
+      supplierId: supplier.id,
+      warehouseId: wh.data.id,
+      notes: notes,
+      lines: [{ productId: p.id, qtyOrdered: qty, unitCost: unitCost }]
+    });
+    if (!created.ok || !created.data || !created.data.id) {
+      btn.disabled = false;
+      hint.textContent = '';
+      toast(apiError(created), 'err');
+      return;
+    }
+    var poId = created.data.id;
+
+    var approved = await Gfp.post(paths.purchaseOrderApprove(poId), {});
+    if (!approved.ok) {
+      btn.disabled = false;
+      hint.textContent = '';
+      toast('Order saved as draft but approve failed: ' + apiError(approved), 'err');
+      return;
+    }
+
+    var detail = await Gfp.get(paths.purchaseOrder(poId));
+    var lines = detail.ok && detail.data && detail.data.lines ? detail.data.lines : [];
+    var line = lines.find(function (l) {
+      return l.productId === p.id && Number(l.qtyRemaining) > 0;
+    }) || lines[0];
+    if (!line || !line.id) {
+      btn.disabled = false;
+      hint.textContent = '';
+      toast('Approved, but could not find a line to receive.', 'err');
+      return;
+    }
+
+    var recvQty = Number(line.qtyRemaining) > 0 ? Number(line.qtyRemaining) : qty;
+    var recvBody = {
+      lines: [
+        {
+          purchaseOrderLineId: line.id,
+          qty: recvQty,
+          unitCost: unitCost,
+          batchNumber: p.trackBatch
+            ? (document.getElementById('buyBatch').value || '').trim()
+            : null,
+          expiresOn: p.trackExpiry ? document.getElementById('buyExpiry').value || null : null
+        }
+      ]
+    };
+    var received = await Gfp.post(paths.purchaseOrderReceive(poId), recvBody);
+    if (!received.ok) {
+      btn.disabled = false;
+      hint.textContent = '';
+      toast('Approved, but receive failed: ' + apiError(received), 'err');
+      return;
+    }
+
+    var grnId = received.data && received.data.id;
+    var recordedTotal =
+      received.data && received.data.totalAmount != null
+        ? Number(received.data.totalAmount)
+        : purchaseTotal;
+    var payNote = notes || 'Payment on purchase receive';
+    var payErr = '';
+    if (canPurchase && paidNow > 0) {
+      var payRes = await Gfp.post(paths.supplierPayments(supplier.id), {
+        amount: paidNow,
+        method: payMethod,
+        note: payNote
+      });
+      if (!payRes.ok) payErr = apiError(payRes);
+    }
+
+    var bal = await Gfp.get(paths.supplierBalance(supplier.id));
+    var due = bal.ok && bal.data ? bal.data.dueTotal : recordedTotal - paidNow;
+    var paidTotal = bal.ok && bal.data ? bal.data.paidTotal : paidNow;
+    var purchasesTotal = bal.ok && bal.data ? bal.data.purchasesTotal : recordedTotal;
+
+    btn.disabled = false;
+    hint.textContent = '';
+    var actions = document.getElementById('buyActions');
+    if (actions) actions.hidden = true;
+    var panel = document.getElementById('buyResultPanel');
+    if (panel) {
+      panel.hidden = false;
+      panel.innerHTML =
+        '<div class="buy-result-title">Purchase recorded / تم تسجيل الشراء</div>' +
+        '<div>Purchase: <strong>' +
+        esc(money(recordedTotal)) +
+        '</strong></div>' +
+        '<div>Paid now: <strong>' +
+        esc(money(paidNow)) +
+        '</strong>' +
+        (payErr ? ' <span style="color:#991B1B">(' + esc(payErr) + ')</span>' : '') +
+        '</div>' +
+        '<div>Still due on supplier: <strong>' +
+        esc(money(Math.max(0, Number(due) || 0))) +
+        '</strong></div>' +
+        '<div style="margin-top:6px;font-size:12px;color:#166534">Supplier totals — Purchases ' +
+        esc(money(purchasesTotal)) +
+        ' · Paid ' +
+        esc(money(paidTotal)) +
+        '</div>' +
+        (grnId
+          ? '<div style="margin-top:10px"><a href="/dashboard/invoices/?tab=buy&grnId=' +
+            encodeURIComponent(grnId) +
+            '">Open purchase invoice / فتح فاتورة الشراء</a></div>'
+          : '') +
+        '<div class="detail-actions" style="margin-top:12px">' +
+        '<button type="button" class="btn-create" id="btnBuyDone">Done</button>' +
+        '</div>';
+      var done = document.getElementById('btnBuyDone');
+      if (done) {
+        done.addEventListener('click', function () {
+          document.getElementById('buyDrawer').hidden = true;
+        });
+      }
+    } else {
+      toast('Bought and stock updated', 'ok');
+      document.getElementById('buyDrawer').hidden = true;
+    }
     await loadProducts();
   }
 
@@ -1551,6 +1859,29 @@
   }
   var btnStockSubmit = document.getElementById('btnStockSubmit');
   if (btnStockSubmit) btnStockSubmit.addEventListener('click', submitStockDrawer);
+
+  var closeBuy = document.getElementById('btnCloseBuyDrawer');
+  if (closeBuy) {
+    closeBuy.addEventListener('click', function () {
+      document.getElementById('buyDrawer').hidden = true;
+    });
+  }
+  var buyOverlay = document.getElementById('buyDrawer');
+  if (buyOverlay) {
+    buyOverlay.addEventListener('click', function (ev) {
+      if (ev.target === buyOverlay) buyOverlay.hidden = true;
+    });
+  }
+  var buySupplierSel = document.getElementById('buySupplier');
+  if (buySupplierSel) {
+    buySupplierSel.addEventListener('change', syncBuyNewSupplierField);
+  }
+  var btnBuySubmit = document.getElementById('btnBuySubmit');
+  if (btnBuySubmit) btnBuySubmit.addEventListener('click', submitBuyDrawer);
+  ['buyQty', 'buyUnitCost'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateBuyTotalPreview);
+  });
 
   document.querySelectorAll('#stockChips .chip').forEach(function (chip) {
     chip.addEventListener('click', function () {

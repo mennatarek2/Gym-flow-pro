@@ -2,12 +2,17 @@
  * GymFlowPro — feature-flag module probe + cached registry (§0.8).
  * FEATURE_DISABLED (404 ProblemDetails title) → module unavailable (hide from nav).
  * Network errors: fail-open for core modules; fail-closed for stock_management (Growth desk).
+ *
+ * Set PHASE_HIDE_STOCK_MANAGEMENT = true to force-hide the Pro Stock Management hub for all tiers.
  */
 (function (global) {
   'use strict';
 
-  var CACHE_KEY = 'gfp_feature_modules_v3';
+  var CACHE_KEY = 'gfp_feature_modules_v4';
   var CACHE_TTL_MS = 10 * 60 * 1000;
+
+  /** false = normal tier packaging (Pro+ sees hub when probe succeeds). */
+  var PHASE_HIDE_STOCK_MANAGEMENT = false;
 
   var FEATURE_MODULES = [
     'sales',
@@ -30,9 +35,7 @@
     refunds: { method: 'GET', path: '/refunds' },
     debtors: { method: 'GET', path: '/debtors?page=1&pageSize=1' },
     imports: { method: 'GET', path: '/imports/template.xlsx', raw: true },
-    // INVS: cheapest inventory read — FEATURE_DISABLED → hide Inventory nav
     inventory: { method: 'GET', path: '/inventory/categories' },
-    // Pro+ Move/Count engines — Growth/Starter Products desk only
     stock_management: { method: 'GET', path: '/inventory/transfers' }
   };
 
@@ -43,7 +46,7 @@
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.at || !parsed.modules) return null;
       if (Date.now() - parsed.at > CACHE_TTL_MS) return null;
-      return parsed.modules;
+      return applyPhaseGates(parsed.modules);
     } catch (e) {
       return null;
     }
@@ -57,8 +60,18 @@
 
   function clearCache() {
     try { global.sessionStorage.removeItem(CACHE_KEY); } catch (e) { /* ignore */ }
+    try { global.sessionStorage.removeItem('gfp_feature_modules_v3'); } catch (e) { /* ignore */ }
     try { global.sessionStorage.removeItem('gfp_feature_modules_v2'); } catch (e) { /* ignore */ }
     try { global.sessionStorage.removeItem('gfp_feature_modules_v1'); } catch (e) { /* ignore */ }
+  }
+
+  function applyPhaseGates(modules) {
+    var out = {};
+    for (var k in modules) {
+      if (Object.prototype.hasOwnProperty.call(modules, k)) out[k] = modules[k];
+    }
+    if (PHASE_HIDE_STOCK_MANAGEMENT) out.stock_management = false;
+    return out;
   }
 
   function isFeatureDisabled(result) {
@@ -72,6 +85,7 @@
   }
 
   async function probeModuleAvailable(module) {
+    if (module === 'stock_management' && PHASE_HIDE_STOCK_MANAGEMENT) return false;
     var probe = PROBES[module];
     if (!probe) return !FAIL_CLOSED[module];
     try {
@@ -86,7 +100,6 @@
         r = await Gfp.get(probe.path, opts);
       }
 
-      // imports: raw Response — check JSON ProblemDetails on 404
       if (probe.raw && r.response) {
         if (r.status === 404) {
           var ct = (r.headers && r.headers.get('content-type')) || '';
@@ -119,14 +132,14 @@
         modules[key] = await probeModuleAvailable(key);
       })
     );
+    modules = applyPhaseGates(modules);
     writeCache(modules);
     return modules;
   }
 
   function isModuleAvailable(key, registry) {
     if (!key) return true;
-    // null/undefined registry = probes not finished — treat as unavailable so nav is not
-    // clickable-but-broken before FEATURE_DISABLED is known.
+    if (key === 'stock_management' && PHASE_HIDE_STOCK_MANAGEMENT) return false;
     if (registry == null) return false;
     if (registry[key] === undefined) return false;
     return !!registry[key];
@@ -134,6 +147,7 @@
 
   var GfpFeatures = {
     FEATURE_MODULES: FEATURE_MODULES,
+    PHASE_HIDE_STOCK_MANAGEMENT: PHASE_HIDE_STOCK_MANAGEMENT,
     probeModuleAvailable: probeModuleAvailable,
     probeAllModules: probeAllModules,
     isModuleAvailable: isModuleAvailable,
