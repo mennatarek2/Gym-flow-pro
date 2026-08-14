@@ -17,10 +17,10 @@ const SHARED_SCRIPTS = [
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=4',
-  '/shared/shell.js?v=6',
+  '/shared/shell.js?v=7',
 ];
 
-const SHARED_STYLES = ['/shared/rtl.css'];
+const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1'];
 
 function sharedScriptTags() {
   return SHARED_SCRIPTS.map((src) => `<script src="${src}"></script>`).join('\n') + '\n';
@@ -45,18 +45,29 @@ function sendHtml(res, filePath) {
   const missingJs = SHARED_SCRIPTS.filter((src) => !hasScriptSrc(html, src));
   const needEarly = !html.includes('data-gfp-early-locale');
 
-  const parts = [];
+  // Early locale/branding must run before first paint → top of <head>.
+  // Shared CSS (esp. typography) must load AFTER page styles → end of <head>.
+  const headStart = [];
+  const headEnd = [];
   if (needEarly) {
-    parts.push(
+    headStart.push(
       '<script data-gfp-early-locale>(function(){try{var l=localStorage.getItem("gfp_locale");if(l!=="ar"&&l!=="en")l="en";var h=document.documentElement;h.lang=l;h.dir=l==="ar"?"rtl":"ltr";var u=JSON.parse(localStorage.getItem("gfp_user")||"null");var tid=u&&(u.tenantId||u.TenantId);var raw=tid&&localStorage.getItem("gfp_branding:"+tid);if(!raw)raw=localStorage.getItem("gfp_branding");if(!raw)return;var b=JSON.parse(raw);var p=b.primaryColor||b.PrimaryColor||"#7ACC00";var a=b.accentColor||b.AccentColor||"#A0E040";h.style.setProperty("--gfp-brand-primary",p);h.style.setProperty("--gfp-brand-accent",a);h.style.setProperty("--l500",p);h.style.setProperty("--l400",a);h.style.setProperty("--l600",p);h.style.setProperty("--l300",a);}catch(e){}})();</script>'
     );
   }
-  missingCss.forEach((href) => parts.push(`<link rel="stylesheet" href="${href}">`));
-  missingJs.forEach((src) => parts.push(`<script src="${src}"></script>`));
+  missingCss.forEach((href) => headEnd.push(`<link rel="stylesheet" href="${href}">`));
+  missingJs.forEach((src) => headEnd.push(`<script src="${src}"></script>`));
 
-  if (parts.length) {
-    const inject = parts.join('\n') + '\n';
-    if (/<head[^>]*>/i.test(html)) {
+  if (headStart.length && /<head[^>]*>/i.test(html)) {
+    html = html.replace(/<head[^>]*>/i, (m) => m + '\n' + headStart.join('\n') + '\n');
+  } else if (headStart.length) {
+    html = headStart.join('\n') + '\n' + html;
+  }
+
+  if (headEnd.length) {
+    const inject = headEnd.join('\n') + '\n';
+    if (/<\/head>/i.test(html)) {
+      html = html.replace(/<\/head>/i, inject + '</head>');
+    } else if (/<head[^>]*>/i.test(html)) {
       html = html.replace(/<head[^>]*>/i, (m) => m + '\n' + inject);
     } else {
       html = inject + html;

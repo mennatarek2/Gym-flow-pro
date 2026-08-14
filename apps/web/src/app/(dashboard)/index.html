@@ -9,14 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <!--
-  Overview widget grid — each widget gated independently via GfpAuthz.useCan():
-  revenue → reports.financial.view (/analytics/overview + snapshotTimeUtc)
-  checkins → members.view
-  shift → shift.open
-  sessions → AnyStaff (Trainer focus; client-filter trainerId)
-  queue → checkin.manual OR sales.sell
-  staff activity → settings.manage
-  empty set → Quick Actions from Front Desk useVisibleNav()
+  Operational overview — permission-gated widgets, real APIs only.
+  Hierarchy: KPIs → Quick Actions → follow-ups → attendance/finance.
+  No Needs Attention / Today-at-a-glance duplicates.
 -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -86,33 +81,32 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .widget-grid{
   display:grid;
   grid-template-columns:repeat(12,1fr);
-  gap:20px;
+  gap:16px;
 }
 .dash-widget{
   grid-column:span 6;
   background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rlg);
-  box-shadow:var(--sh1);padding:20px 22px;min-height:160px;
+  box-shadow:var(--sh1);padding:18px 20px;min-height:0;
   display:flex;flex-direction:column;gap:12px;
 }
-.dash-widget[data-widget="revenue"],
-.dash-widget[data-widget="queue"],
+.dash-widget.span-12{grid-column:span 12}
+.dash-widget.span-6{grid-column:span 6}
+.dash-widget[data-widget="kpis"],
 .dash-widget[data-widget="quick-actions"]{grid-column:span 12}
+.dash-widget[data-widget="kpis"]{min-height:0;padding:16px 18px}
 .dash-widget-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .dash-widget-title{font-family:var(--fd);font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
 .dash-widget-title i{color:var(--l600)}
 .dash-widget-sub{font-size:12px;color:var(--ltt);margin-top:2px}
-.dash-perm{
-  font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
-  color:var(--ltt);background:var(--ls2);border:1px solid var(--ls3);
-  border-radius:var(--rpl);padding:4px 8px;white-space:nowrap;
-}
-.dash-widget-body{flex:1}
-.dash-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
-.dash-kpi{background:var(--ls2);border-radius:var(--rmd);padding:12px 14px}
+.dash-widget-body{flex:1;min-width:0}
+.dash-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.dash-kpi-row.compact{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.dash-kpi{background:var(--ls2);border-radius:var(--rmd);padding:12px 14px;cursor:default}
 .dash-kpi .lbl{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--ltt);margin-bottom:4px}
-.dash-kpi strong{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1.15}
+.dash-kpi strong{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1.15;display:block}
+.dash-kpi-row.compact .dash-kpi strong{font-size:18px}
 .dash-kpi strong.ok{color:var(--suc500)}
-.dash-snapshot{margin-top:12px;font-size:12px;color:var(--lts);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dash-kpi .sub{display:block;margin-top:4px;font-size:12px;color:var(--lts)}
 .dash-muted{color:var(--ltt);font-size:13px}
 .dash-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .dash-btn{
@@ -124,15 +118,12 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .dash-btn.primary{background:var(--l500);border-color:var(--l500);color:var(--c900)}
 .dash-btn.ghost{background:transparent}
 .dash-btn:disabled{opacity:.55;cursor:not-allowed}
-.dash-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.dash-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--ls3);font-size:13px}
+.dash-list{list-style:none;display:flex;flex-direction:column;gap:0}
+.dash-list li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--ls3);font-size:13px}
 .dash-list li:last-child{border-bottom:none}
-.dash-list-main{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-list-main{font-weight:600;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dash-list-meta{color:var(--ltt);font-size:12px;flex-shrink:0;font-family:var(--fd)}
-.dash-queue-block{margin-bottom:16px}
-.dash-queue-block:last-child{margin-bottom:0}
-.dash-queue-block h3{font-family:var(--fd);font-size:13px;font-weight:700;margin-bottom:8px}
-.dash-link{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:var(--l600);text-decoration:none}
+.dash-link{display:inline-block;margin-top:10px;font-size:12px;font-weight:700;color:var(--l600);text-decoration:none}
 .dash-link:hover{text-decoration:underline}
 .dash-quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .dash-quick-item{
@@ -142,9 +133,34 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 }
 .dash-quick-item:hover{border-color:var(--l500);background:var(--l100)}
 .dash-quick-item i{font-size:18px;color:var(--l600)}
+.dash-alert-list{display:flex;flex-direction:column;gap:8px}
+.dash-alert{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--rmd);
+  border:1px solid var(--ls3);background:var(--ls2);text-decoration:none;color:var(--ltp);
+  transition:border-color var(--tf),background var(--tf);
+}
+.dash-alert:hover{border-color:var(--l500);background:var(--l100)}
+.dash-alert > .ti:first-child{font-size:20px;color:var(--wrn500);flex-shrink:0}
+.dash-alert-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dash-alert-body strong{font-family:var(--fd);font-size:13px}
+.dash-alert-body span{font-size:12px;color:var(--ltt)}
+.dash-alert-chev{color:var(--ltt);font-size:16px;flex-shrink:0}
+[dir="rtl"] .dash-alert-chev{transform:scaleX(-1)}
+.dash-glance{display:flex;flex-wrap:wrap;gap:8px}
+.dash-glance-chip{
+  display:inline-flex;align-items:center;padding:6px 12px;border-radius:var(--rpl);
+  background:var(--ls2);border:1px solid var(--ls3);font-size:12px;font-weight:600;color:var(--lts);
+}
+.dash-chart-wrap{position:relative;height:140px;margin-top:10px}
+.dash-chart-hdr{display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--fd);font-size:13px;font-weight:700}
+.dash-seg{display:inline-flex;border:1px solid var(--ls3);border-radius:var(--rmd);overflow:hidden;margin-inline-start:auto}
+.dash-seg-btn{border:none;background:var(--ls2);padding:4px 10px;font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer;color:var(--lts)}
+.dash-seg-btn.act{background:var(--l500);color:var(--c900)}
+.dash-local-err{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.dash-local-err p{color:var(--ltt);font-size:13px}
 
 @media(max-width:900px){
-  .dash-widget,.dash-widget[data-widget="revenue"],.dash-widget[data-widget="queue"],.dash-widget[data-widget="quick-actions"]{grid-column:span 12}
+  .dash-widget,.dash-widget.span-6,.dash-widget.span-12{grid-column:span 12}
 }
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%)}[dir="rtl"] .sidebar{transform:translateX(100%)}
@@ -152,6 +168,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
   .main{margin-left:0}[dir="rtl"] .main{margin-right:0}
   .content{padding:16px}.topbar{padding:0 16px}
   .mob-toggle{display:flex!important}
+  .dash-quick{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 .mob-toggle{display:none!important;width:36px;height:36px;align-items:center;justify-content:center;border:none;background:var(--ls2);border-radius:var(--rmd);cursor:pointer;font-size:18px;color:var(--lts)}
 </style>
@@ -199,6 +216,6 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
   </div>
 </div>
 
-<script src="/dashboard/dashboard-home.js"></script>
+<script src="/dashboard/dashboard-home.js?v=ops3"></script>
 </body>
 </html>

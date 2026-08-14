@@ -790,10 +790,20 @@ export const SHIFTS_ENDPOINTS = {
   open: { method: "POST", path: "/api/shifts/open" }, // perm shift.open ; body: OpenShiftRequest -> ShiftDto
   current: { method: "GET", path: "/api/shifts/current" }, // perm shift.open -> ShiftDto
   closeCurrent: { method: "POST", path: "/api/shifts/current/close" }, // perm shift.close ; body: CloseShiftRequest -> ShiftDto
-  recordMovement: { method: "POST", path: "/api/shifts/current/movements" }, // perm shift.open ; body: RecordMovementRequest
+  recordMovement: { method: "POST", path: "/api/shifts/current/movements" }, // perm shift.open ; body: RecordMovementRequest -> CashMovementDto | ShiftDto
+  /** Part 2 — server-side movements page (RLS-safe count). Prefer shift-scoped path; current alias OK for open drawer. */
+  listMovements: (id: string) => ({
+    method: "GET",
+    path: `/api/shifts/${id}/movements`,
+  }), // query: page=1, pageSize=8|20 -> PagedResult<CashMovementDto>
+  listCurrentMovements: {
+    method: "GET",
+    path: "/api/shifts/current/movements",
+  }, // query: page=1, pageSize=8|20 -> PagedResult<CashMovementDto> (same resource as POST record)
   approve: (id: string) => ({ method: "POST", path: `/api/shifts/${id}/approve` }), // perm shift.reconcile.approve ; body: ApproveShiftRequest
   forceClose: (id: string) => ({ method: "POST", path: `/api/shifts/${id}/force-close` }), // policy ManagerOrAbove
-  list: { method: "GET", path: "/api/shifts" }, // policy ManagerOrAbove ; query: from?, to?, userId?, page=1, pageSize=20 -> PagedResult<ShiftDto>
+  /** ManagerOrAbove. Dates: from|startDate, to|endDate. Staff: userId|staffId. Count must run under tenant RLS/SESSION_CONTEXT. */
+  list: { method: "GET", path: "/api/shifts" }, // query: from?, to?, startDate?, endDate?, userId?, staffId?, page=1, pageSize=20 -> PagedResult<ShiftDto>
   openSummary: { method: "GET", path: "/api/shifts/open-summary" }, // perm reports.financial.view -> ShiftOpenSummaryDto
 } as const;
 
@@ -1041,6 +1051,12 @@ export interface CallSheetEntryDto {
   lastVisitAt?: string | null;
   lastCallOutcome?: "contacted" | "renewed" | "declined" | "no_answer" | null;
 }
+/**
+ * GET /call-sheet/expiring must return at most one row per membershipId.
+ * Duplicate membershipId rows usually mean a missing DISTINCT / GroupBy on a join to
+ * payments, invoices, or call-outcome history — fix in CallSheetService, not only in FE.
+ * Multiple rows for the same memberId with different membershipIds are valid (multi-plan).
+ */
 export interface RecordCallOutcomeRequest {
   outcome: "contacted" | "renewed" | "declined" | "no_answer";
   note?: string | null;
