@@ -11,6 +11,7 @@ html[dir='rtl'] {
 html[dir='rtl'] body {
   font-family: var(--fa, 'IBM Plex Sans Arabic'), 'IBM Plex Sans', sans-serif;
   text-align: start;
+  line-height: var(--gfp-lh-ar, 1.7);
 }
 
 html[dir='rtl'] [dir='ltr'] {

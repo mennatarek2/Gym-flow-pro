@@ -53,6 +53,39 @@
     d.textContent = s == null ? '' : String(s);
     return d.innerHTML;
   }
+
+  /**
+   * One row per membershipId. Duplicate membershipIds = backend join bug
+   * (payments/invoices/outcomes). Distinct membershipIds for one member are kept.
+   */
+  function normalizeExpiringEntries(raw) {
+    const list = Array.isArray(raw) ? raw : [];
+    const byId = Object.create(null);
+    let collapsed = 0;
+    list.forEach(function (e) {
+      if (!e) return;
+      const key =
+        e.membershipId != null && String(e.membershipId)
+          ? String(e.membershipId)
+          : [e.memberId, e.endDate, e.planName].join('|');
+      if (byId[key]) {
+        collapsed += 1;
+        return;
+      }
+      byId[key] = e;
+    });
+    if (collapsed > 0 && typeof console !== 'undefined' && console.warn) {
+      console.warn(
+        '[call-sheet] Collapsed ' +
+          collapsed +
+          ' duplicate membershipId row(s) from GET /call-sheet/expiring — fix DISTINCT/GroupBy in CallSheetService.'
+      );
+    }
+    return Object.keys(byId).map(function (k) {
+      return byId[k];
+    });
+  }
+
   function dt(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -184,7 +217,7 @@
         '<tr><td colspan="6" class="muted">' + esc(problemMessage(res.data, res.status)) + '</td></tr>';
       return;
     }
-    const items = Array.isArray(res.data) ? res.data : [];
+    const items = normalizeExpiringEntries(res.data);
     if (!items.length) {
       tbody.innerHTML = '<tr><td colspan="6" class="muted">No expiring memberships</td></tr>';
       return;

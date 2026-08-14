@@ -1012,13 +1012,23 @@
 
   // Wire "Add Member" button on members list page
   const btnAdd=document.getElementById('btnAddMember');
-  if(btnAdd){
-    btnAdd.addEventListener('click',function(){
-      if(!canCreate()){ toast('Missing members.create permission','error'); return; }
-      const m=document.getElementById('addMemberModal');
-      if(m) m.classList.add('open');
-    });
+  function openAddMemberModal(){
+    if(!canCreate()){ toast('Missing members.create permission','error'); return; }
+    const m=document.getElementById('addMemberModal');
+    if(m) m.classList.add('open');
   }
+  if(btnAdd){
+    btnAdd.addEventListener('click',openAddMemberModal);
+  }
+  try{
+    var params=new URLSearchParams(location.search);
+    if(params.get('action')==='new' && btnAdd){
+      openAddMemberModal();
+      params.delete('action');
+      var qs=params.toString();
+      history.replaceState({},'',location.pathname+(qs?'?'+qs:'')+location.hash);
+    }
+  }catch(e){ /* ignore */ }
 
   // ── Init all components ──
   initAddMemberModal();

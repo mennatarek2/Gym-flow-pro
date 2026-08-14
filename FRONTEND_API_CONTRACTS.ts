@@ -1503,6 +1503,30 @@ export const TENANT_SETTINGS_ENDPOINTS = {
   updateTax: { method: "PUT", path: "/api/settings/tax" }, // policy OwnerOnly ; body: UpdateTaxSettingsRequest
 } as const;
 
+/**
+ * Dashboard Quick Actions — tenant-wide ordered shortcut keys.
+ *
+ * Do NOT hang this on GET/PUT /api/settings: that DTO has no keys field and is OwnerOnly.
+ * Receptionist/Trainer must READ the same list; Manager must WRITE (Owner too).
+ *
+ * Backend needed:
+ *   GET  /api/settings/quick-actions  [Authorize] AnyStaff → QuickActionsSettingsDto
+ *   PUT  /api/settings/quick-actions  policy ManagerOrAbove ; body: UpdateQuickActionsRequest
+ *
+ * Unknown keys are ignored by FE. Missing/404 → default
+ * ["new_member","checkin","new_sale","collect_payment"].
+ * FE whitelist: apps/web/src/app/shared/quick-actions.js
+ */
+export interface QuickActionsSettingsDto {
+  keys: string[];
+}
+export type UpdateQuickActionsRequest = QuickActionsSettingsDto;
+
+export const QUICK_ACTIONS_SETTINGS_ENDPOINTS = {
+  get: { method: "GET", path: "/api/settings/quick-actions" }, // AnyStaff -> QuickActionsSettingsDto
+  update: { method: "PUT", path: "/api/settings/quick-actions" }, // ManagerOrAbove ; body: UpdateQuickActionsRequest
+} as const;
+
 // ═══════════════════════════════════════════════════════════════════════════
 // § 21. Notifications (NotificationsController — api/notifications, [Authorize])
 // ═══════════════════════════════════════════════════════════════════════════

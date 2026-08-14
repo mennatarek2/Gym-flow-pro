@@ -18,6 +18,7 @@ const SHARED_SCRIPTS = [
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=4',
   '/shared/shell.js?v=8',
+  '/shared/quick-actions.js?v=3',
 ];
 
 const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1'];
