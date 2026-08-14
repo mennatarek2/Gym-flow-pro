@@ -127,8 +127,8 @@ assert(!Shell.isNavItemVisible(settings, allOn), 'Receptionist hides Settings');
 assert(!Shell.isNavItemVisible(staff, allOn), 'Receptionist hides Staff');
 assert(Shell.isNavItemVisible(pos, allOn), 'Receptionist sees POS when sales enabled');
 assert(Shell.isNavItemVisible(call, allOn), 'Receptionist sees Call sheet (no feature flag)');
-assert(Shell.isNavItemVisible(invHome, allOn), 'Receptionist sees Inventory Overview');
-assert(Shell.isNavItemVisible(invStock, allOn), 'Receptionist sees Stock Management hub');
+assert(!Shell.isNavItemVisible(invHome, allOn), 'Shop UX hides Inventory Overview');
+assert(!Shell.isNavItemVisible(invStock, allOn), 'Shop UX hides Stock Management hub');
 assert(!Shell.isNavItemVisible(invProducts, allOn), 'Receptionist hides Inventory Products (no manage/purchase)');
 
 // FEATURE_DISABLED
@@ -143,8 +143,9 @@ var stockMgmtOff = Object.assign({}, allOn, { stock_management: false });
 assert(!Shell.isNavItemVisible(invStock, stockMgmtOff), 'stock_management off hides hub');
 assert(!Shell.isNavItemVisible(invHome, stockMgmtOff), 'stock_management off hides Overview');
 
-assert(!Features.PHASE_HIDE_STOCK_MANAGEMENT, 'phase hide Stock Management is off');
-assert(Features.isModuleAvailable('stock_management', allOn), 'stock_management available when probe registry on');
+assert(Features.PHASE_HIDE_STOCK_MANAGEMENT, 'shop UX phase-hides Stock Management');
+assert(Features.SHOP_OWNER_UX, 'SHOP_OWNER_UX is on');
+assert(!Features.isModuleAvailable('stock_management', allOn), 'stock_management gated off in shop UX');
 
 // Pending probe (null registry) — feature modules must NOT be clickable
 assert(!Shell.isNavItemVisible(pos, null), 'Pending probe hides feature-gated POS');
@@ -166,7 +167,7 @@ storage.gfp_access_token = fakeJwt({
 storage.gfp_user = JSON.stringify({ role: 'Owner' });
 assert(Shell.isNavItemVisible(plans, allOn), 'Owner sees Plans');
 assert(Shell.isNavItemVisible(settings, allOn), 'Owner sees Settings');
-assert(Shell.isNavItemVisible(invStock, allOn), 'Owner sees Stock Management hub');
+assert(!Shell.isNavItemVisible(invStock, allOn), 'Owner shop UX hides Stock Management hub');
 assert(Shell.isNavItemVisible(invProducts, stockMgmtOff), 'Owner Growth packaging keeps Products');
 
 // ── Manager: no plans.manage, not Owner ──
@@ -180,7 +181,7 @@ storage.gfp_access_token = fakeJwt({
 storage.gfp_user = JSON.stringify({ role: 'Manager' });
 assert(!Shell.isNavItemVisible(plans, allOn), 'Manager hides Plans (no plans.manage)');
 assert(!Shell.isNavItemVisible(settings, allOn), 'Manager hides Settings (not Owner)');
-assert(Shell.isNavItemVisible(invStock, allOn), 'Manager sees Stock Management hub');
+assert(!Shell.isNavItemVisible(invStock, allOn), 'Manager shop UX hides Stock Management hub');
 // ── Bilingual ──
 assert(I18n.pickBilingual('Hello', 'مرحبا', 'ar') === 'مرحبا', 'pickBilingual prefers ar');
 assert(I18n.displayBilingualText({ message: 'Open shift', messageAr: 'افتح الوردية' }, 'ar').indexOf('افتح') === 0, 'message/messageAr');

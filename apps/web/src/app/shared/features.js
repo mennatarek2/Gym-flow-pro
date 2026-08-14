@@ -3,16 +3,20 @@
  * FEATURE_DISABLED (404 ProblemDetails title) → module unavailable (hide from nav).
  * Network errors: fail-open for core modules; fail-closed for stock_management (Growth desk).
  *
- * Set PHASE_HIDE_STOCK_MANAGEMENT = true to force-hide the Pro Stock Management hub for all tiers.
+ * SHOP_OWNER_UX (2026-08-14 Product Accept — existing-desk preview):
+ * Catalog = Products table + Suppliers table + Purchases. Hide warehouse /
+ * transfers / counts / insights from owner nav. Engines + default warehouse stay.
+ * PHASE_HIDE_STOCK_MANAGEMENT is forced on while shop UX is the product direction.
  */
 (function (global) {
   'use strict';
 
-  var CACHE_KEY = 'gfp_feature_modules_v4';
+  var CACHE_KEY = 'gfp_feature_modules_v5';
   var CACHE_TTL_MS = 10 * 60 * 1000;
 
-  /** false = normal tier packaging (Pro+ sees hub when probe succeeds). */
-  var PHASE_HIDE_STOCK_MANAGEMENT = false;
+  /** Shop UX: hide Stock Management hub / warehouses / transfers / counts for all tiers. */
+  var SHOP_OWNER_UX = true;
+  var PHASE_HIDE_STOCK_MANAGEMENT = SHOP_OWNER_UX;
 
   var FEATURE_MODULES = [
     'sales',
@@ -148,6 +152,7 @@
   var GfpFeatures = {
     FEATURE_MODULES: FEATURE_MODULES,
     PHASE_HIDE_STOCK_MANAGEMENT: PHASE_HIDE_STOCK_MANAGEMENT,
+    SHOP_OWNER_UX: SHOP_OWNER_UX,
     probeModuleAvailable: probeModuleAvailable,
     probeAllModules: probeAllModules,
     isModuleAvailable: isModuleAvailable,

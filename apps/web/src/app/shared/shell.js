@@ -66,7 +66,6 @@
       '/dashboard/inventory/stock/',
       '/dashboard/inventory/transfers/',
       '/dashboard/inventory/counts/',
-      '/dashboard/inventory/purchase-orders/',
       '/dashboard/inventory/adjustments/'
     ];
     var i;
@@ -80,6 +79,14 @@
         if (hub) return hub;
         break;
       }
+    }
+    // Legacy Promo Codes desk highlights Offers & Promotions nav item
+    if (p === '/dashboard/promo-codes/' || p.indexOf('/dashboard/promo-codes/') === 0) {
+      var offersNav = null;
+      getNavItems().forEach(function (item) {
+        if (item.key === 'offers') offersNav = item;
+      });
+      if (offersNav) return offersNav;
     }
     var best = null;
     getNavItems().forEach(function (item) {
@@ -247,14 +254,12 @@
       if (cp.indexOf(normalizePath('/dashboard/inventory/stock')) === 0) return true;
       if (cp.indexOf(normalizePath('/dashboard/inventory/transfers')) === 0) return true;
       if (cp.indexOf(normalizePath('/dashboard/inventory/counts')) === 0) return true;
-      if (cp.indexOf(normalizePath('/dashboard/inventory/purchase-orders')) === 0) return true;
       if (cp.indexOf(normalizePath('/dashboard/inventory/adjustments')) === 0) return true;
       return false;
     }
     // Legacy On Hand path (redirects to hub) — keep Buy/Fix highlight
     if (ip === normalizePath('/dashboard/inventory/stock/')) {
       if (cp === ip) return true;
-      if (cp.indexOf(normalizePath('/dashboard/inventory/purchase-orders')) === 0) return true;
       if (cp.indexOf(normalizePath('/dashboard/inventory/adjustments')) === 0) return true;
       return false;
     }
@@ -467,8 +472,37 @@
     return getDefaultLandingPath(registry) || '/dashboard/';
   }
 
+  function shopUxShouldRedirect(pathname, search) {
+    var Features = global.GfpFeatures;
+    if (!Features || !Features.SHOP_OWNER_UX) return false;
+    if (search && String(search).indexOf('embed=1') !== -1) return false;
+    var p = normalizePath(pathname);
+    if (p === '/dashboard/inventory/') return true;
+    var blocked = [
+      '/dashboard/inventory/stock-management/',
+      '/dashboard/inventory/stock/',
+      '/dashboard/inventory/transfers/',
+      '/dashboard/inventory/counts/',
+      '/dashboard/inventory/warehouses/',
+      '/dashboard/inventory/reports/',
+      '/dashboard/inventory/adjustments/'
+    ];
+    var i;
+    for (i = 0; i < blocked.length; i++) {
+      var root = normalizePath(blocked[i]);
+      if (p === root || p.indexOf(root) === 0) return true;
+    }
+    return false;
+  }
+
+  function maybeShopUxRedirect() {
+    if (!global.location || !shopUxShouldRedirect(global.location.pathname, global.location.search)) return;
+    global.location.replace('/dashboard/inventory/products/');
+  }
+
   async function boot() {
     if (bootDone) return;
+    maybeShopUxRedirect();
     if (!/\/dashboard(\/|$)/.test(global.location.pathname)) return;
     if (!global.GfpAuthz) return;
 
@@ -556,6 +590,7 @@
     renderShellNav: renderShellNav,
     applyNavVisibility: renderShellNav,
     enforceRouteAccess: enforceRouteAccess,
+    shopUxShouldRedirect: shopUxShouldRedirect,
     boot: boot
   };
   global.useVisibleNav = useVisibleNav;

@@ -34,7 +34,9 @@ npm run dev
 | Attendance | Exists (Prompt 6) | `attendance/` — manual check-in (`checkin.manual`; reason 1–4; notes required for Other); today (`members.view`); SignalR `/hubs/attendance` optimistic `MemberCheckedIn` + 15s reconcile; bilingual unselectable; 429 string-safe |
 | Shifts (cash drawer) | Exists (Prompt 7) | `shifts/` — blind count; never derive expected while open |
 | Point of Sale | Exists (Prompt 8) | `pos/` — shift gate, idempotency, promo, discounts, split/partial pay, debt payments |
-| Promo codes | Exists (Prompt 8) | `promo-codes/` — list (`sales.sell`); CRUD (`plans.manage`) |
+| Promo codes | Exists (Prompt 8) — legacy | `promo-codes/` — list (`sales.sell`); CRUD (`plans.manage`). Prefer Offers. |
+| Offers & Promotions | Live API (2026-08-14) | `offers/` — wizard + list + Member App frames; `GET/POST/PUT /api/offers`; members `GET /api/member/offers`; promo-code redemption syncs on publish |
+| Products / Purchases (owner desk) | Product Accept 2026-08-14 (existing-desk) | Catalog: Products table + Suppliers table + Purchases. Qty on the product. Warehouses/transfers/counts/insights hidden. Engines remain. `SHOP_OWNER_UX` in `features.js`. Preview: `previews/products-simplify-from-existing.html` |
 | Refunds & account credit | Exists (Prompt 9) | `refunds/` — request/approve/reject; filters; gateway disabled; member Credits tab |
 | Invoices & receipts | Exists (Prompt 10) | `invoices/` — paged/filter list, detail, void, resend, 80mm receipt (`?paymentId=`) |
 | Daily Z-Report | Exists (Prompt 11) | `z-report/` — date picker; 404→not yet available; PDF; Manager+ regenerate |

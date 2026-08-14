@@ -61,7 +61,8 @@
   } catch (e) { /* ignore */ }
   try {
     var savedView = localStorage.getItem(VIEW_KEY);
-    if (savedView === 'table' || savedView === 'cards') viewMode = savedView;
+    if (window.GfpFeatures && window.GfpFeatures.SHOP_OWNER_UX) viewMode = 'table';
+    else if (savedView === 'table' || savedView === 'cards') viewMode = savedView;
   } catch (e) { /* ignore */ }
 
   function esc(s) {
@@ -70,8 +71,13 @@
     return d.innerHTML;
   }
   function money(n) {
-    if (n == null || Number.isNaN(Number(n))) return '—';
-    return new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(Number(n));
+    var v = Number(n);
+    if (n == null || Number.isNaN(v)) return 'EGP 0.00';
+    try {
+      return new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(v);
+    } catch (e) {
+      return 'EGP ' + v.toFixed(2);
+    }
   }
   function toast(msg, type) {
     var el = document.getElementById('toast');
@@ -108,30 +114,16 @@
     );
     if (chips) chips.hidden = false;
     if (sub) {
-      if (hasStockManagement) {
-        sub.setAttribute(
-          'data-en',
-          'Products, qty left, and simple stock here. Open Stock Management for Move, Count, and the On Hand board.'
-        );
-        sub.setAttribute(
-          'data-ar',
-          'المنتجات والكمية وتعديل الرصيد هنا. إدارة المخزون للنقل والجرد ولوحة الرصيد.'
-        );
-        sub.innerHTML =
-          'Products, qty left, and simple stock here. ' +
-          '<a href="/dashboard/inventory/stock-management/">Open Stock Management</a> for Move, Count, and the On Hand board.';
-      } else {
-        sub.setAttribute(
-          'data-en',
-          'Your sellable items — add products, see qty left, put stock in, and sell from Sale.'
-        );
-        sub.setAttribute(
-          'data-ar',
-          'منتجاتك — ضيف، شوف الكمية، زوّد رصيد، وبيع من شاشة البيع.'
-        );
-        sub.textContent =
-          'Your sellable items — add products, see qty left, put stock in, and sell from Sale.';
-      }
+      sub.setAttribute(
+        'data-en',
+        'What you sell, the price, and how many you have. Buy from a supplier — no warehouse screens.'
+      );
+      sub.setAttribute(
+        'data-ar',
+        'إيه اللي بتبيعه، السعر، والكمية. اشتري من المورد — من غير شاشات مخازن.'
+      );
+      sub.textContent =
+        'What you sell, the price, and how many you have. Buy from a supplier — no warehouse screens.';
     }
     if (crumbInv) {
       crumbInv.setAttribute('data-en', 'Catalog');
@@ -360,6 +352,39 @@
     return '<span class="thumb-ph"><i class="ti ti-photo"></i></span>';
   }
 
+  function memberAppVisible(p) {
+    return !!(p && (p.isVisibleToMembers != null ? p.isVisibleToMembers : p.visibleToMembers));
+  }
+
+  function memberAppBadgeHtml(p) {
+    return memberAppVisible(p)
+      ? '<span class="badge badge-ok">ON</span>'
+      : '<span class="badge badge-off">OFF</span>';
+  }
+
+  function stockQtyState(p) {
+    if (!p || !p.trackStock) return null;
+    if (!Object.prototype.hasOwnProperty.call(stockByProduct, p.id)) return 'pending';
+    var entry = stockByProduct[p.id];
+    var avail =
+      typeof entry === 'object'
+        ? Number(entry.available != null ? entry.available : entry.onHand)
+        : Number(entry);
+    if (Number.isNaN(avail)) return null;
+    var min = Number(p.reorderMinQty) || 0;
+    if (avail <= 0) return 'out';
+    if (min > 0 && avail <= min) return 'low';
+    return 'ok';
+  }
+
+  function stockStatusHtml(p) {
+    var st = stockQtyState(p);
+    if (st === 'out') return '<span class="badge badge-out">Out of stock</span>';
+    if (st === 'low') return '<span class="badge badge-low">Low stock</span>';
+    if (st === 'ok') return '<span class="badge badge-ok">In stock</span>';
+    return '';
+  }
+
   function statusBadge(p) {
     if (p.isArchived) return '<span class="badge badge-arch">مؤرشف</span>';
     if (p.isActive) return '<span class="badge badge-ok">نشط</span>';
@@ -401,6 +426,30 @@
     );
   }
 
+  function stockPillHtml(p) {
+    if (!p.trackStock) return '';
+    if (!Object.prototype.hasOwnProperty.call(stockByProduct, p.id)) {
+      return '<span class="stock-pill stock-pending">…</span>';
+    }
+    var entry = stockByProduct[p.id];
+    var avail =
+      typeof entry === 'object'
+        ? Number(entry.available != null ? entry.available : entry.onHand)
+        : Number(entry);
+    if (Number.isNaN(avail)) return '';
+    var min = Number(p.reorderMinQty) || 0;
+    var cls = 'stock-ok';
+    var txt = avail + ' left';
+    if (avail <= 0) {
+      cls = 'stock-out';
+      txt = 'Empty';
+    } else if (min > 0 && avail <= min) {
+      cls = 'stock-low';
+      txt = 'Only ' + avail + ' left';
+    }
+    return '<span class="stock-pill ' + cls + '">' + esc(txt) + '</span>';
+  }
+
   function bindProductActions(host) {
     host.querySelectorAll('[data-edit]').forEach(function (b) {
       b.addEventListener('click', function (ev) {
@@ -421,7 +470,8 @@
       });
     });
     host.querySelectorAll('[data-open]').forEach(function (b) {
-      b.addEventListener('click', function () {
+      b.addEventListener('click', function (ev) {
+        if (ev.target.closest('.row-actions')) return;
         openProductDetail(b.getAttribute('data-open'));
       });
     });
@@ -447,30 +497,18 @@
 
   function productActionsHtml(p) {
     var html = '<div class="row-actions">';
-    if (canAdjust && productAllowsSimpleStock(p)) {
-      html +=
-        '<button type="button" class="primary" data-stock-add="' +
-        esc(p.id) +
-        '">Add stock</button>';
-      html +=
-        '<button type="button" data-stock-fix="' + esc(p.id) + '">Fix qty</button>';
-    }
     if (canBuy && !p.isArchived && p.isPurchasable !== false) {
       html +=
-        '<button type="button" data-buy="' + esc(p.id) + '">Buy</button>';
+        '<button type="button" class="primary" data-buy="' + esc(p.id) + '">Buy</button>';
+    }
+    if (canAdjust && productAllowsSimpleStock(p)) {
+      html +=
+        '<button type="button" data-stock-add="' +
+        esc(p.id) +
+        '">Add stock</button>';
     }
     if (canManage) {
       html += '<button type="button" data-edit="' + esc(p.id) + '">Edit</button>';
-      if (p.isArchived) {
-        html +=
-          '<button type="button" data-unarchive="' + esc(p.id) + '">Restore</button>';
-      } else {
-        html +=
-          '<button type="button" data-archive="' + esc(p.id) + '">Archive</button>';
-      }
-    }
-    if (p.isSellable !== false) {
-      html += '<a href="/dashboard/pos/">Sell</a>';
     }
     html += '</div>';
     return html;
@@ -552,6 +590,12 @@
       '</div></div>' +
       '<div class="kv"><div class="k">العملة</div><div class="v">' +
       esc(p.currency || 'EGP') +
+      '</div></div>' +
+      '<div class="kv"><div class="k">POS</div><div class="v">' +
+      esc(p.isSellable !== false ? 'Sellable' : 'Off') +
+      '</div></div>' +
+      '<div class="kv"><div class="k">Member App</div><div class="v">' +
+      esc(memberAppVisible(p) ? 'Visible' : 'Hidden') +
       '</div></div>' +
       '</div>' +
       '<div class="detail-actions">' +
@@ -731,11 +775,13 @@
     });
     sel.innerHTML =
       '<option value="">' +
-      (active.length ? 'Select supplier…' : 'No suppliers yet') +
+      (active.length ? 'Select supplier' : 'No suppliers yet') +
       '</option>' +
       active
         .map(function (s) {
-          return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>';
+          var label = s.name || '';
+          if (s.phone) label += ' · ' + s.phone;
+          return '<option value="' + esc(s.id) + '">' + esc(label) + '</option>';
         })
         .join('') +
       '<option value="__new__">+ New supplier…</option>';
@@ -750,11 +796,37 @@
   function syncBuyNewSupplierField() {
     var sel = document.getElementById('buySupplier');
     var wrap = document.getElementById('buyNewSupplierWrap');
+    var phoneWrap = document.getElementById('buyNewSupplierPhoneWrap');
     if (!sel || !wrap) return;
     var activeCount = buySuppliers.filter(function (s) {
       return s.isActive !== false;
     }).length;
-    wrap.hidden = !(sel.value === '__new__' || activeCount === 0);
+    var showNew = sel.value === '__new__' || activeCount === 0;
+    wrap.hidden = !showNew;
+    if (phoneWrap) phoneWrap.hidden = !showNew;
+  }
+
+  function updateBuySupplierMeta() {
+    var sel = document.getElementById('buySupplier');
+    var meta = document.getElementById('buySupplierMeta');
+    if (!sel || !meta) return;
+    if (!sel.value || sel.value === '__new__') {
+      meta.hidden = true;
+      meta.textContent = '';
+      return;
+    }
+    var s = buySuppliers.find(function (x) {
+      return x.id === sel.value;
+    });
+    if (!s) {
+      meta.hidden = true;
+      meta.textContent = '';
+      return;
+    }
+    var bits = [];
+    bits.push(s.phone ? s.phone : 'No phone on file');
+    meta.hidden = false;
+    meta.textContent = bits.join('  ·  ');
   }
 
   async function openBuyDrawer(id) {
@@ -767,32 +839,39 @@
       return;
     }
     buyDrawerProductId = id;
-    document.getElementById('buyDrawerTitle').textContent = p.nameAr || p.name || 'Buy';
+    document.getElementById('buyDrawerTitle').textContent = 'Buy';
     document.getElementById('buyDrawerMeta').textContent =
-      (p.sku || '') + (p.categoryName ? ' · ' + p.categoryName : '');
+      (p.name || '') + (p.sku ? ' · ' + p.sku : '') + (p.categoryName ? ' · ' + p.categoryName : '');
     document.getElementById('buyQty').value = '';
     document.getElementById('buyUnitCost').value =
       p.costPrice != null && !Number.isNaN(Number(p.costPrice)) ? String(p.costPrice) : '0';
-    document.getElementById('buyPaidNow').value = '';
+    document.getElementById('buyPaidNow').value = '0';
     document.getElementById('buyPayMethod').value = 'cash';
     document.getElementById('buyNotes').value = '';
     document.getElementById('buyBatch').value = '';
     document.getElementById('buyExpiry').value = '';
-    document.getElementById('buyDrawerHint').textContent =
-      'Purchase posts to the supplier account. Stock goes to your default shelf.';
+    var newName = document.getElementById('buyNewSupplier');
+    if (newName) newName.value = '';
+    var newPhone = document.getElementById('buyNewSupplierPhone');
+    if (newPhone) newPhone.value = '';
+    document.getElementById('buyDrawerHint').textContent = '';
     document.getElementById('buyBatchWrap').hidden = !p.trackBatch;
     document.getElementById('buyExpiryWrap').hidden = !p.trackExpiry;
     document.getElementById('buyCostWrap').hidden = !canSeeCost;
     document.getElementById('buyMoneyBox').hidden = !canSeeCost;
+    var payStep = document.getElementById('buyPayStep');
+    if (payStep) payStep.hidden = !canSeeCost;
     var result = document.getElementById('buyResultPanel');
     if (result) {
       result.hidden = true;
       result.innerHTML = '';
+      result.classList.remove('has-due', 'has-credit');
     }
     var actions = document.getElementById('buyActions');
     if (actions) actions.hidden = false;
     await loadBuySuppliers();
     syncBuyNewSupplierField();
+    updateBuySupplierMeta();
     updateBuyTotalPreview();
     document.getElementById('buyDrawer').hidden = false;
     document.getElementById('buyQty').focus();
@@ -801,13 +880,15 @@
   function updateBuyTotalPreview() {
     var el = document.getElementById('buyTotalPreview');
     if (!el) return;
-    var qty = Number(document.getElementById('buyQty').value);
-    var unit = Number(document.getElementById('buyUnitCost').value);
-    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(unit) || unit < 0) {
-      el.textContent = '—';
-      return;
-    }
-    el.textContent = money(qty * unit);
+    var qtyEl = document.getElementById('buyQty');
+    var unitEl = document.getElementById('buyUnitCost');
+    var qty = Number(qtyEl && qtyEl.value);
+    var unit = Number(unitEl && unitEl.value);
+    if (!Number.isFinite(qty) || qty < 0) qty = 0;
+    if (!Number.isFinite(unit) || unit < 0) unit = 0;
+    var total = qty * unit;
+    el.textContent = money(total);
+    el.classList.toggle('is-zero', total < 0.005);
   }
 
   async function resolveBuySupplierId() {
@@ -823,6 +904,7 @@
     }
     var created = await Gfp.post(paths.suppliers(), {
       name: name,
+      phone: (document.getElementById('buyNewSupplierPhone').value || '').trim() || null,
       isActive: true
     });
     if (!created.ok || !created.data || !created.data.id) {
@@ -964,9 +1046,21 @@
     }
 
     var bal = await Gfp.get(paths.supplierBalance(supplier.id));
-    var due = bal.ok && bal.data ? bal.data.dueTotal : recordedTotal - paidNow;
-    var paidTotal = bal.ok && bal.data ? bal.data.paidTotal : paidNow;
-    var purchasesTotal = bal.ok && bal.data ? bal.data.purchasesTotal : recordedTotal;
+    var due = bal.ok && bal.data ? Number(bal.data.dueTotal) : recordedTotal - paidNow;
+    if (!Number.isFinite(due)) due = recordedTotal - paidNow;
+    var remainThis = Math.max(0, recordedTotal - paidNow);
+    var dueAll = due;
+    var supplierRow = buySuppliers.find(function (x) {
+      return x.id === supplier.id;
+    });
+    var supplierName =
+      (supplierRow && supplierRow.name) ||
+      (document.getElementById('buyNewSupplier').value || '').trim() ||
+      'Supplier';
+    var supplierPhone =
+      (supplierRow && supplierRow.phone) ||
+      (document.getElementById('buyNewSupplierPhone').value || '').trim() ||
+      '';
 
     btn.disabled = false;
     hint.textContent = '';
@@ -975,6 +1069,41 @@
     var panel = document.getElementById('buyResultPanel');
     if (panel) {
       panel.hidden = false;
+      var isLeh = dueAll > 0.001;
+      var isAlyh = dueAll < -0.001;
+      panel.classList.toggle('has-due', isLeh);
+      panel.classList.toggle('has-credit', isAlyh);
+      var dueBlock = '';
+      if (isLeh) {
+        dueBlock =
+          '<div class="buy-due-banner">' +
+          '<div class="buy-result-title">باقيله (له)</div>' +
+          '<div class="buy-due-amt">' +
+          esc(money(dueAll)) +
+          '</div>' +
+          '<div>' +
+          esc(supplierName) +
+          (supplierPhone ? ' · ' + esc(supplierPhone) : '') +
+          '</div>' +
+          (remainThis > 0.001
+            ? '<div style="margin-top:6px">من الصفقة دي لسه ' + esc(money(remainThis)) + '</div>'
+            : '') +
+          '</div>';
+      } else if (isAlyh) {
+        dueBlock =
+          '<div class="buy-due-banner">' +
+          '<div class="buy-result-title">عليه</div>' +
+          '<div class="buy-due-amt">' +
+          esc(money(Math.abs(dueAll))) +
+          '</div>' +
+          '<div>' +
+          esc(supplierName) +
+          (supplierPhone ? ' · ' + esc(supplierPhone) : '') +
+          '</div>' +
+          '</div>';
+      } else {
+        dueBlock = '<div class="buy-due-banner"><div class="buy-result-title">مفيش باقي</div><div>الحساب متعادل بعد الشراء.</div></div>';
+      }
       panel.innerHTML =
         '<div class="buy-result-title">Purchase recorded / تم تسجيل الشراء</div>' +
         '<div>Purchase: <strong>' +
@@ -985,14 +1114,7 @@
         '</strong>' +
         (payErr ? ' <span style="color:#991B1B">(' + esc(payErr) + ')</span>' : '') +
         '</div>' +
-        '<div>Still due on supplier: <strong>' +
-        esc(money(Math.max(0, Number(due) || 0))) +
-        '</strong></div>' +
-        '<div style="margin-top:6px;font-size:12px;color:#166534">Supplier totals — Purchases ' +
-        esc(money(purchasesTotal)) +
-        ' · Paid ' +
-        esc(money(paidTotal)) +
-        '</div>' +
+        dueBlock +
         (grnId
           ? '<div style="margin-top:10px"><a href="/dashboard/invoices/?tab=buy&grnId=' +
             encodeURIComponent(grnId) +
@@ -1132,6 +1254,7 @@
               esc(p.id) +
               '" style="cursor:pointer">' +
               thumbHtml(p.imageUrl, true) +
+              stockPillHtml(p) +
               '</div>' +
               '<div class="product-card-body">' +
               '<button type="button" class="prod-link" data-open="' +
@@ -1153,8 +1276,7 @@
               money(p.sellPrice) +
               '</span></div>' +
               '<div class="product-card-foot">' +
-              stockBadgeHtml(p) +
-              (isSimpleDesk() ? '' : statusBadge(p)) +
+              (isSimpleDesk() ? '' : stockBadgeHtml(p) + statusBadge(p)) +
               '</div>' +
               productActionsHtml(p) +
               '</div></article>'
@@ -1171,14 +1293,14 @@
       .map(function (p) {
         if (simple) {
           return (
-            '<tr class="' +
-            (p.isArchived ? 'archived' : '') +
+            '<tr class="clickable' +
+            (p.isArchived ? ' archived' : '') +
+            '" data-open="' +
+            esc(p.id) +
             '">' +
             '<td><div class="prod-cell">' +
             thumbHtml(p.imageUrl, false) +
-            '<div><button type="button" class="prod-link" data-open="' +
-            esc(p.id) +
-            '">' +
+            '<div><button type="button" class="prod-link">' +
             esc(p.name) +
             '</button>' +
             '<div class="sku">' +
@@ -1187,8 +1309,12 @@
             '<td class="price-sell">' +
             money(p.sellPrice) +
             '</td>' +
-            '<td>' +
+            '<td><div class="qty-cell">' +
             stockBadgeHtml(p) +
+            stockStatusHtml(p) +
+            '</div></td>' +
+            '<td>' +
+            memberAppBadgeHtml(p) +
             '</td>' +
             '<td>' +
             productActionsHtml(p) +
@@ -1239,7 +1365,7 @@
 
     host.innerHTML = simple
       ? '<div class="table-wrap"><table class="inv"><thead><tr>' +
-        '<th>Product</th><th>Sell price</th><th>Qty left</th><th>Actions</th>' +
+        '<th>Product</th><th>Sell price</th><th>Qty left</th><th>Member App</th><th>Actions</th>' +
         '</tr></thead><tbody>' +
         rows +
         '</tbody></table></div>'
@@ -1337,15 +1463,26 @@
     return (base + '-' + suffix).slice(0, 64);
   }
 
+  function setProductMoreOpen(open) {
+    var more = document.getElementById('productMore');
+    var btn = document.getElementById('btnMoreProduct');
+    if (!more || !btn) return;
+    more.hidden = !open;
+    btn.textContent = open ? 'Hide extra options' : 'More options';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
   function setCreateModeUi(isCreate) {
     var openWrap = document.getElementById('pOpeningWrap');
     if (openWrap) openWrap.style.display = isCreate ? '' : 'none';
     var title = document.getElementById('productModalTitle');
+    var sub = document.getElementById('productModalSub');
     if (isCreate) {
-      title.innerHTML =
-        '<i class="ti ti-plus" style="color:var(--l500)"></i> New product / إضافة منتج';
+      title.textContent = 'New product';
+      if (sub) sub.textContent = 'Name and sell price. You can add a photo.';
     } else {
       title.textContent = 'Edit product';
+      if (sub) sub.textContent = 'Change the name or price. Extra options stay hidden.';
     }
     if (!canSeeCost) {
       document.getElementById('pCostWrap').style.display = 'none';
@@ -1414,7 +1551,7 @@
     document.getElementById('pVisibleToMembers').checked = false;
     document.getElementById('pActive').checked = true;
     document.getElementById('productFormHint').textContent = '';
-    document.getElementById('advancedDetails').open = false;
+    setProductMoreOpen(false);
     syncTrackFlags();
     updateProfit();
     updateImagePreview();
@@ -1458,15 +1595,7 @@
     );
     document.getElementById('pActive').checked = !!p.isActive;
     document.getElementById('productFormHint').textContent = '';
-    var needsAdvanced =
-      !!p.trackBatch ||
-      !!p.trackExpiry ||
-      !!p.allowFractionalQty ||
-      !!p.brand ||
-      !!p.description ||
-      !!p.descriptionAr ||
-      !!p.nameAr;
-    document.getElementById('advancedDetails').open = needsAdvanced;
+    setProductMoreOpen(false);
     syncTrackFlags();
     updateProfit();
     updateImagePreview();
@@ -1479,6 +1608,8 @@
     if (!id) {
       resetProductForm();
       openModal('productModal');
+      var nameEl = document.getElementById('pName');
+      if (nameEl) nameEl.focus();
       return;
     }
     var r = await Gfp.get(paths.product(id));
@@ -1746,6 +1877,13 @@
   });
   document.getElementById('pSell').addEventListener('input', updateProfit);
   document.getElementById('pCost').addEventListener('input', updateProfit);
+  var btnMoreProduct = document.getElementById('btnMoreProduct');
+  if (btnMoreProduct) {
+    btnMoreProduct.addEventListener('click', function () {
+      var more = document.getElementById('productMore');
+      setProductMoreOpen(more && more.hidden);
+    });
+  }
   document.getElementById('pImageFile').addEventListener('change', async function () {
     var file = this.files && this.files[0];
     var hint = document.getElementById('productFormHint');
@@ -1874,14 +2012,21 @@
   }
   var buySupplierSel = document.getElementById('buySupplier');
   if (buySupplierSel) {
-    buySupplierSel.addEventListener('change', syncBuyNewSupplierField);
+    buySupplierSel.addEventListener('change', function () {
+      syncBuyNewSupplierField();
+      updateBuySupplierMeta();
+    });
   }
+  document.addEventListener('input', function (ev) {
+    var id = ev.target && ev.target.id;
+    if (id === 'buyQty' || id === 'buyUnitCost' || id === 'buyPaidNow') updateBuyTotalPreview();
+  });
+  document.addEventListener('change', function (ev) {
+    var id = ev.target && ev.target.id;
+    if (id === 'buyQty' || id === 'buyUnitCost' || id === 'buyPaidNow') updateBuyTotalPreview();
+  });
   var btnBuySubmit = document.getElementById('btnBuySubmit');
   if (btnBuySubmit) btnBuySubmit.addEventListener('click', submitBuyDrawer);
-  ['buyQty', 'buyUnitCost'].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('input', updateBuyTotalPreview);
-  });
 
   document.querySelectorAll('#stockChips .chip').forEach(function (chip) {
     chip.addEventListener('click', function () {
