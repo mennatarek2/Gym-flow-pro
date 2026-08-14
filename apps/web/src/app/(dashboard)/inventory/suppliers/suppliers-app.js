@@ -222,34 +222,29 @@
     var host = document.getElementById('tableHost');
     if (!rows.length) {
       host.innerHTML =
-        '<div class="empty-state"><p>' + esc(t('No suppliers', 'لا موردين')) + '</p></div>';
+        '<div class="empty-state"><p>' + esc(t('No suppliers yet.', 'لا يوجد موردون بعد.')) + '</p></div>';
       return;
     }
-    var moneyHeads = canSeeMoney
-      ? '<th>' +
-        esc(t('Purchases', 'المشتريات')) +
-        '</th><th>' +
-        esc(t('Paid', 'المدفوع')) +
-        '</th><th>' +
-        esc(t('Due', 'المستحق')) +
-        '</th>'
-      : '';
     host.innerHTML =
-      '<table class="inv"><thead><tr><th>' +
+      '<table class="inv"><thead><tr>' +
+      '<th>' +
       esc(t('Name', 'الاسم')) +
       '</th><th>' +
       esc(t('Phone', 'الهاتف')) +
-      '</th><th>' +
-      esc(t('Email', 'البريد')) +
-      '</th><th>' +
-      esc(t('Terms', 'الشروط')) +
       '</th>' +
-      moneyHeads +
-      '<th>' +
-      esc(t('Status', 'الحالة')) +
-      '</th><th></th></tr></thead><tbody>' +
+      (canSeeMoney
+        ? '<th>' +
+          esc(t('Purchases', 'المشتريات')) +
+          '</th><th>' +
+          esc(t('Paid', 'مدفوع')) +
+          '</th><th>' +
+          esc(t('Due', 'المستحق')) +
+          '</th>'
+        : '') +
+      '<th></th></tr></thead><tbody>' +
       rows
         .map(function (s) {
+          var due = Number(s.dueTotal) || 0;
           var actions = '<div class="row-actions">';
           if (canManage) {
             actions +=
@@ -276,36 +271,25 @@
               '</button>';
           }
           actions += '</div>';
-          var moneyCells = canSeeMoney
-            ? '<td>' +
-              esc(money(s.purchasesTotal)) +
-              '</td><td>' +
-              esc(money(s.paidTotal)) +
-              '</td><td class="' +
-              (Number(s.dueTotal) > 0 ? 'money-due' : 'money-ok') +
-              '">' +
-              esc(money(s.dueTotal)) +
-              '</td>'
-            : '';
           return (
-            '<tr><td>' +
+            '<tr>' +
+            '<td>' +
             esc(s.name) +
-            (s.nameAr
-              ? '<div style="font-size:12px;color:var(--ltt)" dir="rtl">' + esc(s.nameAr) + '</div>'
-              : '') +
             '</td><td>' +
             esc(s.phone || '—') +
-            '</td><td>' +
-            esc(s.email || '—') +
-            '</td><td>' +
-            esc(s.paymentTerms || '—') +
             '</td>' +
-            moneyCells +
+            (canSeeMoney
+              ? '<td>' +
+                esc(money(s.purchasesTotal)) +
+                '</td><td>' +
+                esc(money(s.paidTotal)) +
+                '</td><td class="' +
+                (due > 0 ? 'money-due' : '') +
+                '">' +
+                esc(money(s.dueTotal)) +
+                '</td>'
+              : '') +
             '<td>' +
-            (s.isActive
-              ? '<span class="badge badge-ok">' + esc(t('Active', 'نشط')) + '</span>'
-              : '<span class="badge badge-off">' + esc(t('Inactive', 'غير نشط')) + '</span>') +
-            '</td><td>' +
             actions +
             '</td></tr>'
           );

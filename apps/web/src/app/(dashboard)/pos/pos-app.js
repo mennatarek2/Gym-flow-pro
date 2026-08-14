@@ -70,6 +70,9 @@
   let inventoryOn = false;
   /** @type {{ productId: string, sku: string, name: string, qty: number, unitPrice: number, allowFractional: boolean }[]} */
   let retailCart = [];
+  let quickCatalog = [];
+  let saleCat = 'all';
+  let payMethod = 'cash';
 
   function esc(s) {
     const d = document.createElement('div');
@@ -191,19 +194,82 @@
       panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (_) {}
   }
-  function productThumbHtml(url, cls) {
+  function productThumbHtml(url, cls, alt) {
     const c = cls || 'retail-thumb';
-    if (url) {
-      return (
-        '<div class="' +
-        c +
-        '"><img src="' +
-        esc(url) +
-        '" alt="" loading="lazy" onerror="this.remove();this.parentNode.innerHTML=\'<i class=&quot;ti ti-photo&quot;></i>\'"></div>'
-      );
+    const cands = mediaCandidates(url);
+    if (!cands.length) {
+      return '<div class="' + c + '"><i class="ti ti-photo"></i></div>';
     }
-    return '<div class="' + c + '"><i class="ti ti-photo"></i></div>';
+    return (
+      '<div class="' +
+      c +
+      '"><img src="' +
+      esc(cands[0]) +
+      '" alt="' +
+      esc(alt || '') +
+      '" loading="lazy" data-cands="' +
+      esc(JSON.stringify(cands.slice(1))) +
+      '" onerror="window.gfpImgFallback&&window.gfpImgFallback(this)"></div>'
+    );
   }
+  function apiOrigin() {
+    try {
+      return new URL(window.API_BASE || API_BASE || 'https://localhost:5001/api').origin;
+    } catch (e) {
+      return 'https://localhost:5001';
+    }
+  }
+  function uploadsPath(url) {
+    const u = String(url || '').trim();
+    if (!u) return '';
+    try {
+      if (/^https?:\/\//i.test(u)) {
+        const p = new URL(u).pathname;
+        return p.indexOf('/uploads/') === 0 ? p : '';
+      }
+    } catch (e) {}
+    if (u.indexOf('/uploads/') >= 0) {
+      return u.slice(u.indexOf('/uploads/')).split('?')[0];
+    }
+    if (u.charAt(0) === '/') return u.split('?')[0];
+    return '';
+  }
+  function mediaCandidates(url) {
+    const u = String(url || '').trim();
+    if (!u) return [];
+    if (/^(blob:|data:)/i.test(u)) return [u];
+    const list = [];
+    function add(x) {
+      if (x && list.indexOf(x) < 0) list.push(x);
+    }
+    const path = uploadsPath(u);
+    if (path) {
+      add('https://localhost:5001' + path);
+      add('http://localhost:5001' + path);
+      add(apiOrigin() + path);
+    }
+    if (/^https?:\/\//i.test(u)) add(u);
+    else if (!path) add(apiOrigin() + (u.charAt(0) === '/' ? u : '/' + u));
+    return list;
+  }
+  function gfpImgFallback(img) {
+    if (!img) return;
+    let next = [];
+    try {
+      next = JSON.parse(img.getAttribute('data-cands') || '[]');
+    } catch (e) {
+      next = [];
+    }
+    if (!Array.isArray(next) || !next.length) {
+      const parent = img.parentNode;
+      img.remove();
+      if (parent) parent.innerHTML = '<i class="ti ti-photo"></i>';
+      return;
+    }
+    img.setAttribute('data-cands', JSON.stringify(next.slice(1)));
+    img.src = next[0];
+  }
+  window.gfpImgFallback = gfpImgFallback;
   function applyLocaleBits() {
     if (window.GfpI18n && window.GfpI18n.applyDocumentLocale) {
       window.GfpI18n.applyDocumentLocale();
@@ -517,15 +583,10 @@
     const sel = document.getElementById('warehouseSelect');
     const chip = document.getElementById('statusWhChip');
     const text = document.getElementById('statusWhText');
+    const wrap = document.querySelector('.wh-inline');
+    if (wrap) wrap.hidden = true;
     if (!sel || !chip || !text) return;
-    const opt = sel.options[sel.selectedIndex];
-    const label = opt && opt.value ? String(opt.textContent || '').trim() : '';
-    if (!label || !opt.value) {
-      chip.hidden = true;
-      return;
-    }
-    text.textContent = label;
-    chip.hidden = false;
+    chip.hidden = true;
   }
 
   async function checkShift() {
@@ -756,8 +817,8 @@
     }
     const retailHint = document.getElementById('retailSubmitHint');
     if (retailHint) {
-      retailHint.hidden = false;
-      retailHint.style.display = '';
+      retailHint.hidden = true;
+      retailHint.style.display = 'none';
     }
 
     const titleEl = document.getElementById('pageTitleText');
@@ -768,8 +829,8 @@
     const sub = document.getElementById('pageSubtitle');
     if (sub) {
       sub.textContent = t(
-        'Sell retail products at the desk — scan or tap, pay, print receipt. Memberships stay in Members.',
-        'بيع منتجات من المكتب — امسح أو اضغط، ادفع، اطبع الإيصال. الاشتراكات من الأعضاء.'
+        'Scan or tap, take cash or card, print. Memberships stay in Members.',
+        'امسح أو اضغط، خد كاش أو كارت، اطبع. الاشتراكات من الأعضاء.'
       );
     }
 
@@ -779,10 +840,7 @@
     const sellBtn = document.getElementById('btnSell');
     if (sellBtn) {
       sellBtn.classList.add('retail-tap');
-      sellBtn.innerHTML =
-        '<i class="ti ti-check"></i> <span>' +
-        esc(t('Complete sale', 'تمّم البيع')) +
-        '</span>';
+      updateTakeLabel();
     }
 
     if (!opts.skipUrl) syncUrlMode();
@@ -796,6 +854,37 @@
     applyLocaleBits();
   }
 
+  function saleResultVisible() {
+    const box = document.getElementById('saleResult');
+    return !!(box && box.style.display === 'block' && (box.innerHTML || box.textContent));
+  }
+  function syncTicketChrome() {
+    const ws = document.getElementById('posWorkspace');
+    if (!ws) return;
+    const hasCart = retailCart.length > 0;
+    const done = saleResultVisible() && !hasCart;
+    ws.classList.toggle('cart-empty', !hasCart && !done);
+    ws.classList.toggle('has-cart', hasCart);
+    ws.classList.toggle('sale-done', done);
+    updateTakeLabel();
+  }
+  function updateTakeLabel() {
+    const sellBtn = document.getElementById('btnSell');
+    if (!sellBtn) return;
+    const total = estimateTotal();
+    const label =
+      total != null && total > 0
+        ? t('Take ', 'خد ') + money(total)
+        : t('Take money', 'خد الفلوس');
+    sellBtn.innerHTML = '<i class="ti ti-cash"></i> <span>' + esc(label) + '</span>';
+  }
+  function markPayMethod(method) {
+    payMethod = method === 'card_paymob' ? 'card_paymob' : 'cash';
+    const cash = document.getElementById('btnPayCash');
+    const card = document.getElementById('btnPayCard');
+    if (cash) cash.classList.toggle('act', payMethod === 'cash');
+    if (card) card.classList.toggle('act', payMethod === 'card_paymob');
+  }
   function updateCartCount() {
     const el = document.getElementById('cartCount');
     if (el) el.textContent = String(retailCart.length);
@@ -806,14 +895,14 @@
     updateCartCount();
     if (!retailCart.length) {
       host.innerHTML =
-        '<div class="muted empty-cart">' +
-        esc(t(
-          'Cart is empty — scan a barcode or tap a product to start this sale.',
-          'السلة فاضية — امسح باركود أو اضغط منتج عشان تبدأ البيع.'
-        )) +
-        '</div>';
+        '<div class="empty-cart"><i class="ti ti-shopping-cart"></i><strong>' +
+        esc(t('Waiting for the first item', 'مستني أول صنف')) +
+        '</strong><span>' +
+        esc(t('Scan or tap a product. Pay appears after that.', 'امسح أو اضغط منتج. الدفع بيظهر بعد كده.')) +
+        '</span></div>';
       updateEstimate();
       updateSellEnabled();
+      syncTicketChrome();
       return;
     }
     host.innerHTML = retailCart
@@ -898,6 +987,7 @@
     });
     updateEstimate();
     updateSellEnabled();
+    syncTicketChrome();
   }
 
   function addProductToCart(p) {
@@ -907,7 +997,7 @@
     });
     if (existing) {
       existing.qty = Number(existing.qty) + 1;
-      if (!existing.imageUrl && p.imageUrl) existing.imageUrl = p.imageUrl;
+      if (!existing.imageUrl && (p.imageUrl || p.relativeUrl)) existing.imageUrl = p.imageUrl || p.relativeUrl;
       renderRetailCart();
       return;
     }
@@ -915,7 +1005,7 @@
       productId: p.id,
       sku: p.sku || '',
       name: p.name || '',
-      imageUrl: p.imageUrl || null,
+      imageUrl: p.imageUrl || p.relativeUrl || null,
       qty: 1,
       unitPrice: Number(p.sellPrice) || 0,
       allowFractional: !!p.allowFractionalQty
@@ -923,39 +1013,66 @@
     renderRetailCart();
   }
 
-  async function loadQuickProducts() {
+  function renderCatChips() {
+    const host = document.getElementById('catChips');
+    if (!host) return;
+    const names = [];
+    quickCatalog.forEach(function (p) {
+      const n = (p.categoryName || '').trim();
+      if (n && names.indexOf(n) < 0) names.push(n);
+    });
+    const items = [['all', t('All', 'الكل')]].concat(
+      names.map(function (n) {
+        var label = n.charAt(0).toUpperCase() + n.slice(1);
+        return [n, label];
+      })
+    );
+    host.innerHTML = items
+      .map(function (x) {
+        return (
+          '<button type="button" class="chip' +
+          (saleCat === x[0] ? ' act' : '') +
+          '" data-c="' +
+          esc(x[0]) +
+          '">' +
+          esc(x[1]) +
+          '</button>'
+        );
+      })
+      .join('');
+    host.querySelectorAll('button').forEach(function (b) {
+      b.onclick = function () {
+        saleCat = b.getAttribute('data-c') || 'all';
+        renderQuickGrid();
+      };
+    });
+  }
+  function renderQuickGrid() {
     const host = document.getElementById('quickAddGrid');
-    if (!host || host.getAttribute('data-loaded') === '1') return;
-    const res = await api('GET', '/inventory/products?page=1&pageSize=12');
-    if (!res.ok) {
+    if (!host) return;
+    const q = (document.getElementById('barcodeInput').value || '').trim().toLowerCase();
+    const rows = quickCatalog.filter(function (p) {
+      if (p.isActive === false || p.isArchived) return false;
+      if (saleCat !== 'all' && (p.categoryName || '') !== saleCat) return false;
+      if (!q) return true;
+      const blob = ((p.name || '') + ' ' + (p.nameAr || '') + ' ' + (p.sku || '') + ' ' + (p.barcode || '')).toLowerCase();
+      return blob.indexOf(q) !== -1;
+    });
+    if (!rows.length) {
       host.innerHTML =
         '<div class="muted">' +
-        esc(t('Could not load quick products — use search.', 'مش قدرنا نحمّل المنتجات السريعة — استخدم البحث.')) +
+        esc(t('No match. Scan the barcode.', 'مفيش نتيجة. امسح الباركود.')) +
         '</div>';
       return;
     }
-    const items = Array.isArray(res.data)
-      ? res.data
-      : (res.data && (res.data.items || res.data.products)) || [];
-    const active = items.filter(function (p) {
-      return p && p.isActive !== false;
-    }).slice(0, 12);
-    if (!active.length) {
-      host.innerHTML =
-        '<div class="muted">' +
-        esc(t('No products yet — receive stock first.', 'مفيش منتجات — استلم مخزون الأول.')) +
-        '</div>';
-      return;
-    }
-    host.innerHTML = active
+    host.innerHTML = rows
+      .slice(0, 24)
       .map(function (p) {
         return (
           '<button type="button" class="quick-tile retail-tap" data-quick-id="' +
           esc(p.id) +
           '">' +
-          (p.imageUrl
-            ? '<img src="' + esc(p.imageUrl) + '" alt="" width="36" height="36" style="border-radius:8px;object-fit:cover">'
-            : '<i class="ti ti-bottle"></i>') +
+          productThumbHtml(p.imageUrl || p.relativeUrl, 'quick-tile-photo', p.name || p.sku || '') +
           '<span class="quick-tile-name">' +
           esc(p.name || p.sku || 'Item') +
           '</span>' +
@@ -965,10 +1082,9 @@
         );
       })
       .join('');
-    host.setAttribute('data-loaded', '1');
     host.querySelectorAll('[data-quick-id]').forEach(function (btn) {
       const id = btn.getAttribute('data-quick-id');
-      const p = active.find(function (x) {
+      const p = quickCatalog.find(function (x) {
         return x.id === id;
       });
       btn.addEventListener('click', function () {
@@ -978,6 +1094,33 @@
         }
       });
     });
+  }
+  async function loadQuickProducts() {
+    const host = document.getElementById('quickAddGrid');
+    if (!host) return;
+    const res = await api('GET', '/inventory/products?page=1&pageSize=48');
+    if (!res.ok) {
+      host.innerHTML =
+        '<div class="muted">' +
+        esc(t('Could not load products — try search.', 'مش قدرنا نحمّل المنتجات — جرّب البحث.')) +
+        '</div>';
+      return;
+    }
+    const items = Array.isArray(res.data)
+      ? res.data
+      : (res.data && (res.data.items || res.data.products)) || [];
+    quickCatalog = items.filter(function (p) {
+      return p && p.isActive !== false && !p.isArchived;
+    });
+    if (!quickCatalog.length) {
+      host.innerHTML =
+        '<div class="muted">' +
+        esc(t('No products yet — receive stock first.', 'مفيش منتجات — استلم مخزون الأول.')) +
+        '</div>';
+      return;
+    }
+    renderCatChips();
+    renderQuickGrid();
   }
 
   async function loadWarehouses() {
@@ -1052,18 +1195,32 @@
   let productSearchTimer = null;
   document.getElementById('btnBarcode').addEventListener('click', async function () {
     const code = document.getElementById('barcodeInput').value.trim();
-    if (!code) {
-      toast(t('Enter a barcode.', 'اكتب الباركود.'), 'err');
-      return;
-    }
+    if (!code) return;
     const res = await api('GET', '/inventory/products/by-barcode/' + encodeURIComponent(code));
-    if (!res.ok) {
-      toast(problemMessage(res.data, res.status), 'err');
+    if (res.ok && res.data) {
+      addProductToCart(res.data);
+      document.getElementById('barcodeInput').value = '';
+      renderQuickGrid();
+      toast(t('Added', 'تمت الإضافة') + ' ' + (res.data.sku || res.data.name), 'ok');
       return;
     }
-    addProductToCart(res.data);
-    document.getElementById('barcodeInput').value = '';
-    toast(t('Added', 'تمت الإضافة') + ' ' + (res.data.sku || res.data.name), 'ok');
+    const s = await api('GET', '/inventory/products?q=' + encodeURIComponent(code));
+    const items = s.ok
+      ? Array.isArray(s.data)
+        ? s.data
+        : (s.data && (s.data.items || s.data.products)) || []
+      : [];
+    const hit = items.find(function (p) {
+      return p && p.isActive !== false && !p.isArchived;
+    });
+    if (hit) {
+      addProductToCart(hit);
+      document.getElementById('barcodeInput').value = '';
+      renderQuickGrid();
+      toast(t('Added', 'تمت الإضافة') + ' ' + (hit.name || hit.sku), 'ok');
+      return;
+    }
+    toast(problemMessage(res.data, res.status) || t('No product found.', 'مفيش منتج.'), 'err');
   });
   document.getElementById('barcodeInput').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
@@ -1072,8 +1229,11 @@
     }
   });
 
-  document.getElementById('productSearch').addEventListener('input', function (e) {
+  document.getElementById('barcodeInput').addEventListener('input', function (e) {
     const q = e.target.value.trim();
+    const hidden = document.getElementById('productSearch');
+    if (hidden) hidden.value = q;
+    renderQuickGrid();
     clearTimeout(productSearchTimer);
     const list = document.getElementById('productResults');
     if (q.length < 1) {
@@ -1108,7 +1268,7 @@
             '<button type="button" class="prod-hit" data-pid="' +
             esc(p.id) +
             '">' +
-            productThumbHtml(p.imageUrl, 'prod-hit-thumb') +
+            productThumbHtml(p.imageUrl || p.relativeUrl, 'prod-hit-thumb') +
             '<div class="prod-hit-body">' +
             '<div class="prod-hit-name">' +
             esc(p.name) +
@@ -1135,7 +1295,8 @@
             addProductToCart(p);
             list.innerHTML = '';
             list.classList.remove('show');
-            document.getElementById('productSearch').value = '';
+            document.getElementById('barcodeInput').value = '';
+            renderQuickGrid();
           }
         });
       });
@@ -1192,6 +1353,8 @@
       });
     document.getElementById('btnSell').disabled = !cartOk;
     setQuick(!cartOk);
+    updateTakeLabel();
+    syncTicketChrome();
   }
 
   function setSinglePayment(method, amount) {
@@ -1230,9 +1393,14 @@
       }
     }
 
-    const payments = readPayments();
+    let payments = readPayments();
     const partial = document.getElementById('partialOpt').checked;
     const dueDate = document.getElementById('dueDate').value;
+    const total = estimateTotal();
+    if (!payments.length && total != null && total > 0) {
+      setSinglePayment(payMethod === 'card_paymob' ? 'card_paymob' : 'cash', total);
+      payments = readPayments();
+    }
 
     // Anonymous retail sale — no memberId / newMember from POS
     const body = {
@@ -1397,7 +1565,7 @@
         return;
       }
       setSinglePayment('cash', total);
-      submitSale();
+      markPayMethod('cash');
     });
   }
   const btnPayCard = document.getElementById('btnPayCard');
@@ -1409,7 +1577,7 @@
         return;
       }
       setSinglePayment('card_paymob', total);
-      submitSale();
+      markPayMethod('card_paymob');
     });
   }
 
@@ -1469,6 +1637,7 @@
     document.getElementById('btnSell').disabled = true;
   }
   addLeg('cash', '');
+  markPayMethod('cash');
   ensureIdemKey();
   setPosMode('retail', { skipUrl: true });
   Promise.all([checkShift(), probeInventoryAndUi(), refreshSalesFeatureBanner()])
@@ -1483,6 +1652,7 @@
         );
       }
       syncStatusWarehouse();
+      syncTicketChrome();
     })
     .catch(function () {
       setPosMode('retail');

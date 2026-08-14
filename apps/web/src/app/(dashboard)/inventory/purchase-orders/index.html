@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GymFlowPro — Purchase orders</title>
+<title>GymFlowPro — Purchases</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="purchase-orders.css">
+<link rel="stylesheet" href="purchase-orders.css?v=7">
 </head>
 <body>
 <div class="app">
@@ -17,99 +17,117 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb" id="poBreadcrumb"><span data-en="Inventory" data-ar="المخزون">Inventory</span><span class="sep">/</span><span class="current" data-en="Purchases" data-ar="المشتريات">Purchases</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb" id="poBreadcrumb"><span data-en="Catalog" data-ar="الكتالوج">Catalog</span><span class="sep">/</span><span class="current" data-en="Purchases" data-ar="المشتريات">Purchases</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">GymFlowPro</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 <div class="content">
   <p id="poContextBar" class="hint" hidden style="margin:0 0 12px">
-    <a id="poBackOnHand" href="/dashboard/inventory/stock/"><i class="ti ti-arrow-left"></i> <span data-en="Back to On Hand" data-ar="رجوع للرصيد">Back to On Hand</span></a>
+    <a id="poBackOnHand" href="/dashboard/inventory/products/"><i class="ti ti-arrow-left"></i> <span data-en="Back to Products" data-ar="رجوع للمنتجات">Back to Products</span></a>
   </p>
   <div class="page-header">
     <div>
       <h1 class="page-title" data-en="Purchases" data-ar="المشتريات">Purchases</h1>
-      <p class="page-subtitle" data-en="Orders from suppliers. Stock lands on your default shelf automatically." data-ar="طلبات من الموردين. الرصيد بيروح تلقائي على الرف الافتراضي.">Orders from suppliers. Stock lands on your default shelf automatically.</p>
+      <p class="page-subtitle" data-en="What you bought and from whom. Saving a purchase increases product quantity." data-ar="إيه اللي اشتريته ومن مين. حفظ الشراء بيزوّد كمية المنتج.">What you bought and from whom. Saving a purchase increases product quantity.</p>
     </div>
-    <div id="manageActions" hidden>
-      <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New PO" data-ar="أمر جديد" data-i18n-text>New PO</span></button>
+    <div class="ph-right" id="manageActions" hidden>
+      <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New purchase" data-ar="شراء جديد" data-i18n-text>New purchase</span></button>
     </div>
   </div>
 
-  <div class="layout-split">
-    <div>
-      <div class="toolbar">
-        <label><span data-en="Status" data-ar="الحالة">Status</span>
-          <select id="filterStatus">
-            <option value="" data-en="All" data-ar="الكل">All</option>
-            <option value="draft" data-en="Draft" data-ar="مسودة">Draft</option>
-            <option value="approved" data-en="Approved" data-ar="معتمد">Approved</option>
-            <option value="partially_received" data-en="Partially received" data-ar="استلام جزئي">Partially received</option>
-            <option value="received" data-en="Received" data-ar="مستلم">Received</option>
-            <option value="cancelled" data-en="Cancelled" data-ar="ملغى">Cancelled</option>
-          </select>
-        </label>
-        <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
-      </div>
-      <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
+  <div class="toolbar">
+    <div class="chips" id="statusChips">
+      <button type="button" class="chip act" data-status="">All</button>
+      <button type="button" class="chip" data-status="draft" data-en="Draft" data-ar="مسودة">Draft</button>
+      <button type="button" class="chip" data-status="approved" data-en="To receive" data-ar="بانتظار الاستلام">To receive</button>
+      <button type="button" class="chip" data-status="received" data-en="Received" data-ar="مستلم">Received</button>
     </div>
-    <div class="detail-card" id="detailHost">
-      <p class="muted" data-en="Select a purchase order." data-ar="اختار أمر شراء.">Select a purchase order.</p>
-    </div>
+    <select id="filterStatus" hidden>
+      <option value="">All</option>
+      <option value="draft">Draft</option>
+      <option value="approved">To receive</option>
+      <option value="partially_received">Partially received</option>
+      <option value="received">Received</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+    <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
   </div>
+  <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
 </div>
 </div>
+</div>
+
+<div class="drawer-overlay" id="detailDrawer" hidden>
+  <aside class="drawer" role="dialog" aria-labelledby="detailTitle">
+    <div class="drawer-hdr">
+      <h2 id="detailTitle">Purchase</h2>
+      <button type="button" class="modal-close" id="btnCloseDetail"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="drawer-body" id="detailHost"></div>
+  </aside>
 </div>
 
 <div class="modal-overlay" id="poModal" hidden>
-  <div class="modal wide">
+  <div class="modal modal-lg">
     <div class="modal-hdr">
-      <h2 data-en="New purchase order" data-ar="أمر شراء جديد">New purchase order</h2>
+      <h2 data-en="New purchase" data-ar="شراء جديد">New purchase</h2>
       <button type="button" class="modal-close" data-close="poModal"><i class="ti ti-x"></i></button>
     </div>
     <form id="poForm" class="modal-body">
-      <label><span data-en="Supplier *" data-ar="المورد *">Supplier *</span>
-        <select id="poSupplier" required><option value="">…</option></select>
+      <p class="field-hint" style="margin-top:0" data-en="Pick a supplier, add products, then save. Quantity on each product goes up." data-ar="اختار مورد، ضيف المنتجات، وبعدين احفظ. كمية كل منتج هتزيد.">Pick a supplier, add products, then save. Quantity on each product goes up.</p>
+      <label class="ef-field"><span data-en="Supplier *" data-ar="المورد *">Supplier *</span>
+        <select id="poSupplier" required><option value="">Select supplier</option></select>
       </label>
-      <label id="poWarehouseField" hidden>
-        <span data-en="Warehouse" data-ar="المستودع">Warehouse</span>
-        <select id="poWarehouse"><option value="">…</option></select>
-      </label>
-      <p class="muted" id="poWarehouseHint" style="margin:0 0 8px;font-size:12px" data-en="Stock goes to your default shelf — no warehouse pick needed." data-ar="الرصيد بيروح على الرف الافتراضي — من غير اختيار مستودع.">Stock goes to your default shelf — no warehouse pick needed.</p>
-      <label><span data-en="Notes" data-ar="ملاحظات">Notes</span><textarea id="poNotes" rows="2" maxlength="500"></textarea></label>
-      <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <strong style="font-size:13px" data-en="Lines" data-ar="البنود">Lines</strong>
-          <button type="button" class="btn-link" id="btnAddLine" data-en="+ Add line" data-ar="+ بند">+ Add line</button>
+      <div id="poWarehouseWrap" hidden>
+        <label id="poWarehouseField">
+          <span>Warehouse</span>
+          <select id="poWarehouse" tabindex="-1"><option value="">…</option></select>
+        </label>
+      </div>
+      <div class="po-products">
+        <div class="lines-hdr">
+          <strong data-en="Products" data-ar="المنتجات">Products</strong>
+          <button type="button" class="btn-link" id="btnAddLine" data-en="+ Add product" data-ar="+ منتج">+ Add product</button>
+        </div>
+        <div class="po-line-head" aria-hidden="true">
+          <span data-en="Product" data-ar="المنتج">Product</span>
+          <span data-en="Qty" data-ar="الكمية">Qty</span>
+          <span data-en="Cost" data-ar="التكلفة">Cost</span>
+          <span></span>
         </div>
         <div id="poLines"></div>
       </div>
+      <div class="buy-money-row po-total" id="poTotalRow"><span data-en="Total" data-ar="الإجمالي">Total</span><strong id="poTotalPreview">EGP 0.00</strong></div>
+      <label class="ef-field"><span data-en="Notes" data-ar="ملاحظات">Notes <span class="ef-optional">(optional)</span></span>
+        <input type="text" id="poNotes" maxlength="500">
+      </label>
       <p class="form-hint" id="poHint"></p>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" data-close="poModal" data-en="Cancel" data-ar="إلغاء">Cancel</button>
-        <button type="submit" class="btn-create" data-en="Create draft" data-ar="إنشاء مسودة">Create draft</button>
+        <button type="submit" class="btn-create" id="btnPoSubmit"><i class="ti ti-package-import"></i> <span data-en="Save &amp; receive" data-ar="حفظ واستلام">Save &amp; receive</span></button>
       </div>
     </form>
   </div>
 </div>
 
 <div class="modal-overlay" id="recvModal" hidden>
-  <div class="modal wide">
+  <div class="modal modal-lg">
     <div class="modal-hdr">
-      <h2 data-en="Receive goods" data-ar="استلام بضاعة">Receive goods</h2>
+      <h2 data-en="Receive" data-ar="استلام">Receive</h2>
       <button type="button" class="modal-close" data-close="recvModal"><i class="ti ti-x"></i></button>
     </div>
     <form id="recvForm" class="modal-body">
-      <p class="muted" data-en="Qty cannot exceed remaining. Batch / expiry required when the product tracks them." data-ar="الكمية لا تزيد عن المتبقي. رقم التشغيلة / الصلاحية مطلوبان إذا كان المنتج يتتبعهما.">Qty cannot exceed remaining. Batch / expiry required when the product tracks them.</p>
+      <p class="field-hint" style="margin-top:0" data-en="Enter how many arrived. Quantity on the product will go up." data-ar="اكتب الكمية اللي وصلت. كمية المنتج هتزيد.">Enter how many arrived. Quantity on the product will go up.</p>
       <div id="recvLines"></div>
       <p class="form-hint" id="recvHint"></p>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" data-close="recvModal" data-en="Cancel" data-ar="إلغاء">Cancel</button>
-        <button type="submit" class="btn-create" data-en="Post receipt" data-ar="تسجيل الاستلام">Post receipt</button>
+        <button type="submit" class="btn-create" data-en="Add to stock" data-ar="إضافة للمخزون">Add to stock</button>
       </div>
     </form>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="purchase-orders-app.js?v=2"></script>
+<script src="purchase-orders-app.js?v=7"></script>
 </body>
 </html>

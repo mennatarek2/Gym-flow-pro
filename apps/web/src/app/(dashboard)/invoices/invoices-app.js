@@ -3,10 +3,10 @@
   const API_BASE = window.API_BASE || 'https://localhost:5001/api';
   const PAGE_SIZE = 20;
   const TABS = {
-    sell_membership: { kind: 'sell', lineType: 'membership', title: 'Sell · Memberships' },
-    sell_products: { kind: 'sell', lineType: 'retail', title: 'Sell · Products' },
-    buy: { kind: 'buy', title: 'Buy · Suppliers' },
-    all: { kind: 'all', title: 'All documents' },
+    sell_membership: { kind: 'sell', lineType: 'membership', title: 'Memberships' },
+    sell_products: { kind: 'sell', lineType: 'retail', title: 'Products sold' },
+    buy: { kind: 'buy', title: 'Bought from suppliers' },
+    all: { kind: 'all', title: 'All' },
   };
 
   function getToken() {
@@ -76,6 +76,9 @@
   let voidTargetId = null;
   let receiptInvoiceId = null;
   let pendingGrnId = params.get('grnId') || params.get('id') || null;
+  let productById = {};
+  let productsLoaded = false;
+  let suppliersLoaded = false;
 
   function esc(s) {
     const d = document.createElement('div');
@@ -110,6 +113,108 @@
           hour: '2-digit',
           minute: '2-digit',
         });
+  }
+  function friendlyType(type) {
+    if (type === 'credit_note') return 'Credit note';
+    if (type === 'invoice') return 'Invoice';
+    return type || '—';
+  }
+  function friendlyStatus(st) {
+    if (st === 'issued') return 'Issued';
+    if (st === 'voided') return 'Voided';
+    if (st === 'received') return 'Received';
+    return st || '—';
+  }
+  function productRecord(id) {
+    if (!id) return null;
+    return productById[id] || productById[String(id)] || null;
+  }
+  function productLabel(id) {
+    const p = productRecord(id);
+    return (p && (p.name || p.sku)) || 'Product';
+  }
+  function mediaUrl(url) {
+    if (!url) return '';
+    const u = String(url).trim();
+    if (!u) return '';
+    if (/^(https?:|blob:|data:)/i.test(u)) return u;
+    let origin = String(window.API_BASE || '').replace(/\/api\/?$/i, '');
+    if (!origin) {
+      try {
+        origin = new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+      } catch (e) {
+        origin = 'https://localhost:5001';
+      }
+    }
+    return origin + (u.charAt(0) === '/' ? u : '/' + u);
+  }
+  function productCellHtml(id, fallbackName) {
+    const p = productRecord(id);
+    const name = (fallbackName && String(fallbackName).trim()) || (p && (p.name || p.sku)) || 'Product';
+    const src = mediaUrl(p && p.imageUrl);
+    const thumb = src
+      ? '<img class="thumb" src="' +
+        esc(src) +
+        '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
+        '<span class="thumb-ph" hidden><i class="ti ti-photo"></i></span>'
+      : '<span class="thumb-ph"><i class="ti ti-photo"></i></span>';
+    return '<div class="prod-cell">' + thumb + '<span>' + esc(name) + '</span></div>';
+  }
+  function productCellFromSellLine(ln) {
+    if (ln && ln.productId) return productCellHtml(ln.productId, ln.description);
+    const desc = ln && ln.description ? String(ln.description).trim().toLowerCase() : '';
+    if (desc) {
+      const ids = Object.keys(productById);
+      for (let i = 0; i < ids.length; i++) {
+        const p = productById[ids[i]];
+        if (p && String(p.name || '').trim().toLowerCase() === desc) {
+          return productCellHtml(ids[i], ln.description);
+        }
+      }
+    }
+    return productCellHtml(null, ln && ln.description);
+  }
+  function openDetailDrawer(title) {
+    const t = document.getElementById('detailTitle');
+    if (t) t.textContent = title || 'Details';
+    const d = document.getElementById('detailDrawer');
+    if (d) d.hidden = false;
+  }
+  function closeDetailDrawer() {
+    const d = document.getElementById('detailDrawer');
+    if (d) d.hidden = true;
+  }
+  async function ensureBuyLookups() {
+    if (!suppliersLoaded) {
+      const res = await api('GET', '/inventory/suppliers');
+      const rows = res.ok && Array.isArray(res.data) ? res.data : res.ok && res.data && res.data.items ? res.data.items : [];
+      const sel = document.getElementById('fSupplierId');
+      if (sel) {
+        const keep = sel.value;
+        sel.innerHTML =
+          '<option value="">All suppliers</option>' +
+          rows
+            .filter((s) => s.isActive !== false)
+            .map((s) => '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>')
+            .join('');
+        if (keep) sel.value = keep;
+      }
+      suppliersLoaded = true;
+    }
+    if (!productsLoaded) {
+      const res = await api('GET', '/inventory/products');
+      const rows = res.ok && Array.isArray(res.data) ? res.data : res.ok && res.data && res.data.items ? res.data.items : [];
+      rows.forEach((p) => {
+        if (p && p.id) {
+          productById[p.id] = {
+            name: p.name || p.sku || '',
+            sku: p.sku || '',
+            imageUrl: p.imageUrl || p.relativeUrl || null,
+          };
+        }
+      });
+      productsLoaded = true;
+    }
   }
   function toast(msg, type, htmlExtra) {
     const el = document.getElementById('toast');
@@ -259,11 +364,9 @@
           '<td><code>' +
           esc(inv.invoiceNumber) +
           '</code></td>' +
-          '<td><span class="tp ' +
-          esc(inv.type) +
-          '">' +
-          esc(inv.type) +
-          '</span></td>' +
+          '<td>' +
+          esc(friendlyType(inv.type)) +
+          '</td>' +
           '<td>' +
           esc(inv.memberNameSnapshot || '—') +
           '<div class="muted">' +
@@ -279,7 +382,7 @@
           '<td><span class="st ' +
           esc(inv.status) +
           '">' +
-          esc(inv.status) +
+          esc(friendlyStatus(inv.status)) +
           '</span></td>' +
           '<td>' +
           pdfCell(inv) +
@@ -296,7 +399,7 @@
     const tbody = document.getElementById('tbody');
     if (!buyRows.length) {
       tbody.innerHTML =
-        '<tr><td colspan="7" class="muted">No purchase documents (goods receipts)</td></tr>';
+        '<tr><td colspan="4" class="muted">No purchases yet</td></tr>';
       return;
     }
     tbody.innerHTML = buyRows
@@ -311,27 +414,16 @@
           '" data-kind="buy" data-id="' +
           esc(row.id) +
           '">' +
-          '<td><span class="tp purchase_doc">فاتورة شراء</span><div class="muted"><code>' +
-          esc(String(row.id).slice(0, 8)) +
-          '…</code></div></td>' +
-          '<td>' +
-          esc(row.supplierName || '—') +
-          '</td>' +
-          '<td>' +
-          esc(row.warehouseCode || '—') +
-          '</td>' +
           '<td>' +
           esc(dt(row.receivedAtUtc)) +
           '</td>' +
           '<td>' +
+          esc(row.supplierName || '—') +
+          '</td>' +
+          '<td>' +
           esc(money(row.totalAmount)) +
           '</td>' +
-          '<td><span class="st received">' +
-          esc(row.status || 'received') +
-          '</span></td>' +
-          '<td><a href="/dashboard/inventory/purchase-orders/?id=' +
-          esc(row.purchaseOrderId) +
-          '" onclick="event.stopPropagation()">PO</a></td>' +
+          '<td><span class="st received">Received</span></td>' +
           '</tr>'
         );
       })
@@ -389,9 +481,10 @@
   }
 
   async function loadBuyList() {
+    await ensureBuyLookups();
     if (!canViewBuy) {
       document.getElementById('tbody').innerHTML =
-        '<tr><td colspan="7" class="muted">Need inventory.view</td></tr>';
+        '<tr><td colspan="4" class="muted">Need inventory.view</td></tr>';
       renderPager(1, 0, loadList);
       return;
     }
@@ -406,7 +499,7 @@
     const res = await api('GET', '/inventory/goods-receipts' + (q.toString() ? '?' + q : ''));
     if (!res.ok) {
       document.getElementById('tbody').innerHTML =
-        '<tr><td colspan="7" class="muted">' + esc(problemMessage(res.data, res.status)) + '</td></tr>';
+        '<tr><td colspan="4" class="muted">' + esc(problemMessage(res.data, res.status)) + '</td></tr>';
       renderPager(1, 0, loadList);
       return;
     }
@@ -459,11 +552,9 @@
           esc(inv.id) +
           '"><td><code>' +
           esc(inv.invoiceNumber) +
-          '</code></td><td><span class="tp ' +
-          esc(inv.type) +
-          '">' +
-          esc(inv.type) +
-          '</span></td><td>' +
+          '</code></td><td>' +
+          esc(friendlyType(inv.type)) +
+          '</td><td>' +
           esc(inv.memberNameSnapshot || '—') +
           '</td><td>' +
           esc(dt(inv.issuedAt)) +
@@ -472,7 +563,7 @@
           '</td><td><span class="st ' +
           esc(inv.status) +
           '">' +
-          esc(inv.status) +
+          esc(friendlyStatus(inv.status)) +
           '</span></td><td>' +
           pdfCell(inv) +
           '</td></tr>',
@@ -486,15 +577,13 @@
         html:
           '<tr data-kind="buy" data-id="' +
           esc(row.id) +
-          '"><td><span class="tp purchase_doc">شراء</span> <code>' +
-          esc(String(row.id).slice(0, 8)) +
-          '…</code></td><td>Buy</td><td>' +
+          '"><td>Purchase</td><td>Purchase</td><td>' +
           esc(row.supplierName || '—') +
           '</td><td>' +
           esc(dt(row.receivedAtUtc)) +
           '</td><td>' +
           esc(money(row.totalAmount)) +
-          '</td><td><span class="st received">received</span></td><td>—</td></tr>',
+          '</td><td><span class="st received">Received</span></td><td>—</td></tr>',
       });
     });
     merged.sort((a, b) => new Date(b.sortAt || 0) - new Date(a.sortAt || 0));
@@ -529,12 +618,14 @@
       return;
     }
     selectedInvoice = res.data;
+    await ensureBuyLookups();
     renderDetail(res.data);
   }
 
   async function selectBuy(id) {
     selectedId = id;
     selectedKind = 'buy';
+    await ensureBuyLookups();
     document.querySelectorAll('#tbody tr').forEach((tr) => {
       tr.classList.toggle('sel', tr.getAttribute('data-id') === id && tr.getAttribute('data-kind') === 'buy');
     });
@@ -548,21 +639,17 @@
   }
 
   function renderBuyDetail(doc) {
-    document.getElementById('detailEmpty').style.display = 'none';
     const body = document.getElementById('detailBody');
-    body.style.display = 'block';
     const lines = Array.isArray(doc.lines) ? doc.lines : [];
     const linesHtml = lines.length
-      ? '<table class="lines-tbl"><thead><tr><th>Product</th><th>Qty</th><th>Unit cost</th><th>Line</th></tr></thead><tbody>' +
+      ? '<table class="lines-tbl"><thead><tr><th>Product</th><th>Qty</th><th>Cost each</th><th>Line</th></tr></thead><tbody>' +
         lines
           .map((ln) => {
             const lineTotal =
               ln.unitCost != null && ln.qty != null ? Number(ln.qty) * Number(ln.unitCost) : null;
             return (
-              '<tr><td><code>' +
-              esc(ln.productId) +
-              '</code>' +
-              (ln.batchNumber ? '<div class="muted">Batch ' + esc(ln.batchNumber) + '</div>' : '') +
+              '<tr><td>' +
+              productCellHtml(ln.productId, ln.productName) +
               '</td><td>' +
               esc(String(ln.qty)) +
               '</td><td>' +
@@ -574,44 +661,42 @@
           })
           .join('') +
         '</tbody></table>'
-      : '<p class="muted">No lines</p>';
+      : '<p class="muted">No items on this purchase</p>';
 
     body.innerHTML =
-      '<div class="detail-meta">' +
-      '<div class="row"><span>Doc</span><span class="tp purchase_doc">فاتورة شراء / Purchase</span></div>' +
-      '<div class="row"><span>Status</span><span class="st received">received</span></div>' +
-      '<div class="row"><span>Supplier</span><span>' +
-      esc(doc.supplierName || '—') +
-      '</span></div>' +
-      '<div class="row"><span>Warehouse</span><span>' +
-      esc(doc.warehouseCode || doc.warehouseId || '—') +
-      '</span></div>' +
-      '<div class="row"><span>Received</span><span>' +
-      esc(dt(doc.receivedAtUtc)) +
-      '</span></div>' +
-      '<div class="row"><span>Total</span><strong>' +
-      esc(money(doc.totalAmount)) +
-      '</strong></div>' +
-      '<div class="row"><span>Note</span><span class="muted">Paid/due live on supplier statement — not allocated per GRN yet.</span></div>' +
+      '<div class="detail-hero">' +
+      '<div class="who">' +
+      esc(doc.supplierName || 'Supplier') +
       '</div>' +
-      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">Lines</h3>' +
+      '<div class="when">' +
+      esc(dt(doc.receivedAtUtc)) +
+      '</div>' +
+      '<div class="amt">' +
+      esc(money(doc.totalAmount)) +
+      '</div>' +
+      '</div>' +
+      '<div class="detail-meta">' +
+      '<div class="row"><span>Status</span><span class="st received">Received</span></div>' +
+      '</div>' +
+      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">Items</h3>' +
       linesHtml +
       '<div class="actions">' +
-      '<a class="btn secondary" href="/dashboard/inventory/purchase-orders/?id=' +
-      esc(doc.purchaseOrderId) +
-      '"><i class="ti ti-truck"></i> Open PO</a>' +
+      (doc.purchaseOrderId
+        ? '<a class="btn secondary" href="/dashboard/inventory/purchase-orders/?id=' +
+          esc(doc.purchaseOrderId) +
+          '">Open purchase</a>'
+        : '') +
       (doc.supplierId
         ? '<a class="btn secondary" href="/dashboard/inventory/suppliers/?id=' +
           esc(doc.supplierId) +
-          '"><i class="ti ti-building-store"></i> Supplier statement</a>'
+          '">Supplier account</a>'
         : '') +
       '</div>';
+    openDetailDrawer('Purchase');
   }
 
   function renderDetail(inv) {
-    document.getElementById('detailEmpty').style.display = 'none';
     const body = document.getElementById('detailBody');
-    body.style.display = 'block';
 
     const lines = Array.isArray(inv.lines) ? inv.lines : [];
     const linesHtml = lines.length
@@ -620,7 +705,7 @@
           .map(
             (ln) =>
               '<tr><td>' +
-              esc(ln.description) +
+              productCellFromSellLine(ln) +
               (ln.descriptionAr
                 ? '<div class="muted" dir="rtl">' + esc(ln.descriptionAr) + '</div>'
                 : '') +
@@ -634,7 +719,7 @@
           )
           .join('') +
         '</tbody></table>'
-      : '<p class="muted">No lines</p>';
+      : '<p class="muted">No items</p>';
 
     const pdfBlock = inv.pdfUrl
       ? '<a class="btn secondary" href="' +
@@ -660,41 +745,36 @@
     }
 
     body.innerHTML =
-      '<div class="detail-meta">' +
-      '<div class="row"><span>Number</span><strong>' +
+      '<div class="detail-hero">' +
+      '<div class="who">' +
+      esc(inv.memberNameSnapshot || inv.invoiceNumber || 'Invoice') +
+      '</div>' +
+      '<div class="when">' +
       esc(inv.invoiceNumber) +
-      '</strong></div>' +
-      '<div class="row"><span>Type</span><span class="tp ' +
-      esc(inv.type) +
-      '">' +
-      esc(inv.type) +
+      ' · ' +
+      esc(dt(inv.issuedAt)) +
+      '</div>' +
+      '<div class="amt">' +
+      displayTotal(inv) +
+      '</div>' +
+      '</div>' +
+      '<div class="detail-meta">' +
+      '<div class="row"><span>Type</span><span>' +
+      esc(friendlyType(inv.type)) +
       '</span></div>' +
       '<div class="row"><span>Status</span><span class="st ' +
       esc(inv.status) +
       '">' +
-      esc(inv.status) +
+      esc(friendlyStatus(inv.status)) +
       '</span></div>' +
-      '<div class="row"><span>Member</span><span>' +
-      esc(inv.memberNameSnapshot) +
-      '<br><span class="muted">' +
-      esc(inv.memberPhoneSnapshot || '') +
-      '</span></span></div>' +
-      '<div class="row"><span>Issued</span><span>' +
-      esc(dt(inv.issuedAt)) +
-      '</span></div>' +
-      (inv.saleId
-        ? '<div class="row"><span>Sale</span><code>' + esc(inv.saleId) + '</code></div>'
-        : '') +
-      (inv.originalInvoiceId
-        ? '<div class="row"><span>Original invoice</span><code>' +
-          esc(inv.originalInvoiceId) +
-          '</code></div>'
+      (inv.memberPhoneSnapshot
+        ? '<div class="row"><span>Phone</span><span>' + esc(inv.memberPhoneSnapshot) + '</span></div>'
         : '') +
       (inv.voidReason
         ? '<div class="row"><span>Void reason</span><span>' + esc(inv.voidReason) + '</span></div>'
         : '') +
       '</div>' +
-      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">Lines (snapshot)</h3>' +
+      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">Items</h3>' +
       linesHtml +
       '<div class="totals">' +
       '<div>Subtotal: ' +
@@ -716,6 +796,8 @@
       pdfBlock +
       actions.join('') +
       '</div>';
+
+    openDetailDrawer(inv.type === 'credit_note' ? 'Credit note' : 'Invoice');
 
     const btnReceipt = document.getElementById('btnReceipt');
     if (btnReceipt) btnReceipt.onclick = () => openReceiptModal(inv.id);
@@ -813,14 +895,22 @@
     loadList();
   };
 
+  const btnCloseDetail = document.getElementById('btnCloseDetail');
+  if (btnCloseDetail) btnCloseDetail.onclick = closeDetailDrawer;
+  const detailDrawer = document.getElementById('detailDrawer');
+  if (detailDrawer) {
+    detailDrawer.addEventListener('click', (e) => {
+      if (e.target === detailDrawer) closeDetailDrawer();
+    });
+  }
+
   document.querySelectorAll('.hub-tab').forEach((btn) => {
     btn.onclick = () => {
       activeTab = btn.getAttribute('data-tab');
       page = 1;
       selectedId = null;
       selectedKind = null;
-      document.getElementById('detailEmpty').style.display = '';
-      document.getElementById('detailBody').style.display = 'none';
+      closeDetailDrawer();
       loadList().catch((err) => {
         document.getElementById('tbody').innerHTML =
           '<tr><td colspan="7" class="muted">' +

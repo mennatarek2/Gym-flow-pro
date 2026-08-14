@@ -51,6 +51,39 @@
     d.textContent = s == null ? '' : String(s);
     return d.innerHTML;
   }
+  function mediaUrl(url) {
+    if (!url) return '';
+    var u = String(url).trim();
+    if (!u) return '';
+    if (/^(https?:|blob:|data:)/i.test(u)) return u;
+    var origin = String(window.API_BASE || (Gfp && Gfp.apiBase && Gfp.apiBase()) || '').replace(
+      /\/api\/?$/i,
+      ''
+    );
+    if (!origin && Gfp && typeof Gfp.apiBase === 'function') {
+      origin = String(Gfp.apiBase()).replace(/\/api\/?$/i, '');
+    }
+    if (!origin) {
+      try {
+        origin = new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+      } catch (e) {
+        origin = 'https://localhost:5001';
+      }
+    }
+    return origin + (u.charAt(0) === '/' ? u : '/' + u);
+  }
+  function productCellHtml(line) {
+    var p = (line && line.productId && productById[line.productId]) || {};
+    var name = (line && (line.productName || line.productSku)) || p.name || p.sku || '—';
+    var src = mediaUrl(p.imageUrl || p.relativeUrl);
+    var thumb = src
+      ? '<img class="thumb" src="' +
+        esc(src) +
+        '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
+        '<span class="thumb-ph" hidden><i class="ti ti-photo"></i></span>'
+      : '<span class="thumb-ph"><i class="ti ti-photo"></i></span>';
+    return '<div class="prod-cell">' + thumb + '<span>' + esc(name) + '</span></div>';
+  }
   function money(n) {
     if (n == null || Number.isNaN(Number(n))) return '—';
     return new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(Number(n));
@@ -84,11 +117,63 @@
   }
   var STATUS_LABELS = {
     draft: ['Draft', 'مسودة'],
-    approved: ['Approved', 'معتمد'],
+    approved: ['To receive', 'بانتظار الاستلام'],
     partially_received: ['Partially received', 'استلام جزئي'],
     received: ['Received', 'مستلم'],
     cancelled: ['Cancelled', 'ملغى']
   };
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return '—';
+    }
+  }
+  function defaultWarehouseId() {
+    var ws = document.getElementById('poWarehouse');
+    if (ws && ws.value) return ws.value;
+    var def = warehouses.find(function (w) {
+      return w.isDefault && w.isActive !== false;
+    });
+    if (!def) {
+      def = warehouses.find(function (w) {
+        return w.isActive !== false;
+      });
+    }
+    return def ? def.id : '';
+  }
+  function hideWarehouseUi() {
+    var wrap = document.getElementById('poWarehouseWrap');
+    if (wrap) wrap.hidden = true;
+    var field = document.getElementById('poWarehouseField');
+    if (field) field.hidden = true;
+  }
+  function updatePoTotalPreview() {
+    var el = document.getElementById('poTotalPreview');
+    var row = document.getElementById('poTotalRow');
+    if (!el) return;
+    if (!canSeeCost) {
+      if (row) row.hidden = true;
+      return;
+    }
+    if (row) row.hidden = false;
+    var total = 0;
+    var ok = false;
+    document.querySelectorAll('#poLines .line-row').forEach(function (r) {
+      var qty = Number(r.querySelector('.pl-qty').value);
+      var cost = Number(r.querySelector('.pl-cost').value);
+      if (Number.isFinite(qty) && qty > 0 && Number.isFinite(cost) && cost >= 0) {
+        total += qty * cost;
+        ok = true;
+      }
+    });
+    el.textContent = ok ? money(total) : money(0);
+  }
   function statusLabel(st) {
     var pair = STATUS_LABELS[st];
     return pair ? t(pair[0], pair[1]) : st;
@@ -125,6 +210,25 @@
       else window.location.href = '/auth/login/';
     });
     if (canManage) document.getElementById('manageActions').hidden = false;
+    var closeDet = document.getElementById('btnCloseDetail');
+    if (closeDet) {
+      closeDet.addEventListener('click', closeDetailDrawer);
+    }
+    var detOv = document.getElementById('detailDrawer');
+    if (detOv) {
+      detOv.addEventListener('click', function (ev) {
+        if (ev.target === detOv) closeDetailDrawer();
+      });
+    }
+    document.querySelectorAll('#statusChips .chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        document.querySelectorAll('#statusChips .chip').forEach(function (c) {
+          c.classList.toggle('act', c === chip);
+        });
+        document.getElementById('filterStatus').value = chip.getAttribute('data-status') || '';
+        loadList();
+      });
+    });
   })();
 
   (async function loadGym() {
@@ -173,7 +277,7 @@
       .join('');
     return (
       '<option value="">' +
-      esc(t('Product…', 'المنتج…')) +
+      esc(t('Select product', 'اختار منتج')) +
       '</option>' +
       opts
     );
@@ -182,31 +286,35 @@
   function addPoLineRow(pre) {
     var wrap = document.getElementById('poLines');
     var row = document.createElement('div');
-    row.className = 'line-row';
+    row.className = 'po-item line-row';
     row.innerHTML =
-      '<label>' +
+      '<label class="ef-field"><span class="lh">' +
       esc(t('Product', 'المنتج')) +
-      '<select class="pl-product" required>' +
+      '</span><select class="pl-product" required>' +
       purchasableOptionsHtml() +
       '</select></label>' +
-      '<label>' +
+      '<label class="ef-field"><span class="lh">' +
       esc(t('Qty', 'الكمية')) +
-      '<input type="number" class="pl-qty" min="0.001" step="any" required value="' +
+      '</span><input type="number" class="pl-qty" min="0.001" step="any" required value="' +
       esc((pre && pre.qtyOrdered) || 1) +
       '"></label>' +
-      '<label>' +
-      esc(t('Unit cost', 'تكلفة الوحدة')) +
-      '<input type="number" class="pl-cost" min="0" step="0.01" required value="' +
+      '<label class="ef-field"><span class="lh">' +
+      esc(t('Cost', 'التكلفة')) +
+      '</span><input type="number" class="pl-cost" min="0" step="0.01" required value="' +
       esc((pre && pre.unitCost) != null ? pre.unitCost : 0) +
       '"></label>' +
-      '<button type="button" class="btn-link pl-remove">' +
+      '<button type="button" class="pl-remove" title="' +
       esc(t('Remove', 'حذف')) +
-      '</button>';
+      '"><i class="ti ti-trash"></i></button>';
     if (pre && pre.productId) row.querySelector('.pl-product').value = pre.productId;
     row.querySelector('.pl-remove').addEventListener('click', function () {
       row.remove();
+      updatePoTotalPreview();
     });
+    row.querySelector('.pl-qty').addEventListener('input', updatePoTotalPreview);
+    row.querySelector('.pl-cost').addEventListener('input', updatePoTotalPreview);
     wrap.appendChild(row);
+    updatePoTotalPreview();
   }
 
   async function loadList() {
@@ -247,19 +355,19 @@
     if (!list.length) {
       host.innerHTML =
         banner +
-        '<div class="empty-state"><p>' +
-        esc(t('No purchase orders', 'لا أوامر شراء')) +
+        '<div class="empty-state"><i class="ti ti-shopping-bag" style="font-size:32px"></i><p><strong>' +
+        esc(t('No purchases yet.', 'لا توجد مشتريات بعد.')) +
+        '</strong></p><p style="font-size:13px;margin-top:6px">' +
+        esc(t('Record what you bought from a supplier.', 'سجّل اللي اشتريته من المورد.')) +
         '</p></div>';
       return;
     }
     host.innerHTML =
       banner +
       '<table class="inv"><thead><tr><th>' +
-      esc(t('Ordered', 'تاريخ الطلب')) +
+      esc(t('Date', 'التاريخ')) +
       '</th><th>' +
       esc(t('Supplier', 'المورد')) +
-      '</th><th>' +
-      esc(t('Warehouse', 'المستودع')) +
       '</th><th>' +
       esc(t('Status', 'الحالة')) +
       '</th></tr></thead><tbody>' +
@@ -269,12 +377,10 @@
             '<tr class="clickable" data-id="' +
             esc(po.id) +
             '"><td>' +
-            esc(po.orderedAtUtc ? new Date(po.orderedAtUtc).toLocaleString() : '—') +
-            '</td><td>' +
+            esc(fmtDate(po.orderedAtUtc)) +
+            '</td><td><button type="button" class="prod-link">' +
             esc(po.supplierName || '—') +
-            '</td><td class="code">' +
-            esc(po.warehouseCode || '—') +
-            '</td><td>' +
+            '</button></td><td>' +
             statusBadge(po.status) +
             '</td></tr>'
           );
@@ -288,8 +394,20 @@
     });
   }
 
+  function openDetailDrawer() {
+    var d = document.getElementById('detailDrawer');
+    if (d) d.hidden = false;
+  }
+  function closeDetailDrawer() {
+    var d = document.getElementById('detailDrawer');
+    if (d) d.hidden = true;
+  }
+
   async function loadDetail(id) {
+    openDetailDrawer();
     var host = document.getElementById('detailHost');
+    var title = document.getElementById('detailTitle');
+    if (title) title.textContent = t('Purchase', 'شراء');
     host.innerHTML =
       '<div class="loading-state"><div class="loader"></div><p>' +
       esc(t('Loading…', 'جاري التحميل…')) +
@@ -307,10 +425,11 @@
     var po = current;
     var host = document.getElementById('detailHost');
     if (!po) {
-      host.innerHTML =
-        '<p class="muted">' + esc(t('Select a purchase order.', 'اختار أمر شراء.')) + '</p>';
+      closeDetailDrawer();
       return;
     }
+    var title = document.getElementById('detailTitle');
+    if (title) title.textContent = po.supplierName || t('Purchase', 'شراء');
     var actions = [];
     if (canPurchase && po.status === 'draft') {
       actions.push(
@@ -327,7 +446,7 @@
     if (canPurchase && (po.status === 'approved' || po.status === 'partially_received')) {
       actions.push(
         '<button type="button" class="btn-create" id="btnReceive">' +
-          esc(t('Receive…', 'استلام…')) +
+          esc(t('Receive', 'استلام')) +
           '</button>'
       );
       if (po.status === 'approved') {
@@ -338,71 +457,65 @@
         );
       }
     }
-    var lines = (po.lines || [])
-      .map(function (l) {
-        return (
-          '<tr><td class="code">' +
-          esc(l.productSku || '—') +
-          '</td><td>' +
-          esc(l.productName || '—') +
-          '</td><td>' +
-          esc(l.qtyOrdered) +
-          '</td><td>' +
-          esc(l.qtyReceived) +
-          '</td><td>' +
-          esc(l.qtyRemaining) +
-          '</td><td>' +
-          esc(canSeeCost ? money(l.unitCost) : '—') +
-          '</td></tr>'
-        );
-      })
-      .join('');
 
     host.innerHTML =
-      '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">' +
-      '<div><h2 style="font-family:var(--fd);font-size:18px;margin-bottom:4px">' +
-      esc(t('Purchase order', 'أمر شراء')) +
-      '</h2>' +
-      '<div class="muted">' +
-      esc((po.supplierName || '') + (po.status ? ' · ' + statusLabel(po.status) : '')) +
-      '</div></div>' +
-      statusBadge(po.status) +
-      '</div>' +
-      '<div style="margin:12px 0;font-size:13px">' +
-      '<div>' +
+      '<div class="qty-hero">' +
+      '<div class="qty-hero-l">' +
       esc(t('Supplier', 'المورد')) +
-      ': <strong>' +
-      esc(po.supplierName || '—') +
-      '</strong></div>' +
-      '<div>' +
-      esc(t('Warehouse', 'المستودع')) +
-      ': <strong class="code">' +
-      esc(po.warehouseCode || '—') +
-      '</strong></div>' +
-      (po.notes
-        ? '<div class="muted">' + esc(t('Notes', 'ملاحظات')) + ': ' + esc(po.notes) + '</div>'
-        : '') +
       '</div>' +
+      '<div class="qty-hero-v" style="font-size:22px">' +
+      esc(po.supplierName || '—') +
+      '</div>' +
+      '<div class="qty-hero-h">' +
+      esc(fmtDate(po.orderedAtUtc)) +
+      ' · ' +
+      esc(statusLabel(po.status)) +
+      '</div></div>' +
+      '<div class="detail-kv">' +
+      '<div class="kv"><div class="k">' +
+      esc(t('Status', 'الحالة')) +
+      '</div><div class="v">' +
+      statusBadge(po.status) +
+      '</div></div>' +
+      '<div class="kv"><div class="k">' +
+      esc(t('Date', 'التاريخ')) +
+      '</div><div class="v">' +
+      esc(fmtDate(po.orderedAtUtc)) +
+      '</div></div></div>' +
+      (po.notes
+        ? '<p class="muted" style="margin:12px 0 0">' + esc(po.notes) + '</p>'
+        : '') +
       (actions.length ? '<div class="detail-actions">' + actions.join('') + '</div>' : '') +
-      '<div class="table-wrap"><table class="inv"><thead><tr><th>SKU</th><th>' +
-      esc(t('Name', 'الاسم')) +
+      '<div class="table-wrap" style="margin-top:16px"><table class="inv"><thead><tr><th>' +
+      esc(t('Product', 'المنتج')) +
       '</th><th>' +
-      esc(t('Ordered', 'مطلوب')) +
+      esc(t('Qty', 'الكمية')) +
       '</th><th>' +
       esc(t('Received', 'مستلم')) +
       '</th><th>' +
-      esc(t('Remaining', 'متبقي')) +
-      '</th><th>' +
       esc(t('Unit cost', 'تكلفة الوحدة')) +
       '</th></tr></thead><tbody>' +
-      (lines ||
-        '<tr><td colspan="6" class="muted">' + esc(t('No lines', 'لا بنود')) + '</td></tr>') +
+      ((po.lines || [])
+        .map(function (l) {
+          return (
+            '<tr><td>' +
+            productCellHtml(l) +
+            '</td><td>' +
+            esc(l.qtyOrdered) +
+            '</td><td>' +
+            esc(l.qtyReceived) +
+            '</td><td>' +
+            esc(canSeeCost ? money(l.unitCost) : '—') +
+            '</td></tr>'
+          );
+        })
+        .join('') ||
+        '<tr><td colspan="4" class="muted">' + esc(t('No products', 'لا منتجات')) + '</td></tr>') +
       '</tbody></table></div>' +
-      '<p class="muted" style="margin-top:10px">' +
-      esc(t('After receive, check', 'بعد الاستلام، راجع')) +
-      ' <a class="stock-link" href="/dashboard/inventory/stock/">' +
-      esc(t('Stock', 'الأرصدة')) +
-      '</a>.</p>';
+      '<p class="muted" style="margin-top:14px">' +
+      '<a class="stock-link" href="/dashboard/inventory/products/">' +
+      esc(t('Open Products', 'فتح المنتجات')) +
+      '</a></p>';
 
     var btnApprove = document.getElementById('btnApprove');
     if (btnApprove) {
@@ -412,7 +525,7 @@
           toast(apiError(r), 'err');
           return;
         }
-        toast(t('PO approved.', 'تم اعتماد أمر الشراء.'), 'ok');
+        toast(t('Ready to receive.', 'جاهز للاستلام.'), 'ok');
         current = r.data || current;
         await loadList();
         await loadDetail(po.id);
@@ -421,13 +534,13 @@
     var btnCancel = document.getElementById('btnCancel');
     if (btnCancel) {
       btnCancel.addEventListener('click', async function () {
-        if (!window.confirm(t('Cancel this purchase order?', 'إلغاء أمر الشراء ده؟'))) return;
+        if (!window.confirm(t('Cancel this purchase?', 'إلغاء عملية الشراء دي؟'))) return;
         var r = await Gfp.post(paths.purchaseOrderCancel(po.id), {});
         if (!r.ok) {
           toast(apiError(r), 'err');
           return;
         }
-        toast(t('PO cancelled.', 'تم إلغاء أمر الشراء.'), 'ok');
+        toast(t('Purchase cancelled.', 'تم إلغاء الشراء.'), 'ok');
         await loadList();
         await loadDetail(po.id);
       });
@@ -576,7 +689,7 @@
     var el = document.getElementById('toast');
     el.className = 'toast show ok';
     el.innerHTML =
-      esc(t('Goods received — stock updated.', 'تم الاستلام — تم تحديث المخزون.')) + cta;
+      esc(t('Quantity updated on the products.', 'تم تحديث كمية المنتجات.')) + cta;
     setTimeout(function () {
       el.classList.remove('show');
     }, 6000);
@@ -590,10 +703,11 @@
     if (!suppliers.length || !warehouses.length) await loadLookups();
     var ss = document.getElementById('poSupplier');
     var ws = document.getElementById('poWarehouse');
-    var selectPh = esc(t('Select…', 'اختَر…'));
+    var supplierPh = esc(t('Select supplier', 'اختار مورد'));
+    var warehousePh = esc(t('Select warehouse', 'اختار مخزن'));
     ss.innerHTML =
       '<option value="">' +
-      selectPh +
+      supplierPh +
       '</option>' +
       suppliers
         .filter(function (s) {
@@ -605,7 +719,7 @@
         .join('');
     ws.innerHTML =
       '<option value="">' +
-      selectPh +
+      warehousePh +
       '</option>' +
       warehouses
         .filter(function (w) {
@@ -638,7 +752,9 @@
     document.getElementById('poNotes').value = '';
     document.getElementById('poHint').textContent = '';
     document.getElementById('poLines').innerHTML = '';
+    hideWarehouseUi();
     addPoLineRow(prefill.productId ? { productId: prefill.productId, qtyOrdered: 1 } : undefined);
+    updatePoTotalPreview();
     openModal('poModal');
   }
 
@@ -653,6 +769,8 @@
   document.getElementById('poForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     if (!canManage) return;
+    var hint = document.getElementById('poHint');
+    var btn = document.getElementById('btnPoSubmit');
     var lines = [];
     document.querySelectorAll('#poLines .line-row').forEach(function (row) {
       var productId = row.querySelector('.pl-product').value;
@@ -662,28 +780,14 @@
       lines.push({ productId: productId, qtyOrdered: qtyOrdered, unitCost: unitCost });
     });
     if (!lines.length) {
-      document.getElementById('poHint').textContent = t(
-        'Add at least one valid line.',
-        'أضف بنداً صالحاً واحداً على الأقل.'
-      );
+      hint.textContent = t('Add at least one product.', 'ضيف منتج واحد على الأقل.');
       return;
     }
-    var warehouseId = document.getElementById('poWarehouse').value;
+    var warehouseId = defaultWarehouseId();
     if (!warehouseId) {
-      var defWh = warehouses.find(function (w) {
-        return w.isDefault && w.isActive !== false;
-      });
-      if (!defWh) {
-        defWh = warehouses.find(function (w) {
-          return w.isActive !== false;
-        });
-      }
-      if (defWh) warehouseId = defWh.id;
-    }
-    if (!warehouseId) {
-      document.getElementById('poHint').textContent = t(
-        'No default stock location. Create a warehouse once.',
-        'مفيش مكان تخزين افتراضي. أنشئ مستودعاً مرة واحدة.'
+      hint.textContent = t(
+        'No default stock location is set yet.',
+        'مفيش مكان تخزين افتراضي متظبط.'
       );
       return;
     }
@@ -693,16 +797,73 @@
       notes: document.getElementById('poNotes').value.trim() || null,
       lines: lines
     };
+    if (btn) btn.disabled = true;
+    hint.textContent = t('Saving…', 'جاري الحفظ…');
     var r = await Gfp.post(paths.purchaseOrders(), body);
-    if (!r.ok) {
-      document.getElementById('poHint').textContent = apiError(r);
+    if (!r.ok || !r.data || !r.data.id) {
+      if (btn) btn.disabled = false;
+      hint.textContent = apiError(r);
       toast(apiError(r), 'err');
       return;
     }
+    var poId = r.data.id;
+    var approved = await Gfp.post(paths.purchaseOrderApprove(poId), {});
+    if (!approved.ok) {
+      if (btn) btn.disabled = false;
+      closeModal('poModal');
+      toast(
+        t('Saved as draft — approve failed: ', 'اتحفظ كمسودة — الاعتماد فشل: ') + apiError(approved),
+        'err'
+      );
+      await loadList();
+      await loadDetail(poId);
+      return;
+    }
+    var needsExtra = lines.some(function (ln) {
+      var p = productById[ln.productId];
+      return p && (p.trackBatch || p.trackExpiry);
+    });
+    if (needsExtra) {
+      if (btn) btn.disabled = false;
+      closeModal('poModal');
+      toast(t('Saved. Add batch/expiry, then receive.', 'اتحفظ. ضيف التشغيلة/الصلاحية وبعدين استلم.'), 'ok');
+      await loadList();
+      await loadDetail(poId);
+      openReceiveModal();
+      return;
+    }
+    var detail = await Gfp.get(paths.purchaseOrder(poId));
+    var poLines = detail.ok && detail.data && detail.data.lines ? detail.data.lines : [];
+    var recvLines = poLines
+      .filter(function (l) {
+        return Number(l.qtyRemaining) > 0;
+      })
+      .map(function (l) {
+        return {
+          purchaseOrderLineId: l.id,
+          qty: Number(l.qtyRemaining),
+          unitCost: l.unitCost
+        };
+      });
+    if (recvLines.length) {
+      var received = await Gfp.post(paths.purchaseOrderReceive(poId), { lines: recvLines });
+      if (!received.ok) {
+        if (btn) btn.disabled = false;
+        closeModal('poModal');
+        toast(
+          t('Saved, but receive failed: ', 'اتحفظ، بس الاستلام فشل: ') + apiError(received),
+          'err'
+        );
+        await loadList();
+        await loadDetail(poId);
+        return;
+      }
+    }
+    if (btn) btn.disabled = false;
     closeModal('poModal');
-    toast(t('Draft PO created.', 'تم إنشاء مسودة أمر الشراء.'), 'ok');
+    toast(t('Purchase saved — product quantity updated.', 'اتحفظ الشراء — كمية المنتج اتحدثت.'), 'ok');
     await loadList();
-    if (r.data && r.data.id) await loadDetail(r.data.id);
+    await loadDetail(poId);
   });
 
   document.getElementById('btnRefresh').addEventListener('click', loadList);
@@ -772,15 +933,12 @@
     applyLocale();
     renderList(listTruncated, listTake);
     if (current) renderDetail();
-    else {
-      document.getElementById('detailHost').innerHTML =
-        '<p class="muted">' + esc(t('Select a purchase order.', 'اختار أمر شراء.')) + '</p>';
-    }
   });
 
   (async function boot() {
     var ctx = applyBuyDeepLinkContext();
     await loadLookups();
+    hideWarehouseUi();
     await loadList();
     applyLocale();
     try {

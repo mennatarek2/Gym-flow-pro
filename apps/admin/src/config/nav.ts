@@ -29,7 +29,7 @@ import type { FeatureModuleKey } from '@/lib/features/probe'
  * | Overview        | Dashboard                                          |
  * | Members         | Members, Attendance                                |
  * | Front desk      | Sale, Debtors, Call Sheet                          |
- * | Money           | Shifts, Refunds, Promo Codes, Invoices, Reports    |
+ * | Money           | Shifts, Refunds, Offers & Promotions, Invoices, Reports    |
  * | Catalog         | Plans                                              |
  * | Administration  | Import, Staff, Settings                            |
  */
@@ -165,10 +165,10 @@ export const NAV_CATEGORIES: NavCategory[] = [
         featureFlag: 'refunds',
       },
       {
-        key: 'promo-codes',
-        label: 'Promo Codes',
-        labelAr: 'أكواد الخصم',
-        path: '/app/promo-codes',
+        key: 'offers',
+        label: 'Offers & Promotions',
+        labelAr: 'العروض والترويج',
+        path: '/app/offers',
         icon: BadgePercent,
         access: { kind: 'permission', value: ['sales.sell', 'plans.manage'] },
         featureFlag: 'sales',

@@ -7,11 +7,11 @@
 <meta name="description" content="Front desk sale for retail products — cart, payment, and receipt.">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="pos.css?v=desk13">
+<link rel="stylesheet" href="pos.css?v=desk18">
 <script>
 /* Sale is retail-only — membership onboarding lives in Members */
 (function () {
-  try { document.documentElement.classList.add('pos-retail'); } catch (e) { /* ignore */ }
+  try { document.documentElement.classList.add('pos-retail'); document.body.classList.add('pos-retail'); } catch (e) { /* ignore */ }
 })();
 </script>
 </head>
@@ -69,10 +69,10 @@
   <div class="page-header">
     <div>
       <h1 class="page-title"><i class="ti ti-shopping-cart"></i> <span id="pageTitleText" data-en="Sale" data-ar="البيع">Sale</span></h1>
-      <p class="page-subtitle" id="pageSubtitle" data-en="Sell retail products at the desk — scan or tap, pay, print receipt. Memberships stay in Members." data-ar="بيع منتجات من المكتب — امسح أو اضغط، ادفع، اطبع الإيصال. الاشتراكات من الأعضاء.">Sell retail products at the desk — scan or tap, pay, print receipt. Memberships stay in Members.</p>
+      <p class="page-subtitle" id="pageSubtitle" data-en="Scan or tap, take cash or card, print. Memberships stay in Members." data-ar="امسح أو اضغط، خد كاش أو كارت، اطبع. الاشتراكات من الأعضاء.">Scan or tap, take cash or card, print. Memberships stay in Members.</p>
     </div>
     <div class="hdr-actions">
-      <a class="btn secondary" id="btnPromoCodes" href="/dashboard/promo-codes/" style="display:none"><i class="ti ti-discount-2"></i> <span data-en="Promo codes" data-ar="أكواد خصم">Promo codes</span></a>
+      <a class="btn secondary" id="btnPromoCodes" href="/dashboard/offers/" style="display:none"><i class="ti ti-discount-2"></i> <span data-en="Offers" data-ar="العروض">Offers</span></a>
       <button type="button" class="btn secondary" id="btnReset"><i class="ti ti-refresh"></i> <span data-en="New sale" data-ar="بيع جديد">New sale</span></button>
     </div>
   </div>
@@ -103,7 +103,7 @@
     <div id="promoStatus" hidden></div>
   </div>
 
-  <div id="posWorkspace">
+  <div id="posWorkspace" class="pos-retail cart-empty">
     <div class="grid-main">
       <div id="retailPanel">
       <div id="stockBlockPanel" class="banner stock-block danger" style="display:none" role="alert">
@@ -118,29 +118,31 @@
         <section class="card retail-card retail-catalog">
           <div class="card-h retail-catalog-h">
             <h2 data-en="Products" data-ar="المنتجات">Products</h2>
+            <span class="quiet" data-en="Tap to add" data-ar="اضغط عشان تضيف">Tap to add</span>
             <label class="wh-inline"><span data-en="Warehouse" data-ar="المستودع">Warehouse</span>
               <select id="warehouseSelect" class="retail-select"><option value="">Loading…</option></select>
             </label>
           </div>
-          <div class="row-inline retail-scan-row">
-            <input id="barcodeInput" class="retail-barcode" data-en-placeholder="Scan barcode or search…" data-ar-placeholder="امسح الباركود أو ابحث…" placeholder="Scan barcode or search…" dir="ltr" autocomplete="off">
-            <button type="button" class="btn secondary retail-tap" id="btnBarcode"><i class="ti ti-barcode"></i> <span data-en="Add" data-ar="أضف">Add</span></button>
-          </div>
-          <input type="search" id="productSearch" class="full retail-search" data-en-placeholder="Water, creatine, SKU…" data-ar-placeholder="مياه، كرياتين، SKU…" placeholder="Water, creatine, SKU…" autocomplete="off">
+          <label class="sale-scan">
+            <i class="ti ti-barcode"></i>
+            <input id="barcodeInput" class="retail-barcode" data-en-placeholder="Scan or type a name…" data-ar-placeholder="امسح أو اكتب الاسم…" placeholder="Scan or type a name…" autocomplete="off">
+          </label>
+          <button type="button" class="btn secondary retail-tap visually-hidden" id="btnBarcode"><i class="ti ti-barcode"></i> <span data-en="Add" data-ar="أضف">Add</span></button>
+          <input type="search" id="productSearch" class="visually-hidden" tabindex="-1" aria-hidden="true" autocomplete="off">
           <div class="search-list product-results" id="productResults"></div>
-          <div class="quick-add-h" data-en="Quick add" data-ar="إضافة سريعة">Quick add</div>
+          <div class="chips" id="catChips"></div>
           <div class="quick-add-grid" id="quickAddGrid">
             <div class="muted" data-en="Loading products…" data-ar="جاري تحميل المنتجات…">Loading products…</div>
           </div>
         </section>
 
-        <aside class="retail-rail retail-rail-cart">
+        <aside class="retail-rail retail-rail-cart ticket">
           <section class="card retail-card retail-cart-card">
             <div class="cart-hdr">
-              <span data-en="Cart" data-ar="السلة">Cart</span>
+              <span data-en="Ticket" data-ar="التذكرة">Ticket</span>
               <span class="cart-count" id="cartCount">0</span>
             </div>
-            <div id="retailCart" class="retail-cart"><div class="muted empty-cart" data-en="Cart is empty — scan a barcode or tap a product to start this sale." data-ar="السلة فاضية — امسح باركود أو اضغط منتج عشان تبدأ البيع.">Cart is empty — scan a barcode or tap a product to start this sale.</div></div>
+            <div id="retailCart" class="retail-cart"><div class="empty-cart"><i class="ti ti-shopping-cart"></i><strong data-en="Waiting for the first item" data-ar="مستني أول صنف">Waiting for the first item</strong><span data-en="Scan or tap a product. Pay appears after that." data-ar="امسح أو اضغط منتج. الدفع بيظهر بعد كده.">Scan or tap a product. Pay appears after that.</span></div></div>
           </section>
           <div id="retailPayMount"></div>
         </aside>
@@ -148,9 +150,9 @@
       </div><!-- /retailPanel -->
 
       <section class="card" id="paymentsCard">
-        <div class="card-h"><h2 data-en="Pay &amp; finish" data-ar="الدفع والإنهاء">Pay &amp; finish</h2></div>
+        <div class="card-h"><h2 data-en="Pay" data-ar="الدفع">Pay</h2></div>
         <div class="retail-quick-pay" id="retailQuickPay">
-          <button type="button" class="btn qp-cash retail-tap" id="btnPayCash" disabled>
+          <button type="button" class="btn qp-cash retail-tap act" id="btnPayCash" disabled>
             <i class="ti ti-cash"></i> <span data-en="Cash" data-ar="كاش">Cash</span>
           </button>
           <button type="button" class="btn qp-card retail-tap" id="btnPayCard" disabled>
@@ -158,7 +160,7 @@
           </button>
         </div>
         <details class="pay-more" id="payMoreDetails">
-          <summary id="payMoreSummary" data-en="Split payment / other methods" data-ar="تقسيم الدفع / طرق تانية">Split payment / other methods</summary>
+          <summary id="payMoreSummary" data-en="Member phone / split pay" data-ar="رقم عضو / تقسيم الدفع">Member phone / split pay</summary>
           <div class="pay-more-body">
             <div id="payLegs"></div>
             <button type="button" class="btn secondary" id="btnAddLeg"><i class="ti ti-plus"></i> <span id="btnAddLegLabel" data-en="Add another payment" data-ar="أضف دفعة تانية">Add another payment</span></button>
@@ -176,13 +178,16 @@
         <div class="kv-row desk-tech" id="idemKeyRow" hidden>
           <span>Idempotency</span><code id="idemKey" class="tiny">—</code>
         </div>
-        <div class="kv-row"><span data-en="Shift" data-ar="الوردية">Shift</span><strong id="shiftLabel">Checking…</strong></div>
-        <div class="kv-row retail-finish-total" id="finishTotalRow" hidden>
-          <span data-en="Cart total" data-ar="إجمالي السلة">Cart total</span><strong id="finishTotal">—</strong>
+        <div class="kv-row desk-tech" hidden>
+          <span data-en="Shift" data-ar="الوردية">Shift</span><strong id="shiftLabel">Checking…</strong>
+        </div>
+        <div class="ticket-hero" id="finishTotalRow" hidden>
+          <div class="ticket-hero-k" data-en="To collect" data-ar="المطلوب">To collect</div>
+          <div class="ticket-hero-v" id="finishTotal">—</div>
         </div>
       </div>
-      <button type="button" class="btn primary full" id="btnSell" disabled><i class="ti ti-check"></i> <span data-en="Complete sale" data-ar="تمّم البيع">Complete sale</span></button>
-      <p class="hint retail-only-hint" id="retailSubmitHint" hidden data-en="Double-check the cart and cash before completing." data-ar="راجِع السلة والكاش قبل ما تتمّم.">Double-check the cart and cash before completing.</p>
+      <button type="button" class="btn primary full take-btn" id="btnSell" disabled><i class="ti ti-cash"></i> <span id="btnSellLabel" data-en="Take money" data-ar="خد الفلوس">Take money</span></button>
+      <p class="hint retail-only-hint" id="retailSubmitHint" hidden></p>
       <div id="saleResult" class="result" style="display:none"></div>
     </aside>
   </div>
@@ -214,6 +219,6 @@ if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.dis
 document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
 (async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
 </script>
-<script src="pos-app.js?v=desk13"></script>
+<script src="pos-app.js?v=desk18"></script>
 </body>
 </html>

@@ -720,6 +720,133 @@ export const PROMO_CODES_ENDPOINTS = {
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// § 7b. Offers (OffersController — api/offers, [Authorize])
+// Member: MemberOffersController — api/member/offers, AuthenticatedMember
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type OfferAppliesTo = "memberships" | "products" | "both";
+export type OfferDiscountType = "percentage" | "fixed" | "bxgy";
+export type OfferRedemption = "automatic" | "promoCode";
+export type OfferStatus = "draft" | "scheduled" | "active" | "expired";
+
+export interface OfferDto {
+  id: string;
+  name: string;
+  nameAr?: string | null;
+  shortDescription: string;
+  shortDescriptionAr?: string | null;
+  description?: string | null;
+  bannerUrl?: string | null;
+  start: string; // DateOnly yyyy-MM-dd
+  end: string;
+  appliesTo: OfferAppliesTo;
+  planIds: string[];
+  productIds: string[];
+  membershipLabels: string[];
+  productLabels: string[];
+  discountType: OfferDiscountType;
+  value?: number | null;
+  maxDiscount?: number | null;
+  buyQty?: number | null;
+  getQty?: number | null;
+  allMembers: boolean;
+  newMembersOnly: boolean;
+  minPurchase?: number | null;
+  usageLimit?: number | null;
+  perMemberLimit?: number | null;
+  usesCount: number;
+  showOnMemberApp: boolean;
+  featured: boolean;
+  showBanner: boolean;
+  displayOrder: number;
+  redemption: OfferRedemption;
+  promoCode?: string | null;
+  promoCodeId?: string | null;
+  isDraft: boolean;
+  status: OfferStatus;
+  discountLabel: string;
+  createdAtUtc: string;
+  updatedAtUtc?: string | null;
+}
+
+export interface MemberOfferDto {
+  id: string;
+  name: string;
+  nameAr?: string | null;
+  shortDescription: string;
+  shortDescriptionAr?: string | null;
+  description?: string | null;
+  bannerUrl?: string | null;
+  start: string;
+  end: string;
+  appliesTo: OfferAppliesTo;
+  membershipLabels: string[];
+  productLabels: string[];
+  discountType: OfferDiscountType;
+  discountLabel: string;
+  buyQty?: number | null;
+  getQty?: number | null;
+  newMembersOnly: boolean;
+  showOnMemberApp: boolean;
+  featured: boolean;
+  showBanner: boolean;
+  displayOrder: number;
+  redemption: OfferRedemption;
+  /** Present when redemption is promoCode — never the actual code. */
+  promoCodeHint?: string | null;
+  status: "active";
+}
+
+export interface UpsertOfferRequest {
+  name: string;
+  nameAr?: string | null;
+  shortDescription?: string;
+  shortDescriptionAr?: string | null;
+  description?: string | null;
+  bannerUrl?: string | null;
+  start: string;
+  end: string;
+  appliesTo: OfferAppliesTo;
+  planIds?: string[] | null;
+  productIds?: string[] | null;
+  membershipLabels?: string[] | null;
+  productLabels?: string[] | null;
+  discountType: OfferDiscountType; // "percent" accepted as percentage
+  value?: number | null;
+  maxDiscount?: number | null;
+  buyQty?: number | null;
+  getQty?: number | null;
+  allMembers?: boolean;
+  newMembersOnly?: boolean;
+  minPurchase?: number | null;
+  usageLimit?: number | null;
+  perMemberLimit?: number | null;
+  showOnMemberApp?: boolean;
+  featured?: boolean;
+  showBanner?: boolean;
+  displayOrder?: number;
+  redemption: OfferRedemption; // "auto" | "code" accepted
+  promoCode?: string | null;
+  isDraft?: boolean;
+}
+
+export const OFFERS_ENDPOINTS = {
+  list: { method: "GET", path: "/api/offers" }, // perm sales.sell -> OfferDto[]
+  get: (id: string) => ({ method: "GET", path: `/api/offers/${id}` }), // perm sales.sell -> OfferDto
+  create: { method: "POST", path: "/api/offers" }, // perm plans.manage ; body: UpsertOfferRequest -> 201 OfferDto
+  update: (id: string) => ({ method: "PUT", path: `/api/offers/${id}` }), // perm plans.manage ; body: UpsertOfferRequest
+  end: (id: string) => ({ method: "POST", path: `/api/offers/${id}/end` }), // perm plans.manage ; sets end=yesterday Cairo so status is expired now, deactivates linked promo
+} as const;
+
+export const MEMBER_OFFERS_ENDPOINTS = {
+  list: { method: "GET", path: "/api/member/offers" }, // AuthenticatedMember -> MemberOfferDto[] (visible + in-date + eligibility)
+  get: (id: string) => ({ method: "GET", path: `/api/member/offers/${id}` }), // 404 if hidden/expired/draft
+} as const;
+
+// Desk UI: /dashboard/offers/ is API-backed. Publishing a promo-code offer also creates/updates /api/promo-codes.
+// Member App: use MEMBER_OFFERS_ENDPOINTS. Do not call staff /api/promo-codes.
+
+// ═══════════════════════════════════════════════════════════════════════════
 // § 8. Cash Drawer / Shifts (ShiftsController — api/shifts, [Authorize], [FeatureFlag("shifts")])
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1491,6 +1618,9 @@ export const INVITATION_ENDPOINTS = {
 // Feature flag: inventory (Growth/Pro/Enterprise via tier_feature_map; Starter off).
 // Perms: inventory.view | inventory.manage. No QtyOnHand on product (ledger = INVS-3).
 // POS will use product.id as SaleLine.referenceId when lineType = "retail".
+// Owner desk (Product Accept 2026-08-14): Catalog Products table + Suppliers + Purchases.
+// Warehouse/transfer/count UI hidden (`SHOP_OWNER_UX`); default warehouse still used on receive/POS.
+// FE create/edit may send visibleToMembers for Member App store.
 
 export interface ProductCategoryDto {
   id: string;
@@ -1553,6 +1683,8 @@ export interface CreateProductRequest {
   allowFractionalQty?: boolean;
   isSellable?: boolean;
   isPurchasable?: boolean;
+  /** Member App store visibility (FE form). Backend may echo isVisibleToMembers. */
+  visibleToMembers?: boolean;
   reorderMinQty?: number;
   isActive?: boolean;
 }

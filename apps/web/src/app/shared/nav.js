@@ -8,11 +8,10 @@
  * | Overview        | Dashboard                                                     |
  * | Members         | Members, Attendance                                           |
  * | Front desk      | Sale, Member Orders, Debtors, Call sheet                      |
- * | Money           | Shifts, Refunds, Promo codes, Invoices, Z-Report, Reports     |
- * | Catalog         | Plans                                                         |
- * | Stock Management| Stock Management (hub: On Hand / Move / Count)               |
- * | Inventory       | Overview, Insights, Products, Suppliers, Warehouses           |
- * |                 | (Buy/Adjust contextual from On Hand; Sell → Front Desk)       |
+ * | Money           | Shifts, Refunds, Offers & Promotions, Invoices, Z-Report, Reports |
+ * | Catalog         | Plans, Products, Suppliers, Purchases                         |
+ * | Stock Management| hidden in shop UX (engines remain)                            |
+ * | Inventory       | hidden in shop UX (Overview / Insights / Warehouses)          |
  * | Administration  | Import, Audit, Notifications, Staff, Settings                 |
  */
 (function (global) {
@@ -157,10 +156,10 @@
           featureFlag: 'refunds'
         },
         {
-          key: 'promo-codes',
-          label: 'Promo codes',
-          labelAr: 'أكواد الخصم',
-          path: '/dashboard/promo-codes/',
+          key: 'offers',
+          label: 'Offers & Promotions',
+          labelAr: 'العروض والترويج',
+          path: '/dashboard/offers/',
           icon: 'ti-discount-2',
           access: { kind: 'permission', value: ['sales.sell', 'plans.manage'] },
           featureFlag: 'sales'
@@ -216,6 +215,24 @@
           icon: 'ti-box',
           access: { kind: 'permission', value: ['inventory.manage', 'inventory.purchase'] },
           featureFlag: 'inventory'
+        },
+        {
+          key: 'inv-suppliers',
+          label: 'Suppliers',
+          labelAr: 'الموردون',
+          path: '/dashboard/inventory/suppliers/',
+          icon: 'ti-truck',
+          access: { kind: 'permission', value: ['inventory.purchase', 'inventory.manage'] },
+          featureFlag: 'inventory'
+        },
+        {
+          key: 'inv-purchase-orders',
+          label: 'Purchases',
+          labelAr: 'المشتريات',
+          path: '/dashboard/inventory/purchase-orders/',
+          icon: 'ti-shopping-bag',
+          access: { kind: 'permission', value: 'inventory.purchase' },
+          featureFlag: 'inventory'
         }
       ]
     },
@@ -256,15 +273,6 @@
           path: '/dashboard/inventory/reports/',
           icon: 'ti-chart-histogram',
           access: { kind: 'permission', value: 'inventory.view' },
-          featureFlags: ['inventory', 'stock_management']
-        },
-        {
-          key: 'inv-suppliers',
-          label: 'Suppliers',
-          labelAr: 'الموردون',
-          path: '/dashboard/inventory/suppliers/',
-          icon: 'ti-truck',
-          access: { kind: 'permission', value: ['inventory.purchase', 'inventory.manage'] },
           featureFlags: ['inventory', 'stock_management']
         },
         {

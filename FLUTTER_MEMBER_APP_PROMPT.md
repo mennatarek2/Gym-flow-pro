@@ -25,6 +25,7 @@ OWN (build these):
 - Notifications: list + mark read
 - Guest invitations: quota, send, history; referral share (read)
 - Member store (if tenant has inventory feature): browse products, place order, my orders
+- Offers & Promotions (Member App visibility — GET /api/member/offers; see FLUTTER_MEMBER_OFFERS_PROMPT.md)
 - Profile: display name/gym from login + JWT; language & theme settings; logout
 - Bilingual EN/AR UI; map API bilingual fields (name / nameAr, message / messageAr)
 

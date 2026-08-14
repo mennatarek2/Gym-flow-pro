@@ -16,3 +16,17 @@
 .stmt-bal{margin-bottom:10px;font-size:13px}
 .muted{font-size:12px;color:var(--ltt)}
 .row-actions{display:flex;gap:8px;flex-wrap:wrap}
+.people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.person-card{
+  background:var(--ls1);border:1px solid var(--ls3);border-radius:20px;padding:16px;
+  display:flex;flex-direction:column;gap:8px;text-align:left
+}
+.person-top{display:flex;gap:12px;align-items:center}
+.person-av{
+  width:52px;height:52px;border-radius:50%;background:#EDFCD8;color:#3f6212;
+  display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:18px;flex-shrink:0
+}
+.person-card h3{font-family:var(--fd);font-size:16px;margin:0}
+.person-card .meta{font-size:12px;color:var(--ltt)}
+.person-owe{font-family:var(--fd);font-size:18px;font-weight:700;margin-top:4px}
+.person-owe.zero{color:var(--ltt);font-size:14px;font-weight:600}

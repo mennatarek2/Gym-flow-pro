@@ -71,7 +71,8 @@ const INV_ALL_KEYS = INV_VIEW_KEYS.concat(['inv-suppliers', 'inv-warehouses']).s
 
 // Stable order as registered in nav.js
 const INV_OWNER_KEYS = ['inv-home', 'inv-reports', 'inv-suppliers', 'inv-warehouses'];
-const CATALOG_OWNER_KEYS = ['plans', 'inv-products'];
+const CATALOG_OWNER_KEYS = ['plans', 'inv-products', 'inv-suppliers', 'inv-purchase-orders'];
+const CATALOG_MANAGER_KEYS = ['inv-products', 'inv-suppliers', 'inv-purchase-orders'];
 
 const FIXTURES = {
   Owner: { role: 'Owner', perms: ALL_PERMS.slice() },
@@ -209,10 +210,8 @@ assertShape('Owner', runFixture('Owner', ALL_ON), {
   overview: ['dashboard'],
   members: ['members', 'attendance'],
   'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
-  money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'z-report', 'reports'],
+  money: ['shifts', 'refunds', 'offers', 'invoices', 'z-report', 'reports'],
   catalog: CATALOG_OWNER_KEYS.slice(),
-  'stock-management': STOCK_MGMT_KEYS.slice(),
-  inventory: INV_OWNER_KEYS.slice(),
   administration: ['imports', 'audit', 'notifications', 'staff', 'settings']
 });
 
@@ -220,10 +219,8 @@ assertShape('Manager', runFixture('Manager', ALL_ON), {
   overview: ['dashboard'],
   members: ['members', 'attendance'],
   'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
-  money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'z-report', 'reports'],
-  catalog: ['inv-products'],
-  'stock-management': STOCK_MGMT_KEYS.slice(),
-  inventory: INV_OWNER_KEYS.slice(),
+  money: ['shifts', 'refunds', 'offers', 'invoices', 'z-report', 'reports'],
+  catalog: CATALOG_MANAGER_KEYS.slice(),
   administration: ['notifications']
 });
 
@@ -237,25 +234,20 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   overview: ['dashboard'],
   members: ['members', 'attendance'],
   'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
-  money: ['shifts', 'refunds', 'promo-codes', 'reports'],
-  'stock-management': STOCK_MGMT_KEYS.slice(),
-  inventory: INV_VIEW_KEYS.slice(),
+  money: ['shifts', 'refunds', 'offers', 'reports'],
   administration: ['notifications']
 });
 
-// Receptionist: hub only under Stock Management; no catalog admin
+// Receptionist: shop UX hides hub / warehouses; no catalog admin
 {
   const stock = runFixture('Receptionist', ALL_ON)['stock-management'] || [];
   const inv = runFixture('Receptionist', ALL_ON).inventory || [];
-  assert(stock.length === 1 && stock[0] === 'inv-stock-hub', 'Receptionist sees Stock Management hub only');
-  assert(!inv.includes('inv-adjustments'), 'Receptionist hides Adjustments nav');
-  assert(!inv.includes('inv-products'), 'Receptionist hides demoted Products');
-  assert(!inv.includes('inv-warehouses'), 'Receptionist hides demoted Warehouses');
-  assert(!inv.includes('inv-suppliers'), 'Receptionist hides demoted Suppliers');
-  assert(!inv.includes('inv-sell'), 'Sell products removed from Inventory nav');
-  assert(!inv.includes('inv-purchase-orders'), 'Buy & receive removed from Inventory nav');
-  assert(inv.includes('inv-home'), 'Receptionist sees Inventory Overview');
-  assert(inv.includes('inv-reports'), 'Receptionist sees Insights');
+  const catalog = runFixture('Receptionist', ALL_ON).catalog || [];
+  assert(!stock.length, 'Receptionist shop UX hides Stock Management hub');
+  assert(!inv.length, 'Receptionist shop UX hides Inventory overview/insights/warehouses');
+  assert(!catalog.includes('inv-products'), 'Receptionist hides Products');
+  assert(!catalog.includes('inv-suppliers'), 'Receptionist hides Suppliers');
+  assert(!catalog.includes('inv-purchase-orders'), 'Receptionist hides Purchases');
 }
 
 // FEATURE_DISABLED sales — POS hidden from front desk; Inventory unchanged
@@ -265,12 +257,9 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   });
   assert(!actual['front-desk'].includes('pos'), 'sales flag hides Sale');
   assert(actual['front-desk'].includes('debtors'), 'debtors use their own flag');
-  assert(
-    (actual['stock-management'] || []).includes('inv-stock-hub'),
-    'Stock Management hub stays when sales flag off'
-  );
+  assert(!actual['stock-management'], 'sales flag does not restore Stock Management in shop UX');
   assert(actual['front-desk'].includes('call-sheet'), 'Call sheet never flag-gated');
-  assert(!actual.money.includes('promo-codes'), 'promo uses sales flag');
+  assert(!actual.money.includes('offers'), 'offers uses sales flag');
 }
 
 // FEATURE_DISABLED inventory — category gone
@@ -292,8 +281,8 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   assert(!actual['stock-management'], 'stock_management off hides Stock Management');
   assert(!actual.inventory, 'Growth packaging hides advanced Inventory section');
   assert(
-    actual.catalog && actual.catalog.join(',') === 'plans,inv-products',
-    'Growth packaging keeps Plans + Products under Catalog'
+    actual.catalog && actual.catalog.join(',') === CATALOG_OWNER_KEYS.join(','),
+    'Shop UX Catalog = Plans + Products + Suppliers + Purchases'
   );
 }
 
@@ -318,10 +307,16 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   const inventory = cats.find(function (c) {
     return c.key === 'inventory';
   });
-  assert(
-    inventory && inventory.items.length === INV_OWNER_KEYS.length,
-    'full inventory perms show restored inventory nav items'
-  );
+  assert(!inventory, 'shop UX hides advanced Inventory even with full perms');
+  assert(catalog && catalog.items.some(function (i) {
+    return i.key === 'inv-products';
+  }), 'full inventory perms still show Products in Catalog');
+  assert(catalog && catalog.items.some(function (i) {
+    return i.key === 'inv-suppliers';
+  }), 'full inventory perms show Suppliers in Catalog');
+  assert(catalog && catalog.items.some(function (i) {
+    return i.key === 'inv-purchase-orders';
+  }), 'full inventory perms show Purchases in Catalog');
   const admin = cats.find(function (c) {
     return c.key === 'administration';
   });

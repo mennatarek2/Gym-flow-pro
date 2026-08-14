@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="../pos/pos.css">
-<link rel="stylesheet" href="invoices.css">
+<link rel="stylesheet" href="invoices.css?v=4">
 </head>
 <body>
 <div class="app">
@@ -48,16 +48,16 @@
 <div class="content">
   <div class="page-header">
     <div>
-      <h1 class="page-title"><i class="ti ti-file-invoice"></i> Finance — Invoices</h1>
-      <p class="page-subtitle">Sell invoices &amp; credit notes · Buy documents from goods receipts (stock already posted on receive). Credit-note totals stay positive.</p>
+      <h1 class="page-title" data-en="Invoices" data-ar="الفواتير">Invoices</h1>
+      <p class="page-subtitle" data-en="What you sold, and what you bought from suppliers." data-ar="إيه اللي اتباع، وإيه اللي اشتريته من الموردين.">What you sold, and what you bought from suppliers.</p>
     </div>
   </div>
 
   <div class="hub-tabs" id="hubTabs" role="tablist">
-    <button type="button" class="hub-tab" data-tab="sell_membership" role="tab">Sell · Memberships</button>
-    <button type="button" class="hub-tab" data-tab="sell_products" role="tab">Sell · Products</button>
-    <button type="button" class="hub-tab" data-tab="buy" role="tab">Buy · Suppliers</button>
-    <button type="button" class="hub-tab" data-tab="all" role="tab">All</button>
+    <button type="button" class="hub-tab" data-tab="sell_membership" role="tab" data-en="Memberships" data-ar="الاشتراكات">Memberships</button>
+    <button type="button" class="hub-tab" data-tab="sell_products" role="tab" data-en="Products sold" data-ar="منتجات مباعة">Products sold</button>
+    <button type="button" class="hub-tab" data-tab="buy" role="tab" data-en="Suppliers" data-ar="الموردين">Suppliers</button>
+    <button type="button" class="hub-tab" data-tab="all" role="tab" data-en="All" data-ar="الكل">All</button>
   </div>
 
   <div class="inv-layout">
@@ -67,27 +67,29 @@
         <div class="pager" id="pagerTop"></div>
       </div>
       <div class="filters" id="sellFilters">
-        <input type="date" id="fFrom" title="From">
-        <input type="date" id="fTo" title="To">
-        <input id="fMemberId" placeholder="memberId" dir="ltr">
+        <label class="flt"><span>From</span><input type="date" id="fFrom"></label>
+        <label class="flt"><span>To</span><input type="date" id="fTo"></label>
+        <input id="fMemberId" placeholder="Member (optional)" dir="ltr">
         <select id="fStatus">
           <option value="">All statuses</option>
-          <option value="issued">issued</option>
-          <option value="voided">voided</option>
+          <option value="issued">Issued</option>
+          <option value="voided">Voided</option>
         </select>
         <select id="fType">
           <option value="">All types</option>
-          <option value="invoice">invoice</option>
-          <option value="credit_note">credit_note</option>
+          <option value="invoice">Invoice</option>
+          <option value="credit_note">Credit note</option>
         </select>
         <button type="button" class="btn secondary" id="btnFilter">Apply</button>
       </div>
       <div class="filters" id="buyFilters" style="display:none">
-        <input type="date" id="fBuyFrom" title="From">
-        <input type="date" id="fBuyTo" title="To">
-        <input id="fSupplierId" placeholder="supplierId (optional)" dir="ltr">
+        <label class="flt"><span>From</span><input type="date" id="fBuyFrom"></label>
+        <label class="flt"><span>To</span><input type="date" id="fBuyTo"></label>
+        <select id="fSupplierId" aria-label="Supplier">
+          <option value="">All suppliers</option>
+        </select>
         <button type="button" class="btn secondary" id="btnBuyFilter">Apply</button>
-        <a class="btn secondary" href="/dashboard/inventory/suppliers/">Suppliers &amp; statements</a>
+        <a class="btn secondary" href="/dashboard/inventory/suppliers/">Suppliers</a>
       </div>
       <div class="table-wrap">
         <table>
@@ -104,13 +106,10 @@
           </thead>
           <thead id="theadBuy" style="display:none">
             <tr>
-              <th>Doc</th>
+              <th>Date</th>
               <th>Supplier</th>
-              <th>Warehouse</th>
-              <th>Received</th>
               <th>Total</th>
               <th>Status</th>
-              <th>PO</th>
             </tr>
           </thead>
           <tbody id="tbody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
@@ -118,15 +117,19 @@
       </div>
       <div class="pager" id="pagerBottom" style="margin-top:12px"></div>
     </section>
-
-    <section class="card detail-card" id="detailCard">
-      <div class="card-h"><h2>Detail</h2></div>
-      <div id="detailEmpty" class="muted">Select an invoice from the list.</div>
-      <div id="detailBody" style="display:none"></div>
-    </section>
   </div>
 </div>
 </div>
+</div>
+
+<div class="drawer-overlay" id="detailDrawer" hidden>
+  <aside class="drawer" role="dialog" aria-labelledby="detailTitle">
+    <div class="drawer-hdr">
+      <h2 id="detailTitle">Details</h2>
+      <button type="button" class="modal-close" id="btnCloseDetail" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="drawer-body" id="detailBody"></div>
+  </aside>
 </div>
 
 <div class="modal-overlay" id="voidModal">
@@ -173,6 +176,6 @@ if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.dis
 document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
 (async()=>{try{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';}}catch(e){}})();
 </script>
-<script src="invoices-app.js"></script>
+<script src="invoices-app.js?v=4"></script>
 </body>
 </html>

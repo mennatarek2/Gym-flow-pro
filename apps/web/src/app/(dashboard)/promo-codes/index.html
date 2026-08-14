@@ -46,10 +46,18 @@
   <div class="page-header">
     <div>
       <h1 class="page-title"><i class="ti ti-discount-2"></i> Promo codes</h1>
-      <p class="page-subtitle">List needs <code>sales.sell</code>. Create/update/deactivate needs <code>plans.manage</code>.</p>
+      <p class="page-subtitle">Legacy desk — prefer <a href="/dashboard/offers/">Offers &amp; Promotions</a>. List needs <code>sales.sell</code>. Create/update/deactivate needs <code>plans.manage</code>.</p>
     </div>
-    <button type="button" class="btn primary" id="btnNew">New promo</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn secondary" href="/dashboard/offers/">Offers &amp; Promotions</a>
+      <button type="button" class="btn primary" id="btnNew">New promo</button>
+    </div>
   </div>
+
+  <section class="card" style="margin-bottom:12px;padding:12px 14px;border:1px solid rgba(122,204,0,.35);background:rgba(237,252,216,.55)">
+    <strong>Promo codes are now a redemption method on an Offer.</strong>
+    Use <a href="/dashboard/offers/">Offers &amp; Promotions</a> for the full membership + product experience. This page remains for direct code CRUD until the Offers API ships.
+  </section>
 
   <section class="card">
     <div class="filters">

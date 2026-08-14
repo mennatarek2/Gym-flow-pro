@@ -11,13 +11,13 @@ const SHARED_SCRIPTS = [
   '/shared/api-config.js',
   '/shared/api-client.js',
   '/shared/authz.js',
-  '/shared/features.js?v=3',
+  '/shared/features.js?v=5',
   '/shared/i18n.js',
   '/shared/nav.js',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=4',
-  '/shared/shell.js?v=7',
+  '/shared/shell.js?v=8',
 ];
 
 const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1'];
