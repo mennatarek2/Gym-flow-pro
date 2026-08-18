@@ -20,10 +20,10 @@ This is the MEMBER app, not the staff web desk.
 OWN (build these):
 - Activate account with Gym Code + staff-issued one-time Activation Code
 - Session (JWT + refresh), logout
-- Home: greeting, gym context, current membership summary (read-only), quick actions
+- Home: greeting, gym context, current membership summary (read-only), quick actions, live gym occupancy card (GET /api/member/occupancy — see FLUTTER_MEMBER_OCCUPANCY_PROMPT.md)
 - QR check-in: scan the gym’s static QR → send gymCode
 - Notifications: list + mark read
-- Guest invitations: quota, send, history; referral share (read)
+- Invitations: summary, send (name + phone; National ID optional), history
 - Member store (if tenant has inventory feature): browse products, place order, my orders
 - Offers & Promotions (Member App visibility — GET /api/member/offers; see FLUTTER_MEMBER_OFFERS_PROMPT.md)
 - Profile: display name/gym from login + JWT; language & theme settings; logout
@@ -176,36 +176,22 @@ NotificationDto: id, title, titleAr, body, bodyAr, channel ("push"|"whatsapp"), 
 
 Controller resolves the member from JWT (sub fallback). Do not send memberId query.
 
---- C) Guest invitations + referral ---
+--- C) Invitations ---
+GET  /api/invitation/summary
+→ { memberId, membershipId?, planId?, planName?, total, used, remaining, membershipStatus }
+
+GET  /api/invitation/history
+→ InvitationHistoryResponse[] { id, name, phoneNumber, status, createdAtUtc, contactedAtUtc?, convertedAtUtc? }
+  status: new | contacted | interested | not_interested | converted
+
 POST /api/invitation/send
-Body: {
-  "guestName": string,
-  "guestPhoneNumber": string,   // international e.g. +2010...
-  "visitDate": "YYYY-MM-DD"
-}
-→ SendInvitationResponse { invitationId, guestName, visitDate, quotaUsed, quotaRemaining, message, messageAr }
+Body: { "name": string, "phoneNumber": string, "nationalId"?: string|null, "notes"?: string|null }
+→ SendInvitationResponse { invitationId, name, phoneNumber, status, alreadyExisted, quotaTotal, quotaUsed, quotaRemaining, message, messageAr }
+Quota is consumed on create. alreadyExisted true = return existing row, do not spend quota.
+National ID is optional. Do not send visitDate.
 
-GET /api/invitation/history
-→ InvitationHistoryResponse[]
-  { id, guestName, guestPhoneNumber, visitDate, status, sentAtUtc, visitedAtUtc?, convertedAtUtc? }
-
-GET /api/invitation/guest-quota
-→ {
-  memberId, totalGuestInvitations, usedGuestInvitations, remainingGuestInvitations,
-  quotaPeriod,   // "yyyy-MM" Cairo
-  nextResetDate, // DateOnly
-  planId?, planName?
-}
-Note: used counts REDEEMED visits only; pending sends do not consume.
-
-GET /api/invitation/referral-share
-→ {
-  referralCode, shareText, shareTextAr, shareUrlHint,
-  successfulReferralCount, referralTier,
-  familyRewardMultiplier, familyLabelEn, familyLabelAr, familyRulesEn, familyRulesAr
-}
-
-DO NOT call: GET /invitation/pending, POST /invitation/{id}/redeem-visit (desk).
+DO NOT call: GET /invitation/guest-quota, GET /invitation/referral-share,
+GET /invitation/pending, POST /invitation/{id}/redeem-visit (retired).
 
 --- D) Member store (feature-gated: inventory) ---
 Base: /api/member-store
@@ -217,6 +203,11 @@ GET  /api/member-store/products?q=
   { id, categoryId?, categoryName?, sku, name, nameAr?, description?, descriptionAr?,
     brand?, imageUrl?, unitOfMeasure, sellPrice, currency, allowFractionalQty,
     trackStock, availableQty, inStock }
+
+imageUrl is often a RELATIVE path (`/uploads/products-…/file.jpg`), not a full URL.
+Never load it as-is and never prefix API_BASE (that creates `/api/uploads` 404).
+Fix: Frontend/FLUTTER_MEMBER_PRODUCT_PHOTOS_PROMPT.md (resolve to origin without `/api`,
+rewrite localhost, send ngrok-skip-browser-warning on the image GET, BoxFit.contain).
 
 POST /api/member-store/orders
 Body: { "notes"?: string, "lines": [ { "productId": guid, "qty": number } ] }
@@ -280,15 +271,14 @@ Unauthenticated:
 - ActivateAccountScreen: Gym Code + Activation Code → member-activate
 
 Authenticated shell (bottom nav):
-1. Home — greeting, membership summary card (read-only), Check in CTA, Invite CTA, Store (if enabled)
+1. Home — greeting, gym occupancy card (ring + %), membership summary (read-only), Check in CTA, Invite CTA, Store (if enabled)
 2. Check-in — QR scanner
 3. Activity — notifications (+ optional invitation history segment)
 4. Store — products / cart / my orders (hide if inventory flag off / 404 FEATURE_DISABLED)
 5. Profile — name, gym, language, theme, logout
 
 Also:
-- InviteGuestScreen (quota banner + form + history)
-- ReferralShareScreen (share sheet from referral-share payload)
+- InvitationsScreen (summary + Invite a Friend + history)
 - OrderDetailScreen
 
 ═══════════════════════════════════════════════════════════════════
@@ -310,8 +300,8 @@ Status colors: Active green, Expired red, Frozen cyan, Pending amber.
 [ ] Tokens in flutter_secure_storage; silent refresh; logout on refresh fail
 [ ] Identity = JWT sub; never call staff /api/members/{id}/* or /api/memberships/*
 [ ] QR check-in posts { gymCode } from scanned poster; shows message/messageAr
-[ ] Invitations use guestPhoneNumber + visitDate DateOnly; show guest-quota
-[ ] Referral share uses GET /invitation/referral-share
+[ ] Invitations use name + phoneNumber; National ID optional; GET summary for quota
+[ ] No guest-quota, referral-share, or visitDate
 [ ] Notifications list + mark read
 [ ] Member store gated; orders create/list/detail only
 [ ] No Assign / Renew / Freeze / credits / desk check-in UI
@@ -327,7 +317,7 @@ Status colors: Active green, Expired red, Frozen cyan, Pending amber.
 3. Home shell + Profile logout
 4. QR check-in
 5. Notifications
-6. Invitations + guest-quota + referral
+6. Invitations (summary + send + history)
 7. Member store (feature-detect)
 8. Polish: empty/error/shimmer, offline message, deep-link gymCode if QR opens app
 
@@ -342,7 +332,7 @@ Wait for my go-ahead before scaffolding if this prompt is pasted into an AI codi
 |------|------------|------------|
 | Auth | `POST /api/auth/member-activate` + refresh | Login, issue activation code |
 | Check-in | `POST /api/attendance/qr-checkin` | Manual / barcode |
-| Invites | send, history, guest-quota, referral-share | pending, redeem-visit |
+| Invites | send, history, summary | staff list / status PATCH |
 | Store | `/api/member-store/*` | fulfill / reject orders |
 | Membership | Read-only UI from login/JWT/check-in | Assign / Renew / Freeze / Members APIs |
 | Person CRUD | Display only | Create / edit / archive members |

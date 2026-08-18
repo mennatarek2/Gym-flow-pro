@@ -982,7 +982,7 @@
   // ── Guest invite redeem (INV-2) — no GymMember / attendance row ──
   (function initGuestInviteRedeem() {
     const card = document.getElementById('guestInviteCard');
-    if (!card) return;
+    if (!card || card.hidden) return;
 
     if (!canManual) {
       card.innerHTML =

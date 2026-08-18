@@ -298,6 +298,9 @@
     set('gymEmail', s.email || s.Email || '');
     set('gymWebsite', s.website || s.Website || '');
     set('gymAddress', s.address || s.Address || '');
+    var cap = s.gymMaxCapacity;
+    if (cap == null) cap = s.GymMaxCapacity;
+    set('gymMaxCapacity', cap == null || cap === '' ? '' : cap);
     set('gymLogoUrl', s.logoUrl || s.LogoUrl || '');
     set('brandPrimary', s.primaryColor || s.PrimaryColor || '#7ACC00');
     set('brandSecondary', s.secondaryColor || s.SecondaryColor || '#148F8F');
@@ -353,6 +356,12 @@
       email: ((document.getElementById('gymEmail') || {}).value || '').trim() || null,
       website: website || null,
       address: ((document.getElementById('gymAddress') || {}).value || '').trim() || null,
+      gymMaxCapacity: (function () {
+        var raw = ((document.getElementById('gymMaxCapacity') || {}).value || '').trim();
+        if (!raw) return null;
+        var n = parseInt(raw, 10);
+        return Number.isFinite(n) ? n : null;
+      })(),
       logoUrl: ((document.getElementById('gymLogoUrl') || {}).value || '').trim() || null,
       primaryColor: ((document.getElementById('brandPrimary') || {}).value || '').trim() || null,
       secondaryColor: ((document.getElementById('brandSecondary') || {}).value || '').trim() || null,
@@ -392,6 +401,17 @@
     var body = readIdentityBody();
     if (!body.gymName || !body.gymNameAr) {
       toast('Gym name (EN + AR) is required', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Changes';
+      }
+      resetBtns.forEach(function (b) {
+        if (b) b.disabled = false;
+      });
+      return false;
+    }
+    if (body.gymMaxCapacity != null && (body.gymMaxCapacity < 1 || body.gymMaxCapacity > 9999)) {
+      toast('Maximum inside must be between 1 and 9999', 'error');
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Changes';

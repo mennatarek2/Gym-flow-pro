@@ -7,12 +7,13 @@
  * |-----------------|---------------------------------------------------------------|
  * | Overview        | Dashboard                                                     |
  * | Members         | Members, Attendance                                           |
- * | Front desk      | Sale, Member Orders, Debtors, Call sheet                      |
- * | Money           | Shifts, Refunds, Offers & Promotions, Invoices, Z-Report, Reports |
+ * | Front desk      | Sale, Member Orders, Call sheet                                |
+ * | Shifts          | Current Shift, Z-Reports                                  |
+ * | Money           | Offers & Promotions, Invoices, Reports                     |
  * | Catalog         | Plans, Products, Suppliers, Purchases                         |
  * | Stock Management| hidden in shop UX (engines remain)                            |
  * | Inventory       | hidden in shop UX (Overview / Insights / Warehouses)          |
- * | Administration  | Import, Audit, Notifications, Staff, Settings                 |
+ * | Administration  | Import, Audit, Notifications, Staff, Roles, Settings          |
  */
 (function (global) {
   'use strict';
@@ -73,6 +74,14 @@
           access: { kind: 'permission', value: 'members.view' }
         },
         {
+          key: 'invitations',
+          label: 'Invitations',
+          labelAr: 'الدعوات',
+          path: '/dashboard/invitations/',
+          icon: 'ti-user-plus',
+          access: { kind: 'permission', value: 'members.view' }
+        },
+        {
           key: 'attendance',
           label: 'Attendance',
           labelAr: 'الحضور',
@@ -110,15 +119,6 @@
           }
         },
         {
-          key: 'debtors',
-          label: 'Debtors',
-          labelAr: 'المدينون',
-          path: '/dashboard/debtors/',
-          icon: 'ti-cash-off',
-          access: { kind: 'permission', value: 'sales.sell' },
-          featureFlag: 'debtors'
-        },
-        {
           key: 'call-sheet',
           label: 'Call sheet',
           labelAr: 'ورقة المتابعة',
@@ -130,31 +130,34 @@
       ]
     },
     {
-      key: 'money',
-      label: 'Money',
-      labelAr: 'المالية',
+      key: 'shifts',
+      label: 'Shifts',
+      labelAr: 'الورديات',
       items: [
         {
           key: 'shifts',
-          label: 'Shifts',
-          labelAr: 'الورديات',
+          label: 'Current Shift',
+          labelAr: 'الوردية الحالية',
           path: '/dashboard/shifts/',
           icon: 'ti-cash',
           access: { kind: 'permission', value: ['shift.open', 'shift.close'] },
           featureFlag: 'shifts'
         },
         {
-          key: 'refunds',
-          label: 'Refunds',
-          labelAr: 'المرتجعات',
-          path: '/dashboard/refunds/',
-          icon: 'ti-receipt-refund',
-          access: {
-            kind: 'permission',
-            value: ['payments.refund.request', 'payments.refund.approve']
-          },
-          featureFlag: 'refunds'
-        },
+          key: 'z-report',
+          label: 'Z-Reports',
+          labelAr: 'تقارير Z',
+          path: '/dashboard/z-report/',
+          icon: 'ti-report-money',
+          access: { kind: 'permission', value: 'reports.financial.view' }
+        }
+      ]
+    },
+    {
+      key: 'money',
+      label: 'Money',
+      labelAr: 'المالية',
+      items: [
         {
           key: 'offers',
           label: 'Offers & Promotions',
@@ -171,14 +174,6 @@
           path: '/dashboard/invoices/',
           icon: 'ti-file-invoice',
           // Finance hub (PAP AP-2): Sell tabs + Buy GRN docs. Buy also needs inventory.view at API.
-          access: { kind: 'permission', value: 'reports.financial.view' }
-        },
-        {
-          key: 'z-report',
-          label: 'Z-Report',
-          labelAr: 'تقرير Z',
-          path: '/dashboard/z-report/',
-          icon: 'ti-report-money',
           access: { kind: 'permission', value: 'reports.financial.view' }
         },
         {
@@ -322,6 +317,14 @@
           labelAr: 'الموظفون',
           path: '/dashboard/staff/',
           icon: 'ti-user-shield',
+          access: { kind: 'policy', value: 'OwnerOnly' }
+        },
+        {
+          key: 'roles',
+          label: 'Roles',
+          labelAr: 'الأدوار',
+          path: '/dashboard/roles/',
+          icon: 'ti-shield-lock',
           access: { kind: 'policy', value: 'OwnerOnly' }
         },
         {

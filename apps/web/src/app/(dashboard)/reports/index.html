@@ -4,183 +4,205 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>GymFlowPro — Reports</title>
-<meta name="description" content="Snapshot analytics (§16) and live detailed reports (§17).">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="description" content="Understand sales, members, products and staff activity.">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-<link rel="stylesheet" href="reports.css">
+<link rel="stylesheet" href="../pos/pos.css">
+<link rel="stylesheet" href="reports.css?v=ux1">
 </head>
 <body>
 <div class="app">
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
 <div class="sb-hdr"><svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
-<nav class="sb-nav">
-<a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a>
-<a class="sb-item" href="/dashboard/members/"><i class="ti ti-users"></i>Members</a>
-<a class="sb-item" href="/dashboard/memberships/"><i class="ti ti-id-badge"></i>Memberships</a>
-<a class="sb-item" href="/dashboard/plans/"><i class="ti ti-package"></i>Plans</a>
-<a class="sb-item" href="/dashboard/attendance/"><i class="ti ti-door-enter"></i>Attendance</a>
-<a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
-<a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
-<a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
-<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
-<a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
-<a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
-<a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
-<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
-<a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
-<a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
-<a class="sb-item act" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
-<a class="sb-item" href="/dashboard/audit/"><i class="ti ti-list-search"></i>Audit</a>
-<a class="sb-item" href="/dashboard/notifications/"><i class="ti ti-bell"></i>Notifications</a>
-<a class="sb-item" id="navStaff" style="display:none" href="/dashboard/staff/"><i class="ti ti-user-shield"></i>Staff</a>
-<a class="sb-item" href="/dashboard/settings/"><i class="ti ti-settings"></i>Settings</a>
-</nav>
-<div class="sb-ft"><div class="av-sm" id="userAvatar">AO</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">User</div><div class="sb-ft-role" id="userRole">Staff</div></div><button class="sb-logout" id="btnLogout" title="Logout"><i class="ti ti-logout"></i></button></div>
+<nav class="sb-nav"><a class="sb-item" href="/dashboard/"><i class="ti ti-layout-dashboard"></i>Dashboard</a></nav>
+<div class="sb-ft"><div class="av-sm" id="userAvatar">U</div><div class="sb-ft-info"><div class="sb-ft-name" id="userName">User</div><div class="sb-ft-role" id="userRole">Staff</div></div><button class="sb-logout" id="btnLogout"><i class="ti ti-logout"></i></button></div>
 </aside>
 
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span>🏠</span><span class="sep">/</span><span class="current">Reports / التقارير</span></div></div>
-  <div class="tb-right">
-    <div class="date-range">
-      <div class="dr-field"><i class="ti ti-calendar"></i><input type="date" id="dateFrom"></div>
-      <span class="dr-sep">→</span>
-      <div class="dr-field"><i class="ti ti-calendar"></i><input type="date" id="dateTo"></div>
-      <button class="btn-sm btn-primary" id="btnApply"><i class="ti ti-filter"></i>Apply</button>
-    </div>
-    <button class="btn-sm btn-outline" id="btnExport"><i class="ti ti-download"></i>Export CSV</button>
-  </div>
+  <div class="tb-left"><div class="tb-breadcrumb" id="crumb"><span>Money</span><span class="sep">/</span><span class="current">Reports</span></div></div>
+  <div class="tb-right"><div class="gym-name" id="gymName">Gym</div></div>
 </header>
 
 <div class="content">
-  <div class="page-intro">
-    <h1 class="page-h1"><i class="ti ti-chart-bar"></i> Analytics &amp; reports</h1>
-    <p class="page-sub">Snapshots (§16) load once — not polled. Live drill-downs (§17) refresh when you Apply. All-zero = empty state.</p>
-  </div>
-
-  <!-- ══ §16 Analytics snapshots ══ -->
-  <div class="phase-label">Snapshots · as of server snapshot time</div>
-
-  <section class="rpt-section money-sec" id="secOverview">
-    <div class="sec-hdr">
-      <h2><i class="ti ti-layout-dashboard"></i>Overview KPIs</h2>
-      <span class="as-of" id="overviewAsOf">—</span>
-      <span class="perm-badge finance"><i class="ti ti-lock"></i>reports.financial.view</span>
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reports</h1>
+      <p class="page-subtitle" id="pageSub">Understand sales, members, products and staff activity.</p>
     </div>
-    <div class="ov-grid" id="overviewGrid"></div>
-    <div class="blur-overlay" id="blurOverview" style="display:none"><div class="blur-inner"><i class="ti ti-lock"></i><p>Financial permission required</p><span>Trainers see heatmap / status / invitations below</span></div></div>
-  </section>
-
-  <div class="ana-grid">
-    <section class="rpt-section money-sec" id="secRevChart">
-      <div class="sec-hdr"><h2><i class="ti ti-chart-line"></i>Revenue (snapshot)</h2><span class="perm-badge finance"><i class="ti ti-lock"></i>financial</span></div>
-      <div class="card chart-card"><canvas id="chartRevenue" height="220"></canvas><div class="empty-state" id="revChartEmpty" style="display:none">No revenue in snapshot</div></div>
-      <div class="blur-overlay" id="blurRevChart" style="display:none"><div class="blur-inner"><i class="ti ti-lock"></i><p>Financial permission required</p></div></div>
-    </section>
-
-    <section class="rpt-section" id="secStatus">
-      <div class="sec-hdr"><h2><i class="ti ti-chart-donut"></i>Member status</h2></div>
-      <div class="card chart-card"><canvas id="chartStatus" height="220"></canvas><div class="empty-state" id="statusEmpty" style="display:none">No members in snapshot</div></div>
-    </section>
-  </div>
-
-  <section class="rpt-section" id="secHeatmap">
-    <div class="sec-hdr"><h2><i class="ti ti-grid-dots"></i>Attendance heatmap</h2><span class="muted-chip">Mon → Sun · 24h</span></div>
-    <div class="card heatmap-card">
-      <div id="heatmapWrap" class="heatmap-wrap"></div>
-      <div class="empty-state" id="heatmapEmpty" style="display:none">No check-ins in snapshot</div>
-      <div class="hm-legend"><span>Less</span><i class="hm-sw c0"></i><i class="hm-sw c1"></i><i class="hm-sw c2"></i><i class="hm-sw c3"></i><span>More</span></div>
-    </div>
-  </section>
-
-  <div class="ana-grid">
-    <section class="rpt-section" id="secInvites">
-      <div class="sec-hdr"><h2><i class="ti ti-mail-forward"></i>Invitation funnel</h2></div>
-      <div class="card funnel-card" id="inviteFunnelOverall"></div>
-      <div class="invite-split">
-        <div>
-          <div class="invite-split-title">Guest pass</div>
-          <div class="card funnel-card" id="inviteFunnelGuest"></div>
-        </div>
-        <div>
-          <div class="invite-split-title">Referral</div>
-          <div class="card funnel-card" id="inviteFunnelReferral"></div>
+    <div class="hdr-actions">
+      <div class="range-wrap">
+        <button type="button" class="btn secondary" id="btnRange" aria-expanded="false" aria-haspopup="dialog">
+          <i class="ti ti-calendar"></i>
+          <span id="rangeLabel">Date range</span>
+          <i class="ti ti-chevron-down"></i>
+        </button>
+        <div class="range-pop" id="rangePop" hidden role="dialog" aria-label="Date range">
+          <button type="button" class="range-opt" data-preset="last7">Last 7 days</button>
+          <button type="button" class="range-opt" data-preset="last30">Last 30 days</button>
+          <button type="button" class="range-opt" data-preset="thisMonth">This month</button>
+          <div class="range-custom">
+            <label class="flt"><span>From</span><input type="date" id="dateFrom"></label>
+            <label class="flt"><span>To</span><input type="date" id="dateTo"></label>
+            <button type="button" class="btn secondary" id="btnApply">Apply</button>
+          </div>
         </div>
       </div>
-      <div class="card contrib-card" id="inviteContribution"></div>
-    </section>
+      <div id="salesFilters" hidden>
+        <div class="range-wrap">
+          <button type="button" class="btn secondary" id="btnStaff" aria-expanded="false">
+            <span id="staffLabel">Staff</span>
+            <i class="ti ti-chevron-down"></i>
+          </button>
+          <div class="range-pop" id="staffPop" hidden role="dialog" aria-label="Staff"></div>
+        </div>
+        <div class="range-wrap" id="methodWrap">
+          <button type="button" class="btn secondary" id="btnMethod" aria-expanded="false">
+            <span id="methodLabel">Payment</span>
+            <i class="ti ti-chevron-down"></i>
+          </button>
+          <div class="range-pop" id="methodPop" hidden role="dialog" aria-label="Payment method"></div>
+        </div>
+        <div class="range-wrap" id="planWrap" hidden>
+          <button type="button" class="btn secondary" id="btnPlan" aria-expanded="false">
+            <span id="planLabel">Plan</span>
+            <i class="ti ti-chevron-down"></i>
+          </button>
+          <div class="range-pop" id="planPop" hidden role="dialog" aria-label="Plan"></div>
+        </div>
+        <div class="range-wrap" id="productWrap" hidden>
+          <button type="button" class="btn secondary" id="btnProduct" aria-expanded="false">
+            <span id="productLabel">Product</span>
+            <i class="ti ti-chevron-down"></i>
+          </button>
+          <div class="range-pop" id="productPop" hidden role="dialog" aria-label="Product"></div>
+        </div>
+        <div class="range-wrap" id="shiftFilterWrap" hidden>
+          <button type="button" class="btn secondary" id="btnShift" aria-expanded="false">
+            <span id="shiftLabel">Shift</span>
+            <i class="ti ti-chevron-down"></i>
+          </button>
+          <div class="range-pop" id="shiftFilterPop" hidden role="dialog" aria-label="Shift"></div>
+        </div>
+        <div class="range-wrap" id="moreWrap">
+          <button type="button" class="btn secondary" id="btnMore" aria-expanded="false">
+            More Filters
+            <i class="ti ti-chevron-down"></i>
+          </button>
+          <div class="range-pop" id="morePop" hidden role="dialog" aria-label="More filters"></div>
+        </div>
+      </div>
+      <button type="button" class="btn secondary" id="btnExport"><i class="ti ti-download"></i> Export</button>
+    </div>
   </div>
 
-  <!-- ══ §17 Live drill-downs ══ -->
-  <div class="phase-label">Live reports · refresh on Apply</div>
-
-  <!-- S1: Attendance Summary -->
-  <section class="rpt-section" id="secAttendance">
-    <div class="sec-hdr"><h2><i class="ti ti-chart-bar"></i>Attendance summary</h2></div>
-    <div class="card chart-card"><canvas id="chartAttendance" height="260"></canvas><div class="empty-state" id="attEmpty" style="display:none">No attendance in range</div></div>
-    <div class="card" style="margin-top:12px">
-      <table class="tbl"><thead><tr><th>Date</th><th>Check-ins</th><th>Unique Members</th></tr></thead><tbody id="tbAttendance"><tr><td colspan="3" class="tbl-empty"><div class="sk" style="height:14px;width:60%"></div></td></tr></tbody></table>
+  <div id="viewHub">
+    <div class="rpt-empty" id="emptyState" hidden>
+      <div class="empty-icon"><i class="ti ti-chart-bar-off"></i></div>
+      <h2>No reports available yet</h2>
+      <p>There is not enough activity for this period. Try another date range.</p>
+      <button type="button" class="btn secondary" id="btnChangeDate">Change Date</button>
     </div>
-  </section>
+    <div class="rpt-grid" id="cardGrid"></div>
+  </div>
 
-  <!-- S2: Revenue Detail -->
-  <section class="rpt-section money-sec" id="secRevenue">
-    <div class="sec-hdr"><h2><i class="ti ti-currency-dollar"></i>Revenue detail</h2><span class="perm-badge finance"><i class="ti ti-lock"></i>reports.financial.view</span></div>
-    <p class="hint-line">Narrow default range (7 days) — no pagination; keep the window small.</p>
-    <div class="rev-filters">
-      <button class="ftab active" data-m="">All</button>
-      <button class="ftab" data-m="cash">Cash</button>
-      <button class="ftab" data-m="card_paymob">Paymob</button>
-      <button class="ftab" data-m="fawry">Fawry</button>
-      <button class="ftab" data-m="vodafone">Vodafone</button>
-      <button class="ftab" data-m="instapay">Instapay</button>
+  <div id="viewDetail" hidden>
+    <button type="button" class="rpt-back" id="btnBack"><i class="ti ti-arrow-left"></i> Reports</button>
+    <div class="hub-tabs" id="hubTabs" role="tablist">
+      <button type="button" class="hub-tab" data-tab="sales" id="tabSales">Sales</button>
+      <button type="button" class="hub-tab" data-tab="refunds" id="tabRefunds">Refunds</button>
+      <button type="button" class="hub-tab" data-tab="memberships" id="tabMemberships">Memberships</button>
+      <button type="button" class="hub-tab" data-tab="products" id="tabProducts">Products</button>
+      <button type="button" class="hub-tab" data-tab="staff" id="tabStaff">Staff & Shifts</button>
     </div>
-    <div class="card">
-      <table class="tbl"><thead><tr><th>Date</th><th>Member</th><th>Plan</th><th style="text-align:right">Amount (EGP)</th><th>Method</th></tr></thead><tbody id="tbRevenue"></tbody><tfoot id="tfRevenue"></tfoot></table>
-    </div>
-    <div class="blur-overlay" id="blurRevenue" style="display:none"><div class="blur-inner"><i class="ti ti-lock"></i><p>Financial permission required</p><span>Need reports.financial.view</span></div></div>
-  </section>
-
-  <!-- S3: Peak Hours -->
-  <section class="rpt-section" id="secPeak">
-    <div class="sec-hdr"><h2><i class="ti ti-clock-bolt"></i>Peak hours (top 5)</h2></div>
-    <div class="card peak-card" id="peakContent"></div>
-  </section>
-
-  <!-- S4: Member Retention -->
-  <section class="rpt-section money-sec" id="secRetention">
-    <div class="sec-hdr"><h2><i class="ti ti-chart-donut-3"></i>Member retention</h2><span class="perm-badge finance"><i class="ti ti-lock"></i>reports.financial.view</span></div>
-    <div class="ret-grid">
-      <div class="kpi-card ret-kpi"><div class="kpi-ico expired"><i class="ti ti-clock-x"></i></div><div class="kpi-body"><div class="kpi-val" id="retExpired">—</div><div class="kpi-lbl">Expired</div></div></div>
-      <div class="kpi-card ret-kpi"><div class="kpi-ico active"><i class="ti ti-refresh"></i></div><div class="kpi-body"><div class="kpi-val" id="retRenewed">—</div><div class="kpi-lbl">Renewed</div></div></div>
-      <div class="kpi-card ret-kpi gauge-kpi">
-        <div class="semi-gauge" id="retGauge"></div>
-        <div class="kpi-lbl" style="text-align:center;margin-top:4px">Retention Rate</div>
-        <div class="benchmark" id="retBench"></div>
+    <p class="rpt-hint" id="tabHint"></p>
+    <div id="salesBoard" hidden>
+      <div class="sales-kpis" id="salesKpis"></div>
+      <div class="sales-panels">
+        <section class="sales-panel">
+          <h3>Sales by day</h3>
+          <div class="sales-trend" id="salesTrend"></div>
+        </section>
+        <section class="sales-panel">
+          <h3>Breakdown</h3>
+          <div id="salesBreak"></div>
+        </section>
       </div>
     </div>
-    <div class="blur-overlay" id="blurRetention" style="display:none"><div class="blur-inner"><i class="ti ti-lock"></i><p>Financial permission required</p><span>Need reports.financial.view</span></div></div>
-  </section>
+    <div id="refundsBoard" hidden>
+      <div class="sales-kpis" id="refundsKpis"></div>
+    </div>
+    <div id="membershipsBoard" hidden>
+      <div class="sales-kpis" id="membershipsKpis"></div>
+      <div class="sales-panels">
+        <section class="sales-panel">
+          <h3>Breakdown</h3>
+          <div id="membershipsBreak"></div>
+        </section>
+        <section class="sales-panel" id="membershipsPlanPanel">
+          <h3>By Plan</h3>
+          <div id="membershipsByPlan"></div>
+        </section>
+      </div>
+    </div>
+    <div id="productsBoard" hidden>
+      <div class="sales-kpis" id="productsKpis"></div>
+      <section class="sales-panel" id="productsRankPanel">
+        <h3>Top Products</h3>
+        <div class="table-wrap rank-wrap">
+          <table class="rpt-table">
+            <thead><tr><th>Product</th><th>Units</th><th class="amt">Revenue</th></tr></thead>
+            <tbody id="productsRankBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <div id="staffBoard" hidden>
+      <div class="sales-kpis" id="staffKpis"></div>
+    </div>
+    <div class="kpi-row" id="kpiRow"></div>
+    <div class="rpt-toolbar" id="rptToolbar"></div>
+    <div class="rpt-empty rpt-empty-inline" id="detailEmpty" hidden>
+      <div class="empty-icon"><i class="ti ti-chart-bar-off"></i></div>
+      <h2 id="emptyTitle">No sales for this period</h2>
+      <p id="emptyBody">No successful payments in this date range.</p>
+      <div class="empty-actions">
+        <button type="button" class="btn secondary" id="btnChangeDateDetail">Change Date</button>
+        <a class="btn" id="emptyCta" hidden href="/dashboard/pos/">Open Sale</a>
+      </div>
+    </div>
+    <div class="rpt-empty rpt-empty-inline" id="detailError" hidden>
+      <div class="empty-icon"><i class="ti ti-alert-circle"></i></div>
+      <h2>We couldn't load this report.</h2>
+      <p>Try again in a moment.</p>
+      <button type="button" class="btn secondary" id="btnRetry">Try again</button>
+    </div>
+    <div class="table-wrap" id="tableWrap">
+      <table class="rpt-table">
+        <thead id="thead"></thead>
+        <tbody id="tbody"><tr><td class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="pager" id="tablePager" hidden></div>
+    <div class="table-wrap" id="shiftWrap" hidden>
+      <table class="rpt-table">
+        <thead><tr><th>Shift</th><th>Staff</th><th>Opened</th><th>Closed</th><th class="amt">Sales</th><th class="amt">Refunds</th><th>Status</th></tr></thead>
+        <tbody id="shiftBody"></tbody>
+      </table>
+    </div>
+    <div class="table-wrap" id="txWrap" hidden>
+      <table class="rpt-table">
+        <thead><tr><th>Date</th><th>Type</th><th>Invoice</th><th>Staff</th><th>Payment</th><th class="amt">Amount</th></tr></thead>
+        <tbody id="txBody"></tbody>
+      </table>
+    </div>
+    <p class="muted pad" id="truncNote" hidden></p>
+  </div>
 </div>
 </div>
 </div>
 
-<div id="toasts"></div>
-
-<script>
-const API_BASE=window.API_BASE||'https://localhost:5001/api';
-function getH(){const t=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');return{'Content-Type':'application/json',...(t?{Authorization:'Bearer '+t}:{})};}
-async function apiGet(p){const r=await fetch(API_BASE+p,{headers:getH()});if(r.status===401){localStorage.clear();location.href='/auth/login/';return null;}if(!r.ok){const e=await r.json().catch(()=>({}));throw{status:r.status,data:e};}if(r.status===204)return null;return r.json();}
-function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
-const user=getUser();if(!user)location.href='/auth/login/';
-const ini=(user.fullName||'U').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-document.getElementById('userAvatar').textContent=ini;
-document.getElementById('userName').textContent=user.fullName||'User';
-document.getElementById('userRole').textContent=user.role||'Staff';
-if(user.role==='Owner'||user.role==='owner')document.getElementById('navStaff').style.display='flex';
-document.getElementById('btnLogout').addEventListener('click',function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';});
-</script>
-<script src="reports-app.js"></script>
+<div class="toast" id="toast"></div>
+<script src="reports-app.js?v=ux1"></script>
 </body>
 </html>

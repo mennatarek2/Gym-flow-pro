@@ -22,11 +22,9 @@
 <a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
 <a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
 <a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
-<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
 <a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
 <a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
 <a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
-<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
 <a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
 <a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
 <a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
@@ -98,6 +96,11 @@
             </div>
             <div class="fg"><label>Website <span class="opt">(optional)</span></label><input name="website" id="gymWebsite" type="text" inputmode="url" placeholder="https://…" autocomplete="url"></div>
             <div class="fg"><label>Address</label><textarea name="address" id="gymAddress" placeholder="123 Main Street, Cairo, Egypt" rows="2"></textarea></div>
+            <div class="fg">
+              <label>Maximum inside at once <span class="opt">(optional)</span></label>
+              <input name="gymMaxCapacity" id="gymMaxCapacity" type="number" min="1" max="9999" inputmode="numeric" placeholder="300">
+              <div class="hint">Maximum members allowed inside this gym at one time. Occupancy on the dashboard and Member App uses Attendance (checked in today, not checked out).</div>
+            </div>
             <div class="fg"><label>Logo</label>
               <input name="logoUrl" id="gymLogoUrl" type="hidden">
               <div class="logo-upload" id="logoUpload">
@@ -384,6 +387,6 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<script src="/dashboard/settings/settings-app.js?v=27"></script>
+<script src="/dashboard/settings/settings-app.js?v=28"></script>
 </body>
 </html>

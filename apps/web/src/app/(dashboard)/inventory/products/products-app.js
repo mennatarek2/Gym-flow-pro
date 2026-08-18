@@ -51,6 +51,7 @@
   var stockDrawerProductId = null;
   var buyDrawerProductId = null;
   var buySuppliers = [];
+  var productSuppliers = [];
   /** Owner can buy if manage or purchase (receive needs purchase — Owner has both). */
   var canBuy = canManage || canPurchase;
   /** '' | 'low' | 'oos' — from ?alert= on inventory home deep-links */
@@ -65,6 +66,11 @@
     else if (savedView === 'table' || savedView === 'cards') viewMode = savedView;
   } catch (e) { /* ignore */ }
 
+  function t(en, ar) {
+    var I18n = window.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return en;
+  }
   function esc(s) {
     var d = document.createElement('div');
     d.textContent = s == null ? '' : String(s);
@@ -233,6 +239,36 @@
       });
     if (curF) filter.value = curF;
     if (curP) formSel.value = curP;
+  }
+
+  async function loadProductSuppliers() {
+    var r = await Gfp.get(paths.suppliers());
+    productSuppliers = r.ok && Array.isArray(r.data) ? r.data : [];
+  }
+
+  async function fillDefaultSupplierSelect(selectedId) {
+    await loadProductSuppliers();
+    var sel = document.getElementById('pDefaultSupplier');
+    if (!sel) return;
+    var none = t('No default supplier', 'بدون مورد افتراضي');
+    sel.innerHTML = '<option value="">' + esc(none) + '</option>';
+    var seen = {};
+    productSuppliers
+      .slice()
+      .sort(function (a, b) {
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      })
+      .forEach(function (s) {
+        if (s.isActive === false && s.id !== selectedId) return;
+        var label = s.name || '';
+        if (s.isActive === false) label += ' (' + t('inactive', 'غير نشط') + ')';
+        sel.appendChild(new Option(label, s.id));
+        seen[s.id] = true;
+      });
+    if (selectedId && !seen[selectedId]) {
+      sel.appendChild(new Option(t('Unknown supplier', 'مورد غير معروف'), selectedId));
+    }
+    sel.value = selectedId || '';
   }
 
   async function loadCategories() {
@@ -563,8 +599,15 @@
       stockBadgeHtml(p) +
       '</div></div></div>' +
       '<div class="detail-kv">' +
-      '<div class="kv"><div class="k">التصنيف</div><div class="v">' +
+      '<div class="kv"><div class="k">' +
+      esc(t('Category', 'التصنيف')) +
+      '</div><div class="v">' +
       esc(p.categoryName || '—') +
+      '</div></div>' +
+      '<div class="kv"><div class="k">' +
+      esc(t('Default supplier', 'المورد الافتراضي')) +
+      '</div><div class="v">' +
+      esc(p.defaultSupplierName || t('Not set', 'غير محدد')) +
       '</div></div>' +
       '<div class="kv"><div class="k">الوحدة</div><div class="v">' +
       esc(p.unitOfMeasure || 'pcs') +
@@ -829,6 +872,16 @@
     meta.textContent = bits.join('  ·  ');
   }
 
+  function applyDefaultBuySupplier(p) {
+    var sel = document.getElementById('buySupplier');
+    if (!sel || !p || !p.defaultSupplierId) return;
+    if (sel.value === '__new__') return;
+    var match = Array.prototype.some.call(sel.options, function (opt) {
+      return opt.value === p.defaultSupplierId;
+    });
+    if (match) sel.value = p.defaultSupplierId;
+  }
+
   async function openBuyDrawer(id) {
     var p = products.find(function (x) {
       return x.id === id;
@@ -870,6 +923,7 @@
     var actions = document.getElementById('buyActions');
     if (actions) actions.hidden = false;
     await loadBuySuppliers();
+    applyDefaultBuySupplier(p);
     syncBuyNewSupplierField();
     updateBuySupplierMeta();
     updateBuyTotalPreview();
@@ -1529,6 +1583,8 @@
     document.getElementById('pName').value = '';
     document.getElementById('pNameAr').value = '';
     document.getElementById('pCategory').value = '';
+    var ds = document.getElementById('pDefaultSupplier');
+    if (ds) ds.value = '';
     document.getElementById('pBrand').value = '';
     ensureUomOption('pcs');
     document.getElementById('pCurrency').value = 'EGP';
@@ -1607,6 +1663,7 @@
     fillCategorySelects();
     if (!id) {
       resetProductForm();
+      await fillDefaultSupplierSelect(null);
       openModal('productModal');
       var nameEl = document.getElementById('pName');
       if (nameEl) nameEl.focus();
@@ -1618,6 +1675,7 @@
       return;
     }
     fillProductForm(r.data);
+    await fillDefaultSupplierSelect(r.data.defaultSupplierId || null);
     openModal('productModal');
   }
 
@@ -1633,6 +1691,7 @@
     if (!sku || isBrokenSku(sku)) sku = autoSkuFromName(name);
     return {
       categoryId: document.getElementById('pCategory').value || null,
+      defaultSupplierId: document.getElementById('pDefaultSupplier').value || null,
       sku: sku,
       barcode: document.getElementById('pBarcode').value.trim() || null,
       name: name,

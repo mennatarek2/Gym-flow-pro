@@ -93,7 +93,8 @@
           sku: pick(l, ['sku', 'productSku'], ''),
           qty: Number(pick(l, ['qty', 'quantity', 'qtyOrdered'], 0)),
           unitPrice: pick(l, ['unitPrice', 'price', 'sellPrice'], null),
-          lineTotal: pick(l, ['lineTotal', 'total', 'amount'], null)
+          lineTotal: pick(l, ['lineTotal', 'total', 'amount'], null),
+          imageUrl: pick(l, ['imageUrl', 'productImageUrl', 'photoUrl', 'relativeUrl'], null)
         };
       }),
       raw: raw

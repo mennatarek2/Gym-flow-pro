@@ -48,7 +48,8 @@ export type PermissionKey =
   | 'inventory.adjust'
   | 'inventory.purchase'
   | 'inventory.transfer'
-  | 'inventory.transfer'
+  | 'member_orders.view'
+  | 'member_orders.manage'
 
 export interface LoginRequest {
   email: string

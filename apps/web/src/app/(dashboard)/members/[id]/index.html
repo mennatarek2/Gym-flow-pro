@@ -19,6 +19,7 @@
   --t700:#0A4D4D;--t600:#0D6B6B;--t500:#148F8F;--t400:#3DB5B5;
   --suc500:#22C55E;--suc100:#DCFCE7;--suctxt:#166534;
   --dng500:#EF4444;--dng100:#FEE2E2;
+  --wrn100:#FEF3C7;--wrn500:#F59E0B;--wrn700:#92400E;
   --inf500:#3B82F6;--inf100:#DBEAFE;
   --frz500:#22D3EE;--frz100:#CFFAFE;
   --lbg:#FAFAFA;--ls1:#FFF;--ls2:#F5F5F5;--ls3:#EBEBEB;
@@ -85,8 +86,9 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .btn-action.outline:hover{border-color:var(--l500);color:var(--l600)}
 .btn-action i{font-size:16px}
 </style>
-<link rel="stylesheet" href="member-detail.css?v=barcode1">
-<link rel="stylesheet" href="../member-modals.css">
+<link rel="stylesheet" href="member-detail.css?v=ms-cancel1">
+<link rel="stylesheet" href="../member-modals.css?v=assign-pay2">
+<link rel="stylesheet" href="/shared/refund-action.css?v=2">
 </head>
 <body>
 <div class="app">
@@ -106,11 +108,9 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
       <a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
 <a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
 <a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
-<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
 <a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
 <a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
 <a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
-<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
 <a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
 <a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
       <a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
@@ -229,11 +229,36 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 
               <div class="p-divider"></div>
 
-              <!-- Invitation quota -->
+              <!-- Invitation remaining -->
               <div class="quota-chip">
                 <i class="ti ti-user-plus"></i>
-                <span class="q-label">Invitation Quota</span>
+                <span class="q-label">Invitations left</span>
                 <span class="q-num" id="profileQuota">0</span>
+              </div>
+
+              <!-- Sale outstanding (buyer = this GymMember; not membership owner) -->
+              <div class="fin-360" id="fin360" hidden>
+                <div class="fin-360-hdr">
+                  <i class="ti ti-receipt"></i>
+                  <span data-en="Financial" data-ar="المالية">Financial</span>
+                </div>
+                <div class="fin-360-row">
+                  <span class="fin-360-lbl" data-en="Outstanding" data-ar="المستحق">Outstanding</span>
+                  <strong class="fin-360-val" id="fin360Outstanding">—</strong>
+                </div>
+                <button type="button" class="btn-ms primary fin-360-collect" id="btnCollectPayment" hidden>
+                  <i class="ti ti-cash"></i>
+                  <span data-en="Collect Payment" data-ar="تحصيل دفعة">Collect Payment</span>
+                </button>
+                <a class="fin-360-link" id="fin360Invoices" href="/dashboard/invoices/">
+                  <span data-en="View invoices" data-ar="عرض الفواتير">View invoices</span>
+                  <i class="ti ti-chevron-right"></i>
+                </a>
+                <div class="fin-360-row" id="fin360RefundRow" hidden>
+                  <span class="fin-360-lbl" data-en="Refund history" data-ar="سجل الاسترداد">Refund history</span>
+                  <strong class="fin-360-val fin-360-val-sm" id="fin360Refunds">—</strong>
+                </div>
+                <ul class="fin-360-hist" id="fin360RefundList" hidden></ul>
               </div>
 
               <!-- Member App activation -->
@@ -283,6 +308,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
               <!-- Tab bar -->
               <div class="tab-bar">
                 <button class="tab-btn act" data-tab="tabMs"><i class="ti ti-id-badge"></i> Membership</button>
+                <button class="tab-btn" data-tab="tabInv"><i class="ti ti-user-plus"></i> Invitations</button>
                 <button class="tab-btn" data-tab="tabAtt"><i class="ti ti-door-enter"></i> Attendance</button>
                 <button class="tab-btn" data-tab="tabOrders"><i class="ti ti-shopping-bag"></i> Orders</button>
                 <button class="tab-btn" data-tab="tabHist"><i class="ti ti-history"></i> History</button>
@@ -298,6 +324,44 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                     <i class="ti ti-clock"></i> Recent attendance <span style="font-weight:500;color:var(--ltt,#8C8C8C)">(last 5)</span>
                   </div>
                   <div id="recentAttList"></div>
+                </div>
+              </div>
+
+              <!-- TAB: Invitations -->
+              <div class="tab-pane" id="tabInv">
+                <div class="inv360-kpis" id="inv360Kpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Total</span><strong id="inv360Total" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">New</span><strong id="inv360New" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Contacted</span><strong id="inv360Contacted" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Interested</span><strong id="inv360Interested" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Converted</span><strong id="inv360Converted" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                </div>
+                <form id="inv360Form" style="background:var(--ls2);border-radius:12px;padding:14px;margin-bottom:14px">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:10px">Invite a friend for this member</div>
+                  <p id="inv360QuotaHint" style="font-size:12px;color:var(--ltt);margin:0 0 10px">Quota loads with the list.</p>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                    <input id="inv360Name" type="text" maxlength="200" placeholder="Friend’s name" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                    <input id="inv360Phone" type="tel" maxlength="20" placeholder="Phone" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                    <input id="inv360Nid" type="text" maxlength="14" placeholder="National ID (optional)" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                    <input id="inv360Notes" type="text" maxlength="1000" placeholder="Notes (optional)" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                  </div>
+                  <button type="submit" class="btn-action primary" id="btnInv360Create" style="margin-top:10px"><i class="ti ti-user-plus"></i> Create invitation</button>
+                </form>
+                <div style="overflow-x:auto">
+                  <table class="att-tbl">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="inv360Tbody"></tbody>
+                  </table>
+                </div>
+                <div class="no-data" id="inv360Empty" style="display:none">
+                  <i class="ti ti-user-plus"></i>
+                  <p>No invitations yet</p>
                 </div>
               </div>
 
@@ -418,6 +482,27 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('modalDeactivate')">Cancel</button>
       <button class="btn-confirm danger" id="btnConfirmDeactivate"><i class="ti ti-trash"></i> Deactivate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel membership (not a refund, not archive) -->
+<div class="modal-overlay" id="modalCancelMs">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="ti ti-ban" style="color:var(--dng500)"></i> Cancel membership?</div>
+      <button class="modal-close"><i class="ti ti-x"></i></button>
+    </div>
+    <p style="font-size:13px;color:var(--lts);line-height:1.5;margin-bottom:12px">
+      <strong id="cancelMsPlan">This plan</strong> stops today. Check-in and invitations close. The plan stays in history.
+    </p>
+    <div class="ms-note warn" style="margin-bottom:16px">
+      <strong>Not a refund.</strong> Cash already taken stays with the gym. Remaining on this plan will not be collected. Refund the sale separately if they should get money back.
+    </div>
+    <div class="mdl-error-banner" id="cancelMsError"><i class="ti ti-alert-circle"></i><span class="error-text"></span></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modalCancelMs')">Keep plan</button>
+      <button class="btn-confirm danger" id="btnConfirmCancelMs"><i class="ti ti-ban"></i> Cancel membership</button>
     </div>
   </div>
 </div>
@@ -544,7 +629,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
       </div>
 
       <!-- Payment Method -->
-      <div class="form-section">
+      <div class="form-section" hidden>
         <div class="section-hdr">
           <div class="section-title"><i class="ti ti-gift"></i> Referral (optional)</div>
         </div>
@@ -584,6 +669,12 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
           </label>
         </div>
 
+        <div class="mdl-form-group" id="assignAmountWrap" hidden>
+          <label class="mdl-label">Amount paid (EGP)</label>
+          <input type="number" class="mdl-input" id="assignAmountPaid" min="0" step="0.01">
+          <div class="assign-due-hint" id="assignDueHint"></div>
+        </div>
+
         <div class="payment-note" id="assignPaymentNote"></div>
       </div>
     </div>
@@ -618,6 +709,52 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('modalNotify')">Cancel</button>
       <button class="btn-confirm primary" id="btnSendNotif"><i class="ti ti-send"></i> Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Collect Payment — POST /api/sales/{id}/payments against one outstanding sale -->
+<div class="modal-overlay drawer-overlay" id="collectPaymentDrawer">
+  <div class="drawer-panel">
+    <div class="mdl-hdr">
+      <div class="mdl-title-wrap">
+        <div class="mdl-title"><i class="ti ti-cash" style="color:var(--l500)"></i> Collect Payment</div>
+        <div class="mdl-subtitle">تحصيل دفعة</div>
+      </div>
+      <button type="button" class="mdl-close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mdl-body">
+      <div class="mdl-error-banner" id="collectErrorBanner">
+        <i class="ti ti-alert-circle"></i><span class="error-text"></span>
+      </div>
+      <div class="mdl-form-group">
+        <label class="mdl-label" data-en="Outstanding sale" data-ar="البيع المستحق">Outstanding sale</label>
+        <div class="collect-hint" id="collectSaleHint" style="margin-bottom:8px">Select one sale. Pay the rest on the next collect.</div>
+        <div id="collectSaleChoices"></div>
+      </div>
+      <div class="mdl-form-group">
+        <label class="mdl-label" data-en="Amount due (EGP)" data-ar="المبلغ المستحق">Amount due (EGP)</label>
+        <input type="number" class="mdl-input" id="collectAmount" min="0.01" step="0.01">
+        <div class="collect-hint" id="collectAmountHint"></div>
+      </div>
+      <div class="mdl-form-group">
+        <label class="mdl-label" data-en="Method" data-ar="طريقة الدفع">Method</label>
+        <select class="mdl-input" id="collectMethod">
+          <option value="cash">Cash</option>
+          <option value="card_paymob">Card</option>
+          <option value="instapay">InstaPay</option>
+          <option value="fawry">Fawry</option>
+          <option value="vodafone">Vodafone Cash</option>
+        </select>
+        <div class="collect-hint" id="collectMethodHint">Cash requires an open shift.</div>
+      </div>
+    </div>
+    <div class="mdl-footer">
+      <button type="button" class="mdl-btn ghost" onclick="closeOverlay('collectPaymentDrawer')">Cancel</button>
+      <button type="button" class="mdl-btn primary" id="btnTakePayment">
+        <i class="ti ti-check"></i>
+        <span data-en="Take payment" data-ar="تسجيل الدفعة">Take payment</span>
+      </button>
     </div>
   </div>
 </div>
@@ -726,8 +863,9 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<script src="/shared/refund-action.js?v=2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-<script src="member-detail.js?v=barcode2"></script>
-<script src="../member-modals.js"></script>
+<script src="member-detail.js?v=ms-cancel1"></script>
+<script src="../member-modals.js?v=assign-pay1"></script>
 </body>
 </html>

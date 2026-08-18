@@ -62,11 +62,25 @@
   const canVoid = perms.has('payments.refund.approve') || /Owner/i.test(role);
   const canResend = perms.has('sales.sell') || /Owner|Manager|Receptionist/i.test(role);
   const canReceipt = canResend;
+  const canRefundRequest =
+    perms.has('payments.refund.request') || /Owner|Manager/i.test(role);
+
+  function refundsFeatureOn() {
+    const F = window.GfpFeatures;
+    if (!F || typeof F.isModuleAvailable !== 'function') return true;
+    const reg = F.readCache && F.readCache();
+    return F.isModuleAvailable('refunds', reg);
+  }
 
   const params = new URLSearchParams(location.search);
   let activeTab = params.get('tab') || 'sell_membership';
   if (!TABS[activeTab]) activeTab = 'sell_membership';
   if (params.get('grnId')) activeTab = 'buy';
+  const qMember = params.get('memberId');
+  if (qMember) {
+    const f = document.getElementById('fMemberId');
+    if (f) f.value = qMember;
+  }
 
   let page = 1;
   let selectedId = null;
@@ -75,6 +89,8 @@
   let buyRows = [];
   let voidTargetId = null;
   let receiptInvoiceId = null;
+  let receiptFormat = 'thermal';
+  let pendingInvoiceId = params.get('invoiceId') || null;
   let pendingGrnId = params.get('grnId') || params.get('id') || null;
   let productById = {};
   let productsLoaded = false;
@@ -730,7 +746,8 @@
     const actions = [];
     if (canReceipt && inv.status === 'issued') {
       actions.push(
-        '<button type="button" class="btn secondary" id="btnReceipt"><i class="ti ti-printer"></i> 80mm receipt</button>',
+        '<button type="button" class="btn primary" id="btnPrintA4"><i class="ti ti-printer"></i> Print invoice</button>',
+        '<button type="button" class="btn secondary" id="btnReceipt"><i class="ti ti-receipt"></i> 80mm receipt</button>',
       );
     }
     if (canResend && inv.status === 'issued') {
@@ -741,6 +758,17 @@
     if (canVoid && inv.status === 'issued') {
       actions.push(
         '<button type="button" class="btn danger" id="btnVoid"><i class="ti ti-ban"></i> Void</button>',
+      );
+    }
+    if (
+      inv.saleId &&
+      inv.type !== 'credit_note' &&
+      inv.status === 'issued' &&
+      refundsFeatureOn() &&
+      (window.GfpRefundAction ? window.GfpRefundAction.canRequest() : canRefundRequest)
+    ) {
+      actions.push(
+        '<button type="button" class="btn primary" id="btnRefundSale"><i class="ti ti-receipt-refund"></i> Refund</button>',
       );
     }
 
@@ -800,7 +828,9 @@
     openDetailDrawer(inv.type === 'credit_note' ? 'Credit note' : 'Invoice');
 
     const btnReceipt = document.getElementById('btnReceipt');
-    if (btnReceipt) btnReceipt.onclick = () => openReceiptModal(inv.id);
+    if (btnReceipt) btnReceipt.onclick = () => openReceiptModal(inv.id, 'thermal');
+    const btnPrintA4 = document.getElementById('btnPrintA4');
+    if (btnPrintA4) btnPrintA4.onclick = () => openReceiptModal(inv.id, 'a4');
     const btnResend = document.getElementById('btnResend');
     if (btnResend) btnResend.onclick = () => resendInvoice(inv.id);
     const btnVoid = document.getElementById('btnVoid');
@@ -811,6 +841,32 @@
         document.getElementById('voidModal').classList.add('show');
       };
     }
+    const btnRefund = document.getElementById('btnRefundSale');
+    if (btnRefund) {
+      btnRefund.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openSaleRefund(inv);
+      };
+    }
+  }
+
+  function openSaleRefund(inv) {
+    if (!inv || !inv.saleId) {
+      toast('This invoice is not linked to a sale.', 'err');
+      return;
+    }
+    if (!window.GfpRefundAction || typeof window.GfpRefundAction.open !== 'function') {
+      toast('Refund is still loading. Refresh the page.', 'err');
+      return;
+    }
+    window.GfpRefundAction.open({
+      saleId: inv.saleId,
+      saleTotal: inv.total,
+      memberName: inv.memberNameSnapshot || '',
+      invoiceNumber: inv.invoiceNumber || '',
+      lines: Array.isArray(inv.lines) ? inv.lines : [],
+    });
   }
 
   async function resendInvoice(id) {
@@ -845,27 +901,31 @@
     await selectInvoice(id);
   };
 
-  function openReceiptModal(id) {
+  async function openReceiptModal(id, format) {
     receiptInvoiceId = id;
+    receiptFormat = format === 'a4' ? 'a4' : 'thermal';
+    var isA4 = receiptFormat === 'a4';
+    var box = document.getElementById('printBox');
+    if (box) box.classList.toggle('is-a4', isA4);
+    document.getElementById('printModalTitle').textContent = isA4 ? 'Print invoice' : '80mm receipt';
+    document.getElementById('printModalHint').textContent = isA4
+      ? 'A4 invoice with this gym’s name, logo, and brand color.'
+      : 'Compact receipt for the 80mm printer. Same invoice number and totals.';
     document.getElementById('receiptPaymentId').value = '';
     document.getElementById('receiptFrame').srcdoc =
-      '<p style="padding:16px;font-family:sans-serif;color:#666">Click Load to fetch receipt HTML.</p>';
+      '<p style="padding:16px;font-family:sans-serif;color:#666">Loading…</p>';
     document.getElementById('printModal').classList.add('show');
+    await loadReceiptHtml();
   }
 
-  document.getElementById('btnPrintCancel').onclick = () => {
-    document.getElementById('printModal').classList.remove('show');
-    receiptInvoiceId = null;
-  };
-
-  document.getElementById('btnLoadReceipt').onclick = async () => {
+  async function loadReceiptHtml() {
     if (!receiptInvoiceId) return;
     const paymentId = document.getElementById('receiptPaymentId').value.trim();
-    let path = '/invoices/' + receiptInvoiceId + '/receipt-html';
-    if (paymentId) path += '?paymentId=' + encodeURIComponent(paymentId);
+    let path = '/invoices/' + receiptInvoiceId + '/receipt-html?format=' + encodeURIComponent(receiptFormat);
+    if (paymentId) path += '&paymentId=' + encodeURIComponent(paymentId);
     const res = await api('GET', path, undefined, { acceptHtml: true });
     if (!res.ok) {
-      let msg = 'Failed to load receipt (' + res.status + ')';
+      let msg = 'Failed to load invoice (' + res.status + ')';
       try {
         const parsed = JSON.parse(res.text || '{}');
         msg = problemMessage(parsed, res.status);
@@ -874,6 +934,11 @@
       return;
     }
     document.getElementById('receiptFrame').srcdoc = res.text || '';
+  }
+
+  document.getElementById('btnPrintCancel').onclick = () => {
+    document.getElementById('printModal').classList.remove('show');
+    receiptInvoiceId = null;
   };
 
   document.getElementById('btnPrintReceipt').onclick = () => {
@@ -882,7 +947,7 @@
       frame.contentWindow.focus();
       frame.contentWindow.print();
     } catch (e) {
-      toast('Print failed — load the receipt first.', 'err');
+      toast('Print failed — wait for the invoice to load.', 'err');
     }
   };
 
@@ -903,6 +968,16 @@
       if (e.target === detailDrawer) closeDetailDrawer();
     });
   }
+  const detailBody = document.getElementById('detailBody');
+  if (detailBody) {
+    detailBody.addEventListener('click', function (e) {
+      const btn = e.target.closest ? e.target.closest('#btnRefundSale') : null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openSaleRefund(selectedInvoice);
+    });
+  }
 
   document.querySelectorAll('.hub-tab').forEach((btn) => {
     btn.onclick = () => {
@@ -920,7 +995,15 @@
     };
   });
 
-  loadList().catch((err) => {
+  loadList()
+    .then(async () => {
+      if (pendingInvoiceId) {
+        const id = pendingInvoiceId;
+        pendingInvoiceId = null;
+        await selectInvoice(id);
+      }
+    })
+    .catch((err) => {
     document.getElementById('tbody').innerHTML =
       '<tr><td colspan="7" class="muted">' +
       esc(err && err.message ? err.message : 'Failed to load') +

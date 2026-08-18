@@ -9,8 +9,10 @@
  *   GET /analytics/members-status    members.view
  *   GET /analytics/revenue           reports.financial.view (monthly trend)
  *   GET /attendance/today            members.view
+ *   GET /attendance/occupancy        members.view (open visits vs gym_max_capacity)
  *   GET /reports/attendance-summary  members.view
- *   GET /debtors/summary             reports.financial.view
+ *   GET /debtors/summary             reports.financial.view (outstanding total; not a Debtors module)
+ *   GET /debtors?page=1&pageSize=5   sales.sell (unpaid-sale buyers → Member 360)
  *   GET /call-sheet/expiring         sales.sell  (ingest: 1 row per membershipId)
  *   GET /inventory/reports/summary   inventory.view
  *   GET /reports/z/{date}            reports.financial.view (optional)
@@ -27,6 +29,7 @@
     overview: null,
     membersStatus: null,
     checkinsToday: null,
+    occupancy: null,
     attendanceWeek: null,
     debtorsSummary: null,
     debtorsPreview: null,
@@ -378,6 +381,12 @@
     state.checkinsToday = { count: unwrapList(r.data).length };
   }
 
+  async function loadOccupancy() {
+    if (!canMembers()) return;
+    var r = await apiGet('/attendance/occupancy');
+    state.occupancy = r.ok && r.data ? r.data : { __err: true };
+  }
+
   async function loadAttendanceWeek() {
     if (!canMembers()) return;
     var to = new Date();
@@ -393,6 +402,10 @@
     if (canFinance()) {
       var s = await apiGetCached('debtors-summary', '/debtors/summary');
       state.debtorsSummary = s.ok ? s.data : { __err: true };
+    }
+    if (canSales()) {
+      var p = await apiGetCached('outstanding-preview', '/debtors?page=1&pageSize=5');
+      state.debtorsPreview = p.ok ? p.data : { __err: true };
     }
   }
 
@@ -502,14 +515,6 @@
   function monthRevenueValue() {
     if (state.overview && !state.overview.__err && state.overview.revenueThisMonth != null)
       return Number(state.overview.revenueThisMonth);
-    return null;
-  }
-
-  function debtorsCount() {
-    if (state.debtorsSummary && !state.debtorsSummary.__err)
-      return Number(state.debtorsSummary.debtorCount || 0);
-    if (state.debtorsPreview && !state.debtorsPreview.__err)
-      return Number(state.debtorsPreview.totalCount || 0);
     return null;
   }
 
@@ -627,7 +632,7 @@
         ar: 'تحصيل',
         icon: 'ti-cash',
         accent: 'qa-collect',
-        href: '/dashboard/debtors/'
+        href: '/dashboard/members/'
       }
     ];
   }
@@ -1119,6 +1124,136 @@
     paintAttendanceChart();
   }
 
+  function occupancyTone(max, inside, gymActive) {
+    if (gymActive === false) return 'inactive';
+    if (max == null || max === '') return 'unset';
+    var n = Number(inside);
+    if (!Number.isFinite(n)) return 'nodata';
+    if (n === 0) return 'empty';
+    var pct = (n / Number(max)) * 100;
+    if (n > Number(max)) return 'over';
+    if (pct >= 100) return 'full';
+    if (pct >= 80) return 'busy';
+    return 'available';
+  }
+
+  function occupancyCopy(tone) {
+    if (tone === 'inactive' || tone === 'nodata')
+      return { cls: 'mute', title: t('Occupancy temporarily unavailable', 'الإشغال غير متاح مؤقتاً') };
+    if (tone === 'unset') return { cls: 'mute', title: t('Capacity not configured', 'السعة غير مضبوطة') };
+    if (tone === 'empty') return { cls: 'ok', title: t('Gym is Empty', 'الجيم فاضي') };
+    if (tone === 'available') return { cls: 'ok', title: t('Gym is Available', 'الجيم متاح') };
+    if (tone === 'busy') return { cls: 'busy', title: t('Gym is Getting Busy', 'الجيم بيزحم') };
+    if (tone === 'full') return { cls: 'full', title: t('Gym is Full', 'الجيم ممتلئ') };
+    return { cls: 'over', title: t('Capacity Exceeded', 'السعة اتجاوزت') };
+  }
+
+  function occupancyRing(cls, pct) {
+    var C = 301.593;
+    var shown = pct == null ? 0 : Math.max(0, Math.min(100, pct));
+    var offset = C - (shown / 100) * C;
+    var center =
+      pct == null
+        ? '<div class="occ-pct">—</div><div class="occ-pct-lbl">' + esc(t('No data', 'لا بيانات')) + '</div>'
+        : '<div class="occ-pct">' + pct + '<small>%</small></div><div class="occ-pct-lbl">' + esc(t('Occupied', 'مشغول')) + '</div>';
+    return (
+      '<div class="occ-gauge ' +
+      cls +
+      '"><svg viewBox="0 0 120 120" aria-hidden="true">' +
+      '<circle class="track" cx="60" cy="60" r="48"></circle>' +
+      '<circle class="fill" cx="60" cy="60" r="48" style="stroke-dashoffset:' +
+      offset +
+      '"></circle></svg>' +
+      '<div class="occ-center">' +
+      center +
+      '</div></div>'
+    );
+  }
+
+  function renderOccupancy(el) {
+    if (!el) return;
+    if (!canMembers()) {
+      el.innerHTML = '';
+      return;
+    }
+    if (!state.occupancy || state.occupancy.__err) {
+      el.innerHTML =
+        '<div class="occ-row">' +
+        occupancyRing('mute', null) +
+        '<div class="occ-copy"><div class="occ-status"><span class="occ-dot mute"></span><strong>' +
+        esc(t('Occupancy temporarily unavailable', 'الإشغال غير متاح مؤقتاً')) +
+        '</strong></div>' +
+        '<p class="dash-muted">' +
+        esc(t('Attendance did not load. Do not invent a percentage.', 'الحضور ما تحملش. منغير أرقام وهمية.')) +
+        '</p></div></div>';
+      return;
+    }
+    var d = state.occupancy;
+    var max = d.maxCapacity != null ? d.maxCapacity : d.MaxCapacity;
+    var inside = d.currentlyInside != null ? d.currentlyInside : d.CurrentlyInside;
+    var avail = d.available != null ? d.available : d.Available;
+    var pct = d.occupancyPercent != null ? d.occupancyPercent : d.OccupancyPercent;
+    var gymActive = d.gymActive != null ? d.gymActive : d.GymActive;
+    var gymName = d.gymName || d.GymName || '';
+    var tone = occupancyTone(max, inside, gymActive);
+    var copy = occupancyCopy(tone);
+    var gCls = copy.cls === 'ok' ? 'ok' : copy.cls;
+    var barCls = tone === 'busy' ? 'busy' : tone === 'full' || tone === 'over' ? tone : '';
+    var width = pct == null ? 0 : Math.min(100, Number(pct));
+
+    if (tone === 'unset') {
+      el.innerHTML =
+        '<div class="occ-row">' +
+        occupancyRing('mute', null) +
+        '<div class="occ-copy"><div class="occ-status"><span class="occ-dot mute"></span><strong>' +
+        esc(copy.title) +
+        '</strong></div>' +
+        '<p class="dash-muted">' +
+        esc(t('Set the maximum people inside so the desk and the Member App can show how full you are.', 'حدد أقصى عدد جوه عشان الديسك والتطبيق يبينوا الزحمة.')) +
+        '</p>' +
+        linkRow('/dashboard/settings/', t('Configure capacity', 'ضبط السعة')) +
+        '</div></div>';
+      return;
+    }
+    if (tone === 'inactive' || tone === 'nodata') {
+      el.innerHTML =
+        '<div class="occ-row">' +
+        occupancyRing('mute', null) +
+        '<div class="occ-copy"><div class="occ-status"><span class="occ-dot mute"></span><strong>' +
+        esc(copy.title) +
+        '</strong></div></div></div>';
+      return;
+    }
+
+    var meta =
+      tone === 'over'
+        ? t('Over by', 'زيادة') + ' ' + (Number(inside) - Number(max))
+        : avail + ' ' + t('spots available', 'أماكن فاضية');
+    el.innerHTML =
+      '<div class="occ-row">' +
+      occupancyRing(gCls, Number(pct)) +
+      '<div class="occ-copy"><div class="occ-status"><span class="occ-dot ' +
+      gCls +
+      '"></span><strong>' +
+      esc(copy.title) +
+      '</strong></div>' +
+      '<p class="dash-muted">' +
+      esc(String(inside)) +
+      ' / ' +
+      esc(String(max)) +
+      ' ' +
+      esc(t('currently inside', 'جوه دلوقتي')) +
+      (gymName ? ' · ' + esc(gymName) : '') +
+      '<br>' +
+      esc(String(meta)) +
+      '</p>' +
+      '<div class="occ-bar ' +
+      barCls +
+      '"><i style="width:' +
+      width +
+      '%"></i></div></div></div>';
+  }
+
   async function paintAttendanceChart() {
     var host = global.document.getElementById('dashAttChartHost');
     if (!host) return;
@@ -1196,6 +1331,32 @@
     var dout = debtorsOutstanding();
     var ref = refundsToday();
     var showOutstanding = dout != null && dout > 0;
+    var preview =
+      state.debtorsPreview && !state.debtorsPreview.__err
+        ? state.debtorsPreview.items || []
+        : [];
+    var outstandingList = '';
+    if (showOutstanding && preview.length) {
+      outstandingList =
+        '<ul class="dash-list" style="margin-top:10px">' +
+        preview
+          .slice(0, 5)
+          .map(function (d) {
+            var id = d.memberId || '';
+            var name = d.fullName || t('Member', 'عضو');
+            return (
+              '<li><a class="dash-list-main" href="/dashboard/members/' +
+              encodeURIComponent(id) +
+              '/">' +
+              esc(name) +
+              '</a><span class="dash-list-meta">' +
+              esc(money(d.totalDue)) +
+              '</span></li>'
+            );
+          })
+          .join('') +
+        '</ul>';
+    }
 
     // Prefer today's revenue; fall back to month with clear label (no silent double of Today strip)
     var revLabel =
@@ -1224,6 +1385,7 @@
           '</strong></div>'
         : '') +
       '</div>' +
+      outstandingList +
       '<div class="dash-chart-hdr">' +
       '<span>' +
       esc(t('Revenue trend', 'اتجاه الإيراد')) +
@@ -1434,70 +1596,6 @@
       linkRow('/dashboard/member-orders/', t('Open orders', 'فتح الطلبات'));
   }
 
-  // ── Debtors summary ────────────────────────────────────────────
-  function renderDebtors(el) {
-    if (!el) return;
-    if (!canFinance() && !canSales()) {
-      el.innerHTML = '';
-      return;
-    }
-    if (
-      (canFinance() && state.debtorsSummary && state.debtorsSummary.__err) ||
-      (!canFinance() && state.debtorsPreview && state.debtorsPreview.__err)
-    ) {
-      el.innerHTML = errBox(null, 'debtors');
-      return;
-    }
-    var count = debtorsCount();
-    var outstanding = debtorsOutstanding();
-    var preview =
-      state.debtorsPreview && !state.debtorsPreview.__err ? state.debtorsPreview.items || [] : [];
-
-    if (!count) {
-      el.innerHTML =
-        '<p class="dash-muted">' +
-        esc(t('No outstanding balances.', 'مفيش أرصدة مستحقة.')) +
-        '</p>' +
-        linkRow('/dashboard/debtors/', t('View debtors', 'عرض المدينين'));
-      return;
-    }
-
-    var list = '';
-    if (preview.length) {
-      list =
-        '<ul class="dash-list">' +
-        preview
-          .slice(0, 3)
-          .map(function (d) {
-            return (
-              '<li><span class="dash-list-main">' +
-              esc(d.fullName || t('Member', 'عضو')) +
-              '</span><span class="dash-list-meta">' +
-              esc(money(d.totalDue)) +
-              '</span></li>'
-            );
-          })
-          .join('') +
-        '</ul>';
-    }
-
-    el.innerHTML =
-      '<div class="dash-kpi-row compact">' +
-      '<div class="dash-kpi"><span class="lbl">' +
-      esc(t('Debtors', 'المدينون')) +
-      '</span><strong>' +
-      esc(num(count)) +
-      '</strong></div>' +
-      '<div class="dash-kpi"><span class="lbl">' +
-      esc(t('Outstanding', 'المستحق')) +
-      '</span><strong>' +
-      esc(outstanding != null ? money(outstanding) : '—') +
-      '</strong></div>' +
-      '</div>' +
-      list +
-      linkRow('/dashboard/debtors/', t('View debtors', 'عرض المدينين'));
-  }
-
   // ── Inventory alerts ───────────────────────────────────────────
   function renderInventory(el) {
     if (!el) return;
@@ -1661,6 +1759,16 @@
     if (canMembers()) {
       parts.push(
         widgetShell({
+          id: 'occupancy',
+          icon: 'ti-users-group',
+          title: t('Gym capacity', 'سعة الجيم'),
+          sub: t('Live from Attendance In Gym', 'مباشر من حضور الجيم'),
+          bodyId: 'wOccupancy',
+          span: 6
+        })
+      );
+      parts.push(
+        widgetShell({
           id: 'attendance',
           icon: 'ti-door-enter',
           title: t("Today's Attendance", 'حضور اليوم'),
@@ -1710,6 +1818,9 @@
       if (key === 'attendance') {
         await Promise.all([loadCheckinsToday(), loadAttendanceWeek(), loadMembersStatus()]);
         renderAttendance(global.document.getElementById('wAttendance'));
+      } else if (key === 'occupancy') {
+        await loadOccupancy();
+        renderOccupancy(global.document.getElementById('wOccupancy'));
       } else if (key === 'revenue-chart') {
         await loadRevenueChartData(state.revenueMonths);
         renderFinance(global.document.getElementById('wFinance'));
@@ -1774,6 +1885,11 @@
         loadCheckinsToday().then(function () {
           renderKpis(global.document.getElementById('wKpis'));
           renderAttendance(global.document.getElementById('wAttendance'));
+        })
+      );
+      primary.push(
+        loadOccupancy().then(function () {
+          renderOccupancy(global.document.getElementById('wOccupancy'));
         })
       );
     }

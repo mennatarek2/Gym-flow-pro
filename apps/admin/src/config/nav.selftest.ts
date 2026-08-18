@@ -128,10 +128,10 @@ assertShape(
   {
     overview: ['dashboard'],
     members: ['members', 'attendance'],
-    'front-desk': ['sales', 'member-orders', 'debtors', 'call-sheet'],
-    money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'reports'],
+    'front-desk': ['sales', 'member-orders', 'call-sheet'],
+    money: ['shifts', 'offers', 'invoices', 'reports'],
     catalog: ['plans'],
-    administration: ['imports', 'staff', 'settings'],
+    administration: ['imports', 'staff', 'roles', 'settings'],
   },
 )
 
@@ -148,8 +148,8 @@ assertShape(
   {
     overview: ['dashboard'],
     members: ['members', 'attendance'],
-    'front-desk': ['sales', 'member-orders', 'debtors', 'call-sheet'],
-    money: ['shifts', 'refunds', 'promo-codes', 'invoices', 'reports'],
+    'front-desk': ['sales', 'member-orders', 'call-sheet'],
+    money: ['shifts', 'offers', 'invoices', 'reports'],
     // catalog dropped — no plans.manage
     // administration: no imports (settings.manage), no staff/settings (OwnerOnly)
   },
@@ -184,13 +184,13 @@ assertShape(
   {
     overview: ['dashboard'],
     members: ['members', 'attendance'],
-    'front-desk': ['sales', 'member-orders', 'debtors', 'call-sheet'],
-    money: ['shifts', 'refunds', 'promo-codes', 'reports'],
+    'front-desk': ['sales', 'member-orders', 'call-sheet'],
+    money: ['shifts', 'offers', 'reports'],
     // no invoices (reports.financial.view), no catalog, no administration
   },
 )
 
-// ── FEATURE_DISABLED sales: hide POS (+ promo); Call Sheet stays; debtors use own flag ──
+// ── FEATURE_DISABLED sales: hide POS (+ promo); Call Sheet stays; Debtors is not a nav module ──
 {
   const cats = filterVisibleNav(NAV_CATEGORIES, {
     accessToken: FIXTURES.Receptionist.token,
@@ -202,10 +202,11 @@ assertShape(
   const keys = front!.items.map((i) => i.key)
   assert(!keys.includes('sales'), 'FEATURE_DISABLED sales hides POS')
   assert(keys.includes('call-sheet'), 'Call Sheet never feature-flag-gated')
-  assert(keys.includes('debtors'), 'debtors use their own flag')
+  assert(!keys.includes('debtors'), 'Debtors is not a primary nav module')
+  assert(!keys.includes('refunds'), 'Refunds is not a primary nav module')
   assert(!keys.includes('trials'), 'trials removed from product IA')
   const money = cats.find((c) => c.key === 'money')
-  assert(money && !money.items.some((i) => i.key === 'promo-codes'), 'promo flagged with sales')
+  assert(money && !money.items.some((i) => i.key === 'offers'), 'promo flagged with sales')
 }
 
 // ── Claims over role name: Receptionist role but Owner perms → Plans visible ──
@@ -221,6 +222,7 @@ assertShape(
   const admin = cats.find((c) => c.key === 'administration')
   // Staff/Settings still OwnerOnly policy — role name matters for policy, not for permission items
   assert(admin && !admin.items.some((i) => i.key === 'staff'), 'Staff stays OwnerOnly even with full perms')
+  assert(admin && !admin.items.some((i) => i.key === 'roles'), 'Roles stays OwnerOnly even with full perms')
 }
 
 console.log('nav.selftest: OK (Owner/Manager/Trainer/Receptionist fixtures)')

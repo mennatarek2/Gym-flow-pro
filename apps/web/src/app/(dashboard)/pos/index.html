@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="pos.css?v=desk18">
+<link rel="stylesheet" href="/shared/refund-action.css?v=2">
 <script>
 /* Sale is retail-only — membership onboarding lives in Members */
 (function () {
@@ -28,11 +29,9 @@
 <a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
 <a class="sb-item act" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
 <a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
-<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
 <a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
 <a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
 <a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
-<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
 <a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
 <a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
 <a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
@@ -80,7 +79,6 @@
   <div class="status-strip" id="posStatusStrip" aria-live="polite">
     <span class="status-chip" id="statusShiftChip"><i class="ti ti-cash"></i> <span id="statusShiftText">Checking shift…</span></span>
     <span class="status-chip" id="statusWhChip" hidden><i class="ti ti-building-warehouse"></i> <span id="statusWhText">—</span></span>
-    <span class="status-chip status-link"><a href="/dashboard/debtors/" data-en="Outstanding balances → Debtors" data-ar="المديونيات → المدينون">Outstanding balances → Debtors</a></span>
   </div>
   <div id="inventoryOffHint" class="banner warn is-off" hidden style="display:none" role="status">
     <i class="ti ti-package-off" aria-hidden="true"></i>
@@ -219,6 +217,7 @@ if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.dis
 document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
 (async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
 </script>
-<script src="pos-app.js?v=desk18"></script>
+<script src="/shared/refund-action.js?v=2"></script>
+<script src="pos-app.js?v=desk20"></script>
 </body>
 </html>

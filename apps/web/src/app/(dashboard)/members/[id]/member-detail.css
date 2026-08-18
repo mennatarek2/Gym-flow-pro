@@ -39,6 +39,31 @@
 .quota-chip .q-label{font-size:12px;color:var(--lts);flex:1}
 .quota-chip .q-num{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--l600)}
 
+/* Sale outstanding — buyer-scoped, not a Debtor identity */
+.fin-360{margin-top:12px;padding:12px 14px;border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1)}
+.fin-360-hdr{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-size:12px;font-weight:700;color:var(--lts);margin-bottom:8px}
+.fin-360-hdr i{font-size:16px;color:var(--l600)}
+.fin-360-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.fin-360-lbl{font-size:12px;color:var(--ltt)}
+.fin-360-val{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--ltp)}
+.fin-360.has-due .fin-360-val{color:var(--dng500)}
+.fin-360-link{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:600;color:var(--l600);text-decoration:none}
+.fin-360-link:hover{text-decoration:underline}
+.fin-360-collect{width:100%;justify-content:center;margin-top:10px}
+.fin-360-collect[hidden]{display:none!important}
+.collect-hint{font-size:12px;color:var(--ltt);margin-top:6px}
+.collect-choice{border:1px solid var(--ls3);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:flex-start;background:var(--ls1);pointer-events:auto}
+.collect-choice:hover{border-color:var(--l500)}
+.collect-choice.on{border-color:#C5D6B8;background:#F7FAF4;box-shadow:0 0 0 2px rgba(122,204,0,.2)}
+#collectPaymentDrawer .mdl-footer{position:relative;z-index:2}
+.collect-choice b{font-family:var(--fd);font-size:13px;color:var(--ltp)}
+.collect-choice small{display:block;color:var(--ltt);margin-top:2px;font-size:12px}
+.collect-choice .due{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--dng500);white-space:nowrap}
+.fin-360-val-sm{font-size:14px}
+.fin-360-hist{list-style:none;margin:8px 0 0;padding:0}
+.fin-360-hist li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--ls3);font-size:12px}
+.fin-360-hist .muted{color:var(--ltt)}
+
 /* Access barcode card */
 .access-card-block{margin-top:4px;padding:14px;border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1)}
 .access-card-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
@@ -86,32 +111,49 @@
 .tab-pane{display:none;padding:24px}
 .tab-pane.act{display:block}
 
-/* ── Membership Hero Card ── */
-.ms-hero{background:linear-gradient(135deg,var(--c800) 0%,var(--c700) 100%);border-radius:var(--rlg);padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
-.ms-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(160,224,64,.06)}
-.ms-plan{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--dtp);margin-bottom:6px}
-.ms-type-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(160,224,64,.15);color:var(--l400);font-family:var(--fd);font-size:11px;font-weight:700;padding:3px 10px;border-radius:var(--rpl);text-transform:uppercase;letter-spacing:.4px;margin-bottom:16px}
-.ms-status-row{display:flex;align-items:center;gap:10px;margin-bottom:20px}
-.ms-st-badge{padding:5px 14px;border-radius:var(--rpl);font-family:var(--fd);font-size:12px;font-weight:700;text-transform:uppercase}
-.ms-st-badge.active{background:rgba(34,197,94,.2);color:#4ade80}
-.ms-st-badge.expired{background:rgba(239,68,68,.2);color:#f87171}
-.ms-st-badge.frozen{background:rgba(34,211,238,.2);color:#67e8f9}
-.ms-days{font-family:var(--fd);font-size:13px;color:var(--dts)}
-.progress-wrap{margin-bottom:16px}
-.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--dts);margin-bottom:6px}
-.progress-bar{height:6px;background:rgba(255,255,255,.1);border-radius:var(--rpl);overflow:hidden}
-.progress-fill{height:100%;border-radius:var(--rpl);background:linear-gradient(90deg,var(--l500),var(--l400));transition:width 1s ease}
-.ms-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.ms-meta-item{background:rgba(255,255,255,.05);border-radius:var(--rsm);padding:10px 12px}
-.ms-meta-lbl{font-size:10px;color:var(--dtt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.ms-meta-val{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--dtp)}
+/* ── Membership card (recessed sage — not a white tile, not a dark hero) ── */
+.ms-hero{
+  background:#EEF1EC;
+  border-radius:14px;
+  padding:16px 18px 14px;
+  margin-bottom:20px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65);
+  border-left:4px solid #8F9A86;
+}
+.ms-hero.pending,.ms-hero.scheduled{border-left-color:#D97706}
+.ms-hero.active{border-left-color:#5EAF00}
+.ms-hero.frozen{border-left-color:#0E7490}
+.ms-hero.expired,.ms-hero.cancelled{border-left-color:#EF4444}
+.ms-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.ms-plan{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--ltp);margin-bottom:0}
+.ms-type{font-size:12px;color:var(--ltt);margin-top:3px;text-transform:capitalize}
+.ms-st-badge{padding:4px 10px;border-radius:var(--rpl);font-family:var(--fd);font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.ms-st-badge.pending,.ms-st-badge.scheduled{background:var(--wrn100,#FEF3C7);color:var(--wrn700,#92400E)}
+.ms-st-badge.active{background:var(--suc100);color:var(--suctxt,#166534)}
+.ms-st-badge.frozen{background:var(--frz100);color:#155E75}
+.ms-st-badge.expired,.ms-st-badge.cancelled{background:var(--dng100);color:#991B1B}
+.ms-warn{background:rgba(217,119,6,.12);color:var(--wrn700,#92400E);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}
+.ms-warn strong{display:block;font-family:var(--fd);margin-bottom:2px;color:var(--wrn700,#92400E)}
+.ms-note{border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.45;margin-bottom:12px}
+.ms-note.danger{background:#FEE2E2;color:#991B1B}
+.ms-note.warn{background:var(--wrn100,#FEF3C7);color:var(--wrn700,#92400E)}
+.ms-reserved{font-size:13px;color:var(--ltt);margin-bottom:4px}
+.ms-hero-num{font-family:var(--fd);font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--ltp)}
+.ms-hero-lbl{font-size:13px;color:var(--lts);margin-top:2px}
+.progress-wrap{margin:10px 0 6px}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--ltt)}
+.progress-bar{height:5px;background:rgba(13,13,13,.08);border-radius:var(--rpl);overflow:hidden;margin-bottom:6px}
+.progress-fill{height:100%;border-radius:var(--rpl);background:var(--l600);transition:width .4s ease}
+.ms-facts{display:flex;flex-wrap:wrap;gap:6px 20px;margin:12px 0 2px;padding-top:10px;border-top:1px solid rgba(13,13,13,.08)}
+.ms-fact{font-size:12px;color:var(--ltt)}
+.ms-fact b{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--ltp);margin-left:6px}
 
 /* Membership action buttons */
-.ms-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
-.btn-ms{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--rmd);font-family:var(--fd);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all var(--tf)}
-.btn-ms.primary{background:var(--l500);color:var(--c900)}
+.ms-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn-ms{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--rmd);font-family:var(--fd);font-size:13px;font-weight:600;border:1px solid var(--ls3);background:#fff;color:var(--lts);cursor:pointer;transition:all var(--tf)}
+.btn-ms.primary{background:var(--l500);color:var(--c900);border-color:var(--l500)}
 .btn-ms.primary:hover{background:var(--l400);box-shadow:var(--shg)}
-.btn-ms.outline{background:var(--ls1);color:var(--lts);border:1px solid var(--ls3)}
+.btn-ms.outline{background:#fff;color:var(--lts);border:1px solid var(--ls3)}
 .btn-ms.outline:hover{border-color:var(--l500);color:var(--l600)}
 .btn-ms.freeze{background:var(--frz100);color:#155E75;border:1px solid var(--frz500)}
 .btn-ms.freeze:hover{background:var(--frz500);color:#fff}

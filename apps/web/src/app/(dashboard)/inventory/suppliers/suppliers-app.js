@@ -37,6 +37,9 @@
   var editingId = null;
   var paySupplierId = null;
   var stmtSupplierId = null;
+  var stmtEntries = [];
+  var productById = {};
+  var openedDeepLink = false;
 
   function t(en, ar) {
     if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
@@ -77,6 +80,7 @@
   }
   function closeModal(id) {
     document.getElementById(id).hidden = true;
+    if (id === 'stmtModal') showStmtList();
   }
   function setModalTitle(en, ar) {
     var el = document.getElementById('supModalTitle');
@@ -93,6 +97,88 @@
     };
     var p = map[r];
     return p ? t(p[0], p[1]) : r;
+  }
+  function methodLabel(m) {
+    var map = {
+      cash: ['Cash', 'نقدي'],
+      card: ['Card', 'بطاقة'],
+      transfer: ['Transfer', 'تحويل'],
+      other: ['Other', 'أخرى']
+    };
+    var p = map[String(m || '').toLowerCase()];
+    return p ? t(p[0], p[1]) : m || '—';
+  }
+  function parsePayNote(note) {
+    var method = null;
+    var rest = [];
+    String(note || '')
+      .split(';')
+      .forEach(function (part) {
+        part = String(part || '').trim();
+        if (!part) return;
+        var m = part.match(/^method=(.+)$/i);
+        if (m) {
+          method = m[1].trim();
+          return;
+        }
+        if (/^paidAt=/i.test(part)) return;
+        rest.push(part);
+      });
+    return { method: method, note: rest.join('; ') };
+  }
+  function ledgerEntries(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    return [];
+  }
+  function mediaUrl(url) {
+    if (!url) return '';
+    var u = String(url).trim();
+    if (!u) return '';
+    if (/^(https?:|blob:|data:)/i.test(u)) return u;
+    var origin = String(window.API_BASE || '').replace(/\/api\/?$/i, '');
+    if (!origin) {
+      try {
+        origin = new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+      } catch (e) {
+        origin = 'https://localhost:5001';
+      }
+    }
+    return origin + (u.charAt(0) === '/' ? u : '/' + u);
+  }
+  async function ensureProducts() {
+    if (Object.keys(productById).length) return;
+    var r = await Gfp.get(paths.products());
+    if (!r.ok) return;
+    var list = Array.isArray(r.data) ? r.data : ledgerEntries(r.data);
+    list.forEach(function (p) {
+      if (p && p.id) productById[p.id] = p;
+    });
+  }
+  function productCellHtml(line) {
+    var p = (line && line.productId && productById[line.productId]) || {};
+    var name = (line && (line.productName || line.productSku)) || p.name || p.sku || t('Product', 'منتج');
+    var src = mediaUrl(p.imageUrl || p.relativeUrl);
+    var thumb = src
+      ? '<img class="thumb" src="' +
+        esc(src) +
+        '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
+        '<span class="thumb-ph" hidden><i class="ti ti-photo"></i></span>'
+      : '<span class="thumb-ph"><i class="ti ti-photo"></i></span>';
+    return '<div class="prod-cell">' + thumb + '<span>' + esc(name) + '</span></div>';
+  }
+  function showStmtList() {
+    var list = document.getElementById('stmtListPane');
+    var detail = document.getElementById('stmtDetailPane');
+    if (list) list.hidden = false;
+    if (detail) detail.hidden = true;
+  }
+  function showStmtDetail() {
+    var list = document.getElementById('stmtListPane');
+    var detail = document.getElementById('stmtDetailPane');
+    if (list) list.hidden = true;
+    if (detail) detail.hidden = false;
+    applyLocale();
   }
 
   document.querySelectorAll('[data-close]').forEach(function (b) {
@@ -215,6 +301,11 @@
     }
     rows = Array.isArray(r.data) ? r.data : [];
     render();
+    var deep = new URLSearchParams(window.location.search).get('id');
+    if (!openedDeepLink && deep && canSeeMoney && rows.some(function (s) { return s.id === deep; })) {
+      openedDeepLink = true;
+      openStatement(deep);
+    }
   }
 
   function render() {
@@ -274,7 +365,13 @@
           return (
             '<tr>' +
             '<td>' +
-            esc(s.name) +
+            (canSeeMoney
+              ? '<button type="button" class="name-link" data-stmt="' +
+                esc(s.id) +
+                '">' +
+                esc(s.name) +
+                '</button>'
+              : esc(s.name)) +
             '</td><td>' +
             esc(s.phone || '—') +
             '</td>' +
@@ -283,10 +380,14 @@
                 esc(money(s.purchasesTotal)) +
                 '</td><td>' +
                 esc(money(s.paidTotal)) +
-                '</td><td class="' +
-                (due > 0 ? 'money-due' : '') +
+                '</td><td>' +
+                '<button type="button" class="due-link' +
+                (due > 0 ? ' money-due' : '') +
+                '" data-stmt="' +
+                esc(s.id) +
                 '">' +
                 esc(money(s.dueTotal)) +
+                '</button>' +
                 '</td>'
               : '') +
             '<td>' +
@@ -342,6 +443,7 @@
     });
     if (!s || !canSeeMoney) return;
     stmtSupplierId = id;
+    showStmtList();
     document.getElementById('stmtSupplierName').textContent = s.name;
     document.getElementById('stmtBal').textContent = t('Loading…', 'جاري التحميل…');
     document.getElementById('stmtHost').innerHTML = '';
@@ -369,7 +471,8 @@
         '<div class="error-state"><p>' + esc(apiError(led)) + '</p></div>';
       return;
     }
-    var entries = Array.isArray(led.data) ? led.data : [];
+    var entries = ledgerEntries(led.data);
+    stmtEntries = entries;
     if (!entries.length) {
       document.getElementById('stmtHost').innerHTML =
         '<div class="empty-state"><p>' + esc(t('No ledger entries', 'لا قيود')) + '</p></div>';
@@ -386,9 +489,11 @@
       esc(t('Note', 'ملاحظة')) +
       '</th></tr></thead><tbody>' +
       entries
-        .map(function (e) {
+        .map(function (e, i) {
           return (
-            '<tr><td>' +
+            '<tr class="stmt-row" tabindex="0" data-idx="' +
+            i +
+            '"><td>' +
             esc(e.createdAtUtc ? new Date(e.createdAtUtc).toLocaleString() : '—') +
             '</td><td>' +
             esc(reasonLabel(e.reason)) +
@@ -403,6 +508,122 @@
         })
         .join('') +
       '</tbody></table>';
+    document.getElementById('stmtHost').querySelectorAll('.stmt-row').forEach(function (tr) {
+      function open() {
+        var idx = Number(tr.getAttribute('data-idx'));
+        openStmtEntry(stmtEntries[idx]);
+      }
+      tr.addEventListener('click', open);
+      tr.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          open();
+        }
+      });
+    });
+  }
+
+  function metaRow(label, value) {
+    return (
+      '<div class="row"><span>' +
+      esc(label) +
+      '</span><span>' +
+      value +
+      '</span></div>'
+    );
+  }
+
+  function renderStmtLedgerDetail(entry) {
+    var parsed = parsePayNote(entry.note);
+    var bits = [
+      metaRow(t('Date', 'التاريخ'), esc(entry.createdAtUtc ? new Date(entry.createdAtUtc).toLocaleString() : '—')),
+      metaRow(t('Type', 'النوع'), esc(reasonLabel(entry.reason))),
+      metaRow(t('Amount', 'المبلغ'), esc(money(entry.amount)))
+    ];
+    if (parsed.method) bits.push(metaRow(t('Method', 'طريقة الدفع'), esc(methodLabel(parsed.method))));
+    if (parsed.note) bits.push(metaRow(t('Note', 'ملاحظة'), esc(parsed.note)));
+    document.getElementById('stmtDetailHost').innerHTML = '<div class="stmt-meta">' + bits.join('') + '</div>';
+  }
+
+  async function openStmtEntry(entry) {
+    if (!entry) return;
+    var title = document.getElementById('stmtDetailTitle');
+    var reason = String(entry.reason || '').toLowerCase();
+    var en = reason === 'purchase' ? 'Purchase' : reason === 'payment' ? 'Payment' : reason === 'opening' ? 'Opening' : 'Details';
+    var ar = reason === 'purchase' ? 'شراء' : reason === 'payment' ? 'دفعة' : reason === 'opening' ? 'افتتاحي' : 'التفاصيل';
+    title.setAttribute('data-en', en);
+    title.setAttribute('data-ar', ar);
+    title.textContent = t(en, ar);
+    document.getElementById('stmtDetailHost').innerHTML =
+      '<div class="loading-state"><div class="loader"></div><p>' +
+      esc(t('Loading…', 'جاري التحميل…')) +
+      '</p></div>';
+    showStmtDetail();
+    var refId = entry.referenceId;
+    if (String(entry.reason || '').toLowerCase() === 'purchase' && refId) {
+      await ensureProducts();
+      var r = await Gfp.get(paths.goodsReceipt(refId));
+      if (!r.ok) {
+        renderStmtLedgerDetail(entry);
+        var host = document.getElementById('stmtDetailHost');
+        host.innerHTML +=
+          '<p class="muted">' + esc(t('Could not load purchase items.', 'تعذر تحميل أصناف الشراء.')) + '</p>';
+        return;
+      }
+      renderStmtPurchaseDetail(entry, r.data);
+      return;
+    }
+    renderStmtLedgerDetail(entry);
+  }
+
+  function renderStmtPurchaseDetail(entry, doc) {
+    var lines = (doc && Array.isArray(doc.lines) ? doc.lines : []) || [];
+    var linesHtml = lines.length
+      ? '<table class="inv"><thead><tr><th>' +
+        esc(t('Product', 'المنتج')) +
+        '</th><th>' +
+        esc(t('Qty', 'الكمية')) +
+        '</th><th>' +
+        esc(t('Cost each', 'التكلفة')) +
+        '</th><th>' +
+        esc(t('Line', 'الإجمالي')) +
+        '</th></tr></thead><tbody>' +
+        lines
+          .map(function (ln) {
+            var lineTotal =
+              ln.unitCost != null && ln.qty != null ? Number(ln.qty) * Number(ln.unitCost) : null;
+            return (
+              '<tr><td>' +
+              productCellHtml(ln) +
+              '</td><td>' +
+              esc(String(ln.qty != null ? ln.qty : '—')) +
+              '</td><td>' +
+              esc(money(ln.unitCost)) +
+              '</td><td>' +
+              esc(money(lineTotal)) +
+              '</td></tr>'
+            );
+          })
+          .join('') +
+        '</tbody></table>'
+      : '<p class="muted">' + esc(t('No items on this purchase', 'لا أصناف في هذا الشراء')) + '</p>';
+    var when = (doc && doc.receivedAtUtc) || entry.createdAtUtc;
+    document.getElementById('stmtDetailHost').innerHTML =
+      '<div class="stmt-meta">' +
+      metaRow(t('Date', 'التاريخ'), esc(when ? new Date(when).toLocaleString() : '—')) +
+      metaRow(t('Amount', 'المبلغ'), esc(money(doc && doc.totalAmount != null ? doc.totalAmount : entry.amount))) +
+      '</div>' +
+      '<div class="section-label">' +
+      esc(t('Items', 'الأصناف')) +
+      '</div>' +
+      linesHtml +
+      (doc && doc.purchaseOrderId
+        ? '<div class="modal-actions" style="justify-content:flex-start;margin-top:14px"><a class="btn-secondary" href="/dashboard/inventory/purchase-orders/?id=' +
+          encodeURIComponent(doc.purchaseOrderId) +
+          '">' +
+          esc(t('Open purchase', 'فتح المشترى')) +
+          '</a></div>'
+        : '');
   }
 
   document.getElementById('btnCreate').addEventListener('click', function () {
@@ -467,6 +688,7 @@
     }
   });
 
+  document.getElementById('btnStmtBack').addEventListener('click', showStmtList);
   document.getElementById('btnRefresh').addEventListener('click', loadList);
   document.getElementById('filterInactive').addEventListener('change', loadList);
   window.addEventListener('gfp:locale', function () {

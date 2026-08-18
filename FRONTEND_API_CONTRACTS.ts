@@ -141,8 +141,11 @@ export interface FeatureFlagsDto {
  *  of these — call-sheet endpoints are NOT gated by any flag. */
 
 /** Role policies (ASP.NET named policies, distinct from the fine-grained perm system below):
- *  OwnerOnly, ManagerOrAbove (Owner|Manager), AnyStaff (Owner|Manager|Trainer|Receptionist),
- *  AuthenticatedMember (Member role only), AnyAuthenticated (any valid JWT regardless of role). */
+ *  OwnerOnly, ManagerOrAbove (Owner|Manager), AnyStaff (Owner|Manager|Trainer — Receptionist
+ *  is NOT included; Quick Actions GET uses an explicit four-role list instead).
+ *  AuthenticatedMember (Member role only), AnyAuthenticated (any valid JWT regardless of role).
+ *  Frontend GfpAuthz.AnyStaff includes Receptionist for nav/shell `kind: 'any'` only — that is
+ *  not the ASP.NET policy.
 export type RolePolicy =
   | "OwnerOnly"
   | "ManagerOrAbove"
@@ -176,15 +179,13 @@ export type PermissionKey =
   | "inventory.manage"
   | "inventory.adjust"
   | "inventory.purchase"
-  | "inventory.transfer";
+  | "inventory.transfer"
+  | "member_orders.view"
+  | "member_orders.manage";
 
-/** Staff role strings as they actually appear on the wire (StaffListItemDto.Role,
- *  StaffDetailDto.Role, LoginResponse.User.Role, UpdateStaffRequest.Role are all lowercase).
- *  CAVEAT: CreateStaffRequest's doc-comment says lowercase too, but this has NOT been reconciled
- *  against how DataSeeder elsewhere seeds roles (PascalCase, matching ASP.NET Identity's
- *  ClaimTypes.Role convention) — confirm actual casing against a real login response before
- *  hardcoding a comparison. */
-export type StaffRole = "owner" | "manager" | "trainer" | "receptionist";
+/** Canonical Identity role names as returned on the wire (PascalCase).
+ *  Create/Update accept case-insensitive input. Staff API `id` is ApplicationUser.Id (JWT sub). */
+export type StaffRole = "Owner" | "Manager" | "Trainer" | "Receptionist";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § 1. Authentication & Session (AuthController — api/auth, no [Authorize] prefix)
@@ -375,7 +376,8 @@ export interface PlanDetailDto {
   sessionCount?: number | null;
   timeRestrictionStart?: string | null; // TimeOnly
   timeRestrictionEnd?: string | null;
-  invitationQuota: number;
+  invitationQuota: number; // retired guest-pass column
+  referralInviteQuota: number; // Invitations per covering membership
   /** credit | free_days — null = not configured */
   referralRewardType?: string | null;
   referralRewardValue?: number | null;
@@ -397,7 +399,8 @@ export interface CreatePlanRequest {
   sessionCount?: number | null; // session_pack: 10, 20, or 50
   timeRestrictionStart?: string | null; // time_limited plans
   timeRestrictionEnd?: string | null;
-  invitationQuota?: number; // guest_pass monthly quota, default 0
+  invitationQuota?: number; // retired guest-pass column, default 0
+  referralInviteQuota?: number; // Invitations per covering membership, default 0
   referralRewardType?: "credit" | "free_days" | null;
   referralRewardValue?: number | null;
   trialVisitLimit?: number | null; // trial plans
@@ -451,6 +454,8 @@ export interface AssignMembershipRequest {
   /** 'cash' | 'paymob' | 'fawry' — cash activates immediately; gateway methods create a
    *  'pending' membership, activated later by a payment webhook. */
   paymentMethod: "cash" | "paymob" | "fawry";
+  /** Cash taken now. Omit to charge the full plan price. Less than plan price → Sale.AmountDue (Collect Payment). Ignored for gateway. */
+  amountPaid?: number | null;
 }
 export interface RenewMembershipRequest {
   planId?: string | null; // null = renew same plan
@@ -469,6 +474,7 @@ export const MEMBERSHIPS_ENDPOINTS = {
   history: (memberId: string) => ({ method: "GET", path: `/api/memberships/${memberId}/history` }), // query: page=1, pageSize=20 ; policy AnyStaff -> PagedResult<MembershipHistoryItemDto>
   assign: (memberId: string) => ({ method: "POST", path: `/api/memberships/${memberId}/assign` }), // body: AssignMembershipRequest ; policy ManagerOrAbove -> 201 MembershipDto | 409 if already active
   renew: (memberId: string) => ({ method: "POST", path: `/api/memberships/${memberId}/renew` }), // body: RenewMembershipRequest ; policy ManagerOrAbove -> MembershipDto
+  cancel: (memberId: string) => ({ method: "POST", path: `/api/memberships/${memberId}/cancel` }), // policy ManagerOrAbove -> MembershipDto ; not a refund; 409 if expired/already cancelled
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -544,6 +550,25 @@ export const ATTENDANCE_ENDPOINTS = {
   manualCheckin: { method: "POST", path: "/api/attendance/manual-checkin" }, // perm checkin.manual ; body: ManualCheckinRequest -> ManualCheckinResponse
   searchMembers: { method: "GET", path: "/api/attendance/search-members" }, // perm checkin.manual ; query: MemberSearchRequest -> MemberSearchResult[]
   today: { method: "GET", path: "/api/attendance/today" }, // perm members.view ; query: filter="all" -> TodayAttendanceDto[]
+  occupancy: { method: "GET", path: "/api/attendance/occupancy" }, // perm members.view -> GymOccupancyDto
+} as const;
+
+// Live occupancy is a derived view of today's open visits (checkOutAtUtc == null),
+// same window as GET /attendance/today. Not a second attendance system. No status enum —
+// Available/Busy/Full is presentation-only on the client.
+export interface GymOccupancyDto {
+  gymName: string;
+  gymNameAr: string;
+  gymActive: boolean;
+  maxCapacity?: number | null; // null = not configured
+  currentlyInside: number;
+  available?: number | null; // null when maxCapacity unset; never negative
+  occupancyPercent?: number | null; // may exceed 100
+  source: "attendance_open_visits";
+}
+
+export const MEMBER_OCCUPANCY_ENDPOINTS = {
+  get: { method: "GET", path: "/api/member/occupancy" }, // AuthenticatedMember -> GymOccupancyDto (same payload)
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -661,6 +686,7 @@ export type SaleFailureCode =
   | "OPEN_SHIFT_REQUIRED" // 409
   | "PROMO_RACE_LOST" // 400
   | "SALE_NOT_FOUND" // 400
+  | "SALE_NOT_COLLECTABLE" // 400 — not partially_paid or AmountDue is 0 (completed / refunded)
   | "PAYMENT_EXCEEDS_AMOUNT_DUE" // 400
   | "INSUFFICIENT_CREDIT" // 400
   | "INSUFFICIENT_STOCK" // 400 — retail line, includes SKU/name in detail
@@ -673,7 +699,7 @@ export type SaleFailureCode =
 export const SALES_ENDPOINTS = {
   validatePromo: { method: "POST", path: "/api/sales/validate-promo" }, // perm sales.sell ; body: ValidatePromoRequest -> PromoValidationResult
   create: { method: "POST", path: "/api/sales" }, // perm sales.sell ; body: CreateSaleRequest ; header X-Idempotency-Key? -> SaleResponse
-  recordPayment: (id: string) => ({ method: "POST", path: `/api/sales/${id}/payments` }), // perm sales.sell ; body: RecordPaymentRequest -> SaleResponse
+  recordPayment: (id: string) => ({ method: "POST", path: `/api/sales/${id}/payments` }), // perm sales.sell ; body: RecordPaymentRequest -> SaleResponse ; Member 360 Collect Payment uses this against one outstanding sale
   /** Desk print: 404 INVOICE_NOT_READY until Hangfire creates the invoice. */
   invoiceForSale: (id: string) => ({ method: "GET", path: `/api/sales/${id}/invoice` }), // perm sales.sell -> SaleInvoiceRefDto
 } as const;
@@ -936,6 +962,8 @@ export const SHIFTS_ENDPOINTS = {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § 9. Refunds & Account Credit (RefundsController — api/refunds, [Authorize], [FeatureFlag("refunds")])
+// Staff initiate refunds from Sale context (POS receipt / invoice / onboard sale), not a Refunds nav module.
+// GET list remains payments.refund.approve (history). Amount-based; remainder = sale.Total − SUM(executed).
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface RefundDto {
@@ -1044,10 +1072,16 @@ export const INVOICES_ENDPOINTS = {
   get: (id: string) => ({ method: "GET", path: `/api/invoices/${id}` }), // perm reports.financial.view -> InvoiceDto
   void: (id: string) => ({ method: "POST", path: `/api/invoices/${id}/void` }), // perm payments.refund.approve ; body: VoidInvoiceRequest
   resend: (id: string) => ({ method: "POST", path: `/api/invoices/${id}/resend` }), // perm sales.sell
-  receiptHtml: (id: string, paymentId?: string) => ({
-    method: "GET",
-    path: `/api/invoices/${id}/receipt-html${paymentId ? `?paymentId=${paymentId}` : ""}`,
-  }), // perm sales.sell -> text/html; paymentId adds a "Payment Received" section (PaymentReceiptInfoDto data)
+  receiptHtml: (id: string, paymentId?: string, format?: "a4" | "thermal") => {
+    const q = new URLSearchParams();
+    if (paymentId) q.set("paymentId", paymentId);
+    if (format) q.set("format", format);
+    const qs = q.toString();
+    return {
+      method: "GET" as const,
+      path: `/api/invoices/${id}/receipt-html${qs ? `?${qs}` : ""}`,
+    };
+  }, // perm sales.sell -> text/html. Default thermal 80mm; format=a4 is branded A4. Same invoice totals.
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1093,10 +1127,69 @@ export interface ZReportDto {
   membershipRevenueToday: number;
 }
 
+export interface ShiftZReportDto {
+  shiftId: string;
+  tenantId: string;
+  userId: string;
+  staffName: string;
+  gymName: string;
+  openedAt: string;
+  closedAt?: string | null;
+  status: "open" | "closed" | "approved";
+  isFinal: boolean; // closed | approved — cash figures frozen on Shift
+  revealCash: boolean; // false while open (blind count)
+  grossSales: number;
+  discounts: number;
+  refunds: number;
+  netSales: number;
+  transactionCount: number;
+  methods: ZReportMethodTotalDto[];
+  openingCash: number;
+  cashSales: number;
+  cashRefunds: number;
+  cashExpenses: number;
+  cashPaidIn: number;
+  floatAdjust: number;
+  expectedCash?: number | null;
+  countedCash?: number | null;
+  difference?: number | null;
+  memberships: number;
+  membershipCount: number;
+  renewals: number;
+  renewalCount: number;
+  products: number;
+  productCount: number;
+  other: number;
+  otherCount: number;
+  refundCount: number;
+  discountCount: number;
+}
+export interface ShiftZReportListItemDto {
+  shiftId: string;
+  userId: string;
+  staffName: string;
+  openedAt: string;
+  closedAt?: string | null;
+  status: "open" | "closed" | "approved";
+  sales: number;
+  refunds: number;
+  expectedCash?: number | null;
+  countedCash?: number | null;
+  difference?: number | null;
+}
+export interface ShiftZReportListDto {
+  from: string;
+  to: string;
+  items: ShiftZReportListItemDto[];
+}
+
 export const ZREPORT_ENDPOINTS = {
-  get: (date: string) => ({ method: "GET", path: `/api/reports/z/${date}` }), // date=YYYY-MM-DD ; perm reports.financial.view -> ZReportDto (404 ZREPORT_NOT_FOUND if not yet generated)
-  pdf: (date: string) => ({ method: "GET", path: `/api/reports/z/${date}/pdf` }), // perm reports.financial.view -> application/pdf
-  regenerate: (date: string) => ({ method: "POST", path: `/api/reports/z/${date}/regenerate` }), // policy ManagerOrAbove
+  get: (date: string) => ({ method: "GET", path: `/api/reports/z/${date}` }), // date=YYYY-MM-DD daily Cairo snapshot (nightly job); perm reports.financial.view -> ZReportDto
+  pdf: (date: string) => ({ method: "GET", path: `/api/reports/z/${date}/pdf` }), // daily snapshot PDF
+  regenerate: (date: string) => ({ method: "POST", path: `/api/reports/z/${date}/regenerate` }), // policy ManagerOrAbove; daily snapshot only
+  listShifts: { method: "GET", path: "/api/reports/z/shifts" }, // query from,to DateOnly Cairo OpenedAt ; perm reports.financial.view -> ShiftZReportListDto
+  shiftClosing: (shiftId: string) => ({ method: "GET", path: `/api/reports/z/shifts/${shiftId}` }), // shift-linked txs; closed cash is frozen Shift.ExpectedCash/CountedCash/Variance
+  shiftClosingPdf: (shiftId: string) => ({ method: "GET", path: `/api/reports/z/shifts/${shiftId}/pdf` }),
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1136,7 +1229,9 @@ export const TRIALS_ENDPOINTS = {
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// § 13. Debtors (DebtorsController — api/debtors, [Authorize], [FeatureFlag("debtors")])
+// § 13. Outstanding balances (DebtorsController — api/debtors, [Authorize], [FeatureFlag("debtors")])
+// GymFlowPro does not expose Debtors as a primary product module. These APIs remain
+// the outstanding-balance query over Sale.AmountDue (buyer = Sale.MemberId).
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface DebtorDto {
@@ -1159,14 +1254,108 @@ export type DebtorFailureCode =
   | "REMINDER_THROTTLE"; // 429
 
 export const DEBTORS_ENDPOINTS = {
-  list: { method: "GET", path: "/api/debtors" }, // perm sales.sell ; query: page=1, pageSize=20, format? ("csv" streams text/csv instead of JSON) -> PagedResult<DebtorDto>
+  list: { method: "GET", path: "/api/debtors" }, // perm sales.sell ; query: page=1, pageSize=20, memberId?, format? ("csv" streams text/csv instead of JSON) -> PagedResult<DebtorDto>
   summary: { method: "GET", path: "/api/debtors/summary" }, // perm reports.financial.view -> DebtorsSummaryDto
+  outstandingSales: (memberId: string) => ({ method: "GET", path: `/api/debtors/${memberId}/sales` }), // perm sales.sell ; -> MemberOutstandingSalesDto (empty sales + totalDue 0 when nothing due)
   remind: (memberId: string) => ({ method: "POST", path: `/api/debtors/${memberId}/remind` }), // perm sales.sell ; 429 REMINDER_THROTTLE if reminded too recently
 } as const;
 
+export interface OutstandingSaleDto {
+  saleId: string;
+  createdAtUtc: string;
+  dueDate?: string | null;
+  status: "partially_paid";
+  description: string;
+  total: number;
+  paid: number;
+  amountDue: number;
+}
+export interface MemberOutstandingSalesDto {
+  memberId: string;
+  totalDue: number;
+  sales: OutstandingSaleDto[];
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
-// § 14. Renewal Call Sheet (CallSheetController — api/call-sheet, [Authorize] — NO [FeatureFlag])
+// § 14. Call Sheet follow-up queue (CallSheetController — api/call-sheet, [Authorize] — NO [FeatureFlag])
+// Queue = sales.sell. Renewal-rate = reports.financial.view.
+// Call Sheet is NOT source of truth for membership / payments / attendance.
 // ═══════════════════════════════════════════════════════════════════════════
+
+export type FollowUpReason = "renewal" | "trial" | "payment" | "welcome" | "inactive" | "offer" | "custom";
+export type FollowUpSource = "system" | "manual";
+export type FollowUpPriority = "high" | "medium" | "low";
+export type FollowUpStatus = "pending" | "in_progress" | "contacted" | "no_answer" | "completed" | "cancelled";
+export type CallOutcomeValue =
+  | "reached" | "no_answer" | "busy" | "wrong_number" | "not_interested"
+  | "will_visit" | "renewed" | "needs_follow_up"
+  | "contacted" | "declined";
+export type FollowUpNextAction =
+  | "call_tomorrow" | "call_in_3_days" | "member_will_visit" | "member_renewed"
+  | "not_interested" | "wrong_number" | "no_answer" | "completed" | "custom";
+
+export interface FollowUpDto {
+  id: string;
+  memberId: string;
+  membershipId?: string | null;
+  fullName: string;
+  memberNumber: string;
+  phoneNumber: string;
+  profilePhotoUrl?: string | null;
+  reason: FollowUpReason;
+  source: FollowUpSource;
+  priority: FollowUpPriority;
+  status: FollowUpStatus;
+  assignedToUserId?: string | null;
+  assignedToName?: string | null;
+  dueAtUtc: string;
+  nextAction?: FollowUpNextAction | null;
+  nextActionAtUtc?: string | null;
+  why?: string | null;
+  relatedType?: string | null;
+  relatedId?: string | null;
+  lastContactAtUtc?: string | null;
+  lastOutcome?: CallOutcomeValue | null;
+  createdAtUtc: string;
+  completedAtUtc?: string | null;
+}
+export interface FollowUpHistoryDto {
+  id: string;
+  atUtc: string;
+  outcome: CallOutcomeValue;
+  note?: string | null;
+  nextAction?: FollowUpNextAction | null;
+  nextActionAtUtc?: string | null;
+  staffName?: string | null;
+}
+export interface FollowUpDetailDto extends FollowUpDto {
+  notes?: string | null;
+  history: FollowUpHistoryDto[];
+}
+export interface FollowUpSummaryDto {
+  toCallToday: number;
+  highPriority: number;
+  pending: number;
+  contactedToday: number;
+  noAnswerToday: number;
+  overdue: number;
+}
+export interface FollowUpListDto {
+  summary: FollowUpSummaryDto;
+  items: FollowUpDto[];
+}
+export interface CreateFollowUpRequest {
+  memberId: string;
+  reason: FollowUpReason;
+  priority?: FollowUpPriority;
+  dueAtUtc?: string | null;
+  assignedToUserId?: string | null;
+  notes?: string | null;
+  why?: string | null;
+  membershipId?: string | null;
+  relatedType?: string | null;
+  relatedId?: string | null;
+}
 
 export interface CallSheetEntryDto {
   membershipId: string;
@@ -1176,17 +1365,13 @@ export interface CallSheetEntryDto {
   planName: string;
   endDate: string;
   lastVisitAt?: string | null;
-  lastCallOutcome?: "contacted" | "renewed" | "declined" | "no_answer" | null;
+  lastCallOutcome?: CallOutcomeValue | null;
 }
-/**
- * GET /call-sheet/expiring must return at most one row per membershipId.
- * Duplicate membershipId rows usually mean a missing DISTINCT / GroupBy on a join to
- * payments, invoices, or call-outcome history — fix in CallSheetService, not only in FE.
- * Multiple rows for the same memberId with different membershipIds are valid (multi-plan).
- */
 export interface RecordCallOutcomeRequest {
-  outcome: "contacted" | "renewed" | "declined" | "no_answer";
+  outcome: CallOutcomeValue;
   note?: string | null;
+  nextAction?: FollowUpNextAction | null;
+  nextActionAtUtc?: string | null;
 }
 export interface RenewalRateDto {
   staffUserId: string;
@@ -1195,13 +1380,20 @@ export interface RenewalRateDto {
   renewed: number;
   renewalRatePercent: number;
 }
-/** ProblemDetails.title values for call-sheet endpoints. */
-export type CallSheetFailureCode = "MEMBERSHIP_NOT_FOUND" | "STAFF_USER_NOT_FOUND" | "INVALID_OUTCOME";
+export type CallSheetFailureCode =
+  | "MEMBERSHIP_NOT_FOUND" | "STAFF_USER_NOT_FOUND" | "INVALID_OUTCOME"
+  | "FOLLOW_UP_NOT_FOUND" | "MEMBER_NOT_FOUND" | "INVALID_REASON"
+  | "INVALID_STATUS" | "INVALID_PRIORITY" | "INVALID_NEXT_ACTION";
 
 export const CALL_SHEET_ENDPOINTS = {
-  expiring: { method: "GET", path: "/api/call-sheet/expiring" }, // perm sales.sell ; query: days=7 -> CallSheetEntryDto[]
-  recordOutcome: (membershipId: string) => ({ method: "POST", path: `/api/call-sheet/${membershipId}/outcome` }), // perm sales.sell ; body: RecordCallOutcomeRequest
-  renewalRate: { method: "GET", path: "/api/call-sheet/renewal-rate" }, // perm reports.financial.view ; query: from (DateOnly, required), to (DateOnly, required), staffUserId? -> RenewalRateDto[]
+  queue: { method: "GET", path: "/api/call-sheet" }, // perm sales.sell ; query date,reason,priority,status,assignee,q -> FollowUpListDto
+  summary: { method: "GET", path: "/api/call-sheet/summary" }, // perm sales.sell
+  byId: (id: string) => ({ method: "GET", path: `/api/call-sheet/${id}` }),
+  create: { method: "POST", path: "/api/call-sheet" },
+  recordOutcome: (followUpId: string) => ({ method: "POST", path: `/api/call-sheet/${followUpId}/outcome` }),
+  complete: (followUpId: string) => ({ method: "POST", path: `/api/call-sheet/${followUpId}/complete` }),
+  expiring: { method: "GET", path: "/api/call-sheet/expiring" }, // legacy dashboard; query days=7
+  renewalRate: { method: "GET", path: "/api/call-sheet/renewal-rate" }, // perm reports.financial.view
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1355,9 +1547,14 @@ export interface MemberRetentionDto {
 
 export const REPORTS_ENDPOINTS = {
   attendanceSummary: { method: "GET", path: "/api/reports/attendance-summary" }, // perm members.view -> AttendanceSummaryItemDto[]
-  revenueDetail: { method: "GET", path: "/api/reports/revenue-detail" }, // perm reports.financial.view -> RevenueDetailItemDto[]
+  revenueDetail: { method: "GET", path: "/api/reports/revenue-detail" }, // perm reports.financial.view -> RevenueDetailItemDto[] (legacy Plan.Price; prefer sales)
   peakHours: { method: "GET", path: "/api/reports/peak-hours" }, // perm members.view -> PeakHourItemDto[]
   memberRetention: { method: "GET", path: "/api/reports/member-retention" }, // perm reports.financial.view -> MemberRetentionDto
+  sales: { method: "GET", path: "/api/reports/sales" }, // perm reports.financial.view ; query from,to,method?,staffId?,type? -> SalesReportDto (PaymentTransaction cash-in by PaidAtUtc; Net = cash-in − executed cash refunds; type from SaleLine)
+  refunds: { method: "GET", path: "/api/reports/refunds" }, // perm reports.financial.view ; query from,to,method?,staffId?,buyer? -> RefundsReportDto (executed Refund only; method is cash|credit|gateway)
+  memberships: { method: "GET", path: "/api/reports/memberships" }, // perm members.view ; query from,to,planId?,staffId?,type=new|renewal? -> MembershipsReportDto (starts in Cairo range; Type from LastRenewalDate/PlanTransitionMode; Revenue = PaymentTransaction − executed refunds, not Plan.Price)
+  products: { method: "GET", path: "/api/reports/products" }, // perm reports.financial.view ; query from,to,productId?,staffId?,method? -> ProductsReportDto (retail SaleLine by Sale.CreatedAtUtc; Status=refunded drops out; LineTotal is revenue, not Product.SellPrice)
+  staffShifts: { method: "GET", path: "/api/reports/staff-shifts" }, // perm reports.financial.view ; query from,to,staffId?,shiftId? -> StaffShiftsReportDto (Sales = success PaymentTransaction by PaidAtUtc / ReceivedByUserId; Refunds = executed Refund; Shifts = OpenedAt Cairo same grain as Z-Report; no variance/scoring; drill Transactions only when staffId or shiftId is set)
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1394,39 +1591,70 @@ export const AUDIT_ENDPOINTS = {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface StaffListItemDto {
+  /** ApplicationUser.Id (Identity / JWT sub). Not AppUser.Id. */
   id: string;
   fullName: string;
   email: string;
-  role: string; // owner | manager | trainer | receptionist
+  role: string; // Owner | Manager | Trainer | Receptionist (PascalCase)
   isActive: boolean;
-  lastLoginAt?: string | null;
+  lastLoginAt?: string | null; // AppUser.LastLoginAtUtc; null = never logged in
   createdAtUtc: string;
+  profilePhotoUrl?: string | null;
+  phoneNumber?: string | null; // AppUser.PhoneNumber
+  staffNumber?: string | null; // ST-0001; server-generated; not either GUID
+  jobTitle?: string | null;
+  department?: string | null; // Front Desk | Sales | Training | Management | Operations | Other
+  hireDate?: string | null; // DateOnly YYYY-MM-DD
 }
 export interface StaffDetailDto extends StaffListItemDto {
-  updatedAtUtc?: string | null;
+  updatedAtUtc?: string | null; // profile/role/status change — NOT last login
+  notes?: string | null;
 }
 export interface CreateStaffRequest {
   fullName: string;
   email: string;
   password: string;
-  role: "manager" | "trainer" | "receptionist"; // NOT "owner" — default "trainer"
+  role: "Manager" | "Trainer" | "Receptionist" | "manager" | "trainer" | "receptionist";
+  phoneNumber?: string | null;
+  jobTitle?: string | null;
+  department?: string | null;
+  hireDate?: string | null;
+  notes?: string | null;
 }
 export interface UpdateStaffRequest {
   fullName: string;
-  role: "manager" | "trainer" | "receptionist";
+  role: "Manager" | "Trainer" | "Receptionist" | "manager" | "trainer" | "receptionist";
   isActive: boolean;
+  phoneNumber?: string | null;
+  jobTitle?: string | null;
+  department?: string | null;
+  hireDate?: string | null;
+  notes?: string | null;
 }
 export interface ResetPasswordRequest {
   newPassword: string;
 }
+export interface StaffActivityItemDto {
+  id: string;
+  action: string;
+  label: string;
+  entityType?: string | null;
+  createdAtUtc: string;
+  aboutThisStaff: boolean;
+}
 
 export const ADMIN_ENDPOINTS = {
-  staffList: { method: "GET", path: "/api/admin/staff" }, // -> StaffListItemDto[] (excludes owner)
+  staffList: { method: "GET", path: "/api/admin/staff" }, // -> StaffListItemDto[] (includes Owner, excludes Member); id = ApplicationUser.Id
   staffGet: (id: string) => ({ method: "GET", path: `/api/admin/staff/${id}` }), // -> StaffDetailDto
   staffCreate: { method: "POST", path: "/api/admin/staff" }, // body: CreateStaffRequest
   staffUpdate: (id: string) => ({ method: "PUT", path: `/api/admin/staff/${id}` }), // body: UpdateStaffRequest
   staffDelete: (id: string) => ({ method: "DELETE", path: `/api/admin/staff/${id}` }),
   staffResetPassword: (id: string) => ({ method: "POST", path: `/api/admin/staff/${id}/reset-password` }), // body: ResetPasswordRequest
+  staffActivity: (id: string) => ({ method: "GET", path: `/api/admin/staff/${id}/activity` }), // -> StaffActivityItemDto[]
+  staffPhoto: (id: string) => ({ method: "POST", path: `/api/admin/staff/${id}/photo` }), // multipart file; persists ProfilePhotoUrl
+  rolesCatalog: { method: "GET", path: "/api/admin/roles" }, // -> RoleCatalogDto (OwnerOnly); Owner locked; overlay on Tenant.Settings.role_permissions
+  rolesUpdate: (role: "Manager" | "Trainer" | "Receptionist") => ({ method: "PUT", path: `/api/admin/roles/${role}` }), // body: { permissions: PermissionKey[] }
+  rolesReset: (role: "Manager" | "Trainer" | "Receptionist") => ({ method: "POST", path: `/api/admin/roles/${role}/reset` }),
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1452,6 +1680,7 @@ export interface TenantSettingsDto {
   accentColor?: string; // default #A0E040
   cardPrimaryColor?: string;
   showGymLogoOnCard?: boolean; // default true
+  gymMaxCapacity?: number | null; // 1–9999; null = not configured
   isActive: boolean;
   createdAtUtc: string;
   updatedAtUtc?: string | null;
@@ -1470,6 +1699,7 @@ export interface UpdateTenantSettingsRequest {
   accentColor?: string | null;
   cardPrimaryColor?: string | null;
   showGymLogoOnCard?: boolean | null;
+  gymMaxCapacity?: number | null; // 1–9999 or null to clear
 }
 export interface TenantBrandingDto {
   gymName: string;
@@ -1528,6 +1758,46 @@ export const QUICK_ACTIONS_SETTINGS_ENDPOINTS = {
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// § 20b. Quick Actions (TenantSettingsController — api/settings/quick-actions)
+// ═══════════════════════════════════════════════════════════════════════════
+// Gym-wide dashboard shortcuts. NOT part of GET/PUT /api/settings (gym profile stays OwnerOnly).
+// GET: Owner | Manager | Trainer | Receptionist. Missing config → default four keys (never 404).
+// PUT: ManagerOrAbove. Trainer/Receptionist/Member → 403. Empty array is stored (cleared).
+// Max 6 keys. Whitelist only; unknown dropped; "new_offer" aliases to add_promo_code.
+// Persist Tenant.Settings.quick_actions.keys. Feature flags do not strip keys on the server.
+
+export interface QuickActionsSettingsDto {
+  keys: string[];
+}
+export type UpdateQuickActionsRequest = QuickActionsSettingsDto;
+
+export const QUICK_ACTIONS_ENDPOINTS = {
+  get: { method: "GET", path: "/api/settings/quick-actions" },
+  update: { method: "PUT", path: "/api/settings/quick-actions" }, // ManagerOrAbove ; body: { keys: string[] }
+} as const;
+
+export const QUICK_ACTION_KEYS = [
+  "new_member",
+  "checkin",
+  "new_sale",
+  "collect_payment",
+  "new_trial",
+  "send_debtor_reminder", // backend whitelist only; not a desk destination after Debtors nav removal
+  "open_shift",
+  "close_shift",
+  "new_refund", // backend whitelist only; refund is a Sale action, not a Quick Action destination
+  "add_promo_code",
+  "freeze_membership",
+] as const;
+
+export const QUICK_ACTION_DEFAULT_KEYS: readonly string[] = [
+  "new_member",
+  "checkin",
+  "new_sale",
+  "collect_payment",
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
 // § 21. Notifications (NotificationsController — api/notifications, [Authorize])
 // ═══════════════════════════════════════════════════════════════════════════
 // NOTE: GetMyNotifications/MarkAsRead carry only [Authorize] in the attributes — they are scoped
@@ -1561,79 +1831,93 @@ export const NOTIFICATIONS_ENDPOINTS = {
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// § 22. Guest Invitations (InvitationController — api/invitation)
+// § 22. Invitations (InvitationController — api/invitation)
 // ═══════════════════════════════════════════════════════════════════════════
-// AuthenticatedMember JWT: `sub` is Identity ApplicationUser.Id — NOT GymMember.Id.
+// One product: a member submits a friend's name + phone so staff can follow up.
+// JWT `sub` is Identity ApplicationUser.Id — NOT GymMember.Id.
 // Server resolves GymMember via AppUser.UserId (== sub) → GymMember.AppUserId.
-// Status vocabulary (invite row): pending | visited | converted | expired | rejected_fraud
-// (rejected_fraud reserved for later fraud path; send creates pending).
-// Guest quota rule: plan.InvitationQuota per Cairo yyyy-MM; **consume only on redeem-visit**
-// (VisitedAtUtc). Pending / expired / cancelled do not spend. Monthly reset = new period key
-// (InvitationQuotaResetJob is a log-only no-op). Meter: GET guest-quota.
-// Funnel analytics (staff): GET /api/analytics/invitations → InvitationFunnelDto (§16).
+// Status: new | contacted | interested | not_interested | converted
+// Quota: plan.referralInviteQuota on the covering membership; consume on create.
+// Frozen / expired / cancelled membership → remaining 0. No carry-over on renew.
+// Front desk may create on behalf of a member via POST /api/invitation/members/{memberId}
+// (GymMember.Id). Same quota rules as the Member App. Never trust client quota.
+// National ID is optional. Trial is not an invitation status.
+// Retired (do not call): guest-quota, pending, redeem-visit, referral-share.
 
 export type InvitationStatus =
-  | "pending"
-  | "visited"
-  | "converted"
-  | "expired"
-  | "rejected_fraud";
+  | "new"
+  | "contacted"
+  | "interested"
+  | "not_interested"
+  | "converted";
 
 export interface SendInvitationRequest {
-  guestName: string;
-  guestPhoneNumber: string; // Egyptian mobile; server normalizes to +20…
-  visitDate: string; // DateOnly yyyy-MM-dd
+  name?: string;
+  phoneNumber?: string;
+  /** Aliases accepted by the API. */
+  guestName?: string;
+  guestPhoneNumber?: string;
+  nationalId?: string | null; // optional, 14 digits when provided
+  notes?: string | null;
 }
 export interface SendInvitationResponse {
   invitationId: string;
-  guestName: string;
-  visitDate: string;
-  /** Redeemed visits this Cairo month (send does not increment). */
+  name: string;
+  phoneNumber: string;
+  status: InvitationStatus | string;
+  alreadyExisted: boolean;
+  quotaTotal: number;
   quotaUsed: number;
-  /** plan.InvitationQuota − quotaUsed after this call. */
   quotaRemaining: number;
   message: string;
   messageAr: string;
+  guestName?: string;
 }
 export interface InvitationHistoryResponse {
   id: string;
-  guestName: string;
-  guestPhoneNumber: string;
-  visitDate?: string | null;
-  /** pending | visited | converted | expired | rejected_fraud */
+  name: string;
+  phoneNumber: string;
+  nationalId?: string | null;
+  notes?: string | null;
   status: InvitationStatus | string;
-  /** guest_pass | referral */
-  invitationType?: "guest_pass" | "referral" | string;
-  sentAtUtc: string;
-  visitedAtUtc?: string | null;
+  createdAtUtc: string;
+  contactedAtUtc?: string | null;
   convertedAtUtc?: string | null;
+  invitedByMemberId: string;
+  invitedByName: string;
+  guestName?: string;
+  guestPhoneNumber?: string;
+  sentAtUtc?: string;
 }
-/** Live guest-pass quota meter (member self or desk by memberId). */
-export interface GuestInvitationQuotaDto {
+export interface InvitationQuotaDto {
   memberId: string;
-  totalGuestInvitations: number;
-  usedGuestInvitations: number;
-  remainingGuestInvitations: number;
-  /** Cairo period key yyyy-MM */
-  quotaPeriod: string;
-  /** First day of next Cairo calendar month */
-  nextResetDate: string;
+  membershipId?: string | null;
   planId?: string | null;
   planName?: string | null;
+  total: number;
+  used: number;
+  remaining: number;
+  membershipStatus: string;
 }
-/** Orphan DTO — no admin endpoint wired yet (see INV-8). */
-export interface InvitationQuotasDto {
-  quotasByPlanType: Record<string, number>; // e.g. { monthly_unlimited: 3, family: 5 }
+export interface InvitationMemberSummaryDto {
+  quota: InvitationQuotaDto;
+  total: number;
+  new: number;
+  contacted: number;
+  interested: number;
+  notInterested: number;
+  converted: number;
+  items: InvitationHistoryResponse[];
 }
 
 export const INVITATION_ENDPOINTS = {
-  send: { method: "POST", path: "/api/invitation/send" }, // policy AuthenticatedMember ; body: SendInvitationRequest -> SendInvitationResponse
-  history: { method: "GET", path: "/api/invitation/history" }, // policy AuthenticatedMember -> InvitationHistoryResponse[]
-  guestQuota: { method: "GET", path: "/api/invitation/guest-quota" }, // AuthenticatedMember -> GuestInvitationQuotaDto
-  memberGuestQuota: { method: "GET", path: "/api/invitation/members/{memberId}/guest-quota" }, // checkin.manual -> GuestInvitationQuotaDto
-  referralShare: { method: "GET", path: "/api/invitation/referral-share" }, // AuthenticatedMember
-  pending: { method: "GET", path: "/api/invitation/pending?q=" }, // checkin.manual
-  redeemVisit: { method: "POST", path: "/api/invitation/{id}/redeem-visit" }, // checkin.manual ; consumes 1 guest quota
+  send: { method: "POST", path: "/api/invitation/send" }, // AuthenticatedMember
+  history: { method: "GET", path: "/api/invitation/history" }, // AuthenticatedMember
+  summary: { method: "GET", path: "/api/invitation/summary" }, // AuthenticatedMember -> InvitationQuotaDto
+  staffList: { method: "GET", path: "/api/invitation?status=&q=" }, // members.view
+  staffCreate: { method: "POST", path: "/api/invitation/members/{memberId}" }, // members.view; body: SendInvitationRequest; GymMember.Id
+  member360: { method: "GET", path: "/api/invitation/members/{memberId}" }, // members.view -> InvitationMemberSummaryDto
+  updateStatus: { method: "PATCH", path: "/api/invitation/{id}/status" }, // members.view body: { status }
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════

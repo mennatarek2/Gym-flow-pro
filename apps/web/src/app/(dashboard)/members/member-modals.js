@@ -209,6 +209,24 @@
       const btnInv=document.getElementById('btnOnboardPrintInvoice');
       const btnCard=document.getElementById('btnOnboardPrintCard');
       const cardStatus=document.getElementById('onboardCardStatus');
+      const btnRf=document.getElementById('btnOnboardRefund');
+      function showOnboardRefund(){
+        const RA=window.GfpRefundAction;
+        const saleId=onboardSale&&(onboardSale.saleId||onboardSale.id||onboardSale.SaleId);
+        const show=!!(saleId && RA && RA.isEnabled() && RA.canRequest());
+        if(!btnRf) return;
+        btnRf.hidden=!show;
+        if(!show) return;
+        btnRf.onclick=function(){
+          RA.open({
+            saleId: saleId,
+            saleTotal: onboardSale.totals && onboardSale.totals.total,
+            paid: onboardSale.totals && onboardSale.totals.paid,
+            memberName: createdMember && createdMember.fullName,
+            lines: selectedPlan ? [{ description: selectedPlan.name, lineTotal: selectedPlan.price }] : []
+          });
+        };
+      }
 
       if(btnCard&&createdMember&&createdMember.id){
         btnCard.disabled=false;
@@ -221,12 +239,14 @@
       if(!onboardSale){
         if(invStatus) invStatus.textContent='No sale invoice (membership assigned without POS sale).';
         if(btnInv) btnInv.disabled=true;
+        showOnboardRefund();
         return;
       }
       const skipped=onboardSale.invoiceStatus==='skipped'||onboardSale.invoiceStatus==='not_applicable';
       if(skipped){
         if(invStatus) invStatus.textContent='No invoice for this sale.';
         if(btnInv) btnInv.disabled=true;
+        showOnboardRefund();
         return;
       }
       if(invStatus) invStatus.textContent='Preparing invoice…';
@@ -245,6 +265,7 @@
         if(invStatus) invStatus.textContent='Invoice not ready yet — try Print again in a moment.';
         if(btnInv) btnInv.disabled=false; // allow retry via click handler re-resolve
       }
+      showOnboardRefund();
     }
 
     function addDaysIso(iso, days){
@@ -340,7 +361,8 @@
       if(canMgr){
         const r=await Gfp.post('/memberships/'+createdMember.id+'/assign',{
           planId: selectedPlan.id,
-          paymentMethod: pay==='vodafone_cash'?'fawry':pay
+          paymentMethod: pay==='vodafone_cash'?'fawry':pay,
+          amountPaid: pay==='cash'?amount:undefined
         });
         if(!(r.ok||r.status===201)){ showAddError(apiMsg(r,'Assign failed')); return false; }
         return { membership:r.data, payMethod:pay, amount:amount };
@@ -837,6 +859,14 @@
     const detail=overlay.querySelector('#planDetailCard');
     if(detail) detail.classList.remove('show');
     overlay.querySelectorAll('input[name="assignPayment"]').forEach(function(r){ r.checked=false; });
+    const amtWrap=overlay.querySelector('#assignAmountWrap');
+    if(amtWrap) amtWrap.hidden=true;
+    const amt=overlay.querySelector('#assignAmountPaid');
+    if(amt) amt.value='';
+    const dueHint=overlay.querySelector('#assignDueHint');
+    if(dueHint){ dueHint.textContent=''; dueHint.classList.remove('has-due'); }
+    const payNote=overlay.querySelector('#assignPaymentNote');
+    if(payNote) payNote.classList.remove('show');
     const btn=overlay.querySelector('#btnAssignMembership');
     if(btn) btn.disabled=true;
     await loadPlans();
@@ -890,10 +920,47 @@
     const errorBanner=overlay.querySelector('#assignErrorBanner');
     const paymentNote=overlay.querySelector('#assignPaymentNote');
 
+    function selectedPlanPrice(){
+      if(!select||!select.value) return 0;
+      try{
+        const p=JSON.parse(select.options[select.selectedIndex].dataset.plan||'{}');
+        return Number(p.price)||0;
+      }catch(e){ return 0; }
+    }
+    function selectedPayMethod(){
+      const el=overlay.querySelector('input[name="assignPayment"]:checked');
+      return el?el.value:'';
+    }
+    function updateAssignDueHint(){
+      const wrap=overlay.querySelector('#assignAmountWrap');
+      const amtEl=overlay.querySelector('#assignAmountPaid');
+      const hint=overlay.querySelector('#assignDueHint');
+      const isCash=selectedPayMethod()==='cash';
+      if(wrap) wrap.hidden=!isCash;
+      if(!hint||!amtEl) return;
+      if(!isCash){
+        hint.textContent='';
+        hint.classList.remove('has-due');
+        return;
+      }
+      const price=selectedPlanPrice();
+      if(amtEl.value===''&&price>0) amtEl.value=String(price);
+      const paid=parseFloat(amtEl.value);
+      const cash=Number.isFinite(paid)?paid:0;
+      const due=Math.max(0, price-cash);
+      if(due>0.004){
+        hint.textContent='EGP '+due.toLocaleString()+' stays outstanding — Collect Payment on this member.';
+        hint.classList.add('has-due');
+      } else {
+        hint.textContent='Leave as the plan price to pay in full. Pay less if they cannot pay everything now.';
+        hint.classList.remove('has-due');
+      }
+    }
+
     // Plan selection
     if(select){
       select.addEventListener('change',function(){
-        if(!this.value){detail&&detail.classList.remove('show');validateAssignForm();return;}
+        if(!this.value){detail&&detail.classList.remove('show');validateAssignForm();updateAssignDueHint();return;}
         const opt=this.options[this.selectedIndex];
         try{
           const p=JSON.parse(opt.dataset.plan);
@@ -906,8 +973,11 @@
             detail.querySelector('.pdc-duration').textContent=(p.durationDays||0)+' days';
             detail.classList.add('show');
           }
+          const amtEl=overlay.querySelector('#assignAmountPaid');
+          if(amtEl) amtEl.value=String(p.price||0);
         }catch(e){}
         validateAssignForm();
+        updateAssignDueHint();
       });
     }
 
@@ -916,8 +986,7 @@
       radio.addEventListener('change',function(){
         if(paymentNote){
           if(this.value==='cash'){
-            paymentNote.textContent='';
-            paymentNote.innerHTML='<i class="ti ti-info-circle"></i> Membership will be activated immediately upon cash payment.';
+            paymentNote.innerHTML='<i class="ti ti-info-circle"></i> Cash activates the membership now. Pay less than the plan price and the rest stays Outstanding.';
             paymentNote.className='payment-note show';
           } else {
             paymentNote.innerHTML='<i class="ti ti-alert-triangle"></i> Membership will be created as "pending" and activated automatically when payment is confirmed via webhook.';
@@ -925,8 +994,11 @@
           }
         }
         validateAssignForm();
+        updateAssignDueHint();
       });
     });
+    const amtInput=overlay.querySelector('#assignAmountPaid');
+    if(amtInput) amtInput.addEventListener('input',updateAssignDueHint);
 
     function validateAssignForm(){
       const planOk=select&&select.value;
@@ -944,11 +1016,27 @@
         errorBanner&&errorBanner.classList.remove('show');
 
         const payMethod=overlay.querySelector('input[name="assignPayment"]:checked').value;
+        const amtEl=overlay.querySelector('#assignAmountPaid');
+        const amountPaid=payMethod==='cash'?(parseFloat(amtEl&&amtEl.value)||0):undefined;
         const body={planId:select.value,paymentMethod:payMethod};
+        if(amountPaid!=null) body.amountPaid=amountPaid;
         const refEl=overlay.querySelector('#assignReferralCode');
         if(refEl&&refEl.value.trim()) body.referralCode=refEl.value.trim().toUpperCase();
 
         try{
+          if(payMethod==='cash'&&amountPaid>0&&Gfp){
+            const sh=await Gfp.get('/shifts/current');
+            if(!sh.ok||!sh.data||!sh.data.id){
+              if(errorBanner){
+                const te=errorBanner.querySelector('.error-text');
+                if(te) te.textContent='Open a shift before accepting cash.';
+                errorBanner.classList.add('show');
+              }
+              btnAssign.classList.remove('loading');
+              validateAssignForm();
+              return;
+            }
+          }
           let res;
           if(Gfp){
             res=await Gfp.post('/memberships/'+assignMemberId+'/assign',body);
@@ -959,9 +1047,13 @@
           }
           if(res.status===201||res.ok){
             const pending=res.data&&String(res.data.status||'').toLowerCase()==='pending';
+            const price=selectedPlanPrice();
+            const due=payMethod==='cash'?Math.max(0,price-(amountPaid||0)):0;
             toast(
               payMethod==='cash'
-                ?'Membership assigned & activated!'
+                ?(due>0.004
+                  ?'Assigned. EGP '+due.toLocaleString()+' outstanding — Collect Payment on this member.'
+                  :'Membership assigned & activated!')
                 :'Assigned — waiting for payment. Refresh the membership panel (no live push).',
               pending?'error':'success'
             );

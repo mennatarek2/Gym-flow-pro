@@ -34,6 +34,7 @@
   var canSeeCost =
     canManage || canPurchase || Authz.useCan('reports.financial.view');
   var list = [];
+  var allList = [];
   var current = null;
   var suppliers = [];
   var warehouses = [];
@@ -264,6 +265,11 @@
         return !p.isArchived && p.isActive !== false && p.trackStock !== false;
       })
       .map(function (p) {
+        var usual = '';
+        var sid = (document.getElementById('poSupplier') || {}).value;
+        if (sid && p.defaultSupplierId === sid) {
+          usual = ' · ' + t('usual', 'المعتاد');
+        }
         return (
           '<option value="' +
           esc(p.id) +
@@ -271,6 +277,7 @@
           esc(p.sku) +
           ' — ' +
           esc(p.name) +
+          usual +
           '</option>'
         );
       })
@@ -324,12 +331,18 @@
       esc(t('Loading…', 'جاري التحميل…')) +
       '</p></div>';
     var status = document.getElementById('filterStatus').value;
-    var r = await Gfp.get(paths.purchaseOrders(status ? { status: status } : undefined));
+    var r = await Gfp.get(paths.purchaseOrders());
     if (!r.ok) {
+      document.getElementById('kpiHost').hidden = true;
       host.innerHTML = '<div class="error-state"><p>' + esc(apiError(r)) + '</p></div>';
       return;
     }
-    list = Array.isArray(r.data) ? r.data : [];
+    allList = Array.isArray(r.data) ? r.data : [];
+    list = status
+      ? allList.filter(function (po) {
+          return po.status === status;
+        })
+      : allList;
     listTruncated =
       !!(
         r.headers &&
@@ -337,7 +350,64 @@
           'true'
       );
     listTake = (r.headers && (r.headers.get('X-Gfp-Take') || r.headers.get('x-gfp-take'))) || '200';
+    renderKpis();
     renderList(listTruncated, listTake);
+  }
+
+  function poReceivedSpend(po) {
+    return (po.lines || []).reduce(function (sum, ln) {
+      return sum + Number(ln.qtyReceived || 0) * Number(ln.unitCost || 0);
+    }, 0);
+  }
+
+  function isThisMonth(iso) {
+    if (!iso) return false;
+    var d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return false;
+    var now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+
+  function renderKpis() {
+    var host = document.getElementById('kpiHost');
+    if (!host) return;
+    var rows = allList || [];
+    var received = 0;
+    var toReceive = 0;
+    var drafts = 0;
+    var monthSpend = 0;
+    rows.forEach(function (po) {
+      var st = po.status;
+      if (st === 'received' || st === 'partially_received') received += 1;
+      if (st === 'approved' || st === 'partially_received') toReceive += 1;
+      if (st === 'draft') drafts += 1;
+      if (canSeeCost && (st === 'received' || st === 'partially_received') && isThisMonth(po.orderedAtUtc)) {
+        monthSpend += poReceivedSpend(po);
+      }
+    });
+    var thirdLabel = canSeeCost
+      ? t('This month', 'هذا الشهر')
+      : t('Drafts', 'مسودات');
+    var thirdValue = canSeeCost ? money(monthSpend) : String(drafts);
+    host.hidden = false;
+    host.innerHTML =
+      '<div class="kpi-card"><div class="label">' +
+      esc(t('Purchases', 'المشتريات')) +
+      '</div><div class="value">' +
+      esc(String(received)) +
+      '</div></div>' +
+      '<div class="kpi-card"><div class="label">' +
+      esc(t('To receive', 'بانتظار الاستلام')) +
+      '</div><div class="value' +
+      (toReceive > 0 ? ' wait' : '') +
+      '">' +
+      esc(String(toReceive)) +
+      '</div></div>' +
+      '<div class="kpi-card"><div class="label">' +
+      esc(thirdLabel) +
+      '</div><div class="value">' +
+      esc(thirdValue) +
+      '</div></div>';
   }
 
   function renderList(truncated, take) {
@@ -749,6 +819,17 @@
       }
       if (def) ws.value = def.id;
     }
+    if (prefill.supplierId) {
+      ss.value = prefill.supplierId;
+    } else if (prefill.productId) {
+      var prod = productById[prefill.productId];
+      if (prod && prod.defaultSupplierId) {
+        var match = Array.prototype.some.call(ss.options, function (opt) {
+          return opt.value === prod.defaultSupplierId;
+        });
+        if (match) ss.value = prod.defaultSupplierId;
+      }
+    }
     document.getElementById('poNotes').value = '';
     document.getElementById('poHint').textContent = '';
     document.getElementById('poLines').innerHTML = '';
@@ -760,6 +841,14 @@
 
   document.getElementById('btnCreate').addEventListener('click', function () {
     openCreatePoModal();
+  });
+
+  document.getElementById('poSupplier').addEventListener('change', function () {
+    document.querySelectorAll('#poLines .pl-product').forEach(function (sel) {
+      var cur = sel.value;
+      sel.innerHTML = purchasableOptionsHtml();
+      if (cur) sel.value = cur;
+    });
   });
 
   document.getElementById('btnAddLine').addEventListener('click', function () {
@@ -931,6 +1020,7 @@
 
   window.addEventListener('gfp:locale', function () {
     applyLocale();
+    renderKpis();
     renderList(listTruncated, listTake);
     if (current) renderDetail();
   });

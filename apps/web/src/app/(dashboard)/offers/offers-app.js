@@ -47,6 +47,8 @@
     step: 1,
     editingId: null,
     offers: [],
+    selectedId: null,
+    pendingEndId: null,
     form: blankForm(),
   };
 
@@ -120,6 +122,7 @@
       promoCodeId: d.promoCodeId || null,
       usesCount: d.usesCount || 0,
       isDraft: !!d.isDraft,
+      status: d.status || null,
       createdAt: d.createdAtUtc,
       membershipLabels: d.membershipLabels || [],
       productLabels: d.productLabels || [],
@@ -249,7 +252,25 @@
     var t = todayStr();
     if (o.end && o.end < t) return 'expired';
     if (o.start && o.start > t) return 'scheduled';
+    if (o.status === 'expired' || o.status === 'scheduled' || o.status === 'draft') return o.status;
+    var left = daysUntil(o.end);
+    if (left != null && left <= 7) return 'ending';
     return 'active';
+  }
+
+  function tabStatus(st) {
+    return st === 'ending' ? 'active' : st;
+  }
+
+  function daysUntil(end) {
+    if (!end) return null;
+    try {
+      var e = new Date(end + 'T12:00:00');
+      var t = new Date(todayStr() + 'T12:00:00');
+      return Math.round((e - t) / 86400000);
+    } catch (err) {
+      return null;
+    }
   }
 
   function discountLabel(o) {
@@ -262,6 +283,12 @@
     if (t === 'fixed') return 'Fixed amount';
     if (t === 'bxgy') return 'Buy X Get Y';
     return 'Percentage';
+  }
+
+  function appliesShort(o) {
+    if (o.applies === 'products') return 'Products';
+    if (o.applies === 'both') return 'Both';
+    return 'Memberships';
   }
 
   function appliesLabel(o) {
@@ -278,6 +305,7 @@
           return p ? p.name : null;
         })
         .filter(Boolean);
+      if (o.membershipLabels && o.membershipLabels.length) planNames = o.membershipLabels.slice();
       parts.push(planNames.length ? 'Memberships · ' + planNames.slice(0, 2).join(', ') : 'Memberships');
     }
     if (o.applies === 'products' || o.applies === 'both') {
@@ -292,6 +320,7 @@
           return p ? p.name : null;
         })
         .filter(Boolean);
+      if (o.productLabels && o.productLabels.length) prodNames = o.productLabels.slice();
       parts.push(prodNames.length ? 'Products · ' + prodNames.slice(0, 2).join(', ') : 'Products');
     }
     return parts.join(' + ') || '—';
@@ -303,40 +332,92 @@
       if (!s) return '…';
       try {
         var d = new Date(s + 'T12:00:00');
-        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
       } catch (e) {
         return s;
       }
     }
-    return fmt(start) + ' → ' + fmt(end);
+    return fmt(start) + ' – ' + fmt(end);
   }
 
-  function usageLabel(o) {
+  function isUsageTracked(o) {
+    return o.redemption === 'code' && o.discountType !== 'bxgy';
+  }
+
+  function isPosShape(o) {
+    return o.redemption === 'code' && o.discountType !== 'bxgy' && o.applies !== 'products';
+  }
+
+  function usageHtml(o) {
+    if (!isUsageTracked(o)) {
+      return '<div class="offer-use">—<span class="hint">Not tracked</span></div>';
+    }
     var used = o.usesCount || 0;
-    if (o.usageLimit === '' || o.usageLimit == null) return used + ' / ∞';
-    return used + ' / ' + o.usageLimit;
+    if (o.usageLimit === '' || o.usageLimit == null) {
+      return '<div class="offer-use">' + used + '<span class="hint">No cap</span></div>';
+    }
+    return '<div class="offer-use">' + used + ' of ' + esc(String(o.usageLimit)) + '</div>';
+  }
+
+  function dateHtml(o) {
+    var st = computeStatus(o);
+    var left = daysUntil(o.end);
+    var sub =
+      st === 'expired'
+        ? 'Ended'
+        : st === 'scheduled'
+          ? 'Starts in ' + daysUntil(o.start) + ' days'
+          : left === 0
+            ? 'Ends today'
+            : left != null
+              ? left + ' days left'
+              : '';
+    var cls = st === 'expired' ? ' mute' : st === 'ending' ? ' warn' : '';
+    return (
+      '<div class="offer-dates' +
+      cls +
+      '">' +
+      esc(formatRange(o.start, o.end)) +
+      (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') +
+      '</div>'
+    );
+  }
+
+  function metaLine(o) {
+    var bits = [];
+    if (o.redemption === 'code' && o.code) bits.push('<b>' + esc(o.code) + '</b>');
+    var st = computeStatus(o);
+    if (isPosShape(o) && st !== 'expired' && st !== 'draft') bits.push('POS');
+    else if (!o.isDraft) bits.push('App only');
+    if (o.showApp && o.featured) bits.push('Featured');
+    if (!o.showApp) bits.push('Hidden');
+    return bits.length ? '<div class="offer-meta-line">' + bits.join(' · ') + '</div>' : '';
   }
 
   function statusBadge(s) {
-    if (s === 'active') return '<span class="badge act">Active</span>';
-    if (s === 'scheduled') return '<span class="badge sched">Scheduled</span>';
-    if (s === 'expired') return '<span class="badge exp">Expired</span>';
-    return '<span class="badge draft">Draft</span>';
+    var map = {
+      active: ['on', 'Active'],
+      ending: ['end', 'Ending'],
+      scheduled: ['sched', 'Scheduled'],
+      expired: ['exp', 'Expired'],
+      draft: ['draft', 'Draft']
+    };
+    var m = map[s] || map.draft;
+    return '<span class="offer-st ' + m[0] + '"><span class="dot"></span>' + m[1] + '</span>';
   }
 
   function filteredOffers() {
     var q = (document.getElementById('searchQ').value || '').toLowerCase();
     var type = document.getElementById('filterType').value;
     var applies = document.getElementById('filterApplies').value;
-    var statusSel = document.getElementById('filterStatus').value;
-    var status = statusSel || (state.tab === 'all' ? '' : state.tab);
+    var status = state.tab === 'all' ? '' : state.tab;
     return state.offers.filter(function (o) {
       var st = computeStatus(o);
       var hay = (o.name + ' ' + (o.short || '') + ' ' + discountLabel(o) + ' ' + (o.code || '')).toLowerCase();
       if (q && hay.indexOf(q) < 0) return false;
       if (type && o.discountType !== type) return false;
       if (applies && o.applies !== applies) return false;
-      if (status && st !== status) return false;
+      if (status && tabStatus(st) !== status) return false;
       return true;
     });
   }
@@ -346,7 +427,7 @@
     document.getElementById('nAll').textContent = String(all.length);
     document.getElementById('nActive').textContent = String(
       all.filter(function (o) {
-        return computeStatus(o) === 'active';
+        return tabStatus(computeStatus(o)) === 'active';
       }).length,
     );
     document.getElementById('nScheduled').textContent = String(
@@ -354,6 +435,14 @@
         return computeStatus(o) === 'scheduled';
       }).length,
     );
+    var nDraft = document.getElementById('nDraft');
+    if (nDraft) {
+      nDraft.textContent = String(
+        all.filter(function (o) {
+          return computeStatus(o) === 'draft';
+        }).length,
+      );
+    }
     document.getElementById('nExpired').textContent = String(
       all.filter(function (o) {
         return computeStatus(o) === 'expired';
@@ -363,71 +452,259 @@
 
   function renderList() {
     updateTabCounts();
+    closeMenu();
     var rows = filteredOffers();
     var body = document.getElementById('offersBody');
     var empty = document.getElementById('offersEmpty');
+    var hint = document.getElementById('offersEmptyHint');
     if (!rows.length) {
       body.innerHTML = '';
       empty.hidden = false;
+      var filtered =
+        (document.getElementById('searchQ').value || '') ||
+        document.getElementById('filterType').value ||
+        document.getElementById('filterApplies').value ||
+        state.tab !== 'all';
+      if (hint) {
+        hint.textContent = filtered ? 'Clear search or filters.' : 'Create an offer for memberships or products.';
+      }
+      var title = empty.querySelector('.offers-empty-title');
+      if (title) title.textContent = filtered ? 'No offers match' : 'No offers yet';
       return;
     }
     empty.hidden = true;
     body.innerHTML = rows
       .map(function (o) {
         var st = computeStatus(o);
-        var actions = [];
-        if (canManage) {
-          actions.push('<button type="button" data-edit="' + esc(o.id) + '">Edit</button>');
-          actions.push('<button type="button" data-dup="' + esc(o.id) + '">Duplicate</button>');
-          if (st !== 'expired' && !o.isDraft) {
-            actions.push('<button type="button" data-expire="' + esc(o.id) + '">End</button>');
-          }
-        }
+        var kebab = canManage
+          ? '<button type="button" class="offer-kebab" data-menu="' +
+            esc(o.id) +
+            '" aria-label="Actions"><i class="ti ti-dots-vertical"></i></button>'
+          : '';
         return (
-          '<tr>' +
+          '<tr data-id="' +
+          esc(o.id) +
+          '"' +
+          (state.selectedId === o.id ? ' class="sel"' : '') +
+          '>' +
           '<td><div class="offer-name">' +
           esc(o.name) +
           '</div><div class="offer-desc">' +
           esc(o.short || '') +
-          (o.redemption === 'code' && o.code ? ' · Code ' + esc(o.code) : '') +
-          '</div></td>' +
-          '<td>' +
-          esc(typeLabel(o.discountType)) +
+          '</div>' +
+          metaLine(o) +
           '</td>' +
-          '<td><span class="pill">' +
-          esc(appliesLabel(o)) +
-          '</span></td>' +
-          '<td><strong>' +
+          '<td><div class="offer-disc" dir="ltr">' +
           esc(discountLabel(o)) +
-          '</strong></td>' +
-          '<td>' +
-          esc(formatRange(o.start, o.end)) +
+          '</div></td>' +
+          '<td class="col-for"><span class="offer-pill">' +
+          esc(appliesShort(o)) +
+          '</span></td>' +
+          '<td class="col-dates">' +
+          dateHtml(o) +
           '</td>' +
-          '<td>' +
-          esc(usageLabel(o)) +
-          '</td>' +
-          '<td>' +
-          (o.showApp
-            ? '<span class="badge app">' + (o.featured ? 'Featured' : 'Shown') + '</span>'
-            : '<span class="badge off">Hidden</span>') +
+          '<td class="col-use">' +
+          usageHtml(o) +
           '</td>' +
           '<td>' +
           statusBadge(st) +
           '</td>' +
-          '<td><div class="row-actions">' +
-          actions.join('') +
-          '</div></td></tr>'
+          '<td>' +
+          kebab +
+          '</td></tr>'
         );
       })
       .join('');
   }
 
-  function setView(view) {
-    state.view = view;
-    document.querySelectorAll('#viewTabs button').forEach(function (b) {
-      var v = b.getAttribute('data-view');
-      b.classList.toggle('act', v === view);
+  function closeMenu() {
+    var menu = document.getElementById('offerMenu');
+    if (menu) {
+      menu.hidden = true;
+      menu.innerHTML = '';
+    }
+  }
+
+  function closeDrawer() {
+    state.selectedId = null;
+    var ov = document.getElementById('offerDrawerOv');
+    if (ov) {
+      ov.hidden = true;
+      ov.innerHTML = '';
+    }
+    document.querySelectorAll('#offersBody tr').forEach(function (tr) {
+      tr.classList.remove('sel');
     });
+  }
+
+  function drawerRow(k, v) {
+    return '<div class="row"><span>' + esc(k) + '</span><strong>' + v + '</strong></div>';
+  }
+
+  function openDrawer(o) {
+    closeMenu();
+    state.selectedId = o.id;
+    document.querySelectorAll('#offersBody tr').forEach(function (tr) {
+      tr.classList.toggle('sel', tr.getAttribute('data-id') === o.id);
+    });
+    var st = computeStatus(o);
+    var use = !isUsageTracked(o)
+      ? 'Not tracked (no linked promo consume)'
+      : o.usageLimit === '' || o.usageLimit == null
+        ? (o.usesCount || 0) + ' redemptions · no cap'
+        : (o.usesCount || 0) + ' of ' + o.usageLimit + ' redemptions';
+    var posNote = isPosShape(o)
+      ? ''
+      : '<div class="offer-note">POS will not apply this offer. Automatic, product, and BXGY are Member App / catalog only. Sale still needs a membership promo code or a manual discount.</div>';
+    var ft = '';
+    if (canManage) {
+      if (st !== 'expired' && !o.isDraft) {
+        ft += '<button type="button" class="btn secondary" data-expire="' + esc(o.id) + '">End</button>';
+      }
+      ft +=
+        '<button type="button" class="btn secondary" data-dup="' +
+        esc(o.id) +
+        '">Duplicate</button>' +
+        '<button type="button" class="btn primary" data-edit="' +
+        esc(o.id) +
+        '">Edit</button>';
+    }
+    var ov = document.getElementById('offerDrawerOv');
+    ov.innerHTML =
+      '<div class="offer-drawer">' +
+      '<div class="offer-drawer-hdr"><div><h2>' +
+      esc(o.name) +
+      '</h2><div style="margin-top:8px">' +
+      statusBadge(st) +
+      '</div></div>' +
+      '<button type="button" class="btn secondary" id="closeOfferDrawer" aria-label="Close">✕</button></div>' +
+      '<div class="offer-drawer-body">' +
+      '<div class="offer-hero-disc" dir="ltr">' +
+      esc(discountLabel(o)) +
+      '</div>' +
+      '<div class="offer-desc">' +
+      esc(o.short || '') +
+      '</div>' +
+      metaLine(o) +
+      '<div class="offer-dmeta">' +
+      drawerRow('Applies to', esc(appliesLabel(o))) +
+      drawerRow('Valid', esc(formatRange(o.start, o.end))) +
+      drawerRow(
+        'Redemption',
+        esc(o.redemption === 'code' ? 'Promo code · ' + (o.code || '—') : 'Automatic (not applied at Sale)'),
+      ) +
+      drawerRow('Eligibility', esc(o.newOnly ? 'New members only (Member App filter)' : 'All members')) +
+      drawerRow('Usage', esc(use)) +
+      drawerRow('Member App', esc(!o.showApp ? 'Hidden' : o.featured ? 'Shown · Featured' : 'Shown')) +
+      '</div>' +
+      posNote +
+      '</div>' +
+      (ft ? '<div class="offer-drawer-ft">' + ft + '</div>' : '') +
+      '</div>';
+    ov.hidden = false;
+    document.getElementById('closeOfferDrawer').onclick = closeDrawer;
+    ov.onclick = function (e) {
+      if (e.target === ov) closeDrawer();
+    };
+    ov.querySelectorAll('[data-edit]').forEach(function (b) {
+      b.onclick = function () {
+        var found = state.offers.find(function (x) {
+          return x.id === b.getAttribute('data-edit');
+        });
+        if (found) {
+          closeDrawer();
+          openCreate(found);
+        }
+      };
+    });
+    ov.querySelectorAll('[data-dup]').forEach(function (b) {
+      b.onclick = function () {
+        duplicateOfferById(b.getAttribute('data-dup'));
+      };
+    });
+    ov.querySelectorAll('[data-expire]').forEach(function (b) {
+      b.onclick = function () {
+        askEndOffer(b.getAttribute('data-expire'));
+      };
+    });
+  }
+
+  function openMenu(id, btn) {
+    var o = state.offers.find(function (x) {
+      return x.id === id;
+    });
+    if (!o || !canManage) return;
+    var st = computeStatus(o);
+    var menu = document.getElementById('offerMenu');
+    menu.innerHTML =
+      '<button type="button" data-a="view">View</button>' +
+      '<button type="button" data-a="edit">Edit</button>' +
+      '<button type="button" data-a="dup">Duplicate</button>' +
+      (st !== 'expired' && !o.isDraft ? '<button type="button" class="danger" data-a="end">End…</button>' : '');
+    var r = btn.getBoundingClientRect();
+    menu.style.top = r.bottom + 4 + 'px';
+    menu.style.left = Math.max(8, r.right - 168) + 'px';
+    menu.hidden = false;
+    menu.onclick = function (e) {
+      var a = e.target.getAttribute('data-a');
+      closeMenu();
+      if (a === 'view') openDrawer(o);
+      if (a === 'edit') openCreate(o);
+      if (a === 'dup') duplicateOfferById(id);
+      if (a === 'end') askEndOffer(id);
+    };
+  }
+
+  async function duplicateOfferById(id) {
+    var src = state.offers.find(function (x) {
+      return x.id === id;
+    });
+    if (!src || !Gfp || !canManage) return;
+    var copy = JSON.parse(JSON.stringify(src));
+    copy.name = src.name + ' (copy)';
+    copy.code = src.code ? String(src.code).replace(/COPY$/, '') + 'COPY' : '';
+    copy.promoCodeId = null;
+    var dupRes = await Gfp.post('/offers', toApi(copy, true));
+    if (!dupRes.ok) {
+      toast('Duplicate failed', 'err');
+      return;
+    }
+    toast('Duplicated as draft');
+    await loadOffers();
+    renderList();
+  }
+
+  function askEndOffer(id) {
+    var off = state.offers.find(function (x) {
+      return x.id === id;
+    });
+    if (!off || !canManage) return;
+    state.pendingEndId = id;
+    document.getElementById('offerEndCopy').textContent =
+      off.name + ' will expire immediately. A linked promo code is deactivated.';
+    document.getElementById('offerEndOv').hidden = false;
+  }
+
+  async function confirmEndOffer() {
+    var id = state.pendingEndId;
+    document.getElementById('offerEndOv').hidden = true;
+    state.pendingEndId = null;
+    if (!id || !Gfp) return;
+    var endRes = await Gfp.post('/offers/' + id + '/end');
+    if (!endRes.ok) {
+      toast('Could not end offer', 'err');
+      return;
+    }
+    toast('Offer ended');
+    closeDrawer();
+    await loadOffers();
+    renderList();
+  }
+
+  function setView(view) {
+    closeDrawer();
+    closeMenu();
+    state.view = view;
     document.getElementById('viewList').hidden = view !== 'list';
     document.getElementById('viewCreate').hidden = view !== 'create';
     document.getElementById('viewMember').hidden = view !== 'member';
@@ -597,7 +874,7 @@
         '<div class="field span2"><label>Description</label><textarea data-k="desc">' +
         esc(f.desc) +
         '</textarea></div>' +
-        '<div class="field span2"><label>Offer Image / Banner</label><div class="drop-mock"><i class="ti ti-photo" style="margin-inline-end:6px"></i> Banner upload comes with Offers API</div></div>' +
+        '<div class="field span2"><label>Offer image / banner</label><div class="drop-mock">Image upload is not available yet. You can still turn on Show Banner in Member App.</div></div>' +
         field('start', 'Start Date', f.start, true, 'date') +
         field('end', 'End Date', f.end, true, 'date') +
         '</div>';
@@ -639,7 +916,7 @@
           : '');
     } else if (step === 3) {
       html =
-        '<h2>Discount configuration</h2><p class="hint">UI changes with discount type. Checkout math stays on the server later.</p>' +
+        '<h2>Discount configuration</h2><p class="hint">Percentage and fixed membership codes apply at Sale. Buy X Get Y is listed and shown in the Member App — POS does not calculate it yet.</p>' +
         '<div class="seg" data-seg-group="discountType">' +
         segBtn('percentage', 'Percentage', f.discountType) +
         segBtn('fixed', 'Fixed Amount', f.discountType) +
@@ -693,7 +970,7 @@
             field('usageLimit', 'Usage Limit', f.usageLimit, true, 'number') +
             field('perMember', 'Per Member', f.perMember, true, 'number') +
             '</div><p class="hint" style="margin-top:12px">Publishing will sync this code to live Promo Codes for POS when you have plans.manage.</p>'
-          : '<p class="hint" style="margin-top:14px">Automatic — applied at checkout when eligibility matches. No code for members to type.</p>');
+          : '<p class="hint" style="margin-top:14px">Automatic — members can see this in the app. Sale does not apply it automatically. Use a promo code or a manual discount at POS.</p>');
     } else {
       html =
         '<h2>Review &amp; publish</h2><p class="hint">Confirm before saving. Save Draft keeps Member App / POS inactive until you publish.</p>' +
@@ -950,7 +1227,6 @@
     };
     if (!canManage) {
       document.getElementById('btnCreateOffer').style.display = 'none';
-      document.getElementById('tabCreate').style.display = 'none';
     }
   }
 
@@ -982,20 +1258,25 @@
   }
 
   function bindGlobal() {
-    document.getElementById('viewTabs').addEventListener('click', function (e) {
-      var btn = e.target.closest('button[data-view]');
-      if (!btn) return;
-      var v = btn.getAttribute('data-view');
-      if (v === 'create') openCreate(null);
-      else setView(v);
-    });
     document.getElementById('btnCreateOffer').onclick = function () {
       openCreate(null);
     };
+    var memberBtn = document.getElementById('btnMemberApp');
+    if (memberBtn) {
+      memberBtn.onclick = function () {
+        setView('member');
+      };
+    }
     document.getElementById('btnBackList').onclick = function () {
       setView('list');
     };
-    ['searchQ', 'filterType', 'filterApplies', 'filterStatus'].forEach(function (id) {
+    var backMember = document.getElementById('btnBackMember');
+    if (backMember) {
+      backMember.onclick = function () {
+        setView('list');
+      };
+    }
+    ['searchQ', 'filterType', 'filterApplies'].forEach(function (id) {
       document.getElementById(id).addEventListener('input', renderList);
       document.getElementById(id).addEventListener('change', renderList);
     });
@@ -1003,55 +1284,34 @@
       var btn = e.target.closest('button[data-tab]');
       if (!btn) return;
       state.tab = btn.getAttribute('data-tab');
-      document.getElementById('filterStatus').value = state.tab === 'all' ? '' : state.tab;
       document.querySelectorAll('#statusTabs .tab').forEach(function (t) {
         t.classList.toggle('act', t === btn);
       });
       renderList();
     });
-    document.getElementById('offersBody').addEventListener('click', async function (e) {
-      var edit = e.target.closest('[data-edit]');
-      var dup = e.target.closest('[data-dup]');
-      var exp = e.target.closest('[data-expire]');
-      if (edit) {
+    document.getElementById('offersBody').addEventListener('click', function (e) {
+      var menuBtn = e.target.closest('[data-menu]');
+      if (menuBtn) {
+        e.stopPropagation();
+        openMenu(menuBtn.getAttribute('data-menu'), menuBtn);
+        return;
+      }
+      var tr = e.target.closest('tr[data-id]');
+      if (tr) {
         var o = state.offers.find(function (x) {
-          return x.id === edit.getAttribute('data-edit');
+          return x.id === tr.getAttribute('data-id');
         });
-        if (o) openCreate(o);
-      }
-      if (dup) {
-        var src = state.offers.find(function (x) {
-          return x.id === dup.getAttribute('data-dup');
-        });
-        if (!src || !Gfp) return;
-        var copy = JSON.parse(JSON.stringify(src));
-        copy.name = src.name + ' (copy)';
-        copy.code = src.code ? String(src.code).replace(/COPY$/, '') + 'COPY' : '';
-        copy.promoCodeId = null;
-        var dupRes = await Gfp.post('/offers', toApi(copy, true));
-        if (!dupRes.ok) {
-          toast('Duplicate failed', 'err');
-          return;
-        }
-        toast('Duplicated as draft');
-        await loadOffers();
-        renderList();
-      }
-      if (exp) {
-        var off = state.offers.find(function (x) {
-          return x.id === exp.getAttribute('data-expire');
-        });
-        if (!off || !Gfp) return;
-        var endRes = await Gfp.post('/offers/' + off.id + '/end');
-        if (!endRes.ok) {
-          toast('Could not end offer', 'err');
-          return;
-        }
-        toast('Offer ended');
-        await loadOffers();
-        renderList();
+        if (o) openDrawer(o);
       }
     });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('#offerMenu') && !e.target.closest('[data-menu]')) closeMenu();
+    });
+    document.getElementById('offerEndNo').onclick = function () {
+      state.pendingEndId = null;
+      document.getElementById('offerEndOv').hidden = true;
+    };
+    document.getElementById('offerEndYes').onclick = confirmEndOffer;
     document.getElementById('wizNav').addEventListener('click', function (e) {
       var stepBtn = e.target.closest('[data-step]');
       if (!stepBtn) return;

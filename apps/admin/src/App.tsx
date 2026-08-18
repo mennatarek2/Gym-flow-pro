@@ -94,14 +94,8 @@ export default function App() {
             </RequireAccess>
           }
         />
-        <Route
-          path="debtors"
-          element={
-            <RequireAccess permission="sales.sell" featureModule="debtors">
-              <PlaceholderPage titleEn="Debtors" titleAr="المدينون" />
-            </RequireAccess>
-          }
-        />
+        <Route path="debtors" element={<Navigate to="/app" replace />} />
+        <Route path="refunds" element={<Navigate to="/app/invoices" replace />} />
         <Route
           path="call-sheet"
           element={
@@ -120,17 +114,6 @@ export default function App() {
           element={
             <RequireAccess permission={['shift.open', 'shift.close']} featureModule="shifts">
               <PlaceholderPage titleEn="Shifts" titleAr="الورديات" />
-            </RequireAccess>
-          }
-        />
-        <Route
-          path="refunds"
-          element={
-            <RequireAccess
-              permission={['payments.refund.request', 'payments.refund.approve']}
-              featureModule="refunds"
-            >
-              <PlaceholderPage titleEn="Refunds" titleAr="المرتجعات" />
             </RequireAccess>
           }
         />
@@ -179,6 +162,14 @@ export default function App() {
           element={
             <RequireAccess role="OwnerOnly">
               <PlaceholderPage titleEn="Staff" titleAr="الموظفون" />
+            </RequireAccess>
+          }
+        />
+        <Route
+          path="roles"
+          element={
+            <RequireAccess role="OwnerOnly">
+              <PlaceholderPage titleEn="Roles" titleAr="الأدوار" />
             </RequireAccess>
           }
         />

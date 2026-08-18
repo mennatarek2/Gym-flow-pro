@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <!--
   Operational overview — permission-gated widgets, real APIs only.
-  Hierarchy: KPIs → Quick Actions → follow-ups → attendance/finance.
+  Hierarchy: KPIs → Quick Actions → occupancy → attendance/finance.
   No Needs Attention / Today-at-a-glance duplicates.
 -->
 <style>
@@ -124,6 +124,8 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .dash-list li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--ls3);font-size:13px;flex-wrap:wrap}
 .dash-list li:last-child{border-bottom:none}
 .dash-list-main{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-list a.dash-list-main{color:inherit;text-decoration:none}
+.dash-list a.dash-list-main:hover{color:var(--l600)}
 .dash-list-meta{color:var(--ltt);font-size:12px;flex-shrink:0;font-family:var(--fd);white-space:nowrap}
 .dash-exp-main{flex:1;min-width:140px;display:flex;flex-direction:column;gap:2px}
 .dash-exp-sub{font-size:12px;color:var(--ltt);font-weight:500}
@@ -264,6 +266,30 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .dash-seg-btn.act{background:var(--l500);color:var(--c900)}
 .dash-local-err{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .dash-local-err p{color:var(--ltt);font-size:13px}
+.occ-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.occ-gauge{position:relative;width:120px;height:120px;flex-shrink:0}
+.occ-gauge svg{display:block;width:120px;height:120px;transform:rotate(-90deg)}
+.occ-gauge .track{fill:none;stroke:var(--ls3);stroke-width:10}
+.occ-gauge .fill{fill:none;stroke:var(--suc500);stroke-width:10;stroke-linecap:round;stroke-dasharray:301.593;stroke-dashoffset:301.593}
+.occ-gauge.ok .fill{stroke:var(--suc500)}
+.occ-gauge.busy .fill{stroke:var(--wrn500)}
+.occ-gauge.full .fill,.occ-gauge.over .fill{stroke:var(--dng500)}
+.occ-gauge.mute .fill{stroke:var(--ls3)}
+.occ-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.occ-pct{font-family:var(--fd);font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.occ-pct small{font-size:13px;font-weight:600;color:var(--ltt)}
+.occ-pct-lbl{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ltt);margin-top:2px}
+.occ-copy{flex:1;min-width:140px}
+.occ-status{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.occ-status strong{font-family:var(--fd);font-size:16px;font-weight:700}
+.occ-dot{width:10px;height:10px;border-radius:50%;background:var(--suc500);box-shadow:0 0 0 4px var(--suc100);flex-shrink:0}
+.occ-dot.busy{background:var(--wrn500);box-shadow:0 0 0 4px var(--wrn100)}
+.occ-dot.full,.occ-dot.over{background:var(--dng500);box-shadow:0 0 0 4px var(--dng100)}
+.occ-dot.mute{background:var(--ltt);box-shadow:0 0 0 4px var(--ls3)}
+.occ-bar{height:8px;background:var(--ls2);border-radius:999px;overflow:hidden;margin-top:10px}
+.occ-bar > i{display:block;height:100%;border-radius:999px;background:var(--suc500)}
+.occ-bar.busy > i{background:var(--wrn500)}
+.occ-bar.full > i,.occ-bar.over > i{background:var(--dng500)}
 
 @media(max-width:900px){
   .dash-widget,.dash-widget.span-6,.dash-widget.span-12{grid-column:span 12}
@@ -322,7 +348,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
   </div>
 </div>
 
-<script src="/shared/quick-actions.js?v=3"></script>
-<script src="/dashboard/dashboard-home.js?v=ops10"></script>
+<script src="/shared/quick-actions.js?v=5"></script>
+<script src="/dashboard/dashboard-home.js?v=ops12"></script>
 </body>
 </html>

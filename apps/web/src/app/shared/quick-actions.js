@@ -64,9 +64,9 @@
       ar: 'تحصيل',
       icon: 'ti-cash',
       accent: 'qa-collect',
-      href: '/dashboard/debtors/',
+      href: '/dashboard/members/',
       access: { kind: 'permission', value: 'sales.sell' },
-      featureFlag: 'debtors'
+      featureFlag: 'sales'
     },
     {
       key: 'new_trial',
@@ -77,16 +77,6 @@
       href: '/dashboard/trials/',
       access: { kind: 'permission', value: 'sales.sell' },
       featureFlag: 'trials'
-    },
-    {
-      key: 'send_debtor_reminder',
-      en: 'Send Debtor Reminder',
-      ar: 'تذكير مدين',
-      icon: 'ti-bell-ringing',
-      accent: 'qa-remind',
-      href: '/dashboard/debtors/',
-      access: { kind: 'permission', value: 'sales.sell' },
-      featureFlag: 'debtors'
     },
     {
       key: 'open_shift',
@@ -107,16 +97,6 @@
       href: '/dashboard/shifts/',
       access: { kind: 'permission', value: 'shift.close' },
       featureFlag: 'shifts'
-    },
-    {
-      key: 'new_refund',
-      en: 'New Refund',
-      ar: 'مرتجع جديد',
-      icon: 'ti-receipt-refund',
-      accent: 'qa-refund',
-      href: '/dashboard/refunds/',
-      access: { kind: 'permission', value: ['payments.refund.request', 'payments.refund.approve'] },
-      featureFlag: 'refunds'
     },
     {
       key: 'add_promo_code',

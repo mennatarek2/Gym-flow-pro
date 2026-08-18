@@ -304,10 +304,10 @@
     if (cats.length) {
       var mainEmpty = global.document.getElementById('gfpShellEmptyMain');
       if (mainEmpty) mainEmpty.remove();
-      // Restore content hidden by a prior empty-state paint
       Array.prototype.forEach.call(main.children, function (ch) {
-        if (ch.id !== 'gfpShellEmptyMain' && ch.style && ch.style.display === 'none') {
+        if (ch.getAttribute && ch.getAttribute('data-gfp-shell-hidden') === '1') {
           ch.style.removeProperty('display');
+          ch.removeAttribute('data-gfp-shell-hidden');
         }
       });
       return;
@@ -332,7 +332,10 @@
       '</div></div>';
     // Hide noisy page content
     Array.prototype.forEach.call(main.children, function (ch) {
-      if (ch.id !== 'gfpShellEmptyMain') ch.style.display = 'none';
+      if (ch.id !== 'gfpShellEmptyMain') {
+        ch.setAttribute('data-gfp-shell-hidden', '1');
+        ch.style.display = 'none';
+      }
     });
     main.appendChild(wrap);
   }

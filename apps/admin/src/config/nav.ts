@@ -6,15 +6,14 @@ import {
   LayoutDashboard,
   Package,
   PhoneCall,
-  Receipt,
   Settings,
   ShoppingCart,
   Users,
   UserCog,
+  Shield,
   Wallet,
   DoorOpen,
   LineChart,
-  Banknote,
 } from 'lucide-react'
 import type { PermissionKey } from '@/lib/api'
 import type { FeatureModuleKey } from '@/lib/features/probe'
@@ -28,10 +27,10 @@ import type { FeatureModuleKey } from '@/lib/features/probe'
  * |-----------------|----------------------------------------------------|
  * | Overview        | Dashboard                                          |
  * | Members         | Members, Attendance                                |
- * | Front desk      | Sale, Debtors, Call Sheet                          |
- * | Money           | Shifts, Refunds, Offers & Promotions, Invoices, Reports    |
+ * | Front desk      | Sale, Member Orders, Call Sheet                          |
+ * | Money           | Shifts, Offers & Promotions, Invoices, Reports    |
  * | Catalog         | Plans                                              |
- * | Administration  | Import, Staff, Settings                            |
+ * | Administration  | Import, Staff, Roles, Settings                     |
  */
 
 export type NavAccess =
@@ -119,15 +118,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
         access: { kind: 'permission', value: 'sales.sell' },
       },
       {
-        key: 'debtors',
-        label: 'Debtors',
-        labelAr: 'المدينون',
-        path: '/app/debtors',
-        icon: Banknote,
-        access: { kind: 'permission', value: 'sales.sell' },
-        featureFlag: 'debtors',
-      },
-      {
         key: 'call-sheet',
         label: 'Call Sheet',
         labelAr: 'ورقة المتابعة',
@@ -151,18 +141,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
         icon: Wallet,
         access: { kind: 'permission', value: ['shift.open', 'shift.close'] },
         featureFlag: 'shifts',
-      },
-      {
-        key: 'refunds',
-        label: 'Refunds',
-        labelAr: 'المرتجعات',
-        path: '/app/refunds',
-        icon: Receipt,
-        access: {
-          kind: 'permission',
-          value: ['payments.refund.request', 'payments.refund.approve'],
-        },
-        featureFlag: 'refunds',
       },
       {
         key: 'offers',
@@ -229,6 +207,14 @@ export const NAV_CATEGORIES: NavCategory[] = [
         labelAr: 'الموظفون',
         path: '/app/staff',
         icon: UserCog,
+        access: { kind: 'policy', value: 'OwnerOnly' },
+      },
+      {
+        key: 'roles',
+        label: 'Roles',
+        labelAr: 'الأدوار',
+        path: '/app/roles',
+        icon: Shield,
         access: { kind: 'policy', value: 'OwnerOnly' },
       },
       {

@@ -1,5 +1,5 @@
 ﻿/**
- * Member Orders inbox — staff fulfillment (no payment / POS logic).
+ * Member Orders — staff packing desk (no payment / POS logic).
  * Real APIs via GfpApi + GfpMemberOrdersApi.
  */
 (function () {
@@ -36,9 +36,8 @@
     var d = new Date(iso);
     if (Number.isNaN(d.getTime())) return String(iso);
     return d.toLocaleString(undefined, {
-      day: '2-digit',
+      day: 'numeric',
       month: 'short',
-      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -69,6 +68,16 @@
     if (detail && !/^[A-Z][A-Z0-9_]+$/.test(String(detail))) return String(detail);
     if (r.status === 0) return t('Network error — try again.', 'مشكلة شبكة — حاول تاني.');
     return t('Unable to update this order. Please try again.', 'مش قدرنا نحدّث الطلب. حاول تاني.');
+  }
+
+  function statusLabel(st) {
+    var n = Mo ? Mo.normalizeStatus(st) : st;
+    if (n === 'Pending') return t('New', 'جديد');
+    if (n === 'Accepted') return t('Preparing', 'بنجهّز');
+    if (n === 'Ready') return t('Ready', 'جاهز');
+    if (n === 'Completed') return t('Done', 'تمام');
+    if (n === 'Rejected') return t("Couldn't", 'مش قادرين');
+    return n || '—';
   }
 
   function getUser() {
@@ -124,32 +133,140 @@
   var actionBusy = false;
   var pollTimer = null;
   var hubConnection = null;
+  var productById = {};
+  var linesByOrderId = {};
+  var hydrating = false;
 
-  function setSignal(mode) {
-    var dot = document.getElementById('moSignalDot');
-    var lab = document.getElementById('moSignalLabel');
-    if (!dot || !lab) return;
-    dot.className = 'dot' + (mode === 'live' ? ' on' : mode === 'poll' ? ' poll' : '');
-    lab.textContent =
-      mode === 'live'
-        ? t('Live', 'مباشر')
-        : mode === 'poll'
-          ? t('Polling', 'تحديث دوري')
-          : t('Offline', 'غير متصل');
+  function mediaUrl(url) {
+    if (!url) return '';
+    var u = String(url).trim();
+    if (!u) return '';
+    if (/^(https?:|blob:|data:)/i.test(u)) return u;
+    var origin = String(window.API_BASE || (Gfp && Gfp.apiBase && Gfp.apiBase()) || '').replace(
+      /\/api\/?$/i,
+      ''
+    );
+    if (!origin && Gfp && typeof Gfp.apiBase === 'function') {
+      origin = String(Gfp.apiBase()).replace(/\/api\/?$/i, '');
+    }
+    if (!origin) {
+      try {
+        origin = new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+      } catch (e) {
+        origin = 'https://localhost:5001';
+      }
+    }
+    return origin + (u.charAt(0) === '/' ? u : '/' + u);
+  }
+
+  function productRecord(id) {
+    if (!id) return null;
+    return productById[id] || productById[String(id)] || null;
+  }
+
+  function linePhoto(line) {
+    var p = productRecord(line && line.productId);
+    return (line && line.imageUrl) || (p && (p.imageUrl || p.relativeUrl)) || '';
+  }
+
+  function thumbHtml(url, cls) {
+    var src = mediaUrl(url);
+    var klass = cls || 'thumb';
+    if (!src) return '<span class="thumb-ph" aria-hidden="true"><i class="ti ti-photo"></i></span>';
+    return (
+      '<img class="' +
+      klass +
+      '" src="' +
+      esc(src) +
+      '" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;thumb-ph&quot; aria-hidden=&quot;true&quot;><i class=&quot;ti ti-photo&quot;></i></span>\'">'
+    );
+  }
+
+  function rememberLines(o) {
+    if (o && o.id && o.lines && o.lines.length) linesByOrderId[o.id] = o.lines;
+  }
+
+  function linesFor(o) {
+    if (o && o.lines && o.lines.length) return o.lines;
+    if (o && o.id && linesByOrderId[o.id]) return linesByOrderId[o.id];
+    return [];
+  }
+
+  function whatSummary(o) {
+    var lines = linesFor(o);
+    if (!lines.length) {
+      return '<span class="what muted">' + esc(t('Tap to see', 'اضغط للعرض')) + '</span>';
+    }
+    var first = lines[0];
+    var extra = lines.length > 1 ? ' +' + (lines.length - 1) : '';
+    return (
+      '<span class="what">' +
+      thumbHtml(linePhoto(first)) +
+      '<span>' +
+      esc(first.name || t('Item', 'صنف')) +
+      extra +
+      '</span></span>'
+    );
+  }
+
+  async function loadProducts() {
+    if (!Gfp) return;
+    try {
+      var r = await Gfp.get('/inventory/products');
+      if (!r.ok) return;
+      var rows = Array.isArray(r.data) ? r.data : (r.data && r.data.items) || [];
+      rows.forEach(function (p) {
+        if (p && p.id) {
+          productById[p.id] = {
+            name: p.name || p.sku || '',
+            sku: p.sku || '',
+            imageUrl: p.imageUrl || p.relativeUrl || null
+          };
+        }
+      });
+    } catch (e) {}
   }
 
   function showFeatureBanner(msg) {
     var el = document.getElementById('featureDisabled');
     var body = document.getElementById('featureDisabledBody');
     if (body && msg) body.textContent = msg;
-    if (el) el.style.display = 'flex';
+    if (!el) return;
+    el.hidden = false;
+    el.classList.remove('is-off');
+    el.style.display = 'flex';
+  }
+  function hideFeatureBanner() {
+    var el = document.getElementById('featureDisabled');
+    if (!el) return;
+    el.hidden = true;
+    el.classList.add('is-off');
+    el.style.display = '';
+  }
+
+  function drawerOpen() {
+    var d = document.getElementById('detailDrawer');
+    return d && !d.hidden;
+  }
+
+  function openDrawer() {
+    var d = document.getElementById('detailDrawer');
+    if (d) d.hidden = false;
+  }
+
+  function closeDrawer() {
+    var d = document.getElementById('detailDrawer');
+    if (d) d.hidden = true;
+    document.querySelectorAll('#tbody tr[data-id]').forEach(function (tr) {
+      tr.classList.remove('row-sel');
+    });
   }
 
   async function loadList() {
     var tbody = document.getElementById('tbody');
     if (!canView) {
       tbody.innerHTML =
-        '<tr><td colspan="7" class="mo-error">' +
+        '<tr><td colspan="5" class="mo-error">' +
         esc(t('You do not have permission to view member orders.', 'مش عندك صلاحية تشوف طلبات الأعضاء.')) +
         '</td></tr>';
       showFeatureBanner(
@@ -159,13 +276,13 @@
     }
     if (!Gfp || !Mo) {
       tbody.innerHTML =
-        '<tr><td colspan="7" class="mo-error">' +
+        '<tr><td colspan="5" class="mo-error">' +
         esc(t('Unable to load member orders.', 'مش قدرنا نحمّل طلبات الأعضاء.')) +
         '</td></tr>';
       return;
     }
     tbody.innerHTML =
-      '<tr><td colspan="7" class="mo-loading">' +
+      '<tr><td colspan="5" class="mo-loading">' +
       esc(t('Loading…', 'جاري التحميل…')) +
       '</td></tr>';
 
@@ -179,7 +296,7 @@
     if (!r.ok) {
       if (r.data && r.data.title === 'FEATURE_DISABLED') showFeatureBanner(apiError(r));
       tbody.innerHTML =
-        '<tr><td colspan="7" class="mo-error">' +
+        '<tr><td colspan="5" class="mo-error">' +
         esc(apiError(r)) +
         ' <button type="button" class="btn secondary" id="btnRetryList">' +
         esc(t('Try again', 'حاول تاني')) +
@@ -192,67 +309,85 @@
 
     var paged = Mo.extractPaged(r.data);
     var items = (paged.items || []).map(Mo.normalizeOrder).filter(Boolean);
+    hideFeatureBanner();
+    items.forEach(rememberLines);
     renderPager(paged.totalPages, paged.totalCount);
+    renderRows(items);
+    hydrateMissing(items);
+  }
 
+  function renderRows(items) {
+    var tbody = document.getElementById('tbody');
     if (!items.length) {
       tbody.innerHTML =
-        '<tr><td colspan="7" class="mo-empty">' +
-        esc(t('No member orders yet.', 'مفيش طلبات أعضاء لسه.')) +
+        '<tr><td colspan="5" class="mo-empty">' +
+        esc(t('No orders from the app yet.', 'مفيش طلبات من التطبيق لسه.')) +
         '</td></tr>';
       return;
     }
-
     tbody.innerHTML = items
       .map(function (o) {
-        var num = o.orderNumber != null ? '#' + o.orderNumber : (o.id || '').slice(0, 8);
-        var sel = o.id === selectedId ? ' row-sel' : '';
+        var sel = o.id === selectedId && drawerOpen() ? ' row-sel' : '';
         return (
           '<tr class="' +
           sel +
           '" data-id="' +
           esc(o.id) +
           '">' +
-          '<td dir="ltr"><strong>' +
-          esc(num) +
-          '</strong></td>' +
-          '<td>' +
+          '<td class="who">' +
           esc(o.memberName) +
           '</td>' +
-          '<td dir="ltr">' +
-          esc(o.memberNumber) +
+          '<td>' +
+          whatSummary(o) +
           '</td>' +
-          '<td><strong>' +
+          '<td class="amt">' +
           esc(money(o.total, o.currency)) +
-          '</strong></td>' +
+          '</td>' +
           '<td>' +
           esc(dt(o.createdAt)) +
           '</td>' +
           '<td><span class="mo-status ' +
           esc(o.status) +
           '">' +
-          esc(o.status || '—') +
+          esc(statusLabel(o.status)) +
           '</span></td>' +
-          '<td><button type="button" class="btn secondary" data-view="' +
-          esc(o.id) +
-          '">' +
-          esc(t('View', 'عرض')) +
-          '</button></td>' +
           '</tr>'
         );
       })
       .join('');
 
-    tbody.querySelectorAll('[data-view]').forEach(function (btn) {
-      btn.onclick = function () {
-        openDetail(btn.getAttribute('data-view'));
-      };
-    });
     tbody.querySelectorAll('tr[data-id]').forEach(function (tr) {
-      tr.onclick = function (e) {
-        if (e.target.closest('button')) return;
+      tr.onclick = function () {
         openDetail(tr.getAttribute('data-id'));
       };
     });
+  }
+
+  async function hydrateMissing(items) {
+    if (hydrating || !Gfp || !Mo) return;
+    var missing = items.filter(function (o) {
+      return o && o.id && !linesFor(o).length;
+    });
+    if (!missing.length) return;
+    hydrating = true;
+    try {
+      await Promise.all(
+        missing.slice(0, PAGE_SIZE).map(function (o) {
+          return Gfp.get(Mo.paths.detail(o.id)).then(function (r) {
+            if (r && r.ok) rememberLines(Mo.normalizeOrder(r.data));
+          });
+        })
+      );
+      items.forEach(function (o) {
+        if (o && o.id && linesByOrderId[o.id] && !(o.lines && o.lines.length)) {
+          o.lines = linesByOrderId[o.id];
+        }
+      });
+      renderRows(items);
+    } catch (e) {
+    } finally {
+      hydrating = false;
+    }
   }
 
   function renderPager(totalPages, totalCount) {
@@ -299,9 +434,10 @@
     document.querySelectorAll('#tbody tr[data-id]').forEach(function (tr) {
       tr.classList.toggle('row-sel', tr.getAttribute('data-id') === id);
     });
-    document.getElementById('detailEmpty').style.display = 'none';
-    document.getElementById('detailBody').style.display = 'block';
-    document.getElementById('dMember').textContent = '…';
+    openDrawer();
+    document.getElementById('detailLoading').hidden = false;
+    document.getElementById('detailBody').hidden = true;
+    document.getElementById('dName').textContent = '…';
     document.getElementById('rejectBox').classList.remove('show');
 
     var r = await Gfp.get(Mo.paths.detail(id));
@@ -311,45 +447,48 @@
     }
     if (!r.ok) {
       toast(apiError(r), 'err');
-      document.getElementById('dMember').textContent = '—';
+      document.getElementById('dName').textContent = '—';
+      document.getElementById('detailLoading').hidden = true;
+      document.getElementById('detailBody').hidden = false;
       return;
     }
     selectedOrder = Mo.normalizeOrder(r.data);
+    rememberLines(selectedOrder);
     renderDetail(selectedOrder);
+  }
+
+  function linePrice(l, currency) {
+    if (l.lineTotal != null) return money(l.lineTotal, currency);
+    if (l.unitPrice != null) return money(Number(l.unitPrice) * Number(l.qty), currency);
+    return '';
   }
 
   function renderDetail(o) {
     if (!o) return;
-    var num = o.orderNumber != null ? '#' + o.orderNumber : (o.id || '').slice(0, 8);
-    document.getElementById('dMember').textContent = o.memberName || '—';
-    document.getElementById('dMemberNo').textContent = o.memberNumber || '—';
-    document.getElementById('dOrderNo').textContent = num;
-    document.getElementById('dStatus').innerHTML =
-      '<span class="mo-status ' + esc(o.status) + '">' + esc(o.status || '—') + '</span>';
-    document.getElementById('dCreated').textContent = dt(o.createdAt);
+    document.getElementById('detailLoading').hidden = true;
+    document.getElementById('detailBody').hidden = false;
+    document.getElementById('dName').textContent = o.memberName || '—';
+    document.getElementById('dMeta').textContent = dt(o.createdAt) + ' · ' + statusLabel(o.status);
     document.getElementById('dTotal').textContent = money(o.total, o.currency);
 
     var lines = document.getElementById('dLines');
-    if (!o.lines.length) {
-      lines.innerHTML = '<li class="muted">' + esc(t('No line items.', 'مفيش أصناف.')) + '</li>';
+    var rows = linesFor(o);
+    if (!rows.length) {
+      lines.innerHTML = '<div class="muted">' + esc(t('No items.', 'مفيش أصناف.')) + '</div>';
     } else {
-      lines.innerHTML = o.lines
+      lines.innerHTML = rows
         .map(function (l) {
-          var right =
-            l.lineTotal != null
-              ? money(l.lineTotal, o.currency)
-              : l.unitPrice != null
-                ? money(Number(l.unitPrice) * Number(l.qty), o.currency)
-                : '';
           return (
-            '<li><span>' +
+            '<div class="mo-line">' +
+            thumbHtml(linePhoto(l)) +
+            '<div><div class="nm">' +
             esc(l.name) +
-            ' ×' +
+            '</div><div class="qty">× ' +
             esc(String(l.qty)) +
-            (l.sku ? ' <span class="muted">(' + esc(l.sku) + ')</span>' : '') +
-            '</span><strong>' +
-            esc(right) +
-            '</strong></li>'
+            '</div></div>' +
+            '<div class="px">' +
+            esc(linePrice(l, o.currency)) +
+            '</div></div>'
           );
         })
         .join('');
@@ -357,11 +496,39 @@
 
     var note = document.getElementById('dNote');
     if (o.note) {
-      note.style.display = 'block';
+      note.hidden = false;
       note.textContent = o.note;
     } else {
-      note.style.display = 'none';
+      note.hidden = true;
       note.textContent = '';
+    }
+
+    var st = Mo.normalizeStatus(o.status);
+    var hint = document.getElementById('dHint');
+    if (st === 'Pending') {
+      hint.textContent = t(
+        'They asked from the Member App. Pack it, then tap I’ll pack this.',
+        'طلبوا من التطبيق. جهّز الطلب، وبعدين اضغط هجهّزه.'
+      );
+    } else if (st === 'Accepted') {
+      hint.textContent = t(
+        'You’re packing this. When the bag is ready, tap It’s ready.',
+        'بتجهّز الطلب. لما الشنطة تبقى جاهزة، اضغط جاهز.'
+      );
+    } else if (st === 'Ready') {
+      hint.textContent = t(
+        'Waiting at the desk. When they take it, tap They collected it.',
+        'مستني عند المكتب. لما ياخدوا الطلب، اضغط استلموه.'
+      );
+    } else if (st === 'Completed') {
+      hint.textContent = t(
+        'Done. If they still need to pay, take it on Sale.',
+        'تمام. لو لسه محتاج يدفع، خد الفلوس من البيع.'
+      );
+    } else if (st === 'Rejected') {
+      hint.textContent = t("Couldn't fulfill this order.", 'مش قدرنا نجهّز الطلب.');
+    } else {
+      hint.textContent = '';
     }
 
     var linkWrap = document.getElementById('dMemberLinkWrap');
@@ -394,18 +561,18 @@
     }
 
     if (st === 'Pending') {
-      addBtn('btnAccept', 'Accept', 'قبول', 'primary').onclick = function () {
+      addBtn('btnAccept', 'I’ll pack this', 'هجهّزه', 'primary').onclick = function () {
         runAction('accept');
       };
-      addBtn('btnReject', 'Reject', 'رفض', 'secondary').onclick = function () {
+      addBtn('btnReject', "Can't fulfill", 'مش قادرين', 'secondary').onclick = function () {
         document.getElementById('rejectBox').classList.add('show');
       };
     } else if (st === 'Accepted') {
-      addBtn('btnReady', 'Mark Ready', 'جاهز', 'primary').onclick = function () {
+      addBtn('btnReady', 'It’s ready', 'جاهز', 'primary').onclick = function () {
         runAction('ready');
       };
     } else if (st === 'Ready') {
-      addBtn('btnComplete', 'Complete', 'إكمال', 'primary').onclick = function () {
+      addBtn('btnComplete', 'They collected it', 'استلموه', 'primary').onclick = function () {
         runAction('complete');
       };
     }
@@ -454,12 +621,12 @@
     document.getElementById('rejectReason').value = '';
     if (r.data) {
       selectedOrder = Mo.normalizeOrder(r.data);
+      rememberLines(selectedOrder);
       renderDetail(selectedOrder);
     } else {
       await openDetail(selectedId);
     }
     await loadList();
-    // Member 360 Orders tab refreshes if open in another tab via next visit; same-page flag reset if shell reused
     try {
       window._ordersLoaded = false;
     } catch (e) {}
@@ -470,8 +637,15 @@
   };
   document.getElementById('btnRefresh').onclick = function () {
     loadList();
-    if (selectedId) openDetail(selectedId);
+    if (selectedId && drawerOpen()) openDetail(selectedId);
   };
+  document.getElementById('btnCloseDetail').onclick = closeDrawer;
+  document.getElementById('detailDrawer').addEventListener('click', function (e) {
+    if (e.target === this) closeDrawer();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && drawerOpen()) closeDrawer();
+  });
 
   document.querySelectorAll('#statusFilters .chip').forEach(function (chip) {
     chip.onclick = function () {
@@ -487,10 +661,9 @@
 
   function startPolling(ms) {
     stopPolling();
-    setSignal('poll');
     pollTimer = setInterval(function () {
       loadList();
-      if (selectedId) openDetail(selectedId);
+      if (selectedId && drawerOpen()) openDetail(selectedId);
     }, ms || 20000);
   }
   function stopPolling() {
@@ -530,19 +703,17 @@
           .withAutomaticReconnect()
           .build();
 
-        ['MemberOrderCreated', 'MemberOrderUpdated', 'OrderUpdated', 'orderUpdated'].forEach(
+        ['MemberOrderCreated', 'MemberOrderStatusChanged', 'MemberOrderUpdated', 'OrderUpdated'].forEach(
           function (evt) {
             hubConnection.on(evt, function () {
               loadList();
-              if (selectedId) openDetail(selectedId);
+              if (selectedId && drawerOpen()) openDetail(selectedId);
             });
           }
         );
 
         await hubConnection.start();
-        setSignal('live');
         stopPolling();
-        // Light safety refresh even when live
         pollTimer = setInterval(function () {
           loadList();
         }, 60000);
@@ -551,7 +722,6 @@
         hubConnection = null;
       }
     }
-    // Attendance hub is check-in only — fall back to polling.
     startPolling(20000);
   }
 
@@ -560,6 +730,7 @@
       var r = await Gfp.get('/settings');
       if (r.ok && r.data) document.getElementById('gymName').textContent = r.data.gymName || 'Gym';
     } catch (e) {}
+    await loadProducts();
     await loadList();
     var deepId = new URLSearchParams(location.search).get('orderId');
     if (deepId) await openDetail(deepId);

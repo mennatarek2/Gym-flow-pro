@@ -9,7 +9,7 @@
 .modal-overlay.drawer-overlay{justify-content:flex-end;padding:0}
 
 /* ── Base Modal ── */
-.modal-panel{background:var(--ls1);border-radius:var(--rlg);width:100%;max-width:460px;box-shadow:var(--sh4);transform:translateY(20px) scale(.97);transition:all var(--tb);display:flex;flex-direction:column;max-height:90vh}
+.modal-panel{background:var(--ls1);border-radius:var(--rlg);width:100%;max-width:460px;box-shadow:var(--sh4);transform:translateY(20px) scale(.97);transition:all var(--tb);display:flex;flex-direction:column;max-height:90vh;min-height:0;overflow:hidden}
 .modal-overlay.open .modal-panel{transform:translateY(0) scale(1)}
 
 /* ── Wide Modal (560px for Add Member) ── */
@@ -89,7 +89,7 @@ select.mdl-input{appearance:none;cursor:pointer;background-image:url("data:image
 .field-error .err-ar{font-family:var(--fa);direction:rtl;margin-right:auto}
 
 /* ── Modal Footer ── */
-.mdl-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 28px;border-top:1px solid var(--ls3);flex-shrink:0;background:var(--ls2)}
+.mdl-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 28px;border-top:1px solid var(--ls3);flex-shrink:0;background:var(--ls2);width:100%;min-width:0}
 .mdl-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:var(--rmd);font-family:var(--fd);font-size:13px;font-weight:700;cursor:pointer;transition:all var(--tf);border:none}
 .mdl-btn i{font-size:15px}
 .mdl-btn.ghost{background:transparent;color:var(--lts);border:1px solid var(--ls3)}
@@ -150,9 +150,11 @@ select.mdl-input{appearance:none;cursor:pointer;background-image:url("data:image
 
 /* Payment info note */
 .payment-note{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;border-radius:var(--rmd);background:var(--inf100);margin-top:12px;font-size:12px;color:#1E40AF;opacity:0;max-height:0;overflow:hidden;transition:all .25s ease}
-.payment-note.show{opacity:1;max-height:80px;margin-top:12px}
+.payment-note.show{opacity:1;max-height:120px;margin-top:12px}
 .payment-note i{font-size:16px;flex-shrink:0;margin-top:1px}
 .payment-note.warning{background:rgba(251,191,36,.1);color:#92400E}
+.assign-due-hint{font-size:12px;color:var(--ltt,#8C8C8C);margin-top:6px;line-height:1.4}
+.assign-due-hint.has-due{color:#92400E}
 
 /* ═══════════════════════════════════════════════════════════════
    Global Error Banner (for API 400/409/500 errors)

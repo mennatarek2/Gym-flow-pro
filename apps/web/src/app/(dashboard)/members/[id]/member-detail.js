@@ -44,6 +44,8 @@
   const canView=Authz?Authz.useCan('members.view'):true;
   const canEdit=Authz?Authz.useCan('members.edit'):false;
   const canFreeze=Authz?Authz.useCan('memberships.freeze'):false;
+  const canSell=Authz?Authz.useCan('sales.sell'):false;
+  const canFinance=Authz?Authz.useCan('reports.financial.view'):false;
   const isOwner=Authz?Authz.useCanRole('OwnerOnly'):(user.role==='Owner'||user.role==='owner');
   if(!canView){window.location.href='/dashboard/';return;}
   const ini=(user.fullName||'U').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
@@ -93,6 +95,48 @@
     setTimeout(()=>t.classList.remove('show'),3000);
   }
   function fmtEGP(v){return 'EGP '+(v||0).toLocaleString();}
+  function fmtPayMethod(m){
+    if(!m) return '—';
+    return String(m).replace(/_/g,' ').replace(/\b\w/g,function(c){ return c.toUpperCase(); });
+  }
+  function membershipStatusLabel(st){
+    return ({
+      pending:'Waiting for payment',
+      active:'Active',
+      frozen:'Frozen',
+      expired:'Expired',
+      cancelled:'Cancelled',
+      scheduled:'Scheduled'
+    })[st]||st||'—';
+  }
+  let inviteQuotaSnap={ remaining:null, total:null, planName:'' };
+  function inviteFactText(st){
+    if(st==='pending') return '0 · starts when paid';
+    if(inviteQuotaSnap.remaining==null && inviteQuotaSnap.total==null) return '—';
+    return (inviteQuotaSnap.remaining!=null?inviteQuotaSnap.remaining:0)+' of '+(inviteQuotaSnap.total!=null?inviteQuotaSnap.total:0);
+  }
+  function applyInviteQuota(quota){
+    quota=quota||{};
+    inviteQuotaSnap={
+      remaining:quota.remaining!=null?quota.remaining:0,
+      total:quota.total!=null?quota.total:0,
+      planName:quota.planName||''
+    };
+    const pq=document.getElementById('profileQuota');
+    if(pq) pq.textContent=inviteQuotaSnap.remaining;
+    const el=document.getElementById('msInviteVal');
+    const ms=memberData&&memberData.currentMembership;
+    if(el) el.textContent=inviteFactText(ms&&String(ms.status||'').toLowerCase());
+  }
+  async function refreshInviteQuota(){
+    if(!Gfp||!memberId||memberId==='DEMO') return;
+    try{
+      const r=await Gfp.get('/invitation/members/'+encodeURIComponent(memberId));
+      if(!r.ok) return;
+      const payload=r&&r.data&&r.data.quota?r.data:(r&&r.data&&r.data.data)||r.data||{};
+      applyInviteQuota(payload.quota||{});
+    }catch(e){ /* leave — until Invitations tab loads */ }
+  }
   function calcDuration(cin,cout){
     if(!cin||!cout) return '—';
     const m=Math.round((new Date(cout)-new Date(cin))/60000);
@@ -117,6 +161,7 @@
       this.classList.add('act');
       document.getElementById(this.dataset.tab).classList.add('act');
       // Lazy load attendance/history on first open
+      if(this.dataset.tab==='tabInv' && !window._invLoaded){loadInvitations360();window._invLoaded=true;}
       if(this.dataset.tab==='tabAtt' && !window._attLoaded){loadAttendance();window._attLoaded=true;}
       if(this.dataset.tab==='tabOrders' && !window._ordersLoaded){loadMemberOrders();window._ordersLoaded=true;}
       if(this.dataset.tab==='tabHist' && !window._histLoaded){loadHistory();window._histLoaded=true;}
@@ -160,6 +205,7 @@
       }
       renderMember(r.data);
     }catch(e){
+      console.error(e);
       toast('Unable to load member','error');
     }
   }
@@ -247,13 +293,303 @@
     renderMembership(m.currentMembership||null);
     renderRecentAttendance(Array.isArray(m.recentAttendance)?m.recentAttendance:[]);
     renderMemberApp(m);
+    loadFinancial();
     reconcileCurrentMembership();
+
+    window._invLoaded=false;
+    var invPane=document.getElementById('tabInv');
+    if(invPane&&invPane.classList.contains('act')){
+      loadInvitations360();
+      window._invLoaded=true;
+    }
 
     document.getElementById('skeletonProfile').style.display='none';
     document.getElementById('skeletonTabs').style.display='none';
     document.getElementById('profileContent').style.display='';
     document.getElementById('tabsContent').style.display='';
     applyLocaleBits(document.getElementById('memberAppCard'));
+    applyLocaleBits(document.getElementById('fin360'));
+  }
+
+  async function loadFinancial(){
+    const card=document.getElementById('fin360');
+    if(!card) return;
+    if(!canSell && !canFinance){
+      card.hidden=true;
+      return;
+    }
+    card.hidden=false;
+    const val=document.getElementById('fin360Outstanding');
+    const inv=document.getElementById('fin360Invoices');
+    if(inv){
+      inv.style.display=canFinance?'flex':'none';
+      if(memberId && memberId!=='DEMO'){
+        inv.href='/dashboard/invoices/?memberId='+encodeURIComponent(memberId);
+      }
+    }
+    if(!Gfp || !canSell || !memberId || memberId==='DEMO'){
+      if(val) val.textContent='—';
+      card.classList.remove('has-due');
+      showCollectBtn(0);
+      loadRefundHistory();
+      return;
+    }
+    try{
+      const r=await Gfp.get('/debtors?page=1&pageSize=1&memberId='+encodeURIComponent(memberId));
+      if(r.status===401){window.location.href='/auth/login/';return;}
+      if(!r.ok){
+        if(val) val.textContent='—';
+        card.classList.remove('has-due');
+        showCollectBtn(0);
+        return;
+      }
+      const d=r.data;
+      const items=Array.isArray(d)?d:(d&&d.items)||[];
+      const due=items[0]?Number(items[0].totalDue||0):0;
+      if(val) val.textContent=fmtEGP(due);
+      card.classList.toggle('has-due', due>0);
+      showCollectBtn(due);
+    }catch(e){
+      if(val) val.textContent='—';
+      card.classList.remove('has-due');
+      showCollectBtn(0);
+    }
+    loadRefundHistory();
+  }
+
+  function showCollectBtn(due){
+    const btn=document.getElementById('btnCollectPayment');
+    if(!btn) return;
+    btn.hidden=!(canSell && Number(due)>0);
+  }
+
+  let collectSales=[];
+  let collectSelected=null;
+
+  function collectErr(msg){
+    const banner=document.getElementById('collectErrorBanner');
+    if(!banner) return;
+    banner.classList.toggle('show', !!msg);
+    const t=banner.querySelector('.error-text');
+    if(t) t.textContent=msg||'';
+  }
+
+  function syncTakePaymentEnabled(){
+    const btn=document.getElementById('btnTakePayment');
+    if(!btn) return;
+    const sale=selectedCollectSale();
+    const amtEl=document.getElementById('collectAmount');
+    const amount=amtEl?parseFloat(amtEl.value):NaN;
+    const ok=!!(sale && amount>0 && amount<=Number(sale.amountDue)+1e-9);
+    btn.disabled=!ok;
+  }
+
+  function fmtDueOnly(d){
+    if(!d) return '';
+    const s=String(d).slice(0,10);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+      const p=s.split('-');
+      return new Date(Number(p[0]), Number(p[1])-1, Number(p[2])).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    }
+    return fmtDate(d);
+  }
+
+  function selectedCollectSale(){
+    if(!collectSelected) return null;
+    for(let i=0;i<collectSales.length;i++){
+      if(String(collectSales[i].saleId)===String(collectSelected)) return collectSales[i];
+    }
+    return null;
+  }
+
+  function selectCollectSale(saleId){
+    collectSelected=saleId;
+    const sale=selectedCollectSale();
+    document.querySelectorAll('.collect-choice').forEach(function(el){
+      el.classList.toggle('on', el.getAttribute('data-id')===String(saleId));
+    });
+    const amt=document.getElementById('collectAmount');
+    const hint=document.getElementById('collectAmountHint');
+    if(sale && amt){
+      amt.max=sale.amountDue;
+      amt.value=sale.amountDue;
+    }
+    if(hint){
+      hint.textContent=sale
+        ? t('Remaining on this sale: ','المتبقي على هذا البيع: ')+fmtEGP(sale.amountDue)
+        : '';
+    }
+    syncTakePaymentEnabled();
+  }
+
+  function renderCollectSales(){
+    const wrap=document.getElementById('collectSaleChoices');
+    if(!wrap) return;
+    if(!collectSales.length){
+      wrap.innerHTML='<div class="collect-hint">'+escHtml(t('Nothing outstanding.','لا يوجد مستحق.'))+'</div>';
+      return;
+    }
+    wrap.innerHTML=collectSales.map(function(s){
+      const due=fmtDueOnly(s.dueDate);
+      const paid=Number(s.paid||0);
+      const total=Number(s.total||0);
+      return '<div class="collect-choice'+(String(s.saleId)===String(collectSelected)?' on':'')+'" data-id="'+escHtml(s.saleId)+'" role="button" tabindex="0">'
+        +'<div><b>'+escHtml(s.description||t('Sale','بيع'))+'</b>'
+        +'<small>'+escHtml(t('Paid ','مدفوع ')+fmtEGP(paid)+t(' of ',' من ')+fmtEGP(total)+(due?t(' · Due ',' · الاستحقاق ')+due:''))+'</small></div>'
+        +'<div class="due">'+escHtml(fmtEGP(s.amountDue))+'</div></div>';
+    }).join('');
+    wrap.querySelectorAll('.collect-choice').forEach(function(el){
+      el.addEventListener('click',function(){ selectCollectSale(el.getAttribute('data-id')); });
+    });
+  }
+
+  async function openCollectDrawer(){
+    if(!canSell || !Gfp || !memberId || memberId==='DEMO') return;
+    collectErr('');
+    collectSales=[];
+    collectSelected=null;
+    const overlay=document.getElementById('collectPaymentDrawer');
+    if(overlay) overlay.classList.add('open');
+    applyLocaleBits(overlay);
+    try{
+      const r=await Gfp.get('/debtors/'+encodeURIComponent(memberId)+'/sales');
+      if(r.status===401){window.location.href='/auth/login/';return;}
+      if(!r.ok){
+        collectErr(apiErr(r)||t('Could not load outstanding sales.','تعذر تحميل المبيعات المستحقة.'));
+        return;
+      }
+      const d=r.data&&r.data.data?r.data.data:r.data;
+      collectSales=Array.isArray(d&&d.sales)?d.sales:[];
+      const saleHint=document.getElementById('collectSaleHint');
+      if(saleHint){
+        saleHint.textContent=collectSales.length>1
+          ? t('Select one sale. Remaining total is collected next.','اختر بيعاً واحداً. المتبقي يُحصَّل في الدفعة التالية.')
+          : '';
+      }
+      if(collectSales.length) collectSelected=collectSales[0].saleId;
+      renderCollectSales();
+      if(collectSelected) selectCollectSale(collectSelected);
+      else syncTakePaymentEnabled();
+      if(!collectSales.length){
+        collectErr(t('Nothing outstanding.','لا يوجد مستحق.'));
+        showCollectBtn(0);
+      }
+    }catch(e){
+      collectErr(t('Network error','خطأ في الشبكة'));
+    }
+  }
+
+  const btnCollectPayment=document.getElementById('btnCollectPayment');
+  if(btnCollectPayment) btnCollectPayment.addEventListener('click', function(){ openCollectDrawer(); });
+
+  function updateCollectMethodHint(){
+    const pay=document.getElementById('collectMethod');
+    const hint=document.getElementById('collectMethodHint');
+    if(!pay||!hint) return;
+    hint.textContent=pay.value==='cash'
+      ? t('Cash requires an open shift.','النقد يتطلب وردية مفتوحة.')
+      : t('Recorded against this sale.','تُسجَّل على هذا البيع.');
+  }
+  const collectMethodEl=document.getElementById('collectMethod');
+  if(collectMethodEl) collectMethodEl.addEventListener('change', updateCollectMethodHint);
+  updateCollectMethodHint();
+
+  const collectAmountEl=document.getElementById('collectAmount');
+  if(collectAmountEl){
+    collectAmountEl.addEventListener('input', function(){
+      const sale=selectedCollectSale();
+      const n=parseFloat(collectAmountEl.value);
+      if(sale && n>Number(sale.amountDue)) collectAmountEl.value=sale.amountDue;
+      syncTakePaymentEnabled();
+    });
+  }
+
+  const btnTakePayment=document.getElementById('btnTakePayment');
+  if(btnTakePayment){
+    btnTakePayment.addEventListener('click', async function(){
+      collectErr('');
+      const sale=selectedCollectSale();
+      if(!sale){ collectErr(t('Select an outstanding sale.','اختر بيعاً مستحقاً.')); return; }
+      const amtEl=document.getElementById('collectAmount');
+      const methodEl=document.getElementById('collectMethod');
+      const amount=amtEl?parseFloat(amtEl.value):NaN;
+      const method=methodEl?methodEl.value:'cash';
+      if(!(amount>0)){ collectErr(t('Enter an amount.','أدخل مبلغاً.')); return; }
+      if(amount>Number(sale.amountDue)){ collectErr(t('Amount cannot exceed remaining.','المبلغ لا يتجاوز المتبقي.')); return; }
+      btnTakePayment.disabled=true;
+      try{
+        if(method==='cash'){
+          const sh=await Gfp.get('/shifts/current');
+          if(!sh.ok||!sh.data||!sh.data.id){
+            collectErr(t('Open a shift before accepting cash.','افتح وردية قبل قبول النقد.'));
+            btnTakePayment.disabled=false;
+            return;
+          }
+        }
+        const r=await Gfp.post('/sales/'+encodeURIComponent(sale.saleId)+'/payments', { method: method, amount: amount });
+        if(r.ok){
+          closeOverlay('collectPaymentDrawer');
+          toast(t('Payment recorded','تم تسجيل الدفعة'));
+          loadFinancial();
+        } else {
+          collectErr(apiErr(r)||t('Payment failed','فشل تسجيل الدفعة'));
+          toast(apiErr(r)||t('Payment failed','فشل تسجيل الدفعة'),'error');
+        }
+      }catch(e){
+        collectErr(t('Network error','خطأ في الشبكة'));
+      }
+      btnTakePayment.disabled=false;
+    });
+  }
+
+  function refundsFeatureOn(){
+    const F=window.GfpFeatures;
+    if(!F||typeof F.isModuleAvailable!=='function') return true;
+    return F.isModuleAvailable('refunds', F.readCache&&F.readCache());
+  }
+
+  async function loadRefundHistory(){
+    const row=document.getElementById('fin360RefundRow');
+    const list=document.getElementById('fin360RefundList');
+    const val=document.getElementById('fin360Refunds');
+    if(!row||!list) return;
+    const canApproveRf=Authz&&(Authz.useCan('payments.refund.approve')||Authz.useCanRole('OwnerOnly'));
+    if(!refundsFeatureOn()||!canApproveRf||!Gfp||!memberId||memberId==='DEMO'){
+      row.hidden=true;
+      list.hidden=true;
+      return;
+    }
+    row.hidden=false;
+    try{
+      const r=await Gfp.get('/refunds?memberId='+encodeURIComponent(memberId));
+      if(!r.ok){
+        row.hidden=true;
+        list.hidden=true;
+        return;
+      }
+      const items=Array.isArray(r.data)?r.data:(r.data&&r.data.items)||[];
+      const executed=items.filter(function(x){ return String(x.status||'').toLowerCase()==='executed'; });
+      const sum=executed.reduce(function(acc,x){ return acc+Number(x.amount||0); },0);
+      if(val) val.textContent=items.length? (fmtEGP(sum)+' · '+items.length) : t('None','لا يوجد');
+      if(!items.length){
+        list.hidden=true;
+        list.innerHTML='';
+        return;
+      }
+      list.hidden=false;
+      list.innerHTML=items.slice(0,8).map(function(rf){
+        return '<li><span>'+escHtml(fmtEGP(rf.amount))+' · '+escHtml(rf.status||'')+'</span><span class="muted">'+escHtml(rf.method||'')+'</span></li>';
+      }).join('');
+    }catch(e){
+      row.hidden=true;
+      list.hidden=true;
+    }
+  }
+
+  function escHtml(s){
+    const d=document.createElement('div');
+    d.textContent=s==null?'':String(s);
+    return d.innerHTML;
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -625,69 +961,100 @@
     }
     const st=String(ms.status||'').toLowerCase();
     const days=st==='expired'?0:daysRemaining(ms.endDate);
-    const total=totalDays(ms.startDate,ms.endDate);
-    const pct=total>0?Math.min(100,Math.round((Math.max(0,days)/total)*100)):0;
+    const tot=totalDays(ms.startDate,ms.endDate);
+    const used=Math.min(tot, Math.max(0, tot-days));
+    const usedPct=tot>0?Math.min(100,Math.round((used/tot)*100)):0;
     const isPending=st==='pending';
     const isExpired=st==='expired';
     const isFrozen=st==='frozen';
-    const canRenew=canMgr&&(st==='active'||st==='scheduled'||st==='expired'||st==='frozen'||st==='pending');
+    const isCancelled=st==='cancelled';
+    const isScheduled=st==='scheduled';
+    const canRenew=canMgr&&(st==='active'||st==='scheduled'||st==='expired'||st==='frozen'||st==='pending'||st==='cancelled');
     const canAssign=canMgr&&(st==='expired'||st==='cancelled'||!st);
+    const pay=fmtPayMethod(ms.paymentMethod);
+    const showPeriod=!isPending && !isCancelled && !isScheduled;
 
     const pendingBanner=isPending?`
-      <div class="info-banner" style="margin:12px 0;padding:12px;border-radius:8px;background:var(--wrn100);color:var(--wrn500)">
-        <strong><i class="ti ti-clock"></i> Waiting for payment</strong>
-        <p style="margin:6px 0 10px;font-size:12px">Gateway methods leave a pending membership with no live push. Refresh after the customer pays.</p>
-        <button type="button" class="btn-ms" onclick="refreshMembershipStatus()"><i class="ti ti-refresh"></i> Refresh status</button>
-      </div>`:'';
+      <div class="ms-warn">
+        <strong>Waiting for ${escHtml(pay==='—' ? 'payment' : pay)}</strong>
+        Check-in and invitations stay closed until this payment confirms. No live push — refresh after the member pays.
+      </div>
+      <div class="ms-reserved">Reserved period ${fmtDate(ms.startDate)} – ${fmtDate(ms.endDate)}</div>`:'';
 
     const expiredNote=isExpired?`
-      <div class="info-banner" style="margin:12px 0;padding:12px;border-radius:8px;background:#FEE2E2;color:var(--dng500);font-size:12px">
+      <div class="ms-note danger">
         <i class="ti ti-info-circle"></i> Showing last expired membership (no active plan). Use Assign or Renew below.
       </div>`:'';
 
-    const scheduledNote=st==='scheduled'?`
-      <div class="info-banner" style="margin:12px 0;padding:12px;border-radius:8px;background:var(--wrn100);color:var(--wrn600,#B45309);font-size:12px">
+    const cancelledNote=isCancelled?`
+      <div class="ms-note danger">
+        <i class="ti ti-info-circle"></i> This membership was refunded and is historical. Renew or Assign to start a new current membership — invitations use the new period.
+      </div>`:'';
+
+    const scheduledNote=isScheduled?`
+      <div class="ms-note warn">
         <i class="ti ti-calendar-event"></i> Membership starts ${fmtDate(ms.startDate)} — check-in not available yet.
       </div>`:'';
 
     const accountOff=memberData&&memberData.isActive===false;
     const accountNote=accountOff&&!isExpired?`
-      <div class="info-banner" style="margin:12px 0;padding:12px;border-radius:8px;background:#FEF3C7;color:#B45309;font-size:12px">
+      <div class="ms-note warn">
         <i class="ti ti-user-off"></i> Account is archived — use <strong>Activate account</strong> here. Membership actions remain available below.
       </div>`:'';
 
-    const due=ms.amountDue!=null?Number(ms.amountDue):(ms.balanceDue!=null?Number(ms.balanceDue):null);
+    let sessionsFact='';
+    if(ms.sessionsRemaining!=null){
+      sessionsFact=ms.sessionCount!=null
+        ? (ms.sessionsRemaining+' of '+ms.sessionCount)
+        : String(ms.sessionsRemaining);
+    }
+
+    const periodBody=showPeriod?`
+      <div class="ms-hero-num">${days} days left</div>
+      <div class="ms-hero-lbl">Ends ${fmtDate(ms.endDate)}</div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:${usedPct}%"></div></div>
+        <div class="progress-label"><span>Used ${used} of ${tot} days</span><span>${fmtDate(ms.startDate)}</span></div>
+      </div>`:'';
+
+    const primary=isPending
+      ? `<button type="button" class="btn-ms primary" onclick="refreshMembershipStatus()"><i class="ti ti-refresh"></i> Refresh status</button>`
+      : (canRenew?`<button type="button" class="btn-ms primary" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> Renew</button>`:'');
+    const renewAnyway=isPending&&canRenew
+      ? `<button type="button" class="btn-ms" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> Renew</button>`:'';
+    const assignBtn=canAssign
+      ? `<button type="button" class="btn-ms${isPending||canRenew?'':' primary'}" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> Assign</button>`:'';
+    const freezeBtn=canFreeze&&!isFrozen&&(st==='active'||st==='scheduled')
+      ? `<button type="button" class="btn-ms" onclick="openModal('modalFreeze')"><i class="ti ti-snowflake"></i> Freeze</button>`:'';
+    const unfreezeBtn=canFreeze&&isFrozen
+      ? `<button type="button" class="btn-ms" onclick="unfreeze()"><i class="ti ti-sun"></i> Unfreeze</button>`:'';
+    const canCancel=canMgr&&(st==='active'||st==='frozen'||st==='scheduled'||st==='pending');
+    const cancelBtn=canCancel
+      ? `<button type="button" class="btn-ms danger" onclick="openCancelMembership()"><i class="ti ti-ban"></i> Cancel</button>`:'';
 
     container.innerHTML=`
-      <div class="ms-hero">
-        <div class="ms-plan">${ms.planName||''}</div>
-        <div class="ms-type-badge"><i class="ti ti-package"></i>${(ms.planType||'').replace(/_/g,' ')}</div>
-        <div class="ms-status-row">
-          <span class="ms-st-badge ${ms.status}">${ms.status}</span>
-          ${!isPending&&!isExpired?`<span class="ms-days">${days} days remaining</span>`:''}
+      <div class="ms-hero ${st}">
+        <div class="ms-top">
+          <div>
+            <div class="ms-plan">${escHtml(ms.planName||'')}</div>
+            <div class="ms-type">${escHtml((ms.planType||'').replace(/_/g,' '))}</div>
+          </div>
+          <span class="ms-st-badge ${st}">${membershipStatusLabel(st)}</span>
         </div>
-        ${expiredNote}${scheduledNote}${accountNote}${pendingBanner}
-        <div class="progress-wrap">
-          <div class="progress-label"><span>${fmtDate(ms.startDate)}</span><span>${fmtDate(ms.endDate)}</span></div>
-          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        ${expiredNote}${cancelledNote}${scheduledNote}${accountNote}${pendingBanner}
+        ${periodBody}
+        <div class="ms-facts">
+          <div class="ms-fact">Invitations<b id="msInviteVal">${inviteFactText(st)}</b></div>
+          <div class="ms-fact">Paid<b>${escHtml(fmtEGP(ms.amountPaid)+' · '+pay)}</b></div>
+          ${sessionsFact?`<div class="ms-fact">Sessions<b>${escHtml(sessionsFact)}</b></div>`:''}
+          ${ms.frozenUntilDate?`<div class="ms-fact">Hold<b>${escHtml(fmtDate(ms.frozenUntilDate))}</b></div>`:''}
         </div>
-        <div class="ms-meta">
-          <div class="ms-meta-item"><div class="ms-meta-lbl">Amount Paid</div><div class="ms-meta-val">${fmtEGP(ms.amountPaid)}</div></div>
-          ${due!=null?`<div class="ms-meta-item"><div class="ms-meta-lbl">Amount Due</div><div class="ms-meta-val">${fmtEGP(due)}</div></div>`:''}
-          <div class="ms-meta-item"><div class="ms-meta-lbl">Payment</div><div class="ms-meta-val" style="text-transform:capitalize">${ms.paymentMethod||'—'}</div></div>
-          ${ms.sessionsRemaining!=null?`<div class="ms-meta-item"><div class="ms-meta-lbl">Sessions Left</div><div class="ms-meta-val">${ms.sessionsRemaining}</div></div>`:''}
-          ${ms.frozenUntilDate?`<div class="ms-meta-item"><div class="ms-meta-lbl">Frozen Until</div><div class="ms-meta-val">${fmtDate(ms.frozenUntilDate)}</div></div>`:''}
+        <div class="ms-actions">
+          ${primary}${renewAnyway}${assignBtn}${freezeBtn}${unfreezeBtn}${cancelBtn}
         </div>
-      </div>
-      <div class="ms-actions">
-        ${canRenew?`<button type="button" class="btn-ms primary" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> Renew</button>`:''}
-        ${canAssign?`<button type="button" class="btn-ms primary" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> Assign</button>`:''}
-        ${canFreeze&&!isFrozen&&(st==='active'||st==='scheduled')?`<button type="button" class="btn-ms" onclick="openModal('modalFreeze')"><i class="ti ti-snowflake"></i> Freeze</button>`:''}
-        ${canFreeze&&isFrozen?`<button type="button" class="btn-ms" onclick="unfreeze()"><i class="ti ti-sun"></i> Unfreeze</button>`:''}
-        ${isPending?`<button type="button" class="btn-ms" onclick="refreshMembershipStatus()"><i class="ti ti-refresh"></i> Refresh</button>`:''}
       </div>`;
 
-    setTimeout(()=>{const f=document.getElementById('progressFill');if(f) f.style.width=pct+'%';},100);
+    refreshInviteQuota();
   }
 
   window.refreshMembershipStatus=async function(){
@@ -705,6 +1072,98 @@
       loadHistory();
     }catch(e){ toast('Failed to refresh','error'); }
   };
+
+  function invEsc(s){
+    const d=document.createElement('div');
+    d.textContent=s==null?'':String(s);
+    return d.innerHTML;
+  }
+  function invStatusLabel(s){
+    const map={new:'New',contacted:'Contacted',interested:'Interested',not_interested:'Not Interested',converted:'Converted'};
+    return map[String(s||'').toLowerCase()]||s||'—';
+  }
+
+  async function loadInvitations360(){
+    const tbody=document.getElementById('inv360Tbody');
+    const empty=document.getElementById('inv360Empty');
+    if(!tbody||!Gfp) return;
+    tbody.innerHTML='<tr><td colspan="3" style="color:var(--ltt)">Loading…</td></tr>';
+    try{
+      const r=await Gfp.get('/invitation/members/'+encodeURIComponent(memberId));
+      if(!r.ok){
+        tbody.innerHTML='<tr><td colspan="3">Could not load invitations</td></tr>';
+        return;
+      }
+      const payload=r&&r.data&&r.data.quota?r.data:(r&&r.data&&r.data.data)||r.data||{};
+      const items=Array.isArray(payload.items)?payload.items:[];
+      const set=function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; };
+      set('inv360Total', payload.total||0);
+      set('inv360New', payload.new||0);
+      set('inv360Contacted', payload.contacted||0);
+      set('inv360Interested', payload.interested||0);
+      set('inv360Converted', payload.converted||0);
+      const quota=payload.quota||{};
+      applyInviteQuota(quota);
+      const hint=document.getElementById('inv360QuotaHint');
+      if(hint){
+        const remaining=quota.remaining!=null?quota.remaining:0;
+        const total=quota.total!=null?quota.total:0;
+        const plan=quota.planName||'';
+        hint.textContent=remaining+' of '+total+' invitations left'+(plan?' on '+plan:'')+'.';
+      }
+      if(!items.length){
+        tbody.innerHTML='';
+        if(empty) empty.style.display='block';
+        return;
+      }
+      if(empty) empty.style.display='none';
+      tbody.innerHTML=items.map(function(row){
+        const st=String(row.status||'new').toLowerCase();
+        return '<tr><td>'+invEsc(row.name||row.guestName)+'</td><td>'+invEsc(row.phoneNumber||row.guestPhoneNumber)+'</td><td>'+invEsc(invStatusLabel(st))+'</td></tr>';
+      }).join('');
+    }catch(e){
+      tbody.innerHTML='<tr><td colspan="3">Could not load invitations</td></tr>';
+    }
+  }
+
+  const inv360Form=document.getElementById('inv360Form');
+  if(inv360Form){
+    inv360Form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      if(!Gfp){ toast('API client missing — hard-refresh','error'); return; }
+      const name=(document.getElementById('inv360Name').value||'').trim();
+      const phone=(document.getElementById('inv360Phone').value||'').trim();
+      const nid=(document.getElementById('inv360Nid').value||'').trim();
+      const notes=(document.getElementById('inv360Notes').value||'').trim();
+      if(!name){ toast('Friend’s name is required','error'); return; }
+      if(!phone){ toast('Phone is required','error'); return; }
+      if(nid && nid.length!==14){ toast('National ID must be 14 digits','error'); return; }
+      const btn=document.getElementById('btnInv360Create');
+      if(btn) btn.disabled=true;
+      try{
+        const r=await Gfp.post('/invitation/members/'+encodeURIComponent(memberId),{
+          name:name,
+          phoneNumber:phone,
+          nationalId:nid||null,
+          notes:notes||null
+        });
+        if(!r.ok){
+          toast(apiErr(r)||'Could not create invitation','error');
+          return;
+        }
+        const data=r.data||{};
+        toast(data.alreadyExisted?'Invitation already exists':'Invitation created','success');
+        document.getElementById('inv360Name').value='';
+        document.getElementById('inv360Phone').value='';
+        document.getElementById('inv360Nid').value='';
+        document.getElementById('inv360Notes').value='';
+        window._invLoaded=true;
+        await loadInvitations360();
+      }finally{
+        if(btn) btn.disabled=false;
+      }
+    });
+  }
 
   // ═══════════════════════════════════════════════════════════════
   //  Member Orders — GET /api/members/{id}/orders (fallback: /member-orders?memberId=)
@@ -899,6 +1358,54 @@
   // ═══════════════════════════════════════════════════════════════
   window.openModal=openModal;
   window.closeModal=closeModal;
+
+  window.openCancelMembership=function(){
+    const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
+    if(!canMgr){ toast('Manager or above required','error'); return; }
+    const ms=memberData&&memberData.currentMembership;
+    const st=String(ms&&ms.status||'').toLowerCase();
+    if(!ms||!(st==='active'||st==='frozen'||st==='scheduled'||st==='pending')){
+      toast('Nothing to cancel','error');
+      return;
+    }
+    const nameEl=document.getElementById('cancelMsPlan');
+    if(nameEl) nameEl.textContent=ms.planName||'This plan';
+    const err=document.getElementById('cancelMsError');
+    if(err) err.classList.remove('show');
+    openModal('modalCancelMs');
+  };
+
+  const btnConfirmCancelMs=document.getElementById('btnConfirmCancelMs');
+  if(btnConfirmCancelMs){
+    btnConfirmCancelMs.addEventListener('click',async function(e){
+      e.preventDefault();
+      const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
+      if(!canMgr){ toast('Manager or above required','error'); return; }
+      if(!Gfp||!memberId) return;
+      const err=document.getElementById('cancelMsError');
+      if(err) err.classList.remove('show');
+      btnConfirmCancelMs.disabled=true;
+      try{
+        const r=await Gfp.post('/memberships/'+memberId+'/cancel',{});
+        if(r.ok){
+          closeModal('modalCancelMs');
+          toast('Membership cancelled');
+          loadMember();
+          loadHistory();
+          return;
+        }
+        const msg=apiErr(r)||'Could not cancel membership';
+        if(err){
+          const te=err.querySelector('.error-text');
+          if(te) te.textContent=msg;
+          err.classList.add('show');
+        }
+        toast(msg,'error');
+      }finally{
+        btnConfirmCancelMs.disabled=false;
+      }
+    });
+  }
 
   window.unfreeze=async function(){
     if(!canFreeze){ toast('memberships.freeze permission required','error'); return; }

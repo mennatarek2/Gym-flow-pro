@@ -1367,6 +1367,31 @@
   }
 
   // ── Submit retail sale ────────────────────────────────────────
+  function posRefundButtonHtml() {
+    var RA = window.GfpRefundAction;
+    if (!RA || typeof RA.isEnabled !== 'function' || !RA.isEnabled() || !RA.canRequest()) return '';
+    return (
+      '<button type="button" class="btn secondary full" id="btnRefundSale">' +
+      '<i class="ti ti-receipt-refund"></i> ' +
+      esc(t('Refund', 'استرداد')) +
+      '</button>'
+    );
+  }
+
+  function wirePosRefundAction(sale, lines) {
+    var btn = document.getElementById('btnRefundSale');
+    var RA = window.GfpRefundAction;
+    if (!btn || !RA || !sale || !sale.saleId) return;
+    btn.onclick = function () {
+      RA.open({
+        saleId: sale.saleId,
+        saleTotal: sale.totals && sale.totals.total,
+        paid: sale.totals && sale.totals.paid,
+        lines: lines || []
+      });
+    };
+  }
+
   async function submitSale() {
     if (!shiftOk) {
       toast(t('Open a cash shift first.', 'افتح وردية كاش الأول.'), 'err');
@@ -1478,6 +1503,12 @@
     clearIdemKey();
     const due = sale.totals && Number(sale.totals.amountDue);
     const warnList = (sale.warnings || []).filter(Boolean);
+    const refundLines = retailCart.map(function (l) {
+      return {
+        description: l.name || l.sku || t('Item', 'صنف'),
+        lineTotal: Number(l.unitPrice || 0) * Number(l.qty || 0)
+      };
+    });
     box.className = 'result desk-receipt' + (warnList.length ? ' warn' : '');
     box.innerHTML =
       '<div class="receipt-ok"><i class="ti ti-circle-check"></i> <strong>' +
@@ -1499,18 +1530,16 @@
       '</strong>' +
       (due > 0
         ? '<br>' +
-          esc(t('Still due', 'الباقي')) +
+          esc(t('Outstanding', 'المستحق')) +
           ' <strong class="due-amt">' +
           esc(money(due)) +
           '</strong>' +
           '<div class="muted" style="margin-top:6px">' +
           esc(t(
-            'Outstanding balances are listed under Debtors.',
-            'المديونيات ظاهرة في شاشة المدينون.'
+            'This sale still has an outstanding balance. Open the member to see their unpaid sales.',
+            'البيع ده لسه عليه مبلغ مستحق. افتح العضو عشان تشوف المبيعات غير المدفوعة.'
           )) +
-          ' <a href="/dashboard/debtors/">' +
-          esc(t('Open Debtors', 'افتح المدينون')) +
-          '</a></div>'
+          '</div>'
         : '') +
       '</div>' +
       (warnList.length ? '<div class="muted">' + esc(warnList.join(' · ')) + '</div>' : '') +
@@ -1522,12 +1551,14 @@
       '<i class="ti ti-printer"></i> ' +
       esc(t('Print receipt', 'اطبع الإيصال')) +
       '</button>' +
+      posRefundButtonHtml() +
       '<button type="button" class="btn secondary full" id="btnStartNextSale">' +
       esc(t('Next sale', 'بيع جديد')) +
       '</button></div>';
 
     retailCart = [];
     renderRetailCart();
+    wirePosRefundAction(sale, refundLines);
     if (sale.invoiceStatus === 'skipped' || sale.invoiceStatus === 'not_applicable') {
       const statusEl = document.getElementById('invoiceReadyLine');
       const printBtn = document.getElementById('btnPrintReceipt');
@@ -1629,7 +1660,7 @@
   }
 
   // Debt / older-sale balance collection UI removed from Sale.
-  // Backend POST /api/sales/{id}/payments remains for Debtors / future ownership.
+  // Backend POST /api/sales/{id}/payments remains for collecting outstanding on a sale.
 
   // boot — retail-only POS
   if (!canSell) {

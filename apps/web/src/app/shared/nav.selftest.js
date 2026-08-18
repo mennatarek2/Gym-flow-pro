@@ -208,18 +208,20 @@ assert(
 
 assertShape('Owner', runFixture('Owner', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'attendance'],
-  'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
-  money: ['shifts', 'refunds', 'offers', 'invoices', 'z-report', 'reports'],
+  members: ['members', 'invitations', 'attendance'],
+  'front-desk': ['pos', 'member-orders', 'call-sheet'],
+  shifts: ['shifts', 'z-report'],
+  money: ['offers', 'invoices', 'reports'],
   catalog: CATALOG_OWNER_KEYS.slice(),
-  administration: ['imports', 'audit', 'notifications', 'staff', 'settings']
+  administration: ['imports', 'audit', 'notifications', 'staff', 'roles', 'settings']
 });
 
 assertShape('Manager', runFixture('Manager', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'attendance'],
-  'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
-  money: ['shifts', 'refunds', 'offers', 'invoices', 'z-report', 'reports'],
+  members: ['members', 'invitations', 'attendance'],
+  'front-desk': ['pos', 'member-orders', 'call-sheet'],
+  shifts: ['shifts', 'z-report'],
+  money: ['offers', 'invoices', 'reports'],
   catalog: CATALOG_MANAGER_KEYS.slice(),
   administration: ['notifications']
 });
@@ -232,9 +234,10 @@ assertShape('Trainer', runFixture('Trainer', ALL_ON), {
 
 assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'attendance'],
-  'front-desk': ['pos', 'member-orders', 'debtors', 'call-sheet'],
-  money: ['shifts', 'refunds', 'offers', 'reports'],
+  members: ['members', 'invitations', 'attendance'],
+  'front-desk': ['pos', 'member-orders', 'call-sheet'],
+  shifts: ['shifts'],
+  money: ['offers', 'reports'],
   administration: ['notifications']
 });
 
@@ -256,7 +259,8 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
     return k !== 'sales';
   });
   assert(!actual['front-desk'].includes('pos'), 'sales flag hides Sale');
-  assert(actual['front-desk'].includes('debtors'), 'debtors use their own flag');
+  assert(!actual['front-desk'].includes('debtors'), 'Debtors is not a primary nav module');
+  assert(!actual.money.includes('refunds'), 'Refunds is not a primary nav module');
   assert(!actual['stock-management'], 'sales flag does not restore Stock Management in shop UX');
   assert(actual['front-desk'].includes('call-sheet'), 'Call sheet never flag-gated');
   assert(!actual.money.includes('offers'), 'offers uses sales flag');
@@ -325,6 +329,12 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
       return i.key === 'staff';
     }),
     'Staff stays OwnerOnly even with full perms'
+  );
+  assert(
+    admin && !admin.items.some(function (i) {
+      return i.key === 'roles';
+    }),
+    'Roles stays OwnerOnly even with full perms'
   );
 }
 

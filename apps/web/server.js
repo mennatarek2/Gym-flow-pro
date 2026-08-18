@@ -13,15 +13,16 @@ const SHARED_SCRIPTS = [
   '/shared/authz.js',
   '/shared/features.js?v=5',
   '/shared/i18n.js',
-  '/shared/nav.js',
+  '/shared/nav.js?v=4',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=4',
-  '/shared/shell.js?v=8',
-  '/shared/quick-actions.js?v=3',
+  '/shared/shell.js?v=9',
+  '/shared/quick-actions.js?v=5',
+  '/shared/refund-action.js?v=1',
 ];
 
-const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1'];
+const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1', '/shared/refund-action.css'];
 
 function sharedScriptTags() {
   return SHARED_SCRIPTS.map((src) => `<script src="${src}"></script>`).join('\n') + '\n';

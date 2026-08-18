@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="../pos/pos.css">
-<link rel="stylesheet" href="offers.css?v=2">
+<link rel="stylesheet" href="offers.css?v=5">
 </head>
 <body>
 <div class="app">
@@ -27,32 +27,17 @@
 </header>
 
 <div class="content">
-  <div class="view-tabs" id="viewTabs" role="tablist">
-    <button type="button" class="act" data-view="list"><i class="ti ti-list"></i> Offers list</button>
-    <button type="button" data-view="create" id="tabCreate"><i class="ti ti-plus"></i> Create Offer</button>
-    <button type="button" data-view="member"><i class="ti ti-device-mobile"></i> Member App</button>
-  </div>
-
   <!-- LIST -->
   <div id="viewList">
     <div class="page-header offers-hdr">
       <div>
-        <h1 class="page-title"><i class="ti ti-discount-2"></i> Offers &amp; Promotions</h1>
-        <p class="page-subtitle">One place for membership and product deals. A promo code is only an optional way to redeem an offer.</p>
-        <div class="model-chip"><i class="ti ti-hierarchy-2"></i> Offer → rules → visibility → redemption (auto or code)</div>
+        <h1 class="page-title">Offers &amp; Promotions</h1>
+        <p class="page-subtitle">Who can get a deal, for how long, and how it is redeemed.</p>
       </div>
       <div class="hdr-actions">
-        <a class="btn secondary" href="/dashboard/promo-codes/" id="linkLegacyPromo">Legacy promo codes</a>
-        <button type="button" class="btn primary" id="btnCreateOffer"><i class="ti ti-plus"></i> Create Offer</button>
-      </div>
-    </div>
-
-    <div class="offer-banner" id="storageBanner">
-      <i class="ti ti-info-circle"></i>
-      <div>
-        <strong>Offers save to the gym.</strong>
-        Members see visible offers in the Member App (<code>GET /api/member/offers</code>).
-        Promo-code redemption still powers POS via the linked promo code.
+        <a class="quiet-link" href="/dashboard/promo-codes/" id="linkLegacyPromo">Promo codes</a>
+        <button type="button" class="btn secondary" id="btnMemberApp">Member App</button>
+        <button type="button" class="btn primary" id="btnCreateOffer">Create Offer</button>
       </div>
     </div>
 
@@ -65,17 +50,10 @@
         <option value="bxgy">Buy X Get Y</option>
       </select>
       <select id="filterApplies" aria-label="Applies to">
-        <option value="">Applies to</option>
+        <option value="">All</option>
         <option value="memberships">Memberships</option>
         <option value="products">Products</option>
         <option value="both">Both</option>
-      </select>
-      <select id="filterStatus" aria-label="Status">
-        <option value="">All statuses</option>
-        <option value="active">Active</option>
-        <option value="scheduled">Scheduled</option>
-        <option value="expired">Expired</option>
-        <option value="draft">Draft</option>
       </select>
     </div>
 
@@ -83,6 +61,7 @@
       <button type="button" class="tab act" data-tab="all">All <span class="n" id="nAll">0</span></button>
       <button type="button" class="tab" data-tab="active">Active <span class="n" id="nActive">0</span></button>
       <button type="button" class="tab" data-tab="scheduled">Scheduled <span class="n" id="nScheduled">0</span></button>
+      <button type="button" class="tab" data-tab="draft">Draft <span class="n" id="nDraft">0</span></button>
       <button type="button" class="tab" data-tab="expired">Expired <span class="n" id="nExpired">0</span></button>
     </div>
 
@@ -91,22 +70,20 @@
         <thead>
           <tr>
             <th>Offer</th>
-            <th>Type</th>
-            <th>Applies to</th>
             <th>Discount</th>
-            <th>Validity</th>
-            <th>Usage</th>
-            <th>Member App</th>
+            <th class="col-for">For</th>
+            <th class="col-dates">Validity</th>
+            <th class="col-use">Usage</th>
             <th>Status</th>
-            <th>Actions</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="offersBody"></tbody>
       </table>
       <div class="offers-empty" id="offersEmpty" hidden>
         <i class="ti ti-discount-off"></i>
-        <div style="font-family:var(--fd,'Space Grotesk',sans-serif);font-weight:700;color:var(--ltp);margin-bottom:4px">No offers match</div>
-        <div>Try clearing filters — or create your first offer.</div>
+        <div class="offers-empty-title">No offers yet</div>
+        <div id="offersEmptyHint">Create an offer for memberships or products.</div>
       </div>
     </div>
   </div>
@@ -148,9 +125,10 @@
   <div id="viewMember" hidden>
     <div class="page-header offers-hdr">
       <div>
-        <h1 class="page-title"><i class="ti ti-device-mobile"></i> Member App — Offers</h1>
-        <p class="page-subtitle">How offers appear to members. Pricing numbers here are illustrative (no checkout engine).</p>
+        <h1 class="page-title" id="memberViewTitle">Member App</h1>
+        <p class="page-subtitle">How visible offers look to members. Prices here are illustrative.</p>
       </div>
+      <button type="button" class="btn secondary" id="btnBackMember"><i class="ti ti-arrow-left"></i> Back to list</button>
     </div>
     <div class="member-grid" id="memberFrames"></div>
   </div>
@@ -159,6 +137,18 @@
 </div>
 
 <div class="toast offer-toast" id="toast"></div>
-<script src="offers-app.js?v=2"></script>
+<div class="offer-menu" id="offerMenu" hidden></div>
+<div class="offer-drawer-ov" id="offerDrawerOv" hidden></div>
+<div class="offer-modal-ov" id="offerEndOv" hidden>
+  <div class="offer-modal">
+    <h3>End this offer?</h3>
+    <p id="offerEndCopy">This offer will expire immediately. A linked promo code is deactivated.</p>
+    <div class="offer-modal-row">
+      <button type="button" class="btn secondary" id="offerEndNo">Cancel</button>
+      <button type="button" class="btn danger" id="offerEndYes">End offer</button>
+    </div>
+  </div>
+</div>
+<script src="offers-app.js?v=5"></script>
 </body>
 </html>

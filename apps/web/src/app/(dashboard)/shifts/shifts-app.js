@@ -76,6 +76,8 @@
   var canApprove = perms.has('shift.reconcile.approve') || /Owner/i.test(role);
   var canFinancial = perms.has('reports.financial.view') || /Owner/i.test(role);
   var canSeeMgrTabs = isManagerPlus;
+  var zLink = document.getElementById('linkZReports');
+  if (zLink && (canFinancial || isManagerPlus)) zLink.hidden = false;
 
   var currentShift = null;
   /** Embedded movements only used when GET /movements paging is unavailable (degraded). */
@@ -470,6 +472,11 @@
     if (s.status === 'open') {
       html +=
         '<div class="blind-note"><i class="ti ti-eye-off"></i> Blind count active — expected cash is null until you submit the physical count. Do not calculate it from the movements list.</div>';
+    } else if (canFinancial && s.id) {
+      html +=
+        '<p class="hint" style="margin-top:12px"><a href="/dashboard/z-report/?shiftId=' +
+        encodeURIComponent(s.id) +
+        '">View Z-Report</a></p>';
     }
 
     document.getElementById('currentBody').innerHTML = html;
@@ -966,6 +973,13 @@
 
   function historyRowHtml(s) {
     var actions = [];
+    if (canFinancial) {
+      actions.push(
+        '<a class="btn secondary" href="/dashboard/z-report/?shiftId=' +
+          encodeURIComponent(s.id) +
+          '">Z-Report</a>'
+      );
+    }
     if (s.status === 'closed' && canApprove) {
       actions.push(
         '<button class="btn secondary" type="button" data-approve="' +

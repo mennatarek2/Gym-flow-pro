@@ -231,6 +231,7 @@
               timeRestrictionStart: d.data.timeRestrictionStart,
               timeRestrictionEnd: d.data.timeRestrictionEnd,
               invitationQuota: d.data.invitationQuota,
+              referralInviteQuota: d.data.referralInviteQuota,
               referralRewardType: d.data.referralRewardType,
               referralRewardValue: d.data.referralRewardValue,
               trialVisitLimit: d.data.trialVisitLimit,
@@ -352,11 +353,11 @@
           '</div>'
       );
     }
-    if (p.invitationQuota != null && p.invitationQuota > 0) {
+    if (p.referralInviteQuota != null && p.referralInviteQuota > 0) {
       items.push(
-        '<div class="plan-feature"><i class="ti ti-ticket"></i>' +
-          p.invitationQuota +
-          ' guest invitations/month</div>'
+        '<div class="plan-feature"><i class="ti ti-user-plus"></i>' +
+          p.referralInviteQuota +
+          ' invitations / membership</div>'
       );
     }
     if (p.planType === 'trial' && p.trialVisitLimit) {
@@ -575,8 +576,7 @@
       body.timeRestrictionEnd = toTimeOnly(end);
     }
 
-    // Guest-pass monthly quota applies to every plan type (not only family).
-    body.invitationQuota = parseInt(fd.get('invitationQuota'), 10) || 0;
+    body.referralInviteQuota = parseInt(fd.get('referralInviteQuota'), 10) || 0;
 
     const rType = (fd.get('referralRewardType') || '').toString().trim();
     if (rType === 'credit' || rType === 'free_days') {
@@ -602,7 +602,7 @@
 
   function updateConditionalFields(type) {
     document.querySelectorAll('.cond-section').forEach(function (s) {
-      if (s.id === 'cond-referral-rewards' || s.id === 'cond-guest-quota') {
+      if (s.id === 'cond-invite-quota') {
         s.classList.add('visible');
         return;
       }
@@ -646,12 +646,12 @@
     if (type === 'family') {
       feats = '';
     }
-    const iqPreview = parseInt(fd.get('invitationQuota'), 10) || 0;
+    const iqPreview = parseInt(fd.get('referralInviteQuota'), 10) || 0;
     if (iqPreview > 0) {
       feats +=
-        '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-ticket" style="color:var(--l600)"></i>' +
+        '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-user-plus" style="color:var(--l600)"></i>' +
         iqPreview +
-        ' guest invitations/month</div>';
+        ' invitations / membership</div>';
     }
     if (type === 'trial') {
       const tv = fd.get('trialVisitLimit') || '';
@@ -814,28 +814,12 @@
       '</div></div>' +
       '<div class="cond-section" id="cond-family">' +
       '<div class="cond-title"><i class="ti ti-users-group"></i> Family Plan Options</div>' +
-      '<div class="modal-header-sub">Family plan uses a higher referral reward multiplier when friends join on this plan type. Guest invites are configured below for every plan.</div></div>' +
-      '<div class="cond-section visible" id="cond-guest-quota" style="display:block">' +
-      '<div class="cond-title"><i class="ti ti-ticket"></i> Guest invitations (train free)</div>' +
-      '<div class="fg"><label>Guest invitations per month</label><input type="number" name="invitationQuota" min="0" value="' +
-      (v.invitationQuota != null ? v.invitationQuota : 0) +
-      '" placeholder="0 = none"><div class="modal-header-sub">How many friends a member on this plan may invite per Cairo month. Desk redeems visits on Attendance. Set 0 to disable guest passes.</div></div></div>' +
-      '<div class="cond-section visible" id="cond-referral-rewards" style="display:block">' +
-      '<div class="cond-title"><i class="ti ti-gift"></i> Referral rewards (when a friend becomes a paying member)</div>' +
-      '<div class="form-row">' +
-      '<div class="fg"><label>Reward type</label><select name="referralRewardType">' +
-      '<option value="">— Not set (use defaults later) —</option>' +
-      '<option value="credit"' +
-      (v.referralRewardType === 'credit' ? ' selected' : '') +
-      '>Account credit (EGP)</option>' +
-      '<option value="free_days"' +
-      (v.referralRewardType === 'free_days' ? ' selected' : '') +
-      '>Free membership days</option>' +
-      '</select></div>' +
-      '<div class="fg"><label>Reward value</label><input type="number" name="referralRewardValue" min="0" step="0.01" value="' +
-      (v.referralRewardValue != null ? v.referralRewardValue : '') +
-      '" placeholder="EGP or days"></div></div>' +
-      '<div class="modal-header-sub">Referral share codes are uncapped; only rewarded conversions use the monthly reward cap.</div></div>' +
+      '<div class="modal-header-sub">Invitations for this plan are configured below.</div></div>' +
+      '<div class="cond-section visible" id="cond-invite-quota" style="display:block">' +
+      '<div class="cond-title"><i class="ti ti-user-plus"></i> Invitations</div>' +
+      '<div class="fg"><label>Invitations per membership</label><input type="number" name="referralInviteQuota" min="0" value="' +
+      (v.referralInviteQuota != null ? v.referralInviteQuota : 0) +
+      '" placeholder="0 = none"><div class="modal-header-sub">How many friends a member on this plan may invite during this membership. Unused invitations do not carry to the next membership. Frozen, expired, or cancelled = 0.</div></div></div>' +
       '<div class="cond-section" id="cond-trial">' +
       '<div class="cond-title"><i class="ti ti-flask"></i> Trial Options</div>' +
       '<div class="fg"><label>Visit limit (optional)</label><input type="number" name="trialVisitLimit" min="1" value="' +

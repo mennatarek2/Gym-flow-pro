@@ -367,7 +367,8 @@
     }
   </style>
   <link rel="stylesheet" href="members.css">
-  <link rel="stylesheet" href="member-modals.css">
+  <link rel="stylesheet" href="member-modals.css?v=assign-pay2">
+  <link rel="stylesheet" href="/shared/refund-action.css?v=2">
 </head>
 
 <body>
@@ -395,11 +396,9 @@
         <a class="sb-item" href="/dashboard/shifts/"><i class="ti ti-cash"></i>Shifts</a>
 <a class="sb-item" href="/dashboard/pos/"><i class="ti ti-shopping-cart"></i>POS</a>
 <a class="sb-item" href="/dashboard/promo-codes/"><i class="ti ti-discount-2"></i>Promo codes</a>
-<a class="sb-item" href="/dashboard/refunds/"><i class="ti ti-receipt-refund"></i>Refunds</a>
 <a class="sb-item" href="/dashboard/invoices/"><i class="ti ti-file-invoice"></i>Invoices</a>
 <a class="sb-item" href="/dashboard/z-report/"><i class="ti ti-report-money"></i>Z-Report</a>
 <a class="sb-item" href="/dashboard/trials/"><i class="ti ti-flask"></i>Trials</a>
-<a class="sb-item" href="/dashboard/debtors/"><i class="ti ti-cash-off"></i>Debtors</a>
 <a class="sb-item" href="/dashboard/call-sheet/"><i class="ti ti-phone-call"></i>Call sheet</a>
 <a class="sb-item" href="/dashboard/imports/"><i class="ti ti-file-import"></i>Import</a>
         <a class="sb-item" href="/dashboard/reports/"><i class="ti ti-chart-bar"></i>Reports</a>
@@ -628,7 +627,7 @@
               <label class="mdl-label">Notes</label>
               <textarea class="mdl-input" id="addNotes" rows="3" placeholder="Any additional notes about this member..."></textarea>
             </div>
-            <div class="mdl-form-group">
+            <div class="mdl-form-group" hidden>
               <label class="mdl-label">Referral code <span style="color:var(--ltt);font-weight:400;text-transform:none">(optional)</span></label>
               <input type="text" class="mdl-input" id="addReferralCode" placeholder="e.g. RABCDEF1" style="text-transform:uppercase" maxlength="20">
             </div>
@@ -691,6 +690,9 @@
             <p id="onboardInvoiceStatus" class="payment-note show" style="margin-bottom:10px">Preparing invoice…</p>
             <button type="button" class="mdl-btn primary" id="btnOnboardPrintInvoice" disabled style="width:100%;justify-content:center">
               <i class="ti ti-printer"></i> <span data-en="Print invoice" data-ar="طباعة الفاتورة">Print invoice</span>
+            </button>
+            <button type="button" class="mdl-btn ghost" id="btnOnboardRefund" hidden style="width:100%;justify-content:center;margin-top:8px">
+              <i class="ti ti-receipt-refund"></i> <span data-en="Refund" data-ar="استرداد">Refund</span>
             </button>
           </div>
 
@@ -839,8 +841,9 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <script src="/shared/refund-action.js?v=2"></script>
   <script src="members-app.js"></script>
-  <script src="member-modals.js?v=onboard-print1"></script>
+  <script src="member-modals.js?v=assign-pay1"></script>
 </body>
 
 </html>

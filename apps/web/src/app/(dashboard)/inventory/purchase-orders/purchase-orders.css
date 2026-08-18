@@ -30,6 +30,13 @@
 .inv .prod-cell{display:flex;align-items:center;gap:10px}
 .inv .prod-cell .thumb,.inv .prod-cell .thumb-ph{width:44px;height:44px;border-radius:10px;flex-shrink:0}
 .hint{font-size:13px}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:900px){.kpi-row{grid-template-columns:1fr}}
+.kpi-card{background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rlg);padding:14px 16px}
+.kpi-card .label{font-size:12px;color:var(--ltt);margin-bottom:4px}
+.kpi-card .value{font-family:var(--fd);font-size:22px;font-weight:700}
+.kpi-card .value.wait{color:#1E40AF}
+.kpi-card .value.due{color:var(--dng500)}
 @media(max-width:720px){
   .po-line-head{display:none}
   .po-item{grid-template-columns:1fr;background:var(--ls2);border:1px solid var(--ls3);border-radius:var(--rmd);padding:10px}

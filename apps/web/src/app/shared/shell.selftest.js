@@ -110,6 +110,7 @@ var settings = Shell.NAV_ITEMS.find(function (n) { return n.key === 'settings'; 
 var pos = Shell.NAV_ITEMS.find(function (n) { return n.key === 'pos'; });
 var call = Shell.NAV_ITEMS.find(function (n) { return n.key === 'call-sheet'; });
 var staff = Shell.NAV_ITEMS.find(function (n) { return n.key === 'staff'; });
+var roles = Shell.NAV_ITEMS.find(function (n) { return n.key === 'roles'; });
 var invHome = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-home'; });
 var invStock = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-stock-hub'; });
 var invProducts = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-products'; });
@@ -125,6 +126,8 @@ assert(!invAdjust, 'Adjustments stay removed from Inventory nav registry');
 assert(!Shell.isNavItemVisible(plans, allOn), 'Receptionist hides Plans');
 assert(!Shell.isNavItemVisible(settings, allOn), 'Receptionist hides Settings');
 assert(!Shell.isNavItemVisible(staff, allOn), 'Receptionist hides Staff');
+assert(!!roles, 'Roles nav item is registered');
+assert(!Shell.isNavItemVisible(roles, allOn), 'Receptionist hides Roles');
 assert(Shell.isNavItemVisible(pos, allOn), 'Receptionist sees POS when sales enabled');
 assert(Shell.isNavItemVisible(call, allOn), 'Receptionist sees Call sheet (no feature flag)');
 assert(!Shell.isNavItemVisible(invHome, allOn), 'Shop UX hides Inventory Overview');
@@ -167,6 +170,8 @@ storage.gfp_access_token = fakeJwt({
 storage.gfp_user = JSON.stringify({ role: 'Owner' });
 assert(Shell.isNavItemVisible(plans, allOn), 'Owner sees Plans');
 assert(Shell.isNavItemVisible(settings, allOn), 'Owner sees Settings');
+assert(Shell.isNavItemVisible(staff, allOn), 'Owner sees Staff');
+assert(Shell.isNavItemVisible(roles, allOn), 'Owner sees Roles');
 assert(!Shell.isNavItemVisible(invStock, allOn), 'Owner shop UX hides Stock Management hub');
 assert(Shell.isNavItemVisible(invProducts, stockMgmtOff), 'Owner Growth packaging keeps Products');
 
@@ -181,6 +186,8 @@ storage.gfp_access_token = fakeJwt({
 storage.gfp_user = JSON.stringify({ role: 'Manager' });
 assert(!Shell.isNavItemVisible(plans, allOn), 'Manager hides Plans (no plans.manage)');
 assert(!Shell.isNavItemVisible(settings, allOn), 'Manager hides Settings (not Owner)');
+assert(!Shell.isNavItemVisible(staff, allOn), 'Manager hides Staff');
+assert(!Shell.isNavItemVisible(roles, allOn), 'Manager hides Roles');
 assert(!Shell.isNavItemVisible(invStock, allOn), 'Manager shop UX hides Stock Management hub');
 // ── Bilingual ──
 assert(I18n.pickBilingual('Hello', 'مرحبا', 'ar') === 'مرحبا', 'pickBilingual prefers ar');
