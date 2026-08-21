@@ -74,7 +74,7 @@
       '--l600:var(--gfp-brand-primary,#7ACC00);' +
       '--l400:var(--gfp-brand-accent,#A0E040);' +
       '--l300:var(--gfp-brand-accent,#A0E040);' +
-      '--l100:color-mix(in srgb,var(--gfp-brand-primary,#7ACC00) 16%,#fff);' +
+      '--l100:color-mix(in srgb,var(--gfp-brand-primary,#7ACC00) 16%,var(--ls1,#fff));' +
       '}' +
       '.sb-hdr svg rect{fill:var(--gfp-brand-primary,#7ACC00)!important}' +
       '.sb-hdr span{color:var(--gfp-brand-accent,#A0E040)!important}' +
@@ -85,7 +85,7 @@
       'color:var(--gfp-brand-accent,#A0E040)!important;' +
       'border-left-color:var(--gfp-brand-primary,#7ACC00)!important}' +
       '.sb-item.act i{color:var(--gfp-brand-accent,#A0E040)!important;opacity:1!important}' +
-      '.av-sm{background:color-mix(in srgb,var(--gfp-brand-primary,#7ACC00) 35%,#fff)!important}' +
+      '.av-sm{background:color-mix(in srgb,var(--gfp-brand-primary,#7ACC00) 35%,var(--ls1,#fff))!important}' +
       '.btn.primary,.btn-save,.btn-qr:not(.outline),button.primary{' +
       'background:var(--gfp-brand-primary,#7ACC00)!important;' +
       'border-color:var(--gfp-brand-primary,#7ACC00)!important;' +

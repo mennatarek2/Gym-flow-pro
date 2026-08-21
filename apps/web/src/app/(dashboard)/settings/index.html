@@ -7,7 +7,7 @@
 <meta name="description" content="Manage gym settings, QR check-in, and subscription for your fitness business.">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="/dashboard/settings/settings.css">
+<link rel="stylesheet" href="/dashboard/settings/settings.css?v=theme1">
 </head>
 <body>
 <div class="app">
@@ -50,7 +50,48 @@
 <div class="content">
   <div class="page-header">
     <h1 class="page-title"><i class="ti ti-building-store"></i> Gym Identity &amp; Settings</h1>
-    <p class="page-subtitle">Your gym name, logo, brand colors, tax/VAT, and front-desk QR check-in</p>
+    <p class="page-subtitle">Appearance, gym name, logo, brand colors, tax/VAT, and front-desk QR check-in</p>
+  </div>
+
+  <div class="card" id="appearanceCard">
+    <div class="card-header"><h2><i class="ti ti-moon-stars"></i> <span data-en="Appearance" data-ar="المظهر" data-i18n-text>Appearance</span></h2></div>
+    <div class="card-body">
+      <p class="muted-hint" style="margin:0 0 14px;font-size:13px;color:var(--ltt)">Choose how GymFlowPro looks on this device. This does not change your gym logo or brand colors.</p>
+      <div class="gfp-appear" id="appearanceOpts">
+        <button type="button" class="gfp-appear-opt" data-appearance="light">
+          <div class="gfp-appear-mini" style="background:#F3F5F2">
+            <div class="rail" style="background:#0D0D0D"></div>
+            <div class="pane">
+              <div class="bar" style="background:#fff"></div>
+              <div class="ln" style="background:#E4E8E2"></div>
+              <div class="ln" style="background:#E4E8E2;width:55%"></div>
+            </div>
+          </div>
+          <div class="gfp-appear-lab">Light<span>Current GymFlowPro look.</span></div>
+        </button>
+        <button type="button" class="gfp-appear-opt" data-appearance="dark">
+          <div class="gfp-appear-mini" style="background:#151716">
+            <div class="rail" style="background:#101210"></div>
+            <div class="pane">
+              <div class="bar" style="background:#1C201D"></div>
+              <div class="ln" style="background:#2E342F"></div>
+              <div class="ln" style="background:#2E342F;width:55%"></div>
+            </div>
+          </div>
+          <div class="gfp-appear-lab">Dark<span>Neutral surfaces. Lime CTAs.</span></div>
+        </button>
+        <button type="button" class="gfp-appear-opt" data-appearance="system">
+          <div class="gfp-appear-mini" style="background:linear-gradient(90deg,#F3F5F2 50%,#151716 50%)">
+            <div class="rail" style="background:#0D0D0D"></div>
+            <div class="pane">
+              <div class="bar" style="background:#7ACC00;opacity:.45"></div>
+              <div class="ln" style="background:#8C8C8C;opacity:.35"></div>
+            </div>
+          </div>
+          <div class="gfp-appear-lab">System<span>Follows this device. Updates if the OS theme changes.</span></div>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Tab Navigation -->
@@ -387,6 +428,6 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<script src="/dashboard/settings/settings-app.js?v=28"></script>
+<script src="/dashboard/settings/settings-app.js?v=theme1"></script>
 </body>
 </html>

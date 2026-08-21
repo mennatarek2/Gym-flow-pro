@@ -12,7 +12,7 @@
 .range-pop{
   position:absolute;top:calc(100% + 6px);right:0;z-index:40;
   min-width:260px;max-width:min(360px,calc(100vw - 32px));max-height:min(70vh,420px);overflow:auto;padding:8px;
-  background:#fff;border:1px solid var(--ls3);border-radius:var(--rmd);
+  background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rmd);
   box-shadow:0 8px 24px rgba(0,0,0,.08)
 }
 [dir=rtl] .range-pop{right:auto;left:0}
@@ -29,7 +29,7 @@
 
 .hub-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 .hub-tabs[hidden],#tabHint[hidden],#kpiRow[hidden],#salesBoard[hidden],#refundsBoard[hidden],#membershipsBoard[hidden],#productsBoard[hidden],#staffBoard[hidden],#membershipsPlanPanel[hidden],#productsRankPanel[hidden],#salesFilters[hidden],#methodWrap[hidden],#planWrap[hidden],#productWrap[hidden],#shiftFilterWrap[hidden],#moreWrap[hidden],#txWrap[hidden],#shiftWrap[hidden],#tablePager[hidden],#detailError[hidden]{display:none!important}
-.hub-tab{height:36px;padding:0 14px;border:1px solid var(--ls3);border-radius:var(--rmd);background:#fff;font:inherit;font-weight:600;cursor:pointer;color:var(--lts)}
+.hub-tab{height:36px;padding:0 14px;border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1);font:inherit;font-weight:600;cursor:pointer;color:var(--lts)}
 .hub-tab:hover{border-color:var(--lts)}
 .hub-tab.active{background:var(--ls2);border-color:var(--lts);color:var(--ltp)}
 .hub-tab[hidden]{display:none}
@@ -38,11 +38,11 @@
 .flt input,.rpt-toolbar select{height:36px;border:1px solid var(--ls3);border-radius:var(--rmd);padding:0 10px;font:inherit}
 .rpt-hint{font-size:13px;color:var(--ltt);margin:0 0 12px;max-width:44rem;line-height:1.45}
 .kpi-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.kpi{background:#fff;border:1px solid var(--ls3);border-radius:var(--rmd);padding:12px 14px;min-width:140px}
+.kpi{background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rmd);padding:12px 14px;min-width:140px}
 .kpi .v{font-family:var(--fd);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .kpi .l{font-size:11px;font-weight:700;color:var(--ltt);text-transform:uppercase;margin-top:2px}
 .rpt-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.table-wrap{overflow:auto;max-width:100%;max-height:min(70vh,720px);border:1px solid var(--ls3);border-radius:var(--rmd);background:#fff}
+.table-wrap{overflow:auto;max-width:100%;max-height:min(70vh,720px);border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1)}
 #shiftWrap,#txWrap{margin-top:14px}
 .rank-wrap{max-height:none}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -78,7 +78,7 @@ tbody a:hover{text-decoration:underline}
   display:flex;flex-direction:column;align-items:flex-start;gap:10px;
   text-align:start;cursor:pointer;
   padding:18px 18px 16px;
-  background:#fff;border:1px solid var(--ls3);border-radius:var(--rlg);
+  background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rlg);
   box-shadow:0 1px 2px rgba(0,0,0,.04);
   color:inherit;font:inherit
 }
@@ -102,7 +102,7 @@ tbody a:hover{text-decoration:underline}
 
 .rpt-empty{
   max-width:420px;margin:48px auto;text-align:center;
-  padding:32px 24px;background:#fff;border:1px solid var(--ls3);border-radius:var(--rlg)
+  padding:32px 24px;background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rlg)
 }
 .rpt-empty h2{font-family:var(--fd);font-size:18px;margin:0 0 8px}
 .rpt-empty p{font-size:13px;color:var(--ltt);margin:0 0 16px;line-height:1.5}
@@ -121,14 +121,14 @@ tbody a:hover{text-decoration:underline}
 
 .range-pop-label{font-size:11px;font-weight:700;color:var(--ltt);text-transform:uppercase;letter-spacing:.04em;margin:4px 8px 6px}
 .sales-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}
-.sales-kpi{background:#fff;border:1px solid var(--ls3);border-radius:var(--rmd);padding:10px 12px}
+.sales-kpi{background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rmd);padding:10px 12px}
 .sales-kpi .l{font-size:11px;font-weight:700;color:var(--ltt);text-transform:uppercase;letter-spacing:.04em}
 .sales-kpi .v{font-family:var(--fd);font-size:18px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
 .rank-wrap{margin:0;border:0}
 .rank-wrap th{background:transparent;padding:6px 8px;position:static}
 .rank-wrap td{padding:8px}
 .sales-panels{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:16px}
-.sales-panel{background:#fff;border:1px solid var(--ls3);border-radius:var(--rmd);padding:14px 16px}
+.sales-panel{background:var(--ls1);border:1px solid var(--ls3);border-radius:var(--rmd);padding:14px 16px}
 .sales-panel h3{font-family:var(--fd);font-size:13px;font-weight:700;margin:0 0 12px}
 .sales-trend{display:flex;align-items:flex-end;gap:4px;height:120px}
 .sales-bar{flex:1;min-width:4px;background:var(--ls3);border-radius:4px 4px 0 0;height:4px}

@@ -49,7 +49,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .row-actions button,.row-actions a{
   height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--ls3);
-  background:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--lts);text-decoration:none;display:inline-flex;align-items:center
+  background:var(--ls1);font:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--lts);text-decoration:none;display:inline-flex;align-items:center
 }
 .row-actions button.primary{background:rgba(122,204,0,.15);border-color:rgba(122,204,0,.35);color:#3f6212}
 .prod-cell{display:flex;align-items:center;gap:10px}
@@ -205,7 +205,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .ef-field > span:first-child{font-size:12px}
 .ef-optional{font-weight:400;color:var(--ltt)}
 .ef-span-2{grid-column:1/-1}
-.ef-field input,.ef-field select,.ef-field textarea{height:40px;border:1px solid var(--ls3);border-radius:var(--rmd);padding:0 12px;font:inherit;color:var(--ltp);background:#fff}
+.ef-field input,.ef-field select,.ef-field textarea{height:40px;border:1px solid var(--ls3);border-radius:var(--rmd);padding:0 12px;font:inherit;color:var(--ltp);background:var(--ls1)}
 .ef-field textarea{height:auto;min-height:64px;padding:8px 12px;resize:vertical}
 .ef-field input:focus,.ef-field select:focus,.ef-field textarea:focus{outline:none;border-color:var(--l500);box-shadow:0 0 0 3px rgba(122,204,0,.2)}
 .ef-barcode-row{display:flex;gap:8px;align-items:stretch}

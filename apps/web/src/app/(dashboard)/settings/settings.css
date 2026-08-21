@@ -189,7 +189,7 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .brand-reset-row .hint{flex:1;min-width:180px;margin:0;line-height:1.4}
 .btn-reset-brand{
   height:36px;padding:0 14px;border-radius:var(--rmd);font:inherit;font-size:13px;font-weight:700;
-  cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--lts);
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:var(--ls1);color:var(--lts);
   border:1px solid var(--ls3)
 }
 .btn-reset-brand:hover{border-color:var(--l500);color:var(--ltp)}
@@ -201,7 +201,7 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .check-row{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--lts);margin:8px 0 14px}
 .check-row input{accent-color:var(--l500)}
 .brand-live{border:1px solid var(--ls3);border-radius:var(--rlg);overflow:hidden;background:var(--ls2);margin-bottom:14px}
-.brand-live-bar{height:44px;background:#fff;border-bottom:1px solid var(--ls3);display:flex;align-items:center;gap:10px;padding:0 12px}
+.brand-live-bar{height:44px;background:var(--ls1);border-bottom:1px solid var(--ls3);display:flex;align-items:center;gap:10px;padding:0 12px}
 .brand-live-mark{width:22px;height:22px;border-radius:6px;background:var(--l500)}
 .brand-live-actions{display:flex;gap:8px;flex-wrap:wrap;padding:12px}
 .brand-live-cta,.brand-live-sec{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:10px;font-size:12px;font-weight:700;color:#0D0D0D}
@@ -221,4 +221,4 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .cr80-num{font-family:var(--fm);font-size:11px;font-weight:600;letter-spacing:.04em}
 .cr80-bars{height:28px;width:85%;margin:0 auto;background:repeating-linear-gradient(90deg,#111 0 2px,transparent 2px 4px);border-radius:2px}
 .logo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.logo-btn.outline{background:#fff;border:1px solid var(--ls3);color:var(--ltp)}
+.logo-btn.outline{background:var(--ls1);border:1px solid var(--ls3);color:var(--ltp)}

@@ -106,6 +106,8 @@ assert(Authz.useCanRole('AnyStaff'), 'Receptionist matches AnyStaff');
 assert(!Authz.useCanRole('OwnerOnly'), 'Receptionist is not OwnerOnly');
 
 var plans = Shell.NAV_ITEMS.find(function (n) { return n.key === 'plans'; });
+var activities = Shell.NAV_ITEMS.find(function (n) { return n.key === 'activities'; });
+var classes = Shell.NAV_ITEMS.find(function (n) { return n.key === 'classes'; });
 var settings = Shell.NAV_ITEMS.find(function (n) { return n.key === 'settings'; });
 var pos = Shell.NAV_ITEMS.find(function (n) { return n.key === 'pos'; });
 var call = Shell.NAV_ITEMS.find(function (n) { return n.key === 'call-sheet'; });
@@ -121,9 +123,11 @@ var allOn = {
   inventory: true, stock_management: true
 };
 
-assert(!!plans && !!pos && !!invHome && !!invStock && !!invProducts, 'nav items resolved by key');
+assert(!!plans && !!activities && !!classes && !!pos && !!invHome && !!invStock && !!invProducts, 'nav items resolved by key');
 assert(!invAdjust, 'Adjustments stay removed from Inventory nav registry');
 assert(!Shell.isNavItemVisible(plans, allOn), 'Receptionist hides Plans');
+assert(!Shell.isNavItemVisible(activities, allOn), 'Receptionist hides Activities catalog');
+assert(Shell.isNavItemVisible(classes, allOn), 'Receptionist sees Classes');
 assert(!Shell.isNavItemVisible(settings, allOn), 'Receptionist hides Settings');
 assert(!Shell.isNavItemVisible(staff, allOn), 'Receptionist hides Staff');
 assert(!!roles, 'Roles nav item is registered');
@@ -169,6 +173,7 @@ storage.gfp_access_token = fakeJwt({
 });
 storage.gfp_user = JSON.stringify({ role: 'Owner' });
 assert(Shell.isNavItemVisible(plans, allOn), 'Owner sees Plans');
+assert(Shell.isNavItemVisible(activities, allOn), 'Owner sees Activities');
 assert(Shell.isNavItemVisible(settings, allOn), 'Owner sees Settings');
 assert(Shell.isNavItemVisible(staff, allOn), 'Owner sees Staff');
 assert(Shell.isNavItemVisible(roles, allOn), 'Owner sees Roles');
@@ -185,6 +190,7 @@ storage.gfp_access_token = fakeJwt({
 });
 storage.gfp_user = JSON.stringify({ role: 'Manager' });
 assert(!Shell.isNavItemVisible(plans, allOn), 'Manager hides Plans (no plans.manage)');
+assert(!Shell.isNavItemVisible(activities, allOn), 'Manager hides Activities (no plans.manage)');
 assert(!Shell.isNavItemVisible(settings, allOn), 'Manager hides Settings (not Owner)');
 assert(!Shell.isNavItemVisible(staff, allOn), 'Manager hides Staff');
 assert(!Shell.isNavItemVisible(roles, allOn), 'Manager hides Roles');

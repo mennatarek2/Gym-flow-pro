@@ -47,6 +47,55 @@
   };
 
   var charts = { attendance: null, revenue: null };
+
+  function cssVar(name, fallback) {
+    try {
+      var v = global.getComputedStyle(global.document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function chartTheme() {
+    return {
+      text: cssVar('--ltt', '#8C8C8C'),
+      grid: cssVar('--ls3', '#E8E8E8'),
+      brand: cssVar('--l500', '#7ACC00'),
+      fill: 'rgba(122,204,0,.18)'
+    };
+  }
+
+  function applyChartTheme() {
+    var t = chartTheme();
+    function paint(ch, kind) {
+      if (!ch || !ch.options || !ch.options.scales) return;
+      var x = ch.options.scales.x || {};
+      var y = ch.options.scales.y || {};
+      x.ticks = x.ticks || {};
+      y.ticks = y.ticks || {};
+      y.grid = y.grid || {};
+      x.grid = x.grid || {};
+      x.ticks.color = t.text;
+      y.ticks.color = t.text;
+      y.grid.color = t.grid;
+      x.grid.color = t.grid;
+      if (ch.data && ch.data.datasets && ch.data.datasets[0]) {
+        if (kind === 'bar') ch.data.datasets[0].backgroundColor = 'rgba(122,204,0,.45)';
+        if (kind === 'line') {
+          ch.data.datasets[0].borderColor = t.brand;
+          ch.data.datasets[0].backgroundColor = t.fill;
+        }
+      }
+      ch.update('none');
+    }
+    paint(charts.attendance, 'bar');
+    paint(charts.revenue, 'line');
+  }
+
+  if (global.document && global.document.addEventListener) {
+    global.document.addEventListener('gfp-theme-change', applyChartTheme);
+  }
   var chartJsLoading = null;
 
   function can(access) {
@@ -1312,8 +1361,15 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, ticks: { font: { size: 10 } } },
-          x: { ticks: { font: { size: 10 } } }
+          y: {
+            beginAtZero: true,
+            ticks: { font: { size: 10 }, color: chartTheme().text },
+            grid: { color: chartTheme().grid }
+          },
+          x: {
+            ticks: { font: { size: 10 }, color: chartTheme().text },
+            grid: { display: false }
+          }
         }
       }
     });
@@ -1465,6 +1521,7 @@
       return;
     }
     if (charts.revenue) charts.revenue.destroy();
+    var ct = chartTheme();
     charts.revenue = new global.Chart(canvas, {
       type: 'line',
       data: {
@@ -1472,8 +1529,8 @@
         datasets: [
           {
             data: values,
-            borderColor: '#7ACC00',
-            backgroundColor: 'rgba(122,204,0,.15)',
+            borderColor: ct.brand,
+            backgroundColor: ct.fill,
             fill: true,
             tension: 0.3
           }
@@ -1484,8 +1541,15 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, ticks: { font: { size: 10 } } },
-          x: { ticks: { font: { size: 10 } } }
+          y: {
+            beginAtZero: true,
+            ticks: { font: { size: 10 }, color: ct.text },
+            grid: { color: ct.grid }
+          },
+          x: {
+            ticks: { font: { size: 10 }, color: ct.text },
+            grid: { color: ct.grid }
+          }
         }
       }
     });

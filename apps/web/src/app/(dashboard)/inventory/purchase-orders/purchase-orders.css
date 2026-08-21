@@ -13,7 +13,7 @@
 .po-item .lh{display:none}
 .po-item .pl-remove{
   height:40px;width:40px;padding:0;border-radius:var(--rmd);border:1px solid var(--ls3);
-  background:#fff;color:var(--ltt);cursor:pointer;display:inline-flex;align-items:center;justify-content:center
+  background:var(--ls1);color:var(--ltt);cursor:pointer;display:inline-flex;align-items:center;justify-content:center
 }
 .po-item .pl-remove:hover{border-color:var(--dng500);color:var(--dng500)}
 .po-total{margin:4px 0 8px}

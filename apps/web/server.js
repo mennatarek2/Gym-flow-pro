@@ -13,16 +13,17 @@ const SHARED_SCRIPTS = [
   '/shared/authz.js',
   '/shared/features.js?v=5',
   '/shared/i18n.js',
+  '/shared/theme.js?v=1',
   '/shared/nav.js?v=4',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
-  '/shared/gfp-branding.js?v=4',
-  '/shared/shell.js?v=9',
+  '/shared/gfp-branding.js?v=5',
+  '/shared/shell.js?v=theme1',
   '/shared/quick-actions.js?v=5',
   '/shared/refund-action.js?v=1',
 ];
 
-const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1', '/shared/refund-action.css'];
+const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1', '/shared/refund-action.css', '/shared/theme.css?v=2'];
 
 function sharedScriptTags() {
   return SHARED_SCRIPTS.map((src) => `<script src="${src}"></script>`).join('\n') + '\n';
@@ -46,14 +47,20 @@ function sendHtml(res, filePath) {
   const missingCss = SHARED_STYLES.filter((href) => !hasStylesheetHref(html, href));
   const missingJs = SHARED_SCRIPTS.filter((src) => !hasScriptSrc(html, src));
   const needEarly = !html.includes('data-gfp-early-locale');
+  const needThemeBoot = !html.includes('data-gfp-theme-boot');
 
-  // Early locale/branding must run before first paint → top of <head>.
-  // Shared CSS (esp. typography) must load AFTER page styles → end of <head>.
+  // Early locale/theme/branding must run before first paint → top of <head>.
+  // Shared CSS (esp. typography + theme) must load AFTER page styles → end of <head>.
   const headStart = [];
   const headEnd = [];
+  if (needThemeBoot) {
+    headStart.push(
+      '<style data-gfp-theme-boot>html[data-theme="dark"]{color-scheme:dark;background:#151716;--lbg:#151716;--ls1:#1C201D;--ls2:#222722;--ls3:#2E342F;--ltp:#E8EBE6;--lts:#B5BBB4;--ltt:#8C948A;--suc100:#16351F;--dng100:#3A1C1C;--wrn100:#3A2E12;--inf100:#1A2A44;--l100:rgba(122,204,0,.16);--sh1:0 1px 2px rgba(0,0,0,.28)}html[data-theme="dark"] body{background:#151716;color:#E8EBE6}</style>'
+    );
+  }
   if (needEarly) {
     headStart.push(
-      '<script data-gfp-early-locale>(function(){try{var l=localStorage.getItem("gfp_locale");if(l!=="ar"&&l!=="en")l="en";var h=document.documentElement;h.lang=l;h.dir=l==="ar"?"rtl":"ltr";var u=JSON.parse(localStorage.getItem("gfp_user")||"null");var tid=u&&(u.tenantId||u.TenantId);var raw=tid&&localStorage.getItem("gfp_branding:"+tid);if(!raw)raw=localStorage.getItem("gfp_branding");if(!raw)return;var b=JSON.parse(raw);var p=b.primaryColor||b.PrimaryColor||"#7ACC00";var a=b.accentColor||b.AccentColor||"#A0E040";h.style.setProperty("--gfp-brand-primary",p);h.style.setProperty("--gfp-brand-accent",a);h.style.setProperty("--l500",p);h.style.setProperty("--l400",a);h.style.setProperty("--l600",p);h.style.setProperty("--l300",a);}catch(e){}})();</script>'
+      '<script data-gfp-early-locale>(function(){try{var h=document.documentElement;var l=localStorage.getItem("gfp_locale");if(l!=="ar"&&l!=="en")l="en";h.lang=l;h.dir=l==="ar"?"rtl":"ltr";var pref=localStorage.getItem("gfp_appearance");try{var u0=JSON.parse(localStorage.getItem("gfp_user")||"null");var uid=u0&&(u0.id||u0.Id||u0.userId||u0.UserId);if(uid){var p2=localStorage.getItem("gfp_appearance:"+uid);if(p2==="light"||p2==="dark"||p2==="system")pref=p2;}}catch(e0){}if(pref!=="light"&&pref!=="dark"&&pref!=="system")pref="light";var dark=pref==="dark"||(pref==="system"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);h.setAttribute("data-theme",dark?"dark":"light");h.setAttribute("data-appearance",pref);h.style.colorScheme=dark?"dark":"light";var u=JSON.parse(localStorage.getItem("gfp_user")||"null");var tid=u&&(u.tenantId||u.TenantId);var raw=tid&&localStorage.getItem("gfp_branding:"+tid);if(!raw)raw=localStorage.getItem("gfp_branding");if(!raw)return;var b=JSON.parse(raw);var p=b.primaryColor||b.PrimaryColor||"#7ACC00";var a=b.accentColor||b.AccentColor||"#A0E040";h.style.setProperty("--gfp-brand-primary",p);h.style.setProperty("--gfp-brand-accent",a);h.style.setProperty("--l500",p);h.style.setProperty("--l400",a);h.style.setProperty("--l600",p);h.style.setProperty("--l300",a);}catch(e){}})();</script>'
     );
   }
   missingCss.forEach((href) => headEnd.push(`<link rel="stylesheet" href="${href}">`));

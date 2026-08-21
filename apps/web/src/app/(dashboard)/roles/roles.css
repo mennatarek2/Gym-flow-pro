@@ -23,7 +23,7 @@
 .roles-table .type-cell{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--gold)}
 .roles-view-btn{
   height:32px;padding:0 12px;border:1px solid var(--ls3);border-radius:8px;
-  background:#fff;color:var(--lts);font:inherit;font-size:12px;font-weight:600;cursor:pointer
+  background:var(--ls1);color:var(--lts);font:inherit;font-size:12px;font-weight:600;cursor:pointer
 }
 .roles-view-btn:hover,.roles-view-btn:focus{border-color:var(--c300);color:var(--ltp);outline:none}
 .roles-view-btn:focus-visible{outline:2px solid var(--l500);outline-offset:2px}

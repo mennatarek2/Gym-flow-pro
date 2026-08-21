@@ -150,10 +150,10 @@
 
 /* Membership action buttons */
 .ms-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-.btn-ms{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--rmd);font-family:var(--fd);font-size:13px;font-weight:600;border:1px solid var(--ls3);background:#fff;color:var(--lts);cursor:pointer;transition:all var(--tf)}
+.btn-ms{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:var(--rmd);font-family:var(--fd);font-size:13px;font-weight:600;border:1px solid var(--ls3);background:var(--ls1);color:var(--lts);cursor:pointer;transition:all var(--tf)}
 .btn-ms.primary{background:var(--l500);color:var(--c900);border-color:var(--l500)}
 .btn-ms.primary:hover{background:var(--l400);box-shadow:var(--shg)}
-.btn-ms.outline{background:#fff;color:var(--lts);border:1px solid var(--ls3)}
+.btn-ms.outline{background:var(--ls1);color:var(--lts);border:1px solid var(--ls3)}
 .btn-ms.outline:hover{border-color:var(--l500);color:var(--l600)}
 .btn-ms.freeze{background:var(--frz100);color:#155E75;border:1px solid var(--frz500)}
 .btn-ms.freeze:hover{background:var(--frz500);color:#fff}

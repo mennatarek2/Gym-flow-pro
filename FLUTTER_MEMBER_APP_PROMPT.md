@@ -20,7 +20,7 @@ This is the MEMBER app, not the staff web desk.
 OWN (build these):
 - Activate account with Gym Code + staff-issued one-time Activation Code
 - Session (JWT + refresh), logout
-- Home: greeting, gym context, current membership summary (read-only), quick actions, live gym occupancy card (GET /api/member/occupancy — see FLUTTER_MEMBER_OCCUPANCY_PROMPT.md)
+- Home: greeting, gym context, current membership summary (read-only), quick actions, live gym occupancy card (GET /api/member/occupancy — see FLUTTER_MEMBER_OCCUPANCY_PROMPT.md), classes (GET /api/member/sessions — see FLUTTER_MEMBER_CLASSES_PROMPT.md)
 - QR check-in: scan the gym’s static QR → send gymCode
 - Notifications: list + mark read
 - Invitations: summary, send (name + phone; National ID optional), history

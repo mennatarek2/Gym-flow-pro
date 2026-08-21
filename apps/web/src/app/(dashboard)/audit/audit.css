@@ -9,7 +9,7 @@ td{padding:10px 12px;border-top:1px solid var(--ls3);vertical-align:top}
 .pager .btn{height:32px;padding:0 10px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:300;padding:16px}
 .modal-overlay.show{display:flex}
-.diff-box{background:#fff;border-radius:var(--rlg);padding:18px;width:100%;max-width:920px;max-height:90vh;overflow:auto}
+.diff-box{background:var(--ls1);border-radius:var(--rlg);padding:18px;width:100%;max-width:920px;max-height:90vh;overflow:auto}
 .diff-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .diff-hdr h3{font-family:var(--fd)}
 .diff-panes{display:grid;grid-template-columns:1fr 1fr;gap:12px}

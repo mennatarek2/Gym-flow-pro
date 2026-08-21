@@ -71,7 +71,7 @@ const INV_ALL_KEYS = INV_VIEW_KEYS.concat(['inv-suppliers', 'inv-warehouses']).s
 
 // Stable order as registered in nav.js
 const INV_OWNER_KEYS = ['inv-home', 'inv-reports', 'inv-suppliers', 'inv-warehouses'];
-const CATALOG_OWNER_KEYS = ['plans', 'inv-products', 'inv-suppliers', 'inv-purchase-orders'];
+const CATALOG_OWNER_KEYS = ['plans', 'activities', 'inv-products', 'inv-suppliers', 'inv-purchase-orders'];
 const CATALOG_MANAGER_KEYS = ['inv-products', 'inv-suppliers', 'inv-purchase-orders'];
 
 const FIXTURES = {
@@ -209,7 +209,7 @@ assert(
 assertShape('Owner', runFixture('Owner', ALL_ON), {
   overview: ['dashboard'],
   members: ['members', 'invitations', 'attendance'],
-  'front-desk': ['pos', 'member-orders', 'call-sheet'],
+  'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts', 'z-report'],
   money: ['offers', 'invoices', 'reports'],
   catalog: CATALOG_OWNER_KEYS.slice(),
@@ -219,7 +219,7 @@ assertShape('Owner', runFixture('Owner', ALL_ON), {
 assertShape('Manager', runFixture('Manager', ALL_ON), {
   overview: ['dashboard'],
   members: ['members', 'invitations', 'attendance'],
-  'front-desk': ['pos', 'member-orders', 'call-sheet'],
+  'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts', 'z-report'],
   money: ['offers', 'invoices', 'reports'],
   catalog: CATALOG_MANAGER_KEYS.slice(),
@@ -235,7 +235,7 @@ assertShape('Trainer', runFixture('Trainer', ALL_ON), {
 assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   overview: ['dashboard'],
   members: ['members', 'invitations', 'attendance'],
-  'front-desk': ['pos', 'member-orders', 'call-sheet'],
+  'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts'],
   money: ['offers', 'reports'],
   administration: ['notifications']
@@ -286,7 +286,7 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   assert(!actual.inventory, 'Growth packaging hides advanced Inventory section');
   assert(
     actual.catalog && actual.catalog.join(',') === CATALOG_OWNER_KEYS.join(','),
-    'Shop UX Catalog = Plans + Products + Suppliers + Purchases'
+    'Shop UX Catalog = Plans + Activities + Products + Suppliers + Purchases'
   );
 }
 
@@ -308,6 +308,9 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   assert(catalog && catalog.items.some(function (i) {
     return i.key === 'plans';
   }), 'plans.manage claim shows Plans regardless of role name');
+  assert(catalog && catalog.items.some(function (i) {
+    return i.key === 'activities';
+  }), 'plans.manage claim shows Activities');
   const inventory = cats.find(function (c) {
     return c.key === 'inventory';
   });

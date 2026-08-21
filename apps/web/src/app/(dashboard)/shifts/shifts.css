@@ -53,7 +53,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .btn:disabled{opacity:.55;cursor:not-allowed}
 .btn.primary{background:var(--l500);border-color:var(--l500);color:var(--c900)}
 .btn.primary:hover:not(:disabled){background:var(--l400);border-color:var(--l400)}
-.btn.secondary{background:#fff;border-color:var(--ls3);color:var(--ltp)}
+.btn.secondary{background:var(--ls1);border-color:var(--ls3);color:var(--ltp)}
 .btn.secondary:hover:not(:disabled){border-color:var(--l500)}
 .btn.danger{background:var(--dng500);border-color:var(--dng500);color:#fff}
 .btn.ghost{background:transparent;border-color:transparent;color:var(--lts)}
@@ -152,7 +152,7 @@ td{padding:10px 12px;border-top:1px solid var(--ls3)}
 .filter-field .stat-lbl{margin-bottom:0}
 .filter-field input[type="date"],
 .filter-field select,
-.filters select{height:40px;border:2px solid var(--ls3);border-radius:var(--rmd);padding:0 12px;font:inherit;background:#fff;min-width:148px}
+.filters select{height:40px;border:2px solid var(--ls3);border-radius:var(--rmd);padding:0 12px;font:inherit;background:var(--ls1);min-width:148px}
 .filter-field-staff{flex:1;min-width:180px;max-width:280px}
 .filter-field-staff select{width:100%;min-width:0}
 .filter-actions{display:flex;align-items:flex-end;padding-bottom:0}

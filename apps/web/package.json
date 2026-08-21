@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "node server.js",
+    "prepare:wwwroot": "node scripts/prepare-wwwroot.mjs",
+    "publish:monsterasp": "node scripts/prepare-wwwroot.mjs",
     "serve": "node server.js",
     "test:nav": "node src/app/shared/nav.selftest.js",
     "test:staff": "node src/app/(dashboard)/staff/staff.selftest.js",

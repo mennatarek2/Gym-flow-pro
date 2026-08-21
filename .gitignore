@@ -50,3 +50,5 @@ Thumbs.db
 
 # Cache
 .turbo
+
+tmp-lastlogin-meta.txt

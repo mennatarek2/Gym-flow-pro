@@ -97,6 +97,14 @@
       labelAr: 'مكتب الاستقبال',
       items: [
         {
+          key: 'classes',
+          label: 'Classes',
+          labelAr: 'الحصص',
+          path: '/dashboard/classes/',
+          icon: 'ti-calendar-event',
+          access: { kind: 'permission', value: 'members.view' }
+        },
+        {
           key: 'pos',
           // Retail / general sales — membership onboarding lives in Members
           label: 'Sale',
@@ -200,6 +208,14 @@
           labelAr: 'الباقات',
           path: '/dashboard/plans/',
           icon: 'ti-package',
+          access: { kind: 'permission', value: 'plans.manage' }
+        },
+        {
+          key: 'activities',
+          label: 'Activities',
+          labelAr: 'الأنشطة',
+          path: '/dashboard/activities/',
+          icon: 'ti-run',
           access: { kind: 'permission', value: 'plans.manage' }
         },
         {

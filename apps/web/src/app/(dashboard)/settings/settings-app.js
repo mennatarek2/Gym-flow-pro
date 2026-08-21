@@ -849,6 +849,29 @@
     });
   }
 
+  // ── Appearance (browser preference — not gym identity) ──
+  (function bindAppearance() {
+    var root = document.getElementById('appearanceOpts');
+    if (!root) return;
+    function current() {
+      return (window.GfpTheme && window.GfpTheme.getPref && window.GfpTheme.getPref()) || 'light';
+    }
+    function paint() {
+      var pref = current();
+      root.querySelectorAll('[data-appearance]').forEach(function (btn) {
+        btn.classList.toggle('act', btn.getAttribute('data-appearance') === pref);
+      });
+    }
+    root.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-appearance]');
+      if (!btn) return;
+      var pref = btn.getAttribute('data-appearance');
+      if (window.GfpTheme && window.GfpTheme.setPref) window.GfpTheme.setPref(pref);
+      paint();
+    });
+    paint();
+  })();
+
   // ── Init (Owner settings first so gymCode is not wiped by a failed gym-code call) ──
   if (user && user.tenantId) {
     const tid = document.getElementById('tenantId');

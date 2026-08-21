@@ -6,6 +6,7 @@
   const Gfp = window.GfpApi;
   const Authz = window.GfpAuthz;
   const SESSION_PACK_COUNTS = [10, 20, 50];
+  let activityCatalog = null;
 
   function getUser() {
     if (Gfp && Gfp.tokens) return Gfp.tokens.getUser();
@@ -452,8 +453,14 @@
       plan = r.data;
     }
 
+    activityCatalog = null;
+    const actRes = await Gfp.get('/activities');
+    if (actRes && actRes.ok && Array.isArray(actRes.data)) {
+      activityCatalog = actRes.data;
+    }
+
     const modal = document.getElementById('modalContent');
-    modal.innerHTML = buildModalHTML(plan, isEdit);
+    modal.innerHTML = buildModalHTML(plan, isEdit, activityCatalog || []);
     openModal();
 
     const typeCards = modal.querySelectorAll('.type-card');
@@ -597,12 +604,42 @@
       }
     }
 
+    if (activityCatalog) {
+      const ents = [];
+      activityCatalog.forEach(function (a) {
+        const on = document.getElementById('entOn-' + a.id);
+        if (!on || !on.checked) return;
+        const modeEl = document.getElementById('entMode-' + a.id);
+        const mode = modeEl ? modeEl.value : 'included';
+        const item = { activityId: a.id, accessMode: mode };
+        if (mode === 'limited') {
+          const lim = parseInt((document.getElementById('entLimit-' + a.id) || {}).value, 10);
+          if (!lim || lim < 1) {
+            return;
+          }
+          item.quotaLimit = lim;
+          item.quotaPeriod = ((document.getElementById('entPeriod-' + a.id) || {}).value) || 'cairo_month';
+        }
+        ents.push(item);
+      });
+      const limitedMissing = activityCatalog.some(function (a) {
+        const on = document.getElementById('entOn-' + a.id);
+        const modeEl = document.getElementById('entMode-' + a.id);
+        return on && on.checked && modeEl && modeEl.value === 'limited' &&
+          !(parseInt((document.getElementById('entLimit-' + a.id) || {}).value, 10) > 0);
+      });
+      if (limitedMissing) {
+        return { error: 'Limited access needs a quota of at least 1' };
+      }
+      body.entitlements = ents;
+    }
+
     return { body: body };
   }
 
   function updateConditionalFields(type) {
     document.querySelectorAll('.cond-section').forEach(function (s) {
-      if (s.id === 'cond-invite-quota') {
+      if (s.id === 'cond-invite-quota' || s.id === 'cond-entitlements') {
         s.classList.add('visible');
         return;
       }
@@ -653,6 +690,18 @@
         iqPreview +
         ' invitations / membership</div>';
     }
+    if (activityCatalog) {
+      const n = activityCatalog.filter(function (a) {
+        const on = document.getElementById('entOn-' + a.id);
+        return on && on.checked;
+      }).length;
+      if (n > 0) {
+        feats +=
+          '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-run" style="color:var(--l600)"></i>' +
+          n +
+          ' included activities</div>';
+      }
+    }
     if (type === 'trial') {
       const tv = fd.get('trialVisitLimit') || '';
       feats = tv
@@ -700,8 +749,47 @@
       '</div>';
   }
 
-  function buildModalHTML(p, isEdit) {
+  function entitlementSectionHtml(plan, isEdit, catalog) {
+    if (!catalog.length) {
+      return '<div class="cond-section visible" id="cond-entitlements" style="display:block">' +
+        '<div class="cond-title"><i class="ti ti-run"></i> Includes</div>' +
+        '<div class="modal-header-sub">Could not load activities. Save without changing includes, or open Catalog → Activities first.</div></div>';
+    }
+    const existing = (plan && Array.isArray(plan.entitlements)) ? plan.entitlements : [];
+    const byId = {};
+    existing.forEach(function (e) { byId[e.activityId] = e; });
+    const rows = catalog.map(function (a) {
+      const ent = byId[a.id];
+      const onCreateFloor = !isEdit && a.systemKey === 'gym_floor';
+      const checked = ent ? true : onCreateFloor;
+      const mode = ent ? (ent.accessMode || 'included') : 'included';
+      const limit = ent && ent.quotaLimit != null ? ent.quotaLimit : '';
+      const period = ent && ent.quotaPeriod ? ent.quotaPeriod : 'cairo_month';
+      const label = a.name + (a.isSystem ? ' (system)' : '') + (a.kind === 'facility' ? ' · facility' : '');
+      return '<div class="ent-row" data-ent-activity="' + a.id + '">' +
+        '<label><input type="checkbox" id="entOn-' + a.id + '" value="' + a.id + '"' +
+        (checked ? ' checked' : '') + '> ' + esc(label) + '</label>' +
+        '<select id="entMode-' + a.id + '">' +
+        '<option value="included"' + (mode === 'included' ? ' selected' : '') + '>Included</option>' +
+        '<option value="unlimited"' + (mode === 'unlimited' ? ' selected' : '') + '>Unlimited</option>' +
+        '<option value="limited"' + (mode === 'limited' ? ' selected' : '') + '>Limited</option>' +
+        '</select>' +
+        '<input type="number" id="entLimit-' + a.id + '" min="1" placeholder="Quota" value="' + limit + '">' +
+        '<select id="entPeriod-' + a.id + '">' +
+        '<option value="cairo_month"' + (period === 'cairo_month' ? ' selected' : '') + '>Cairo month</option>' +
+        '<option value="membership"' + (period === 'membership' ? ' selected' : '') + '>This membership</option>' +
+        '<option value="one_time"' + (period === 'one_time' ? ' selected' : '') + '>One time</option>' +
+        '</select></div>';
+    }).join('');
+    return '<div class="cond-section visible" id="cond-entitlements" style="display:block">' +
+      '<div class="cond-title"><i class="ti ti-run"></i> Includes</div>' +
+      '<div class="modal-header-sub">What this plan grants. Uncheck Gym floor for a CrossFit-only plan (no gym-door access). TIME hours still apply only to gym-door check-in.</div>' +
+      rows + '</div>';
+  }
+
+  function buildModalHTML(p, isEdit, catalog) {
     const v = p || {};
+    catalog = catalog || [];
     const selType = v.planType || 'monthly_unlimited';
     let sessCount = v.sessionCount || 20;
     if (SESSION_PACK_COUNTS.indexOf(sessCount) === -1) sessCount = 20;
@@ -820,6 +908,7 @@
       '<div class="fg"><label>Invitations per membership</label><input type="number" name="referralInviteQuota" min="0" value="' +
       (v.referralInviteQuota != null ? v.referralInviteQuota : 0) +
       '" placeholder="0 = none"><div class="modal-header-sub">How many friends a member on this plan may invite during this membership. Unused invitations do not carry to the next membership. Frozen, expired, or cancelled = 0.</div></div></div>' +
+      entitlementSectionHtml(v, isEdit, catalog) +
       '<div class="cond-section" id="cond-trial">' +
       '<div class="cond-title"><i class="ti ti-flask"></i> Trial Options</div>' +
       '<div class="fg"><label>Visit limit (optional)</label><input type="number" name="trialVisitLimit" min="1" value="' +

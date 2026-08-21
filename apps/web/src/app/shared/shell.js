@@ -164,6 +164,10 @@
     css.textContent = [
       '.gfp-lang-toggle{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--ls3,#E8E8E8);background:var(--ls1,#fff);border-radius:999px;font-size:var(--gfp-fs-sm,13px);font-weight:700;cursor:pointer;color:var(--lts,#4A4A4A);flex-shrink:0}',
       '.gfp-lang-toggle:hover{border-color:var(--l500,#7ACC00);color:var(--l600,#5EAF00)}',
+      '.gfp-appear-toggle{display:inline-flex;align-items:center;padding:2px;border:1px solid var(--ls3,#E8E8E8);background:var(--ls2,#F5F5F5);border-radius:999px;flex-shrink:0;gap:2px}',
+      '.gfp-appear-toggle button{height:26px;min-width:30px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:var(--lts,#4A4A4A);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px}',
+      '.gfp-appear-toggle button.act{background:var(--l500,#7ACC00);color:#0D0D0D}',
+      '.gfp-appear-toggle button:focus-visible{outline:2px solid var(--l400,#A0E040);outline-offset:1px}',
       'html[dir=rtl] .sidebar{left:auto;right:0}',
       'html[dir=rtl] .main{margin-left:0;margin-right:var(--sidebar-w,220px)}',
       '.gfp-sb-nav{display:flex;flex-direction:column;gap:4px;padding:8px 0}',
@@ -217,6 +221,52 @@
       host.insertBefore(btn, host.firstChild);
     } else {
       host.appendChild(btn);
+    }
+  }
+
+  function injectAppearanceToggle() {
+    if (global.document.getElementById('gfpAppearToggle')) return;
+    var Theme = global.GfpTheme;
+    if (!Theme || !Theme.setPref) return;
+    var host =
+      global.document.querySelector('.tb-right') ||
+      global.document.querySelector('.topbar') ||
+      global.document.querySelector('.sb-ft');
+    if (!host) return;
+    var wrap = global.document.createElement('div');
+    wrap.id = 'gfpAppearToggle';
+    wrap.className = 'gfp-appear-toggle';
+    wrap.setAttribute('role', 'group');
+    wrap.setAttribute('aria-label', 'Appearance');
+    var opts = [
+      { id: 'light', icon: 'ti-sun', title: 'Light' },
+      { id: 'dark', icon: 'ti-moon', title: 'Dark' },
+      { id: 'system', icon: 'ti-device-desktop', title: 'System' }
+    ];
+    function paint() {
+      var pref = Theme.getPref();
+      wrap.querySelectorAll('[data-appearance]').forEach(function (btn) {
+        btn.classList.toggle('act', btn.getAttribute('data-appearance') === pref);
+      });
+    }
+    opts.forEach(function (opt) {
+      var btn = global.document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('data-appearance', opt.id);
+      btn.title = opt.title;
+      btn.setAttribute('aria-label', opt.title);
+      btn.innerHTML = '<i class="ti ' + opt.icon + '"></i>';
+      btn.addEventListener('click', function () {
+        Theme.setPref(opt.id);
+        paint();
+      });
+      wrap.appendChild(btn);
+    });
+    paint();
+    if (host.classList.contains('tb-right') || host.classList.contains('topbar')) {
+      host.insertBefore(wrap, host.firstChild);
+    } else {
+      host.appendChild(wrap);
     }
   }
 
@@ -518,6 +568,7 @@
     bootDone = true;
     ensureShellStyles();
     injectLangToggle();
+    injectAppearanceToggle();
     clearInlineOwnerOnlyHacks();
     if (global.GfpI18n && global.GfpI18n.applyDocumentLocale) {
       global.GfpI18n.applyDocumentLocale();
