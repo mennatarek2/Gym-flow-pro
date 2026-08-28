@@ -51,12 +51,22 @@ export interface PlatformTenantListItemDto {
   planTier?: string | null
   status?: string | null
   billingCycle?: string | null
+  currentPeriodStart?: string | null
   currentPeriodEnd?: string | null
+  /** Trial end from live subscription row (trialing). Prefer over currentPeriodEnd for trial display. */
+  trialEndsAtUtc?: string | null
   priceEgp?: number | null
   /** CP7 list seam — null until health scores are populated. */
   riskBand?: RiskBand | null
   healthScore?: number | null
   lastLoginAtUtc?: string | null
+  /** P2.1 — the tenant's active Owner-role account. Null when there is no active Owner. */
+  ownerName?: string | null
+  ownerEmail?: string | null
+  /** P2.1 — active_members usage counter for the current Cairo period (monthly rollup, not live). */
+  memberCount?: number | null
+  /** Null means unlimited on the tenant's current tier. */
+  memberCap?: number | null
 }
 
 export interface SubscriptionStatusDto {
@@ -71,8 +81,10 @@ export interface SubscriptionStatusDto {
   trialEndsAtUtc?: string | null
   cancelAtPeriodEnd: boolean
   cancelledAtUtc?: string | null
+  suspendedAtUtc?: string | null
   updatedAtUtc: string
   pendingDowngradeTier?: string | null
+  hasPaymentMethodOnFile?: boolean
 }
 
 /** CP4 usage metric keys from platform.usage_counters. */
@@ -129,7 +141,66 @@ export interface PlatformTenantDetailDto {
   priceOverrides?: PriceOverrideDto[]
   /** Recent platform_audit_log rows for this tenant (CP6). */
   recentAudit?: PlatformAuditLogDto[]
+  /** Staff (non-Member) login accounts for this tenant. */
+  users?: PlatformTenantUserDto[]
 }
+
+export interface PlatformTenantUserDto {
+  id: string
+  fullName: string
+  email: string
+  role?: string | null
+  isActive: boolean
+  updatedAtUtc?: string | null
+}
+
+/** P2.2 — mirrors backend StaffListItemDto/StaffDetailDto (GMS.Application.DTOs.Admin). Id is
+ * always ApplicationUser.Id (the identity/login id), never the separate AppUser row id. */
+export interface TenantStaffDto {
+  id: string
+  fullName: string
+  email: string
+  role: string
+  isActive: boolean
+  lastLoginAt?: string | null
+  createdAtUtc: string
+  staffNumber?: string | null
+  jobTitle?: string | null
+  department?: string | null
+}
+
+/** Owner is deliberately excluded — the backend rejects it (assigned only at tenant
+ * provisioning) and P2.2 does not implement an owner-transfer workflow. */
+export const TENANT_STAFF_ROLES = ['Manager', 'Trainer', 'Receptionist'] as const
+export type TenantStaffRole = (typeof TENANT_STAFF_ROLES)[number]
+
+export interface CreateTenantStaffRequest {
+  fullName: string
+  email: string
+  password: string
+  role: string
+}
+
+export interface DisableTenantStaffRequest {
+  reason: string
+}
+
+export interface ReactivateTenantStaffRequest {
+  reason: string
+}
+
+export interface ChangeTenantStaffRoleRequest {
+  role: string
+  reason: string
+}
+
+export const TENANT_STAFF_ENDPOINTS = {
+  list: (tenantId: string) => `/platform-api/tenants/${tenantId}/users`,
+  create: (tenantId: string) => `/platform-api/tenants/${tenantId}/users`,
+  disable: (tenantId: string, staffId: string) => `/platform-api/tenants/${tenantId}/users/${staffId}/disable`,
+  reactivate: (tenantId: string, staffId: string) => `/platform-api/tenants/${tenantId}/users/${staffId}/reactivate`,
+  changeRole: (tenantId: string, staffId: string) => `/platform-api/tenants/${tenantId}/users/${staffId}/role`,
+} as const
 
 export interface PlatformAuditLogDto {
   id: string
@@ -137,6 +208,10 @@ export interface PlatformAuditLogDto {
   actorName?: string | null
   action: string
   tenantId?: string | null
+  /** Populated only by the global audit feed (GET /platform-api/audit) — null on the per-tenant
+   * embedded RecentAudit, where the caller is already on that tenant's page. */
+  tenantName?: string | null
+  gymCode?: string | null
   beforeJson?: string | null
   afterJson?: string | null
   createdAtUtc: string
@@ -178,6 +253,56 @@ export interface PriceOverrideDto {
   createdAtUtc: string
   isActive?: boolean
 }
+
+/** Same 4 tiers as backend PlanTiers — fixed enum for the Change Plan select, not a Plans CRUD UI. */
+export const PLAN_TIERS = ['starter', 'growth', 'pro', 'enterprise'] as const
+export type PlanTier = (typeof PLAN_TIERS)[number]
+
+export function planTierRank(tier: string): number {
+  return PLAN_TIERS.indexOf(tier.toLowerCase() as PlanTier)
+}
+
+export interface ChangeTierRequest {
+  newTier: string
+  /** Upgrades ignore this server-side (always immediate). Downgrades: true = now, false = period end. */
+  effectiveNow: boolean
+  reason?: string
+}
+
+export interface CancelSubscriptionRequest {
+  /** false = cancel_at_period_end; true = immediate cancel. */
+  immediate: boolean
+  reason?: string
+}
+
+export interface SubscriptionMutationResult {
+  success: boolean
+  errorCode?: string | null
+  errorMessage?: string | null
+  subscription?: SubscriptionStatusDto | null
+}
+
+export interface ConvertTrialRequest {
+  reason: string
+}
+
+export interface RestartPaidRequest {
+  tier: string
+  reason: string
+}
+
+export interface StartTrialRequest {
+  tier?: string
+  trialDays?: number
+}
+
+export const SUBSCRIPTION_ENDPOINTS = {
+  changeTier: (tenantId: string) => `/platform-api/tenants/${tenantId}/subscription/change-tier`,
+  cancel: (tenantId: string) => `/platform-api/tenants/${tenantId}/subscription/cancel`,
+  undoCancel: (tenantId: string) => `/platform-api/tenants/${tenantId}/subscription/undo-cancel`,
+  convertTrial: (tenantId: string) => `/platform-api/tenants/${tenantId}/subscription/convert-trial`,
+  restartPaid: (tenantId: string) => `/platform-api/tenants/${tenantId}/subscription/restart-paid`,
+} as const
 
 export interface ForceSuspendRequest {
   reason: string
@@ -332,6 +457,8 @@ export interface ProvisionTenantRequest {
   ownerPassword: string
   /** default growth */
   tier?: string
+  /** Optional 1–90; omitted → platform default (14). */
+  trialDays?: number
 }
 
 export interface ProvisionTenantResponse {
@@ -352,6 +479,7 @@ export const TENANT_ENDPOINTS = {
   forceSuspend: (id: string) => `/platform-api/tenants/${id}/force-suspend`,
   forceReactivate: (id: string) => `/platform-api/tenants/${id}/force-reactivate`,
   extendTrial: (id: string) => `/platform-api/tenants/${id}/extend-trial`,
+  startTrial: (id: string) => `/platform-api/tenants/${id}/start-trial`,
   coupon: (id: string) => `/platform-api/tenants/${id}/coupon`,
   featureOverrides: (id: string) => `/platform-api/tenants/${id}/feature-overrides`,
   featureOverride: (id: string, overrideId: string) =>
@@ -488,4 +616,183 @@ export const METRICS_ENDPOINTS = {
   churn: '/platform-api/metrics/churn',
   conversion: '/platform-api/metrics/conversion',
   tierDistribution: '/platform-api/metrics/tier-distribution',
+} as const
+
+/** Wire shape of GET /platform-api/usage/summary — cross-tenant rollup for the current Cairo period. */
+export interface PlatformUsageSummaryDto {
+  period: string // YYYY-MM
+  totals: UsageMetricTotalDto[]
+  /** Tenants at or above 80% of their cap for any metric, worst first — already filtered server-side. */
+  tenantsNearLimit: TenantNearLimitDto[]
+  computedAtUtc: string
+}
+
+export interface UsageMetricTotalDto {
+  metric: UsageMetricKey
+  totalCount: number
+  /** Tenants with a counter row for this metric this period — not a cap. */
+  tenantCount: number
+}
+
+export interface TenantNearLimitDto {
+  tenantId: string
+  tenantName: string
+  gymCode: string
+  metric: UsageMetricKey
+  count: number
+  cap: number
+  /** Rounded percentage, e.g. 92 for 92%. */
+  percentOfCap: number
+}
+
+export const USAGE_ENDPOINTS = {
+  summary: '/platform-api/usage/summary',
+} as const
+
+export interface PlatformAuditListParams {
+  tenantId?: string
+  action?: string
+  from?: string // yyyy-MM-dd
+  to?: string // yyyy-MM-dd
+  page?: number
+  pageSize?: number
+}
+
+export const AUDIT_ENDPOINTS = {
+  list: '/platform-api/audit',
+} as const
+
+/** Same 3 roles as backend PlatformRoles — fixed set, not user-editable. */
+export const PLATFORM_USER_ROLES = ['platform_support', 'platform_ops', 'platform_admin'] as const
+export type PlatformUserRole = (typeof PLATFORM_USER_ROLES)[number]
+
+export interface PlatformUserDto {
+  id: string
+  email: string
+  fullName: string
+  role: string
+  isActive: boolean
+  mfaEnabled: boolean
+  lastLoginAtUtc?: string | null
+  createdAtUtc: string
+}
+
+export interface CreatePlatformUserRequest {
+  email: string
+  fullName: string
+  role: string
+  password: string
+}
+
+export interface ChangePlatformUserRoleRequest {
+  role: string
+}
+
+export const PLATFORM_USER_ENDPOINTS = {
+  list: '/platform-api/platform-users',
+  create: '/platform-api/platform-users',
+  disable: (id: string) => `/platform-api/platform-users/${id}/disable`,
+  reactivate: (id: string) => `/platform-api/platform-users/${id}/reactivate`,
+  changeRole: (id: string) => `/platform-api/platform-users/${id}/role`,
+} as const
+
+/** Module keys from backend FeatureKeys — do not invent. */
+export const COMMERCIAL_PLAN_FEATURE_KEYS = [
+  'sales',
+  'shifts',
+  'trials',
+  'refunds',
+  'debtors',
+  'imports',
+  'inventory',
+  'stock_management',
+  'hr',
+] as const
+
+export interface CommercialPlanListItemDto {
+  tier: string
+  displayName: string
+  description?: string | null
+  sortOrder: number
+  isActiveForSales: boolean
+  isDefault: boolean
+  monthlyPriceEgp: number
+  annualPriceEgp: number
+  annualSavingsPercent: number
+  membersCap?: number | null
+  staffCap?: number | null
+  branchesCap?: number | null
+  whatsAppCap?: number | null
+  featureCount: number
+  liveSubscriptionCount: number
+  updatedAtUtc: string
+}
+
+export interface CommercialPlanDetailDto extends CommercialPlanListItemDto {
+  enabledFeatures: string[]
+}
+
+export interface UpdatePlanMetadataRequest {
+  displayName: string
+  description?: string | null
+  sortOrder: number
+  reason: string
+}
+
+export interface UpdatePlanPricingRequest {
+  monthlyPriceEgp: number
+  reason: string
+}
+
+export interface UpdatePlanCapsRequest {
+  activeMembers?: number | null
+  staffSeats?: number | null
+  branches?: number | null
+  whatsAppMessages?: number | null
+  reason: string
+}
+
+export interface UpdatePlanFeaturesRequest {
+  enabledFeatures: string[]
+  reason: string
+}
+
+export interface UpdatePlanSalesStatusRequest {
+  isActiveForSales: boolean
+  reason: string
+}
+
+export interface SetDefaultPlanRequest {
+  reason: string
+}
+
+export interface PlanChangeLogDto {
+  id: string
+  tier: string
+  fieldName: string
+  oldValue?: string | null
+  newValue?: string | null
+  actorPlatformUserId: string
+  actorName?: string | null
+  reason: string
+  createdAtUtc: string
+}
+
+export interface CommercialPlanMutationResult {
+  success: boolean
+  errorCode?: string | null
+  errorMessage?: string | null
+  plan?: CommercialPlanDetailDto | null
+}
+
+export const PLANS_ENDPOINTS = {
+  list: '/platform-api/plans',
+  detail: (tier: string) => `/platform-api/plans/${tier}`,
+  history: (tier: string) => `/platform-api/plans/${tier}/history`,
+  metadata: (tier: string) => `/platform-api/plans/${tier}/metadata`,
+  pricing: (tier: string) => `/platform-api/plans/${tier}/pricing`,
+  caps: (tier: string) => `/platform-api/plans/${tier}/caps`,
+  features: (tier: string) => `/platform-api/plans/${tier}/features`,
+  salesStatus: (tier: string) => `/platform-api/plans/${tier}/sales-status`,
+  setDefault: (tier: string) => `/platform-api/plans/${tier}/set-default`,
 } as const

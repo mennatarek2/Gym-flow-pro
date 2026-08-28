@@ -15,6 +15,7 @@ export interface ProvisionFormValues {
   ownerEmail: string
   ownerPassword: string
   tier: string
+  trialDays: string
 }
 
 export function emptyProvisionForm(): ProvisionFormValues {
@@ -30,7 +31,8 @@ export function emptyProvisionForm(): ProvisionFormValues {
     ownerFullName: '',
     ownerEmail: '',
     ownerPassword: '',
-    tier: 'growth',
+    tier: '',
+    trialDays: '14',
   }
 }
 
@@ -68,6 +70,12 @@ export function validateProvisionForm(values: ProvisionFormValues): ProvisionVal
     errors.tier = 'Choose a valid plan tier.'
   }
 
+  const trialDaysRaw = values.trialDays.trim()
+  const trialDaysNum = trialDaysRaw === '' ? 14 : Number(trialDaysRaw)
+  if (!Number.isFinite(trialDaysNum) || trialDaysNum < 1 || trialDaysNum > 90) {
+    errors.trialDays = 'Trial duration must be between 1 and 90 days.'
+  }
+
   if (Object.keys(errors).length > 0) return { ok: false, errors }
 
   const body: ProvisionTenantRequest = {
@@ -79,6 +87,7 @@ export function validateProvisionForm(values: ProvisionFormValues): ProvisionVal
     ownerEmail,
     ownerPassword,
     tier,
+    trialDays: trialDaysNum,
   }
 
   const nameAr = values.nameAr.trim()
