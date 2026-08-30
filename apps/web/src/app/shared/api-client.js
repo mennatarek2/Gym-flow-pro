@@ -19,7 +19,9 @@
   };
 
   function apiBase() {
-    return global.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+    // REM-F3: no hardcoded remote URL. api-config.js resolves the base
+    // (meta tag override / localhost dev default / same-origin '/api' in production).
+    return global.API_BASE || (global.GFP_DEFAULT_API_BASE ?? '');
   }
 
   function storeForWrite() {
@@ -148,8 +150,11 @@
 
   function logoutToLogin() {
     tokens.clear();
-    if (typeof location !== 'undefined' && !/\/auth\/login/.test(location.pathname)) {
-      location.href = '/auth/login/';
+    // Member App pages set window.GFP_LOGIN_PATH = '/member/login/' before this script loads
+    // so an expired session bounces back to the member login, not the staff one.
+    var loginPath = global.GFP_LOGIN_PATH || '/auth/login/';
+    if (typeof location !== 'undefined' && location.pathname.indexOf(loginPath) === -1) {
+      location.href = loginPath;
     }
   }
 
@@ -248,13 +253,21 @@
     }
 
     var data = null;
-    var ct = res.headers.get('content-type') || '';
+    var ct = (res.headers.get('content-type') || '').toLowerCase();
+    var isJson =
+      ct.indexOf('application/json') !== -1 ||
+      ct.indexOf('+json') !== -1 ||
+      ct.indexOf('application/problem') !== -1;
     if (opts.raw) {
       data = res;
-    } else if (ct.indexOf('application/json') !== -1) {
+    } else if (isJson) {
       data = await res.json().catch(function () { return null; });
     } else if (res.status !== 204) {
       data = await res.text().catch(function () { return null; });
+      // Some proxies strip content-type; still try JSON ProblemDetails bodies.
+      if (typeof data === 'string' && data.length && (data.charAt(0) === '{' || data.charAt(0) === '[')) {
+        try { data = JSON.parse(data); } catch (e) { /* keep text */ }
+      }
     }
 
     return {
@@ -299,6 +312,19 @@
     /** Member OTP verify stub — POST /api/auth/member-verify → LoginResponse */
     verifyMemberOtp: async function (body, opts) {
       var r = await request('POST', '/auth/member-verify', { body: body, auth: false });
+      if (r.ok && r.data && r.data.accessToken) {
+        tokens.persistSession(r.data, { remember: !!(opts && opts.remember) });
+      }
+      return r;
+    },
+    /**
+     * Member App Stage 0 login — staff-issued one-time activation code.
+     * POST /api/auth/member-activate → LoginResponse
+     * @param {{ gymCode: string, activationCode: string }} body
+     * @param {{ remember?: boolean }} [opts]
+     */
+    activateMember: async function (body, opts) {
+      var r = await request('POST', '/auth/member-activate', { body: body, auth: false });
       if (r.ok && r.data && r.data.accessToken) {
         tokens.persistSession(r.data, { remember: !!(opts && opts.remember) });
       }

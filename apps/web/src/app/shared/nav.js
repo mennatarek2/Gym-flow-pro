@@ -13,6 +13,10 @@
  * | Catalog         | Plans, Products, Suppliers, Purchases                         |
  * | Stock Management| hidden in shop UX (engines remain)                            |
  * | Inventory       | hidden in shop UX (Overview / Insights / Warehouses)          |
+ * | HR              | Dashboard, Employees, Schedule, Attendance, Leaves, Payroll   |
+ * |                 | (Departments/Positions: Employees page toolbar. Shift         |
+ * |                 | Templates: Schedule page. Documents: Employee hub /           |
+ * |                 | /dashboard/hr/documents/ — none removed, just not primary nav)|
  * | Administration  | Import, Audit, Notifications, Staff, Roles, Settings          |
  */
 (function (global) {
@@ -34,8 +38,8 @@
    *   path: string,
    *   icon: string,
    *   access: NavAccess,
-   *   featureFlag?: 'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management',
-   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'>
+   *   featureFlag?: 'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr',
+   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr'>
    * }} NavItem
    */
 
@@ -285,15 +289,68 @@
           icon: 'ti-chart-histogram',
           access: { kind: 'permission', value: 'inventory.view' },
           featureFlags: ['inventory', 'stock_management']
+        }
+      ]
+    },
+    {
+      key: 'hr',
+      label: 'HR',
+      labelAr: 'الموارد البشرية',
+      items: [
+        {
+          key: 'hr-dashboard',
+          label: 'Dashboard',
+          labelAr: 'لوحة الموارد البشرية',
+          path: '/dashboard/hr/dashboard/',
+          icon: 'ti-layout-dashboard',
+          access: { kind: 'permission', value: 'hr.view' },
+          featureFlag: 'hr'
         },
         {
-          key: 'inv-warehouses',
-          label: 'Warehouses',
-          labelAr: 'المستودعات',
-          path: '/dashboard/inventory/warehouses/',
-          icon: 'ti-building-warehouse',
-          access: { kind: 'permission', value: 'inventory.manage' },
-          featureFlags: ['inventory', 'stock_management']
+          key: 'hr-employees',
+          label: 'Employees',
+          labelAr: 'بيانات الموظفين',
+          path: '/dashboard/hr/employees/',
+          icon: 'ti-id-badge-2',
+          access: { kind: 'permission', value: 'hr.view' },
+          featureFlag: 'hr'
+        },
+        {
+          key: 'hr-schedule',
+          label: 'Schedule',
+          labelAr: 'الجدول الوظيفي',
+          path: '/dashboard/hr/schedule/',
+          icon: 'ti-calendar-week',
+          access: { kind: 'permission', value: 'hr.attendance.view' },
+          featureFlag: 'hr'
+        },
+        {
+          key: 'hr-attendance',
+          label: 'Attendance',
+          labelAr: 'الحضور',
+          path: '/dashboard/hr/attendance/',
+          icon: 'ti-fingerprint',
+          access: { kind: 'permission', value: 'hr.attendance.view' },
+          featureFlag: 'hr'
+        },
+        {
+          key: 'hr-leaves',
+          label: 'Leaves',
+          labelAr: 'الإجازات',
+          path: '/dashboard/hr/leaves/',
+          icon: 'ti-beach',
+          access: { kind: 'permission', value: 'hr.leave.view' },
+          featureFlag: 'hr'
+        },
+        {
+          // hr.payroll.* only — deliberately never hr.view/hr.manage, payroll must stay restricted.
+          key: 'hr-payroll',
+          label: 'Payroll',
+          labelAr: 'الرواتب',
+          path: '/dashboard/hr/payroll/',
+          icon: 'ti-cash-banknote',
+          access: { kind: 'permission', value: 'hr.payroll.view' },
+          featureFlag: 'hr'
         }
       ]
     },

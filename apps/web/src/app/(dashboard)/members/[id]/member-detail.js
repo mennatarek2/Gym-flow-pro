@@ -3,7 +3,7 @@
 //  API: GET /api/members/{id} → MemberDetailDto
 // ═══════════════════════════════════════════════════════════════
 (function(){
-  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || ''; // REM-F3: no hardcoded remote URL
 
   function t(en, ar){
     if(window.GfpI18n && typeof window.GfpI18n.tLabel === 'function'){
@@ -1009,6 +1009,57 @@
         : String(ms.sessionsRemaining);
     }
 
+    const activityQuotas=Array.isArray(ms.activityQuotas)?ms.activityQuotas
+      :(Array.isArray(ms.ActivityQuotas)?ms.ActivityQuotas:[]);
+    const isAr=(document.documentElement.lang||'').toLowerCase()==='ar';
+    function quotaPeriodLabel(period){
+      const p=String(period||'').toLowerCase();
+      if(p==='cairo_month'||p==='monthly') return isAr?'كل شهر (القاهرة)':'Every Cairo month';
+      if(p==='one_time') return isAr?'مرة واحدة':'One time';
+      return isAr?'لكل عضوية':'Per membership';
+    }
+    function activityAccessLabel(mode){
+      if(mode==='unlimited') return isAr?'غير محدود':'Unlimited';
+      if(mode==='included') return isAr?'مشمول':'Included';
+      if(mode==='limited') return isAr?'محدود':'Limited';
+      return isAr?'غير متاح':'Not available';
+    }
+    function activityQuotaRow(q){
+      const mode=String(q.accessMode||q.AccessMode||'').toLowerCase();
+      const name=q.activityName||q.ActivityName||'Activity';
+      const nameAr=q.activityNameAr||q.ActivityNameAr||'';
+      const label=isAr&&nameAr?nameAr:name;
+      const kind=String(q.activityKind||q.ActivityKind||'').toLowerCase();
+      const kindLabel=kind==='facility'?(isAr?'مرفق':'Facility'):(isAr?'فصل':'Class');
+      const lim=q.quotaLimit!=null?Number(q.quotaLimit):null;
+      const used=q.quotaUsed!=null?Number(q.quotaUsed):0;
+      const rem=q.quotaRemaining!=null?Number(q.quotaRemaining):null;
+      if(mode!=='limited'||lim==null){
+        return '<div class="activity-access-row '+escHtml(mode)+'">'+
+          '<div class="activity-access-main"><span class="activity-access-icon"><i class="ti ti-'+(kind==='facility'?'building-store':'run')+'"></i></span>'+
+          '<span><strong>'+escHtml(label)+'</strong><small>'+escHtml(kindLabel)+'</small></span></div>'+
+          '<span class="activity-access-badge '+escHtml(mode)+'">'+escHtml(activityAccessLabel(mode))+'</span></div>';
+      }
+      const remaining=Math.max(0,rem==null?lim-used:rem);
+      const pct=Math.min(100,Math.max(0,Math.round((used/lim)*100)));
+      return '<div class="activity-access-row limited">'+
+        '<div class="activity-access-top"><div class="activity-access-main"><span class="activity-access-icon"><i class="ti ti-'+(kind==='facility'?'building-store':'run')+'"></i></span>'+
+        '<span><strong>'+escHtml(label)+'</strong><small>'+escHtml(kindLabel)+'</small></span></div>'+
+        '<div class="activity-access-remaining"><strong>'+remaining+'</strong><span>'+escHtml(isAr?'متبقي':'left')+'</span></div></div>'+
+        '<div class="activity-access-progress" role="progressbar" aria-valuemin="0" aria-valuemax="'+lim+'" aria-valuenow="'+used+'"><span style="width:'+pct+'%"></span></div>'+
+        '<div class="activity-access-meta"><span>'+used+' '+escHtml(isAr?'مستخدم من':'used of')+' '+lim+'</span><span>'+escHtml(quotaPeriodLabel(q.quotaPeriod||q.QuotaPeriod))+'</span></div></div>';
+    }
+    const activityAccessHtml='<div class="activity-access-panel">'+
+      '<div class="activity-access-header"><div><div class="activity-access-title"><i class="ti ti-chart-donut"></i>'+
+      escHtml(isAr?'استخدام الأنشطة':'Activity access')+'</div><div class="activity-access-sub">'+
+      escHtml(isAr?'الرصيد محسوب من الحجوزات الفعلية':'Live balance from actual bookings')+'</div></div>'+
+      '<span class="activity-access-live"><i class="ti ti-database"></i> Live</span></div>'+
+      (activityQuotas.length
+        ? '<div class="activity-access-list">'+activityQuotas.map(activityQuotaRow).join('')+'</div>'
+        : '<div class="activity-access-empty"><i class="ti ti-info-circle"></i>'+
+          escHtml(isAr?'لا توجد أنشطة مضافة لهذه العضوية':'No activity access configured for this membership')+'</div>')+
+      '</div>';
+
     const periodBody=showPeriod?`
       <div class="ms-hero-num">${days} days left</div>
       <div class="ms-hero-lbl">Ends ${fmtDate(ms.endDate)}</div>
@@ -1052,7 +1103,8 @@
         <div class="ms-actions">
           ${primary}${renewAnyway}${assignBtn}${freezeBtn}${unfreezeBtn}${cancelBtn}
         </div>
-      </div>`;
+      </div>
+      ${activityAccessHtml}`;
 
     refreshInviteQuota();
   }

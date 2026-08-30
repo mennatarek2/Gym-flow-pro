@@ -137,11 +137,25 @@
     return c.length && c.upper && c.lower && c.number && c.special;
   }
 
+  function parseApiUtc(iso) {
+    if (iso == null || iso === '') return null;
+    if (iso instanceof Date) return isNaN(iso.getTime()) ? null : iso;
+    var s = String(iso).trim();
+    if (!s) return null;
+    if (/[zZ]$|[+-]\d{2}:\d{2}$|[+-]\d{4}$/.test(s)) {
+      var withTz = new Date(s);
+      return isNaN(withTz.getTime()) ? null : withTz;
+    }
+    s = s.replace(' ', 'T');
+    var asUtc = new Date(/[Tt]/.test(s) ? s + 'Z' : s + 'T00:00:00Z');
+    return isNaN(asUtc.getTime()) ? null : asUtc;
+  }
+
   function formatLastLogin(iso) {
     if (!iso) return { text: 'Never logged in', cls: 'never', days: -1 };
     var now = new Date();
-    var dt = new Date(iso);
-    if (isNaN(dt.getTime())) return { text: 'Never logged in', cls: 'never', days: -1 };
+    var dt = parseApiUtc(iso);
+    if (!dt || isNaN(dt.getTime())) return { text: 'Never logged in', cls: 'never', days: -1 };
     var diff = Math.floor((now - dt) / (1000 * 60 * 60 * 24));
     if (diff === 0) {
       var h = dt.getHours();
@@ -264,6 +278,7 @@
     checkPassword: checkPassword,
     passwordMeetsPolicy: passwordMeetsPolicy,
     formatLastLogin: formatLastLogin,
+    parseApiUtc: parseApiUtc,
     permissionsForRole: permissionsForRole,
     permissionCount: permissionCount,
     permissionUniverseCount: permissionUniverseCount,

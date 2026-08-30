@@ -744,7 +744,7 @@
     var whPath = paths.warehouseDefault ? paths.warehouseDefault() : '/inventory/warehouses/default';
     var wh = await Gfp.get(whPath);
     if (!wh.ok || !wh.data || !wh.data.id) {
-      return { ok: false, error: 'No default warehouse' };
+      return { ok: false, error: 'Unable to resolve stock location. Please contact support.' };
     }
     var body = {
       warehouseId: wh.data.id,
@@ -1735,7 +1735,7 @@
     var whPath = paths.warehouseDefault ? paths.warehouseDefault() : '/inventory/warehouses/default';
     var wh = await Gfp.get(whPath);
     if (!wh.ok || !wh.data || !wh.data.id) {
-      return { ok: false, error: 'No default warehouse for opening stock' };
+      return { ok: false, error: 'Unable to resolve stock location for opening stock. Please contact support.' };
     }
     var create = await Gfp.post(paths.adjustments(), {
       warehouseId: wh.data.id,
@@ -2114,6 +2114,11 @@
     await resolveStockManagementFlag();
     await loadCategories();
     await loadProducts();
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var focus = params.get('focus') || params.get('productId');
+      if (focus) openProductDetail(focus);
+    } catch (e) { /* ignore */ }
   })();
 
   window.addEventListener('gfp:locale', function () {

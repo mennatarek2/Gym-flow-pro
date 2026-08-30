@@ -188,3 +188,48 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .toast.success{background:var(--suc100);color:var(--suc500);border:1px solid rgba(34,197,94,.3)}
 .toast.error{background:var(--dng100);color:var(--dng500);border:1px solid rgba(239,68,68,.3)}
 .toast i{font-size:18px}
+
+/* -- Staff inbox -- */
+.notif-page-hdr{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.page-title{font-family:var(--fd);font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px}
+.page-subtitle{font-size:13px;color:var(--ltt);margin-top:4px}
+.inbox-unread-pill{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--dng500);color:#fff;font-size:11px;font-weight:700}
+.notif-tabs{display:flex;gap:8px}
+.notif-tab{height:36px;padding:0 14px;border:2px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:var(--lts)}
+.notif-tab.act{border-color:var(--l500);background:var(--l100);color:var(--l600)}
+.inbox-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.inbox-filters{display:flex;gap:8px}
+.chip{height:32px;padding:0 12px;border-radius:var(--rpl);border:1px solid var(--ls3);background:var(--ls1);font-size:12px;font-weight:600;cursor:pointer;color:var(--lts)}
+.chip.act{background:var(--c900);color:#fff;border-color:var(--c900)}
+.btn-secondary{height:36px;padding:0 14px;border:2px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.inbox-list{padding:8px 12px 16px;min-height:240px}
+.inbox-group{margin-top:12px}
+.inbox-group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ltt);padding:8px 8px 6px}
+.inbox-item{display:flex;gap:12px;padding:12px;border-radius:var(--rmd);cursor:pointer;border:1px solid transparent;transition:background var(--tf)}
+.inbox-item:hover{background:var(--ls2)}
+.inbox-item.unread{background:rgba(122,204,0,.06);border-color:rgba(122,204,0,.18)}
+.inbox-item.read{opacity:.85}
+.inbox-icon{width:36px;height:36px;border-radius:10px;background:var(--ls2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.inbox-item.prio-critical .inbox-icon{background:var(--dng100);color:var(--dng500)}
+.inbox-item.prio-action .inbox-icon{background:var(--wrn100);color:var(--wrn500)}
+.inbox-item.prio-info .inbox-icon{background:var(--inf100);color:var(--inf500)}
+.inbox-body{flex:1;min-width:0}
+.inbox-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.inbox-title-row strong{font-size:13px}
+.inbox-prio{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)}
+.inbox-msg{font-size:12px;color:var(--lts);margin:4px 0 6px;line-height:1.4}
+.inbox-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:11px;color:var(--ltt)}
+.inbox-cat{padding:2px 8px;border-radius:var(--rsm);background:var(--ls2)}
+.inbox-item.has-link:hover{border-color:rgba(122,204,0,.35)}
+.inbox-cta{color:var(--l600);font-weight:700;text-decoration:none}
+.inbox-cta:hover{text-decoration:underline}
+.inbox-pager{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;border-top:1px solid var(--ls3)}
+.empty-state{padding:48px 20px;text-align:center;color:var(--ltt);font-size:13px}
+.empty-state i{display:block;font-size:28px;margin-bottom:8px;opacity:.5}
+.loading-state{padding:40px;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--ltt)}
+.loader{width:18px;height:18px;border:2px solid var(--ls3);border-top-color:var(--l500);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fg{margin-bottom:12px;display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:12px;font-weight:600}
+.fg input,.fg textarea{border:2px solid var(--ls3);border-radius:var(--rmd);padding:10px 12px;font-family:var(--fb);font-size:13px}
+.req{color:var(--dng500)}

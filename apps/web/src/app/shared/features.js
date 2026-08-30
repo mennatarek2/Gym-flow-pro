@@ -11,7 +11,7 @@
 (function (global) {
   'use strict';
 
-  var CACHE_KEY = 'gfp_feature_modules_v5';
+  var CACHE_KEY = 'gfp_feature_modules_v6';
   var CACHE_TTL_MS = 10 * 60 * 1000;
 
   /** Shop UX: hide Stock Management hub / warehouses / transfers / counts for all tiers. */
@@ -26,7 +26,8 @@
     'debtors',
     'imports',
     'inventory',
-    'stock_management'
+    'stock_management',
+    'hr'
   ];
 
   /** Modules that must stay OFF when probe fails (tier packaging, not core POS). */
@@ -40,7 +41,8 @@
     debtors: { method: 'GET', path: '/debtors?page=1&pageSize=1' },
     imports: { method: 'GET', path: '/imports/template.xlsx', raw: true },
     inventory: { method: 'GET', path: '/inventory/categories' },
-    stock_management: { method: 'GET', path: '/inventory/transfers' }
+    stock_management: { method: 'GET', path: '/inventory/transfers' },
+    hr: { method: 'GET', path: '/hr/departments' }
   };
 
   function readCache() {
@@ -82,8 +84,11 @@
     if (!result) return false;
     if (result.status !== 404) return false;
     var err = result.error;
-    if (err && err.code === 'FEATURE_DISABLED') return true;
+    if (err && (err.code === 'FEATURE_DISABLED' || /FEATURE_DISABLED/i.test(String(err.message || '')))) return true;
     var d = result.data;
+    if (typeof d === 'string') {
+      try { d = JSON.parse(d); } catch (e) { d = null; }
+    }
     if (d && typeof d === 'object' && d.title === 'FEATURE_DISABLED') return true;
     return false;
   }

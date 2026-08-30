@@ -462,6 +462,7 @@
     const modal = document.getElementById('modalContent');
     modal.innerHTML = buildModalHTML(plan, isEdit, activityCatalog || []);
     openModal();
+    wireEntitlementControls(modal);
 
     const typeCards = modal.querySelectorAll('.type-card');
     typeCards.forEach(function (tc) {
@@ -766,25 +767,60 @@
       const limit = ent && ent.quotaLimit != null ? ent.quotaLimit : '';
       const period = ent && ent.quotaPeriod ? ent.quotaPeriod : 'cairo_month';
       const label = a.name + (a.isSystem ? ' (system)' : '') + (a.kind === 'facility' ? ' · facility' : '');
-      return '<div class="ent-row" data-ent-activity="' + a.id + '">' +
-        '<label><input type="checkbox" id="entOn-' + a.id + '" value="' + a.id + '"' +
-        (checked ? ' checked' : '') + '> ' + esc(label) + '</label>' +
-        '<select id="entMode-' + a.id + '">' +
+      return '<div class="ent-card' + (checked ? ' is-on' : '') + '" data-ent-activity="' + a.id + '">' +
+        '<label class="ent-card-toggle">' +
+        '<input type="checkbox" id="entOn-' + a.id + '" value="' + a.id + '"' +
+        (checked ? ' checked' : '') + '>' +
+        '<span class="ent-check"><i class="ti ti-check"></i></span>' +
+        '<span class="ent-card-name"><strong>' + esc(a.name) + '</strong>' +
+        '<small>' + esc((a.isSystem ? 'System activity' : 'Custom activity') + (a.kind === 'facility' ? ' · Facility access' : ' · Class booking')) + '</small></span>' +
+        '</label>' +
+        '<div class="ent-card-controls">' +
+        '<label class="ent-control"><span>Access</span><select id="entMode-' + a.id + '">' +
         '<option value="included"' + (mode === 'included' ? ' selected' : '') + '>Included</option>' +
         '<option value="unlimited"' + (mode === 'unlimited' ? ' selected' : '') + '>Unlimited</option>' +
         '<option value="limited"' + (mode === 'limited' ? ' selected' : '') + '>Limited</option>' +
-        '</select>' +
-        '<input type="number" id="entLimit-' + a.id + '" min="1" placeholder="Quota" value="' + limit + '">' +
-        '<select id="entPeriod-' + a.id + '">' +
-        '<option value="cairo_month"' + (period === 'cairo_month' ? ' selected' : '') + '>Cairo month</option>' +
-        '<option value="membership"' + (period === 'membership' ? ' selected' : '') + '>This membership</option>' +
+        '</select></label>' +
+        '<label class="ent-control ent-quota-control"><span>Quota</span><input type="number" id="entLimit-' + a.id + '" min="1" placeholder="e.g. 8" value="' + limit + '"></label>' +
+        '<label class="ent-control ent-period-control"><span>Resets</span><select id="entPeriod-' + a.id + '">' +
+        '<option value="cairo_month"' + (period === 'cairo_month' || period === 'monthly' ? ' selected' : '') + '>Every Cairo month</option>' +
+        '<option value="membership"' + (period === 'membership' ? ' selected' : '') + '>Per membership</option>' +
         '<option value="one_time"' + (period === 'one_time' ? ' selected' : '') + '>One time</option>' +
-        '</select></div>';
+        '</select></label>' +
+        '</div></div>';
     }).join('');
     return '<div class="cond-section visible" id="cond-entitlements" style="display:block">' +
-      '<div class="cond-title"><i class="ti ti-run"></i> Includes</div>' +
-      '<div class="modal-header-sub">What this plan grants. Uncheck Gym floor for a CrossFit-only plan (no gym-door access). TIME hours still apply only to gym-door check-in.</div>' +
-      rows + '</div>';
+      '<div class="ent-section-header"><div><div class="cond-title"><i class="ti ti-run"></i> Activity access</div>' +
+      '<div class="modal-header-sub">Choose what members can use. Limited access consumes one credit per booking; the remaining balance is calculated from real usage.</div></div>' +
+      '<span class="ent-section-hint"><i class="ti ti-database"></i> Live usage</span></div>' +
+      '<div class="ent-grid">' + rows + '</div></div>';
+  }
+
+  function wireEntitlementControls(modal) {
+    modal.querySelectorAll('.ent-card').forEach(function (card) {
+      const on = card.querySelector('input[type="checkbox"]');
+      const mode = card.querySelector('select[id^="entMode-"]');
+      const quota = card.querySelector('input[id^="entLimit-"]');
+      const period = card.querySelector('select[id^="entPeriod-"]');
+      const quotaControl = card.querySelector('.ent-quota-control');
+      const periodControl = card.querySelector('.ent-period-control');
+      if (!on || !mode || !quota || !period) return;
+
+      function sync() {
+        const enabled = on.checked;
+        const limited = mode.value === 'limited';
+        card.classList.toggle('is-on', enabled);
+        mode.disabled = !enabled;
+        quota.disabled = !enabled || !limited;
+        period.disabled = !enabled || !limited;
+        if (quotaControl) quotaControl.hidden = !limited;
+        if (periodControl) periodControl.hidden = !limited;
+      }
+
+      on.addEventListener('change', sync);
+      mode.addEventListener('change', sync);
+      sync();
+    });
   }
 
   function buildModalHTML(p, isEdit, catalog) {

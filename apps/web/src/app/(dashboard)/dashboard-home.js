@@ -1,32 +1,23 @@
 /**
  * Dashboard Overview — operational control center.
  *
- * Hierarchy: KPIs → Quick Actions → follow-ups → attendance/finance → inventory (below fold).
+ * Hierarchy: Financial overview → Today → Quick Actions → Business overview → Operations → Needs attention.
  * Real APIs only. Per-widget permission gates.
  *
- * Data sources (no single consolidated dashboard endpoint in contracts — primary wave + lazy secondary):
- *   GET /analytics/overview          reports.financial.view
- *   GET /analytics/members-status    members.view
- *   GET /analytics/revenue           reports.financial.view (monthly trend)
- *   GET /attendance/today            members.view
- *   GET /attendance/occupancy        members.view (open visits vs gym_max_capacity)
- *   GET /reports/attendance-summary  members.view
- *   GET /debtors/summary             reports.financial.view (outstanding total; not a Debtors module)
- *   GET /debtors?page=1&pageSize=5   sales.sell (unpaid-sale buyers → Member 360)
- *   GET /call-sheet/expiring         sales.sell  (ingest: 1 row per membershipId)
+ * Primary data source:
+ *   GET /dashboard/overview?period=... — one Cairo-day, role-filtered contract.
+ * Secondary sources remain limited to inventory/order widgets below the fold.
  *   GET /inventory/reports/summary   inventory.view
- *   GET /reports/z/{date}            reports.financial.view (optional)
- *   GET /shifts/current              shift.open
  *   GET/PUT /settings/quick-actions  AnyStaff read / ManagerOrAbove write (tenant shortcut keys)
  */
 (function (global) {
   'use strict';
 
   var CACHE_TTL_MS = 45000;
-  var CACHE_PREFIX = 'gfp_dash_v1:';
+  var CACHE_PREFIX = 'gfp_dash_v2:';
 
   var state = {
-    overview: null,
+    dashboardOverview: null,
     membersStatus: null,
     checkinsToday: null,
     occupancy: null,
@@ -35,12 +26,15 @@
     debtorsPreview: null,
     expiring: null,
     inventory: null,
-    zReport: null,
     ordersPending: null,
     ordersReady: null,
     shift: null,
     revenueChart: null,
     revenueMonths: 6,
+    sessionsToday: null,
+    sessionDetails: Object.create(null),
+    membershipsPeriod: null,
+    financialPeriod: null,
     chartsReady: { attendance: false, revenue: false },
     quickActionKeys: null,
     quickSaving: false
@@ -133,6 +127,29 @@
     return y + '-' + m + '-' + day;
   }
 
+  function periodRange(period) {
+    var now = new Date();
+    var from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var to = new Date(from);
+    if (period === 'today') {
+      // same day
+    } else if (period === 'week') {
+      var day = from.getDay() || 7;
+      from.setDate(from.getDate() - day + 1);
+    } else if (period === 'last_month') {
+      from = new Date(from.getFullYear(), from.getMonth() - 1, 1);
+      to = new Date(from.getFullYear(), from.getMonth() + 1, 0);
+    } else if (period === 'year') {
+      from = new Date(from.getFullYear(), 0, 1);
+    } else if (period === 'last_year') {
+      from = new Date(from.getFullYear() - 1, 0, 1);
+      to = new Date(from.getFullYear(), 11, 31);
+    } else {
+      from = new Date(from.getFullYear(), from.getMonth(), 1);
+    }
+    return { from: fmtDateOnly(from), to: fmtDateOnly(to) };
+  }
+
   function daysUntil(iso) {
     if (!iso) return null;
     var end = new Date(iso);
@@ -162,9 +179,20 @@
     return unwrapList(data).length;
   }
 
+  function cacheScope() {
+    try {
+      var user = global.GfpApi && global.GfpApi.tokens ? global.GfpApi.tokens.getUser() : null;
+      var tenant = user && (user.tenantId || user.TenantId);
+      var id = user && (user.id || user.userId || user.Id || user.UserId);
+      return String(tenant || 'tenant-unknown') + ':' + String(id || 'user-unknown');
+    } catch (e) {
+      return 'tenant-unknown:user-unknown';
+    }
+  }
+
   function cacheGet(key) {
     try {
-      var raw = global.sessionStorage.getItem(CACHE_PREFIX + key);
+      var raw = global.sessionStorage.getItem(CACHE_PREFIX + cacheScope() + ':' + key);
       if (!raw) return null;
       var parsed = JSON.parse(raw);
       if (!parsed || parsed.at == null) return null;
@@ -178,7 +206,7 @@
   function cacheSet(key, data) {
     try {
       global.sessionStorage.setItem(
-        CACHE_PREFIX + key,
+        CACHE_PREFIX + cacheScope() + ':' + key,
         JSON.stringify({ at: Date.now(), data: data })
       );
     } catch (e) { /* ignore quota */ }
@@ -383,6 +411,22 @@
   var canMembers = function () {
     return can('members.view');
   };
+  var canClasses = function () {
+    return canMembers() || can('classes.view');
+  };
+  var canAttendance = function () {
+    return canMembers() || can('attendance.view') || can('checkin.manual');
+  };
+  var canBusiness = function () {
+    var role = global.GfpAuthz && global.GfpAuthz.getUserRole
+      ? String(global.GfpAuthz.getUserRole() || '').toLowerCase()
+      : '';
+    return canMembers() && (role === 'owner' || role === 'manager');
+  };
+  var isTrainer = function () {
+    return global.GfpAuthz && global.GfpAuthz.getUserRole &&
+      String(global.GfpAuthz.getUserRole() || '').toLowerCase() === 'trainer';
+  };
   var canFinance = function () {
     return can('reports.financial.view');
   };
@@ -406,22 +450,134 @@
   };
 
   // ── Data loaders (short-lived cache on summary GETs) ───────────
-  async function loadOverview() {
-    if (!canFinance()) return;
-    var r = await apiGetCached('overview', '/analytics/overview');
-    state.overview = r.ok ? r.data : { __err: true };
+  function cairoDateFromIso(value) {
+    if (!value) return '';
+    try {
+      var parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Africa/Cairo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(new Date(value)).reduce(function (result, part) {
+        result[part.type] = part.value;
+        return result;
+      }, {});
+      return parts.year + '-' + parts.month + '-' + parts.day;
+    } catch (e) {
+      return String(value).slice(0, 10);
+    }
+  }
+
+  function applyDashboardOverview(data) {
+    state.dashboardOverview = data || null;
+    if (!data) return;
+    var today = data.today || {};
+    var business = data.business || null;
+    var operations = data.operations || {};
+    var financial = data.financial || null;
+
+    state.membersStatus = business
+      ? { active: business.activeMembers, expired: business.expired, inactive: business.inactive }
+      : null;
+    state.membershipsPeriod = business
+      ? { newCount: business.newMembers, renewalCount: business.renewals }
+      : null;
+    state.checkinsToday = today.checkinsToday == null
+      ? { __err: true }
+      : { count: today.checkinsToday };
+    state.occupancy = operations.maxCapacity == null && operations.currentlyInside == null
+      ? { __err: true }
+      : {
+        maxCapacity: operations.maxCapacity,
+        currentlyInside: operations.currentlyInside,
+        available: operations.availableCapacity,
+        occupancyPercent: operations.occupancyPercent
+      };
+    state.attendanceWeek = Array.isArray(operations.attendanceTrend)
+      ? operations.attendanceTrend.map(function (point) {
+        return { date: point.date, checkinCount: point.value };
+      })
+      : [];
+    var sessions = Array.isArray(operations.sessions) ? operations.sessions : [];
+    var cairoToday = cairoDateFromIso(new Date().toISOString());
+    state.sessionsToday = sessions.filter(function (session) {
+      return cairoDateFromIso(session.startsAtUtc) === cairoToday;
+    });
+    state.sessionDetails = Object.create(null);
+    state.sessionsToday.forEach(function (session) {
+      if (!Array.isArray(session.bookings)) return;
+      state.sessionDetails[session.id] = {
+        bookings: session.bookings.map(function (booking) {
+          return {
+            memberId: booking.memberId,
+            memberName: booking.name,
+            memberPhone: booking.phone,
+            status: booking.status,
+            checkedInAtUtc: booking.checkedIn ? new Date().toISOString() : null
+          };
+        })
+      };
+    });
+    state.debtorsSummary = financial
+      ? { totalOutstanding: financial.outstanding }
+      : null;
+    state.financialPeriod = financial
+      ? {
+        period: data.period && data.period.key ? data.period.key : 'month',
+        from: data.period && data.period.from,
+        to: data.period && data.period.to,
+        sales: { netCashIn: financial.cashCollected, cashInTotal: financial.cashCollected },
+        refunds: { total: financial.refunds },
+        dashboard: financial
+      }
+      : null;
+    if (Array.isArray(data.quickActions)) {
+      state.quickActionKeys = data.quickActions.map(function (action) {
+        return action.key;
+      }).filter(Boolean);
+    }
+    var trend = financial && Array.isArray(financial.cashTrend) ? financial.cashTrend : [];
+    state.revenueChart = {
+      labels: trend.map(function (point) { return String(point.date || '').slice(5); }),
+      values: trend.map(function (point) { return Number(point.value) || 0; })
+    };
+    var attention = {};
+    (data.attention && Array.isArray(data.attention.items) ? data.attention.items : [])
+      .forEach(function (item) { attention[item.key] = item; });
+    state.expiring = attention.renewals_due
+      ? new Array(Number(attention.renewals_due.count) || 0).fill({})
+      : [];
+  }
+
+  async function loadDashboardOverview(period, from, to, force) {
+    var selected = period || 'month';
+    var path = '/dashboard/overview?period=' + encodeURIComponent(selected);
+    if (selected === 'custom' && from && to) {
+      path += '&from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to);
+    }
+    var r = force
+      ? await apiGet(path)
+      : await apiGetCached('overview:' + path, path);
+    if (!r.ok || !r.data) {
+      state.dashboardOverview = { __err: true };
+      state.membersStatus = { __err: true };
+      state.checkinsToday = { __err: true };
+      state.occupancy = { __err: true };
+      state.sessionsToday = { __err: true };
+      state.financialPeriod = { sales: { __err: true }, refunds: { __err: true } };
+      return;
+    }
+    applyDashboardOverview(r.data);
   }
 
   async function loadMembersStatus() {
     if (!canMembers()) return;
-    // Skip when overview already supplies activeMembers (avoid duplicate source)
-    if (state.overview && !state.overview.__err && state.overview.activeMembers != null) return;
     var r = await apiGetCached('members-status', '/analytics/members-status');
     state.membersStatus = r.ok ? r.data : { __err: true };
   }
 
   async function loadCheckinsToday() {
-    if (!canMembers()) return;
+    if (!canAttendance()) return;
     var r = await apiGet('/attendance/today?filter=all');
     if (!r.ok) {
       state.checkinsToday = { __err: true };
@@ -431,13 +587,13 @@
   }
 
   async function loadOccupancy() {
-    if (!canMembers()) return;
+    if (!canAttendance()) return;
     var r = await apiGet('/attendance/occupancy');
     state.occupancy = r.ok && r.data ? r.data : { __err: true };
   }
 
   async function loadAttendanceWeek() {
-    if (!canMembers()) return;
+    if (!canAttendance()) return;
     var to = new Date();
     var from = new Date();
     from.setDate(from.getDate() - 6);
@@ -445,6 +601,50 @@
       '/reports/attendance-summary?from=' + fmtDateOnly(from) + '&to=' + fmtDateOnly(to);
     var r = await apiGetCached('att-week:' + fmtDateOnly(from), path);
     state.attendanceWeek = r.ok ? unwrapList(r.data) : { __err: true };
+  }
+
+  async function loadSessionsToday() {
+    if (!canClasses()) return;
+    var date = cairoDateFromIso(new Date().toISOString());
+    var r = await apiGetCached('sessions:' + date, '/activity-sessions?date=' + date);
+    state.sessionsToday = r.ok ? unwrapList(r.data) : { __err: true };
+  }
+
+  async function loadSessionDetails() {
+    var role = global.GfpAuthz && global.GfpAuthz.getUserRole
+      ? String(global.GfpAuthz.getUserRole() || '').toLowerCase()
+      : '';
+    if (!canClasses() || role !== 'trainer' || !Array.isArray(state.sessionsToday)) return;
+    var sessions = state.sessionsToday.slice(0, 6);
+    var results = await Promise.all(sessions.map(function (session) {
+      var id = session.id || session.Id;
+      return id
+        ? apiGet('/activity-sessions/' + encodeURIComponent(id)).catch(function () { return { ok: false }; })
+        : Promise.resolve({ ok: false });
+    }));
+    state.sessionDetails = Object.create(null);
+    results.forEach(function (result, index) {
+      if (result.ok && result.data) {
+        var id = sessions[index].id || sessions[index].Id;
+        state.sessionDetails[id] = result.data;
+      }
+    });
+  }
+
+  async function loadMembershipsPeriod() {
+    // This report DTO contains financial fields and is currently protected by
+    // members.view; only financial viewers may request it.
+    if (!canMembers() || !canFinance()) return;
+    var range = periodRange('month');
+    var path =
+      '/reports/memberships?from=' + range.from + '&to=' + range.to;
+    var r = await apiGetCached('memberships:' + range.from + ':' + range.to, path);
+    state.membershipsPeriod = r.ok ? r.data : { __err: true };
+  }
+
+  async function loadFinancialPeriod(period) {
+    if (!canFinance()) return;
+    await loadDashboardOverview(period || 'month');
   }
 
   async function loadDebtors() {
@@ -475,14 +675,6 @@
     state.inventory = r.ok ? r.data : { __err: true };
   }
 
-  async function loadZReport() {
-    if (!canFinance()) return;
-    var r = await apiGet('/reports/z/' + fmtDateOnly(new Date()));
-    if (r.ok && r.data) state.zReport = r.data;
-    else if (r.status === 404) state.zReport = null;
-    else state.zReport = { __err: true };
-  }
-
   async function loadOrders() {
     if (!canOrders()) return;
     var Mo = global.GfpMemberOrdersApi;
@@ -511,14 +703,31 @@
   async function loadRevenueChartData(months) {
     if (!canFinance()) return;
     var m = months || 6;
-    var r = await apiGetCached('revenue:' + m, '/analytics/revenue?months=' + m);
-    state.revenueChart = r.ok ? r.data : { __err: true };
+    var to = new Date();
+    var from = new Date(to);
+    from.setMonth(from.getMonth() - m);
+    var range = { from: fmtDateOnly(from), to: fmtDateOnly(to) };
+    var r = await apiGetCached(
+      'sales-chart:' + range.from + ':' + range.to,
+      '/reports/sales?from=' + range.from + '&to=' + range.to
+    );
+    if (!r.ok) {
+      state.revenueChart = { __err: true };
+      return;
+    }
+    var days = r.data && (r.data.days || r.data.Days);
+    if (!Array.isArray(days)) days = [];
+    state.revenueChart = {
+      labels: days.map(function (d) {
+        var date = d.date || d.Date;
+        return date ? String(date).slice(5) : '';
+      }),
+      values: days.map(function (d) { return Number(d.cashIn != null ? d.cashIn : d.CashIn) || 0; })
+    };
   }
 
   // ── Derived KPI values ─────────────────────────────────────────
   function activeMembersValue() {
-    if (state.overview && !state.overview.__err && state.overview.activeMembers != null)
-      return Number(state.overview.activeMembers);
     if (state.membersStatus && !state.membersStatus.__err && state.membersStatus.active != null)
       return Number(state.membersStatus.active);
     return null;
@@ -526,44 +735,6 @@
 
   function checkinsTodayValue() {
     if (state.checkinsToday && !state.checkinsToday.__err) return state.checkinsToday.count;
-    if (state.overview && !state.overview.__err && state.overview.checkinsToday != null)
-      return Number(state.overview.checkinsToday);
-    return null;
-  }
-
-  function todaySalesCount() {
-    if (state.zReport && !state.zReport.__err && Array.isArray(state.zReport.methodTotals)) {
-      return state.zReport.methodTotals.reduce(function (a, m) {
-        return a + (Number(m.count) || 0);
-      }, 0);
-    }
-    if (state.inventory && !state.inventory.__err && state.inventory.todayRetailUnits != null)
-      return Number(state.inventory.todayRetailUnits);
-    return null;
-  }
-
-  function todayRevenueValue() {
-    if (state.zReport && !state.zReport.__err) {
-      var methods = state.zReport.methodTotals || [];
-      var sum = methods.reduce(function (a, m) {
-        return a + (Number(m.total) || 0);
-      }, 0);
-      if (methods.length) return sum;
-    }
-    if (
-      state.inventory &&
-      !state.inventory.__err &&
-      state.inventory.todayRetailSalesEgp != null &&
-      canFinance()
-    ) {
-      return Number(state.inventory.todayRetailSalesEgp);
-    }
-    return null;
-  }
-
-  function monthRevenueValue() {
-    if (state.overview && !state.overview.__err && state.overview.revenueThisMonth != null)
-      return Number(state.overview.revenueThisMonth);
     return null;
   }
 
@@ -573,50 +744,58 @@
     return null;
   }
 
-  function refundsToday() {
-    if (state.zReport && !state.zReport.__err && state.zReport.refundsTotal != null)
-      return Number(state.zReport.refundsTotal);
-    return null;
-  }
-
-  // ── Render: KPI row (ops only — money lives in Financial summary) ─
+  // ── Render: role-aware Today KPI row ────────────────────────────
   function renderKpis(el) {
     if (!el) return;
-    var cards = [];
-
-    var am = activeMembersValue();
-    if (am != null) {
-      var sub = '';
-      if (state.overview && !state.overview.__err && state.overview.newMembersThisMonth != null) {
-        sub =
-          '+' +
-          num(state.overview.newMembersThisMonth) +
-          ' ' +
-          t('this month', 'هذا الشهر');
-      }
-      cards.push(kpiCard(t('Active Members', 'الأعضاء النشطون'), num(am), sub));
-    }
-
-    var ci = checkinsTodayValue();
-    if (ci != null) {
-      cards.push(kpiCard(t("Today's Check-ins", 'حضور اليوم'), num(ci), ''));
-    }
-
-    var sales = todaySalesCount();
-    if (sales != null && (canFinance() || canInventory() || canSales())) {
-      cards.push(
-        kpiCard(t("Today's Sales (count)", 'مبيعات اليوم (عدد)'), num(sales), '')
+    var data = state.dashboardOverview && !state.dashboardOverview.__err
+      ? state.dashboardOverview
+      : null;
+    if (!data) {
+      el.innerHTML = errBox(
+        t('Unable to load dashboard data.', 'مش قادرين نحمّل بيانات لوحة التحكم.'),
+        'overview'
       );
-    } else if (canFinance() || canInventory() || canSales()) {
-      cards.push(kpiCard(t("Today's Sales (count)", 'مبيعات اليوم (عدد)'), '—', ''));
-    }
-
-    if (!cards.length) {
-      el.innerHTML =
-        '<p class="dash-muted">' +
-        esc(t('No KPIs available for your role.', 'مفيش مؤشرات متاحة لدورك.')) +
-        '</p>';
       return;
+    }
+    var today = data && data.today ? data.today : {};
+    var role = global.GfpAuthz && global.GfpAuthz.getUserRole
+      ? String(global.GfpAuthz.getUserRole() || '').toLowerCase()
+      : '';
+    var cards;
+    if (role === 'owner') {
+      cards = [
+        kpiCard(t('Revenue today', 'إيراد اليوم'), today.revenueToday == null ? '—' : money(today.revenueToday), ''),
+        kpiCard(t('Outstanding', 'المستحقات'), today.outstanding == null ? '—' : money(today.outstanding), ''),
+        kpiCard(t('Active members', 'الأعضاء النشطون'), today.activeMembers == null ? '—' : num(today.activeMembers), ''),
+        kpiCard(t('Renewals due soon', 'تجديدات قريبة'), today.renewalsDueSoon == null ? '—' : num(today.renewalsDueSoon), '')
+      ];
+    } else if (role === 'manager') {
+      cards = [
+        kpiCard(t('Revenue today', 'إيراد اليوم'), today.revenueToday == null ? '—' : money(today.revenueToday), ''),
+        kpiCard(t('Outstanding', 'المستحقات'), today.outstanding == null ? '—' : money(today.outstanding), ''),
+        kpiCard(t('Active members', 'الأعضاء النشطون'), today.activeMembers == null ? '—' : num(today.activeMembers), ''),
+        kpiCard(t("Today's check-ins", 'حضور اليوم'), today.checkinsToday == null ? '—' : num(today.checkinsToday), '')
+      ];
+    } else if (role === 'receptionist') {
+      cards = [
+        kpiCard(t("Today's check-ins", 'حضور اليوم'), today.checkinsToday == null ? '—' : num(today.checkinsToday), ''),
+        kpiCard(t('Active memberships', 'العضويات النشطة'), today.activeMembers == null ? '—' : num(today.activeMembers), ''),
+        kpiCard(t("Today's classes", 'حصص اليوم'), today.todayClasses == null ? '—' : num(today.todayClasses), ''),
+        kpiCard(t('Upcoming bookings', 'الحجوزات القادمة'), today.upcomingBookings == null ? '—' : num(today.upcomingBookings), '')
+      ];
+    } else {
+      cards = [
+        kpiCard(t("Today's classes", 'حصص اليوم'), today.todayClasses == null ? '—' : num(today.todayClasses), ''),
+        kpiCard(t('My upcoming classes', 'حصصي القادمة'), today.myUpcomingClasses == null ? '—' : num(today.myUpcomingClasses), ''),
+        kpiCard(t("Today's attendance", 'حضور اليوم'), today.todayAttendance == null ? '—' : num(today.todayAttendance), ''),
+        kpiCard(
+          t('Class capacity', 'سعة الحصة'),
+          today.classCapacityBooked == null || today.classCapacityTotal == null
+            ? '—'
+            : num(today.classCapacityBooked) + ' / ' + num(today.classCapacityTotal),
+          ''
+        )
+      ];
     }
     el.innerHTML = '<div class="dash-kpi-row">' + cards.join('') + '</div>';
   }
@@ -710,10 +889,17 @@
         }
       }
       if (!def) return;
+      if (qa && qa.isAvailable && !qa.isAvailable(def)) return;
       if (qa && qa.isTenantEnabled && !qa.isTenantEnabled(def)) return;
       out.push(def);
     });
-    if (!out.length) return fallback.slice();
+    if (!out.length) {
+      return fallback.filter(function (def) {
+        if (qa && qa.isAvailable && !qa.isAvailable(def)) return false;
+        if (qa && qa.isTenantEnabled && !qa.isTenantEnabled(def)) return false;
+        return true;
+      }).slice(0, qaMax());
+    }
     return out.slice(0, qaMax());
   }
 
@@ -1129,13 +1315,33 @@
   // ── Attendance widget ──────────────────────────────────────────
   function renderAttendance(el) {
     if (!el) return;
-    if (!canMembers()) {
+    if (!canAttendance()) {
       el.innerHTML = '';
+      return;
+    }
+    if (isTrainer() && state.dashboardOverview && !state.dashboardOverview.__err) {
+      var sessions = state.dashboardOverview.operations &&
+        Array.isArray(state.dashboardOverview.operations.sessions)
+        ? state.dashboardOverview.operations.sessions
+        : [];
+      var own = sessions.find(function (session) {
+        return session.isMine && cairoDateFromIso(session.startsAtUtc) ===
+          cairoDateFromIso(new Date().toISOString());
+      });
+      el.innerHTML =
+        '<div class="dash-kpi-row compact">' +
+        '<div class="dash-kpi"><span class="lbl">' +
+        esc(t('Booked members', 'الأعضاء المحجوزون')) + '</span><strong>' +
+        esc(own ? num(own.bookedCount) : '—') + '</strong></div>' +
+        '<div class="dash-kpi"><span class="lbl">' +
+        esc(t('Checked in', 'سجلوا حضورهم')) + '</span><strong>' +
+        esc(own ? num(own.checkedInCount) : '—') + '</strong></div></div>' +
+        linkRow('/dashboard/classes/', t('Open my classes', 'فتح حصصي'));
       return;
     }
     if (
       (state.checkinsToday && state.checkinsToday.__err) &&
-      (!state.overview || state.overview.__err)
+      (!state.membersStatus || state.membersStatus.__err)
     ) {
       el.innerHTML = errBox(null, 'attendance');
       return;
@@ -1221,7 +1427,7 @@
 
   function renderOccupancy(el) {
     if (!el) return;
-    if (!canMembers()) {
+    if (!canAttendance()) {
       el.innerHTML = '';
       return;
     }
@@ -1251,6 +1457,10 @@
     var width = pct == null ? 0 : Math.min(100, Number(pct));
 
     if (tone === 'unset') {
+      var canConfigureCapacity =
+        global.GfpAuthz &&
+        global.GfpAuthz.useCanRole &&
+        global.GfpAuthz.useCanRole('ManagerOrAbove');
       el.innerHTML =
         '<div class="occ-row">' +
         occupancyRing('mute', null) +
@@ -1260,7 +1470,7 @@
         '<p class="dash-muted">' +
         esc(t('Set the maximum people inside so the desk and the Member App can show how full you are.', 'حدد أقصى عدد جوه عشان الديسك والتطبيق يبينوا الزحمة.')) +
         '</p>' +
-        linkRow('/dashboard/settings/', t('Configure capacity', 'ضبط السعة')) +
+        (canConfigureCapacity ? linkRow('/dashboard/settings/', t('Configure capacity', 'ضبط السعة')) : '') +
         '</div></div>';
       return;
     }
@@ -1382,11 +1592,55 @@
       el.innerHTML = '';
       return;
     }
-    var revToday = todayRevenueValue();
-    var revMonth = monthRevenueValue();
+    var financial = state.financialPeriod;
+    if (!financial || state.dashboardOverview && state.dashboardOverview.__err) {
+      el.innerHTML = errBox(
+        t('Unable to load financial data.', 'مش قادرين نحمّل البيانات المالية.'),
+        'finance'
+      );
+      return;
+    }
+    if (
+      financial &&
+      financial.sales &&
+      financial.sales.__err &&
+      financial.refunds &&
+      financial.refunds.__err
+    ) {
+      el.innerHTML = errBox(
+        t('Unable to load financial data.', 'مش قادرين نحمّل البيانات المالية.'),
+        'finance'
+      );
+      return;
+    }
+    var sales = financial && financial.sales && !financial.sales.__err ? financial.sales : null;
+    var refunds = financial && financial.refunds && !financial.refunds.__err ? financial.refunds : null;
+    var dashboardFinancial = financial && financial.dashboard ? financial.dashboard : null;
     var dout = debtorsOutstanding();
-    var ref = refundsToday();
-    var showOutstanding = dout != null && dout > 0;
+    var selectedPeriod = financial ? financial.period : 'month';
+    var periodLabel = selectedPeriod === 'today'
+      ? t('today', 'اليوم')
+      : selectedPeriod === 'week'
+        ? t('this week', 'هذا الأسبوع')
+        : selectedPeriod === 'last_month'
+          ? t('last month', 'الشهر الماضي')
+          : selectedPeriod === 'year'
+            ? t('this year', 'هذه السنة')
+            : selectedPeriod === 'last_year'
+              ? t('last year', 'السنة الماضية')
+              : selectedPeriod === 'custom'
+                ? t('custom range', 'فترة مخصصة')
+              : t('this month', 'هذا الشهر');
+    var cashCollected = dashboardFinancial && dashboardFinancial.cashCollected != null
+      ? Number(dashboardFinancial.cashCollected)
+      : sales && sales.netCashIn != null ? Number(sales.netCashIn) : null;
+    var ref = dashboardFinancial && dashboardFinancial.refunds != null
+      ? Number(dashboardFinancial.refunds)
+      : refunds && refunds.total != null ? Number(refunds.total) : null;
+    var expenses = dashboardFinancial ? dashboardFinancial.expenses : null;
+    var profit = dashboardFinancial ? dashboardFinancial.netProfit : null;
+    var margin = dashboardFinancial ? dashboardFinancial.profitMargin : null;
+    var showOutstanding = dout != null;
     var preview =
       state.debtorsPreview && !state.debtorsPreview.__err
         ? state.debtorsPreview.items || []
@@ -1413,25 +1667,50 @@
           .join('') +
         '</ul>';
     }
-
-    // Prefer today's revenue; fall back to month with clear label (no silent double of Today strip)
-    var revLabel =
-      revToday != null
-        ? t('Revenue today (EGP)', 'إيراد اليوم (ج.م)')
-        : t('Revenue this month (EGP)', 'إيراد هذا الشهر (ج.م)');
-    var revVal = revToday != null ? revToday : revMonth;
+    var breakdown = dashboardFinancial && Array.isArray(dashboardFinancial.breakdown)
+      ? dashboardFinancial.breakdown
+      : [];
+    var breakdownHtml = breakdown.length
+      ? '<div class="dash-breakdown">' + breakdown.map(function (item) {
+        var labels = {
+          memberships: t('Memberships', 'العضويات'),
+          renewals: t('Renewals', 'التجديدات'),
+          products: t('POS / products', 'المنتجات'),
+          classes: t('Classes / drop-ins', 'الحصص والدخول اليومي')
+        };
+        return '<div><span>' + esc(labels[item.key] || item.key) + '</span><strong>' +
+          esc(money(item.amount)) + '</strong></div>';
+      }).join('') + '</div>'
+      : '';
 
     el.innerHTML =
       '<div class="dash-kpi-row compact">' +
       '<div class="dash-kpi"><span class="lbl">' +
-      esc(revLabel) +
+      esc(t('Cash collected', 'المتحصلات النقدية') + ' · ' + periodLabel + ' (EGP)') +
       '</span><strong>' +
-      esc(revVal != null ? money(revVal) : '—') +
+      esc(cashCollected != null ? money(cashCollected) : '—') +
       '</strong></div>' +
       '<div class="dash-kpi"><span class="lbl">' +
-      esc(t('Refunds today (EGP)', 'مرتجعات اليوم (ج.م)')) +
+      esc(t('Refunds', 'المرتجعات') + ' · ' + periodLabel + ' (EGP)') +
       '</span><strong>' +
       esc(ref != null ? money(ref) : '—') +
+      '</strong></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Expenses', 'المصروفات')) +
+      '</span><strong>' +
+      esc(expenses == null ? t('Not available', 'غير متاح') : money(expenses)) +
+      '</strong>' + (expenses == null ? '<span class="sub">' +
+      esc(t('No recorded cash expenses', 'لا توجد مصروفات نقدية مسجلة')) + '</span>' : '') + '</div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Net profit', 'صافي الربح')) +
+      '</span><strong>' +
+      esc(profit == null ? t('Not available', 'غير متاح') : money(profit)) +
+      '</strong>' + (profit == null ? '<span class="sub">' +
+      esc(t('Requires recorded expenses', 'يحتاج مصروفات مسجلة')) + '</span>' : '') + '</div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Profit margin', 'هامش الربح')) +
+      '</span><strong>' +
+      esc(margin == null ? t('Not available', 'غير متاح') : Number(margin).toFixed(2) + '%') +
       '</strong></div>' +
       (showOutstanding
         ? '<div class="dash-kpi"><span class="lbl">' +
@@ -1442,41 +1721,79 @@
         : '') +
       '</div>' +
       outstandingList +
+      breakdownHtml +
       '<div class="dash-chart-hdr">' +
       '<span>' +
-      esc(t('Revenue trend', 'اتجاه الإيراد')) +
+      esc(t('Cash collected trend', 'اتجاه المتحصلات')) +
       '</span>' +
-      '<div class="dash-seg" id="revMonthsSeg">' +
-      '<button type="button" class="dash-seg-btn' +
-      (state.revenueMonths === 3 ? ' act' : '') +
-      '" data-months="3">3</button>' +
-      '<button type="button" class="dash-seg-btn' +
-      (state.revenueMonths === 6 ? ' act' : '') +
-      '" data-months="6">6</button>' +
+      '<div class="dash-seg" id="financePeriodSeg">' +
+      ['today', 'week', 'month', 'last_month', 'year', 'last_year', 'custom'].map(function (period) {
+        var label = period === 'today'
+          ? t('Today', 'اليوم')
+          : period === 'week'
+            ? t('Week', 'أسبوع')
+            : period === 'month'
+              ? t('Month', 'شهر')
+              : period === 'last_month'
+                ? t('Last month', 'الشهر الماضي')
+                : period === 'year'
+                  ? t('Year', 'سنة')
+                : period === 'last_year'
+                  ? t('Last year', 'السنة الماضية')
+                  : t('Custom', 'مخصص');
+        return '<button type="button" class="dash-seg-btn' +
+          (selectedPeriod === period ? ' act' : '') +
+          '" data-finance-period="' + period + '">' + esc(label) + '</button>';
+      }).join('') +
       '</div>' +
-      '<span class="dash-muted" style="font-size:11px">' +
-      esc(t('months', 'شهور')) +
-      '</span>' +
+      '<div class="dash-custom-range" id="dashCustomRange" ' +
+      (selectedPeriod === 'custom' ? '' : 'hidden') + '>' +
+      '<input type="date" id="dashFromDate" value="' + esc(financial && financial.from || '') + '">' +
+      '<input type="date" id="dashToDate" value="' + esc(financial && financial.to || '') + '">' +
+      '<button type="button" class="dash-btn" data-finance-custom>' +
+      esc(t('Apply', 'تطبيق')) + '</button></div>' +
       '</div>' +
       '<div class="dash-chart-wrap" id="dashRevChartHost">' +
       chartSkeleton() +
       '</div>' +
       '<p class="dash-muted" style="margin-top:6px;font-size:11px">' +
-      esc(t('Month-by-month totals for the gym.', 'إجمالي كل شهر للنادي.')) +
+      esc(t('Daily cash-in totals from payment transactions.', 'إجمالي المتحصلات اليومية من معاملات الدفع.')) +
       '</p>' +
       linkRow('/dashboard/reports/', t('View reports', 'عرض التقارير'));
 
-    var seg = el.querySelector('#revMonthsSeg');
-    if (seg) {
-      seg.querySelectorAll('[data-months]').forEach(function (btn) {
+    var periodSeg = el.querySelector('#financePeriodSeg');
+    if (periodSeg) {
+      periodSeg.querySelectorAll('[data-finance-period]').forEach(function (btn) {
         btn.onclick = async function () {
-          state.revenueMonths = Number(btn.getAttribute('data-months')) || 6;
+          var period = btn.getAttribute('data-finance-period') || 'month';
+          var custom = el.querySelector('#dashCustomRange');
+          if (period === 'custom') {
+            if (custom) custom.hidden = false;
+            return;
+          }
+          if (custom) custom.hidden = true;
           var host = global.document.getElementById('dashRevChartHost');
           if (host) host.innerHTML = chartSkeleton();
-          await loadRevenueChartData(state.revenueMonths);
+          await loadFinancialPeriod(period);
           renderFinance(el);
+          renderBusiness(global.document.getElementById('wBusiness'));
         };
       });
+    }
+    var customApply = el.querySelector('[data-finance-custom]');
+    if (customApply) {
+      customApply.onclick = async function () {
+        var from = (el.querySelector('#dashFromDate') || {}).value;
+        var to = (el.querySelector('#dashToDate') || {}).value;
+        if (!from || !to || from > to) {
+          qaToast(t('Choose a valid date range.', 'اختار فترة زمنية صحيحة.'), 'err');
+          return;
+        }
+        await loadDashboardOverview('custom', from, to, true);
+        renderFinance(el);
+        renderKpis(global.document.getElementById('wKpis'));
+        renderBusiness(global.document.getElementById('wBusiness'));
+      };
     }
     paintRevenueChart();
   }
@@ -1780,11 +2097,215 @@
       '</a></div>';
   }
 
+  // ── Role-aware business, classes, and attention summaries ──────
+  function renderBusiness(el) {
+    if (!el || !canBusiness()) return;
+    var status = state.membersStatus;
+    var memberships = state.membershipsPeriod;
+    if ((status && status.__err) || (memberships && memberships.__err)) {
+      el.innerHTML = errBox(null, 'business');
+      return;
+    }
+    var active = status && status.active != null ? num(status.active) : '—';
+    var expired = status && status.expired != null ? num(status.expired) : '—';
+    var inactive = status && status.inactive != null ? num(status.inactive) : '—';
+    var newCount = memberships && memberships.newCount != null ? num(memberships.newCount) : '—';
+    var renewals = memberships && memberships.renewalCount != null ? num(memberships.renewalCount) : '—';
+    el.innerHTML =
+      '<div class="dash-glance">' +
+      '<span class="dash-glance-chip">' + esc(t('Active memberships', 'عضويات نشطة')) + ': <strong>' + esc(active) + '</strong></span>' +
+      '<span class="dash-glance-chip">' + esc(t('New members this month', 'أعضاء جدد هذا الشهر')) + ': <strong>' + esc(newCount) + '</strong></span>' +
+      '<span class="dash-glance-chip">' + esc(t('Renewals this month', 'تجديدات هذا الشهر')) + ': <strong>' + esc(renewals) + '</strong></span>' +
+      '<span class="dash-glance-chip">' + esc(t('Expired memberships', 'عضويات منتهية')) + ': <strong>' + esc(expired) + '</strong></span>' +
+      '<span class="dash-glance-chip">' + esc(t('Inactive members', 'أعضاء غير نشطين')) + ': <strong>' + esc(inactive) + '</strong></span>' +
+      '</div>' +
+      linkRow('/dashboard/members/', t('View members', 'عرض الأعضاء'));
+  }
+
+  function renderClasses(el) {
+    if (!el || !canClasses()) return;
+    if (state.sessionsToday && state.sessionsToday.__err) {
+      el.innerHTML = errBox(null, 'classes');
+      return;
+    }
+    var sessions = Array.isArray(state.sessionsToday) ? state.sessionsToday : [];
+    if (!sessions.length) {
+      el.innerHTML =
+        '<p class="dash-muted">' + esc(t('No classes scheduled today.', 'مفيش حصص النهارده.')) + '</p>' +
+        linkRow('/dashboard/classes/', t('Open classes', 'فتح الحصص'));
+      return;
+    }
+    el.innerHTML =
+      '<ul class="dash-list">' +
+      sessions.slice(0, 8).map(function (s) {
+        var start = s.startsAtUtc || s.StartsAtUtc;
+        var d = start ? new Date(start) : null;
+        var time = d && !Number.isNaN(d.getTime())
+          ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '—';
+        var booked = s.bookedCount != null ? s.bookedCount : s.BookedCount;
+        var capacity = s.capacity != null ? s.capacity : s.Capacity;
+        var remaining = s.remainingCapacity != null ? s.remainingCapacity : s.RemainingCapacity;
+        var sessionId = s.id || s.Id;
+        var detail = sessionId ? state.sessionDetails[sessionId] : null;
+        var bookingRows = detail && (detail.bookings || detail.Bookings);
+        var names = Array.isArray(bookingRows)
+          ? bookingRows
+            .filter(function (b) { return String(b.status || b.Status || '').toLowerCase() !== 'cancelled'; })
+            .slice(0, 3)
+            .map(function (b) {
+              return b.memberName || b.MemberName || b.guestName || b.GuestName || t('Guest', 'زائر');
+            })
+          : [];
+        return '<li>' +
+          '<span class="dash-list-meta">' + esc(time) + '</span>' +
+          '<span class="dash-list-main">' + esc(s.activityName || s.ActivityName || t('Class', 'حصة')) + '</span>' +
+          '<span class="dash-list-meta">' + esc(String(booked == null ? '—' : booked) + ' / ' + String(capacity == null ? '—' : capacity)) + '</span>' +
+          '<span class="dash-exp-sub">' + esc(String(remaining == null ? '—' : remaining) + ' ' + t('spots left', 'أماكن متاحة')) + '</span>' +
+          (names.length ? '<span class="dash-exp-sub dash-class-members">' + esc(t('Booked: ', 'محجوز: ') + names.join(', ')) + '</span>' : '') +
+          '</li>';
+      }).join('') +
+      '</ul>' +
+      linkRow('/dashboard/classes/', t('View all classes', 'عرض كل الحصص'));
+  }
+
+  function renderAttention(el) {
+    if (!el) return;
+    if (state.dashboardOverview && state.dashboardOverview.__err) {
+      el.innerHTML = errBox(
+        t('Unable to load attention items.', 'مش قادرين نحمّل عناصر المتابعة.'),
+        'attention'
+      );
+      return;
+    }
+    if (state.dashboardOverview && !state.dashboardOverview.__err) {
+      var liveItems = state.dashboardOverview.attention &&
+        Array.isArray(state.dashboardOverview.attention.items)
+        ? state.dashboardOverview.attention.items
+        : [];
+      if (!liveItems.length) {
+        el.innerHTML =
+          '<div class="dash-empty"><i class="ti ti-circle-check"></i><strong>' +
+          esc(t('Nothing needs attention right now.', 'مفيش حاجة محتاجة متابعة دلوقتي.')) +
+          '</strong></div>';
+        return;
+      }
+      var labels = {
+        renewals_due: t('Memberships expiring within 7 days', 'عضويات تنتهي خلال 7 أيام'),
+        outstanding_payments: t('Outstanding payments', 'مدفوعات مستحقة'),
+        inactive_members: t('Inactive members', 'أعضاء غير نشطين'),
+        trials_ending_soon: t('Trials ending soon', 'تجارب تنتهي قريباً'),
+        classes_near_full: t('Classes nearly full', 'حصص اقتربت من الامتلاء')
+      };
+      var icons = {
+        renewals_due: 'ti-calendar-event',
+        outstanding_payments: 'ti-receipt',
+        inactive_members: 'ti-user-off',
+        trials_ending_soon: 'ti-hourglass',
+        classes_near_full: 'ti-users-group'
+      };
+      el.innerHTML = '<div class="dash-attention-grid">' + liveItems.map(function (item) {
+        var key = item.key || '';
+        var amount = item.amount == null ? '' : ' · ' + money(item.amount);
+        var target = key === 'outstanding_payments' || key === 'inactive_members'
+          ? 'members/'
+          : key === 'classes_near_full'
+            ? 'classes/'
+            : key === 'trials_ending_soon'
+              ? 'trials/'
+              : 'call-sheet/';
+        return '<a class="dash-attention-item" href="/dashboard/' +
+          target +
+          '"><i class="ti ' + esc(icons[key] || 'ti-alert-circle') + '"></i><span>' +
+          esc(labels[key] || key) + '</span><strong>' + esc(num(item.count)) +
+          esc(amount) + '</strong></a>';
+      }).join('') + '</div>';
+      return;
+    }
+    var items = [];
+    var attentionError =
+      (canSales() && state.expiring && state.expiring.__err) ||
+      (canFinance() && state.debtorsSummary && state.debtorsSummary.__err);
+    if (canSales() && Array.isArray(state.expiring) && state.expiring.length) {
+      items.push({
+        icon: 'ti-calendar-event',
+        label: t('Memberships expiring within 7 days', 'عضويات تنتهي خلال 7 أيام'),
+        value: state.expiring.length,
+        href: '/dashboard/call-sheet/'
+      });
+    }
+    if (canFinance() && state.debtorsSummary && !state.debtorsSummary.__err && Number(state.debtorsSummary.debtorCount) > 0) {
+      items.push({
+        icon: 'ti-receipt',
+        label: t('Outstanding payments', 'مدفوعات مستحقة'),
+        value: state.debtorsSummary.debtorCount,
+        href: '/dashboard/members/'
+      });
+    }
+    if (canMembers() && state.membersStatus && !state.membersStatus.__err && Number(state.membersStatus.expired) > 0) {
+      items.push({
+        icon: 'ti-user-off',
+        label: t('Expired memberships', 'عضويات منتهية'),
+        value: state.membersStatus.expired,
+        href: '/dashboard/members/'
+      });
+    }
+    if (canMembers() && Array.isArray(state.sessionsToday)) {
+      var full = state.sessionsToday.filter(function (s) {
+        var capacity = Number(s.capacity != null ? s.capacity : s.Capacity);
+        var booked = Number(s.bookedCount != null ? s.bookedCount : s.BookedCount);
+        return capacity > 0 && booked >= capacity;
+      }).length;
+      if (full) {
+        items.push({
+          icon: 'ti-users-group',
+          label: t('Classes at capacity', 'حصص مكتملة'),
+          value: full,
+          href: '/dashboard/classes/'
+        });
+      }
+    }
+    if (!items.length) {
+      if (attentionError) {
+        el.innerHTML = errBox(
+          t('Some attention items could not be loaded.', 'تعذر تحميل بعض عناصر المتابعة.'),
+          'attention'
+        );
+        return;
+      }
+      el.innerHTML =
+        '<p class="dash-muted">' + esc(t('Nothing requires attention right now.', 'مفيش حاجة محتاجة متابعة دلوقتي.')) + '</p>';
+      return;
+    }
+    el.innerHTML =
+      '<div class="dash-alert-list">' +
+      items.map(function (item) {
+        return '<a class="dash-alert" href="' + esc(item.href) + '">' +
+          '<i class="ti ' + esc(item.icon) + '"></i>' +
+          '<span class="dash-alert-body"><strong>' + esc(item.label) + '</strong><span>' + esc(t('Action required', 'مطلوب إجراء')) + '</span></span>' +
+          '<strong>' + esc(num(item.value)) + '</strong><i class="ti ti-chevron-right dash-alert-chev"></i>' +
+          '</a>';
+      }).join('') +
+      '</div>';
+  }
+
   // ── Shell / boot ───────────────────────────────────────────────
   function buildLayout(host) {
     var parts = [];
 
-    // Above the fold: Today + Quick Actions
+    if (canFinance()) {
+      parts.push(
+        widgetShell({
+          id: 'finance',
+          icon: 'ti-currency-dollar',
+          title: t('Financial overview', 'نظرة مالية'),
+          sub: t('Cash collected, refunds, and outstanding balances', 'المتحصلات والمرتجعات والمستحقات'),
+          bodyId: 'wFinance',
+          span: 12
+        })
+      );
+    }
+
     parts.push(
       widgetShell({
         id: 'kpis',
@@ -1807,20 +2328,30 @@
       })
     );
 
-    // Primary follow-ups
-    if (canSales()) {
+    if (canBusiness()) {
       parts.push(
         widgetShell({
-          id: 'expiring',
-          icon: 'ti-calendar-event',
-          title: t('Memberships Expiring Soon', 'عضويات قاربت تنتهي'),
-          bodyId: 'wExpiring',
+          id: 'business',
+          icon: 'ti-chart-dots-3',
+          title: t('Business overview', 'نظرة على النشاط'),
+          sub: t('Membership activity from operational data', 'نشاط العضويات من بيانات التشغيل'),
+          bodyId: 'wBusiness',
           span: 12
         })
       );
     }
 
-    if (canMembers()) {
+    if (canAttendance() || canClasses()) {
+      parts.push(
+        '<div class="dash-section-label"><span>' +
+        esc(t('Operations', 'التشغيل')) +
+        '</span><small>' +
+        esc(t('Attendance, capacity, and scheduled classes', 'الحضور والسعة والحصص المجدولة')) +
+        '</small></div>'
+      );
+    }
+
+    if (canAttendance() && !isTrainer()) {
       parts.push(
         widgetShell({
           id: 'occupancy',
@@ -1841,34 +2372,30 @@
         })
       );
     }
-    if (canFinance()) {
+
+    if (canClasses()) {
       parts.push(
         widgetShell({
-          id: 'finance',
-          icon: 'ti-currency-dollar',
-          title: t('Financial summary', 'ملخص مالي'),
-          bodyId: 'wFinance',
-          span: 6
+          id: 'classes',
+          icon: 'ti-calendar-event',
+          title: isTrainer() ? t('My upcoming classes', 'حصصي القادمة') : t("Today's classes", 'حصص اليوم'),
+          sub: t('Bookings and capacity from the sessions service', 'الحجوزات والسعة من خدمة الحصص'),
+          bodyId: 'wClasses',
+          span: 12
         })
       );
     }
 
-    // Below the fold: Inventory Alerts
-    if (canInventory()) {
-      parts.push(
-        widgetShell({
-          id: 'inventory',
-          icon: 'ti-package',
-          title: t('Inventory Alerts', 'تنبيهات المخزون'),
-          bodyId: 'wInventory',
-          span: 12,
-          body:
-            '<div class="dash-muted">' +
-            esc(t('Loading inventory…', 'جاري تحميل المخزون…')) +
-            '</div>'
-        })
-      );
-    }
+    parts.push(
+      widgetShell({
+        id: 'attention',
+        icon: 'ti-alert-triangle',
+        title: t('Needs attention', 'يحتاج متابعة'),
+        sub: t('Only actionable items appear here', 'هنا بنعرض الحاجات اللي محتاجة إجراء'),
+        bodyId: 'wAttention',
+        span: 12
+      })
+    );
 
     host.innerHTML = parts.join('');
   }
@@ -1879,21 +2406,25 @@
       if (!btn) return;
       var key = btn.getAttribute('data-retry');
       btn.disabled = true;
-      if (key === 'attendance') {
-        await Promise.all([loadCheckinsToday(), loadAttendanceWeek(), loadMembersStatus()]);
-        renderAttendance(global.document.getElementById('wAttendance'));
-      } else if (key === 'occupancy') {
-        await loadOccupancy();
-        renderOccupancy(global.document.getElementById('wOccupancy'));
-      } else if (key === 'revenue-chart') {
-        await loadRevenueChartData(state.revenueMonths);
-        renderFinance(global.document.getElementById('wFinance'));
-      } else if (key === 'expiring') {
+      if (key === 'attendance' || key === 'occupancy' || key === 'classes' ||
+          key === 'business' || key === 'revenue-chart' || key === 'finance' ||
+          key === 'attention') {
         try {
-          global.sessionStorage.removeItem(CACHE_PREFIX + 'expiring-7');
+          global.sessionStorage.removeItem(CACHE_PREFIX + cacheScope() + ':overview:');
         } catch (e) { /* ignore */ }
-        await loadExpiring();
-        renderExpiring(global.document.getElementById('wExpiring'));
+        await loadDashboardOverview(
+          (state.financialPeriod && state.financialPeriod.period) || 'month',
+          null,
+          null,
+          true
+        );
+        renderFinance(global.document.getElementById('wFinance'));
+        renderKpis(global.document.getElementById('wKpis'));
+        renderAttendance(global.document.getElementById('wAttendance'));
+        renderOccupancy(global.document.getElementById('wOccupancy'));
+        renderBusiness(global.document.getElementById('wBusiness'));
+        renderClasses(global.document.getElementById('wClasses'));
+        renderAttention(global.document.getElementById('wAttention'));
       } else if (key === 'inventory') {
         try {
           global.sessionStorage.removeItem(CACHE_PREFIX + 'inv-summary');
@@ -1924,103 +2455,21 @@
     wireRetries(host);
     wireQuickActions();
     paintQuickActions();
-    loadQuickActions();
 
-    // ── Primary wave (above the fold) ────────────────────────────
-    var primary = [];
-    if (canFinance()) {
-      primary.push(
-        loadOverview().then(function () {
-          renderKpis(global.document.getElementById('wKpis'));
-          renderFinance(global.document.getElementById('wFinance'));
-          renderAttendance(global.document.getElementById('wAttendance'));
-        })
-      );
-    } else if (canMembers()) {
-      primary.push(
-        loadMembersStatus().then(function () {
-          renderKpis(global.document.getElementById('wKpis'));
-          renderAttendance(global.document.getElementById('wAttendance'));
-        })
-      );
-    }
-    if (canMembers()) {
-      primary.push(
-        loadCheckinsToday().then(function () {
-          renderKpis(global.document.getElementById('wKpis'));
-          renderAttendance(global.document.getElementById('wAttendance'));
-        })
-      );
-      primary.push(
-        loadOccupancy().then(function () {
-          renderOccupancy(global.document.getElementById('wOccupancy'));
-        })
-      );
-    }
-    if (canSales()) {
-      primary.push(
-        loadExpiring().then(function () {
-          renderExpiring(global.document.getElementById('wExpiring'));
-        })
-      );
-    }
-
-    await Promise.all(
-      primary.map(function (p) {
-        return p.catch(function () { /* widget-local */ });
-      })
-    );
-
-    // Members-status only if overview didn't cover active count
-    if (canMembers() && canFinance()) {
-      await loadMembersStatus().catch(function () {});
-      renderKpis(global.document.getElementById('wKpis'));
-      renderAttendance(global.document.getElementById('wAttendance'));
-    }
-
-    // ── Secondary / below-the-fold (lazy) ─────────────────────────
-    whenIdle(function () {
-      var secondary = [];
-      if (canMembers()) {
-        secondary.push(
-          loadAttendanceWeek().then(function () {
-            paintAttendanceChart();
-          })
-        );
-      }
-      if (canFinance()) {
-        secondary.push(
-          loadRevenueChartData(state.revenueMonths).then(function () {
-            paintRevenueChart();
-          })
-        );
-        secondary.push(
-          loadDebtors().then(function () {
-            renderFinance(global.document.getElementById('wFinance'));
-          })
-        );
-        secondary.push(
-          loadZReport().then(function () {
-            renderKpis(global.document.getElementById('wKpis'));
-            renderFinance(global.document.getElementById('wFinance'));
-          })
-        );
-      }
-      if (canInventory()) {
-        secondary.push(
-          loadInventory().then(function () {
-            renderInventory(global.document.getElementById('wInventory'));
-            renderKpis(global.document.getElementById('wKpis'));
-            if (canFinance()) renderFinance(global.document.getElementById('wFinance'));
-          })
-        );
-      }
-      Promise.all(
-        secondary.map(function (p) {
-          return p.catch(function () {});
-        })
-      );
+    // The overview endpoint is the only source for dashboard KPIs. This keeps
+    // Cairo boundaries, role filtering, and business calculations server-owned.
+    await loadDashboardOverview('month').catch(function () {
+      state.dashboardOverview = { __err: true };
     });
+    paintQuickActions();
+    renderFinance(global.document.getElementById('wFinance'));
+    renderKpis(global.document.getElementById('wKpis'));
+    renderAttendance(global.document.getElementById('wAttendance'));
+    renderOccupancy(global.document.getElementById('wOccupancy'));
+    renderBusiness(global.document.getElementById('wBusiness'));
+    renderClasses(global.document.getElementById('wClasses'));
+    renderAttention(global.document.getElementById('wAttention'));
+
   }
 
   function paintUserChrome() {
@@ -2044,6 +2493,18 @@
     }
     if (nm) nm.textContent = user.fullName || 'User';
     if (rl) rl.textContent = user.role || 'Staff';
+    var headline = global.document.getElementById('dashboardHeadline');
+    var subtitle = global.document.getElementById('dashboardSubtitle');
+    var role = String(user.role || '').toLowerCase();
+    var context = role === 'owner'
+      ? ['Owner dashboard', 'The most important numbers for the whole gym']
+      : role === 'manager'
+        ? ['Manager dashboard', 'Business and operations within your permissions']
+        : role === 'receptionist'
+          ? ['Reception dashboard', 'The next actions at the front desk']
+          : ['Trainer dashboard', 'Your classes, attendance, and members today'];
+    if (headline) headline.textContent = context[0];
+    if (subtitle) subtitle.textContent = context[1];
     return true;
   }
 

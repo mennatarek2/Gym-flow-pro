@@ -100,19 +100,19 @@ export function AuditTrailPanel({ recentAudit }: AuditTrailPanelProps) {
   }, [expandedId, rows])
 
   return (
-    <section className="rounded-[var(--radius)] border border-slate-700 bg-slate-900/50 p-4">
+    <section className="rounded-[var(--radius)] border border-gray-200 bg-white p-4">
       <h2 className="text-lg font-medium">Audit trail</h2>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-gray-500">
         Recent platform actions for this tenant (including impersonation). Expand a row for
         before/after JSON.
       </p>
 
       {!rows.length ? (
-        <p className="mt-3 text-sm text-slate-400">No audit events yet for this tenant.</p>
+        <p className="mt-3 text-sm text-gray-500">No audit events yet for this tenant.</p>
       ) : (
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="text-slate-400">
+            <thead className="text-gray-500">
               <tr>
                 <th className="px-2 py-1">When</th>
                 <th className="px-2 py-1">Actor</th>
@@ -125,8 +125,8 @@ export function AuditTrailPanel({ recentAudit }: AuditTrailPanelProps) {
                 const open = expandedId === row.id
                 const reason = extractReasonFromAudit(row)
                 return (
-                  <tr key={row.id} className="border-t border-slate-800 align-top">
-                    <td className="px-2 py-2 whitespace-nowrap text-slate-400">
+                  <tr key={row.id} className="border-t border-gray-200 align-top">
+                    <td className="px-2 py-2 whitespace-nowrap text-gray-500">
                       <button
                         type="button"
                         className="text-left underline-offset-2 hover:underline"
@@ -138,16 +138,16 @@ export function AuditTrailPanel({ recentAudit }: AuditTrailPanelProps) {
                     </td>
                     <td className="px-2 py-2">
                       {row.actorName ?? (
-                        <span className="font-[var(--mono)] text-xs text-slate-500">
+                        <span className="font-[var(--mono)] text-xs text-gray-500">
                           {row.actorPlatformUserId.slice(0, 8)}…
                         </span>
                       )}
                     </td>
                     <td className="px-2 py-2">
                       <div>{labelAuditAction(row.action)}</div>
-                      <div className="font-[var(--mono)] text-[10px] text-slate-600">{row.action}</div>
+                      <div className="font-[var(--mono)] text-[10px] text-gray-400">{row.action}</div>
                     </td>
-                    <td className="px-2 py-2 text-slate-400">{reason ?? '—'}</td>
+                    <td className="px-2 py-2 text-gray-500">{reason ?? '—'}</td>
                   </tr>
                 )
               })}
@@ -155,22 +155,22 @@ export function AuditTrailPanel({ recentAudit }: AuditTrailPanelProps) {
           </table>
 
           {expandedId && expandedDiff ? (
-            <div className="mt-3 rounded border border-slate-700 bg-slate-950/60 p-3">
+            <div className="mt-3 rounded border border-gray-200 bg-white/60 p-3">
               <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-sm font-medium text-slate-200">Before / after</h3>
+                <h3 className="text-sm font-medium text-gray-800">Before / after</h3>
                 <button
                   type="button"
-                  className="text-xs text-slate-400 underline"
+                  className="text-xs text-gray-500 underline"
                   onClick={() => setExpandedId(null)}
                 >
                   Close
                 </button>
               </div>
               {!expandedDiff.length ? (
-                <p className="text-sm text-slate-500">No JSON payload for this event.</p>
+                <p className="text-sm text-gray-500">No JSON payload for this event.</p>
               ) : (
                 <table className="min-w-full text-left text-xs">
-                  <thead className="text-slate-500">
+                  <thead className="text-gray-500">
                     <tr>
                       <th className="px-1 py-1">Key</th>
                       <th className="px-1 py-1">Before</th>
@@ -183,17 +183,17 @@ export function AuditTrailPanel({ recentAudit }: AuditTrailPanelProps) {
                         key={d.key}
                         className={
                           d.op === 'added'
-                            ? 'bg-emerald-950/40'
+                            ? 'bg-emerald-50'
                             : d.op === 'removed'
-                              ? 'bg-red-950/40'
+                              ? 'bg-red-50'
                               : d.op === 'changed'
-                                ? 'bg-amber-950/30'
+                                ? 'bg-amber-50'
                                 : undefined
                         }
                       >
-                        <td className="px-1 py-1 font-[var(--mono)] text-slate-300">{d.key}</td>
-                        <td className="px-1 py-1 font-[var(--mono)] text-slate-400 break-all">{d.before}</td>
-                        <td className="px-1 py-1 font-[var(--mono)] text-slate-200 break-all">{d.after}</td>
+                        <td className="px-1 py-1 font-[var(--mono)] text-gray-700">{d.key}</td>
+                        <td className="px-1 py-1 font-[var(--mono)] text-gray-500 break-all">{d.before}</td>
+                        <td className="px-1 py-1 font-[var(--mono)] text-gray-800 break-all">{d.after}</td>
                       </tr>
                     ))}
                   </tbody>

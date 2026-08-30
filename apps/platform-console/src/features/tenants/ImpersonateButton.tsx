@@ -83,7 +83,7 @@ export function ImpersonateButton({ tenant }: ImpersonateButtonProps) {
           setError(null)
           setReason('')
         }}
-        className="rounded-[var(--radius)] border border-amber-700 bg-amber-950/50 px-3 py-1.5 text-sm font-medium text-amber-100 hover:bg-amber-900/50"
+        className="rounded-[var(--radius)] border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
       >
         Impersonate
       </button>
@@ -98,7 +98,7 @@ export function ImpersonateButton({ tenant }: ImpersonateButtonProps) {
               <strong>30 minutes</strong>. The gym&apos;s staff will see a visible banner while this
               is active. This session is fully logged.
             </p>
-            <p className="text-xs text-amber-200/90">
+            <p className="text-xs text-amber-800/90">
               Impersonation is never silent. A new browser tab will open for the tenant admin —
               keep this Platform Console tab open; your own session stays here.
             </p>
@@ -126,9 +126,9 @@ export function ImpersonateButton({ tenant }: ImpersonateButtonProps) {
         }}
       >
         <label className="mt-2 block text-sm" htmlFor="impersonate-reason">
-          <span className="text-slate-400">
+          <span className="text-gray-500">
             Reason{' '}
-            <span className="text-red-300">
+            <span className="text-red-600">
               (required, min {MIN_REASON_LENGTH} chars — audit log)
             </span>
           </span>
@@ -138,7 +138,7 @@ export function ImpersonateButton({ tenant }: ImpersonateButtonProps) {
             disabled={busy}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
-            className="mt-1 w-full rounded-[var(--radius)] border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 disabled:opacity-60"
+            className="mt-1 w-full rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2 text-gray-900 disabled:opacity-60"
             placeholder="e.g. Investigating owner-reported billing mismatch on July invoice…"
           />
         </label>

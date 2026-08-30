@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || ''; // REM-F3: no hardcoded remote URL
   const METHODS = ['cash', 'card_paymob', 'fawry', 'vodafone', 'instapay'];
   function methodLabel(code) {
     const map = {
@@ -1368,7 +1368,8 @@
   // ── Submit retail sale ────────────────────────────────────────
   function posRefundButtonHtml() {
     var RA = window.GfpRefundAction;
-    if (!RA || typeof RA.isEnabled !== 'function' || !RA.isEnabled() || !RA.canRequest()) return '';
+    // Always show when staff can request — do not hide just because the feature cache is stale/false.
+    if (!RA || typeof RA.canRequest !== 'function' || !RA.canRequest()) return '';
     return (
       '<button type="button" class="btn secondary full" id="btnRefundSale">' +
       '<i class="ti ti-receipt-refund"></i> ' +

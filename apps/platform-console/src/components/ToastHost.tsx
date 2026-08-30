@@ -15,10 +15,10 @@ export function ToastHost() {
 
   const tone =
     toast.tone === 'error'
-      ? 'border-red-700 bg-red-950 text-red-100'
+      ? 'border-red-200 bg-red-50 text-red-800'
       : toast.tone === 'success'
-        ? 'border-emerald-700 bg-emerald-950 text-emerald-100'
-        : 'border-slate-600 bg-slate-900 text-slate-100'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+        : 'border-gray-200 bg-white text-gray-900'
 
   return (
     <div

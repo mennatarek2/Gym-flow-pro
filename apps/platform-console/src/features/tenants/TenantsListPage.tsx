@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchTenants } from '@/lib/api'
 import { RiskBandBadge, StatusBadge, TierBadge } from '@/components/Badges'
+import { RenewalFilter } from '@/components/RenewalFilter'
+import { capTone } from '@/features/tenants/UsagePanel'
 import { formatCairoDate, formatCairoDateTime, formatEgp } from '@/lib/format'
 import { isOpsOrAbove } from '@/lib/platform-roles'
 import { useAuthStore } from '@/stores/auth-store'
@@ -24,6 +26,8 @@ export function TenantsListPage() {
   const status = params.get('status') ?? ''
   const tier = params.get('tier') ?? ''
   const riskBand = params.get('riskBand') ?? ''
+  const renewingBefore = params.get('renewingBefore') ?? ''
+  const hasSubscriptionParam = params.get('hasSubscription') ?? ''
   const page = Number(params.get('page') ?? '1') || 1
   const rawPageSize = Number(params.get('pageSize') ?? '20') || 20
   const pageSize = PAGE_SIZE_OPTIONS.includes(rawPageSize) ? rawPageSize : 20
@@ -43,8 +47,8 @@ export function TenantsListPage() {
   }, [searchDraft])
 
   const queryKey = useMemo(
-    () => ['tenants', { search, status, tier, riskBand, page, pageSize }] as const,
-    [search, status, tier, riskBand, page, pageSize],
+    () => ['tenants', { search, status, tier, riskBand, renewingBefore, hasSubscriptionParam, page, pageSize }] as const,
+    [search, status, tier, riskBand, renewingBefore, hasSubscriptionParam, page, pageSize],
   )
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
@@ -55,6 +59,9 @@ export function TenantsListPage() {
         status: status || undefined,
         tier: tier || undefined,
         riskBand: riskBand || undefined,
+        renewingBefore: renewingBefore || undefined,
+        hasSubscription:
+          hasSubscriptionParam === 'false' ? false : hasSubscriptionParam === 'true' ? true : undefined,
         page,
         pageSize,
       }),
@@ -84,21 +91,18 @@ export function TenantsListPage() {
   const selectedStatus = new Set((status || '').split(',').filter(Boolean))
   const selectedTier = new Set((tier || '').split(',').filter(Boolean))
   const selectedRisk = new Set((riskBand || '').split(',').filter(Boolean))
-  const colCount = 10
+  const colCount = 9
 
-  const showOrphanBillingCallout =
-    !!data &&
-    data.totalCount > 0 &&
-    data.items.length > 0 &&
-    data.items.every((row) => !row.status && !row.planTier)
+  const showOrphanBillingCallout = hasSubscriptionParam === 'false'
 
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Tenants</h1>
-          <p className="text-sm text-slate-400">
-            Platform gyms — open a row for billing, health, and ops actions.
+          <h1 className="text-[22px] font-bold tracking-tight text-gray-900">Tenants</h1>
+          <p className="mt-1 text-[13.5px] text-gray-500">
+            Lifecycle control plane — open a row for subscription, usage, health, users, billing, and
+            audit.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -108,17 +112,17 @@ export function TenantsListPage() {
               disabled={!canProvision}
               onClick={() => setProvisionOpen(true)}
               aria-disabled={!canProvision}
-              className="rounded-[var(--radius)] bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-45"
+              className="cp-btn cp-btn-primary disabled:cursor-not-allowed"
             >
-              Provision gym
+              Create Tenant
             </button>
           </span>
-          <label className="flex items-center gap-2 text-sm text-slate-300">
-            <span className="text-slate-400">Rows</span>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="text-gray-500">Rows</span>
             <select
               value={pageSize}
               onChange={(e) => patchParams({ pageSize: e.target.value, page: '1' })}
-              className="rounded-[var(--radius)] border border-slate-600 bg-slate-950 px-2 py-1"
+              className="cp-input w-auto py-1"
             >
               {PAGE_SIZE_OPTIONS.map((n) => (
                 <option key={n} value={n}>
@@ -135,43 +139,49 @@ export function TenantsListPage() {
       {showOrphanBillingCallout ? (
         <div
           role="status"
-          className="rounded-[var(--radius)] border border-amber-800 bg-amber-950/40 px-3 py-2 text-sm text-amber-100"
+          className="rounded-[var(--radius)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
         >
           No billing subscription on these gyms — provision StartTrial or open Platform Ops checklist.
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 rounded-[var(--radius)] border border-slate-700 bg-slate-900/50 p-4">
+      <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 shadow-[var(--shadow-sm)]">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-300">Search gym name / code</span>
+          <span className="text-gray-600">Search gym name / code</span>
           <input
             value={searchDraft}
             onChange={(e) => setSearchDraft(e.target.value)}
-            className="max-w-md rounded-[var(--radius)] border border-slate-600 bg-slate-950 px-3 py-2"
+            className="cp-input max-w-md"
             placeholder="e.g. Cairo or GYM-"
           />
         </label>
         <div className="flex flex-wrap gap-4 text-sm">
           <fieldset>
-            <legend className="mb-1 text-slate-400">Status</legend>
+            <legend className="mb-1 text-gray-500">Status</legend>
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((s) => (
-                <label key={s} className="inline-flex items-center gap-1 rounded border border-slate-700 px-2 py-1">
+                <label
+                  key={s}
+                  className="inline-flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-2 py-1"
+                >
                   <input
                     type="checkbox"
                     checked={selectedStatus.has(s)}
                     onChange={() => toggleCsv('status', s)}
                   />
-                  {s}
+                  {s.replace('_', ' ')}
                 </label>
               ))}
             </div>
           </fieldset>
           <fieldset>
-            <legend className="mb-1 text-slate-400">Tier</legend>
+            <legend className="mb-1 text-gray-500">Plan</legend>
             <div className="flex flex-wrap gap-2">
               {TIER_OPTIONS.map((t) => (
-                <label key={t} className="inline-flex items-center gap-1 rounded border border-slate-700 px-2 py-1">
+                <label
+                  key={t}
+                  className="inline-flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-2 py-1 capitalize"
+                >
                   <input
                     type="checkbox"
                     checked={selectedTier.has(t)}
@@ -183,10 +193,13 @@ export function TenantsListPage() {
             </div>
           </fieldset>
           <fieldset>
-            <legend className="mb-1 text-slate-400">Risk band</legend>
+            <legend className="mb-1 text-gray-500">Health / risk</legend>
             <div className="flex flex-wrap gap-2">
               {RISK_OPTIONS.map((r) => (
-                <label key={r} className="inline-flex items-center gap-1 rounded border border-slate-700 px-2 py-1">
+                <label
+                  key={r}
+                  className="inline-flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-2 py-1"
+                >
                   <input
                     type="checkbox"
                     checked={selectedRisk.has(r)}
@@ -198,31 +211,34 @@ export function TenantsListPage() {
             </div>
           </fieldset>
         </div>
+        <div>
+          <div className="mb-1 text-sm text-gray-500">Renewal</div>
+          <RenewalFilter value={renewingBefore} onChange={(v) => patchParams({ renewingBefore: v || null, page: '1' })} />
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[var(--radius)] border border-slate-700">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-900 text-slate-400">
+      <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-gray-200 bg-white shadow-[var(--shadow-sm)]">
+        <table className="cp-table min-w-[1100px]">
+          <thead>
             <tr>
-              <th className="px-3 py-2 font-medium">Gym Name</th>
-              <th className="px-3 py-2 font-medium">Gym Code</th>
-              <th className="px-3 py-2 font-medium">Tier</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium">Risk</th>
-              <th className="px-3 py-2 font-medium">Score</th>
-              <th className="px-3 py-2 font-medium">Last login</th>
-              <th className="px-3 py-2 font-medium">Billing Cycle</th>
-              <th className="px-3 py-2 font-medium">Period End</th>
-              <th className="px-3 py-2 font-medium">Price</th>
+              <th>Tenant</th>
+              <th>Owner</th>
+              <th>Plan</th>
+              <th>Status</th>
+              <th>Members</th>
+              <th>Renewal</th>
+              <th>Health</th>
+              <th>Last Login</th>
+              <th>Price</th>
             </tr>
           </thead>
           <tbody>
             {isLoading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <tr key={i} className="border-t border-slate-800">
+                  <tr key={i}>
                     {Array.from({ length: colCount }).map((__, j) => (
-                      <td key={j} className="px-3 py-3">
-                        <div className="h-4 animate-pulse rounded bg-slate-800" />
+                      <td key={j}>
+                        <div className="h-4 animate-pulse rounded bg-gray-200" />
                       </td>
                     ))}
                   </tr>
@@ -230,7 +246,7 @@ export function TenantsListPage() {
               : null}
             {isError ? (
               <tr>
-                <td colSpan={colCount} className="px-3 py-8 text-center text-red-300">
+                <td colSpan={colCount} className="py-8 text-center text-red-600">
                   Failed to load tenants.{' '}
                   <button type="button" className="underline" onClick={() => refetch()}>
                     Retry
@@ -240,7 +256,7 @@ export function TenantsListPage() {
             ) : null}
             {!isLoading && !isError && data?.items.length === 0 ? (
               <tr>
-                <td colSpan={colCount} className="px-3 py-8 text-center text-slate-400">
+                <td colSpan={colCount} className="py-8 text-center text-gray-500">
                   No tenants match these filters.{' '}
                   <button
                     type="button"
@@ -258,31 +274,64 @@ export function TenantsListPage() {
             {data?.items.map((row) => (
               <tr
                 key={row.id}
-                className="cursor-pointer border-t border-slate-800 hover:bg-slate-900/80"
+                tabIndex={0}
                 onClick={() => navigate(`/tenants/${row.id}?${params.toString()}`)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') navigate(`/tenants/${row.id}?${params.toString()}`)
                 }}
-                tabIndex={0}
               >
-                <td className="px-3 py-2 font-medium text-slate-100">{row.name}</td>
-                <td className="px-3 py-2 font-[var(--mono)] text-slate-300">{row.gymCode}</td>
-                <td className="px-3 py-2">
+                <td>
+                  <div className="font-semibold text-gray-900">{row.name}</div>
+                  <div className="font-[var(--mono)] text-xs text-gray-400">{row.gymCode}</div>
+                </td>
+                <td>
+                  {row.ownerName ? (
+                    <>
+                      <div className="text-gray-800">{row.ownerName}</div>
+                      <div className="text-xs text-gray-400">{row.ownerEmail}</div>
+                    </>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
+                <td>
                   <TierBadge tier={row.planTier} />
                 </td>
-                <td className="px-3 py-2">
+                <td>
                   <StatusBadge status={row.status} />
                 </td>
-                <td className="px-3 py-2">
-                  <RiskBandBadge band={row.riskBand} />
+                <td>
+                  {row.memberCount == null ? (
+                    <span className="text-gray-400">—</span>
+                  ) : (
+                    (() => {
+                      const tone = capTone(row.memberCount!, row.memberCap ?? null)
+                      const toneClass =
+                        tone === 'red'
+                          ? 'text-red-600'
+                          : tone === 'amber'
+                            ? 'text-amber-700'
+                            : 'text-gray-800'
+                      return (
+                        <span className={`font-[var(--mono)] tabular-nums ${toneClass}`}>
+                          {row.memberCount!.toLocaleString('en-US')}
+                          {row.memberCap != null ? ` / ${row.memberCap.toLocaleString('en-US')}` : ' / ∞'}
+                        </span>
+                      )
+                    })()
+                  )}
                 </td>
-                <td className="px-3 py-2 font-[var(--mono)] tabular-nums text-slate-300">
-                  {row.healthScore == null ? '—' : row.healthScore}
+                <td className="tabular-nums text-gray-700">{formatCairoDate(row.currentPeriodEnd)}</td>
+                <td>
+                  <div className="flex items-center gap-2">
+                    <RiskBandBadge band={row.riskBand} />
+                    <span className="font-[var(--mono)] tabular-nums text-gray-400">
+                      {row.healthScore == null ? '—' : row.healthScore}
+                    </span>
+                  </div>
                 </td>
-                <td className="px-3 py-2 text-slate-300">{formatCairoDateTime(row.lastLoginAtUtc)}</td>
-                <td className="px-3 py-2 capitalize text-slate-300">{row.billingCycle ?? '—'}</td>
-                <td className="px-3 py-2 text-slate-300">{formatCairoDate(row.currentPeriodEnd)}</td>
-                <td className="px-3 py-2 text-slate-200">{formatEgp(row.priceEgp)}</td>
+                <td className="text-gray-600">{formatCairoDateTime(row.lastLoginAtUtc)}</td>
+                <td className="tabular-nums text-gray-800">{formatEgp(row.priceEgp)}</td>
               </tr>
             ))}
           </tbody>
@@ -290,7 +339,7 @@ export function TenantsListPage() {
       </div>
 
       {data ? (
-        <div className="flex items-center justify-between text-sm text-slate-400">
+        <div className="flex items-center justify-between text-sm text-gray-500">
           <span>
             Page {data.page} of {Math.max(data.totalPages, 1)} · {data.totalCount} total
             {isFetching ? ' · updating…' : ''}
@@ -299,7 +348,7 @@ export function TenantsListPage() {
             <button
               type="button"
               disabled={!data.hasPrevious}
-              className="rounded border border-slate-700 px-3 py-1 disabled:opacity-40"
+              className="cp-btn cp-btn-secondary"
               onClick={() => patchParams({ page: String(page - 1) })}
             >
               Previous
@@ -307,7 +356,7 @@ export function TenantsListPage() {
             <button
               type="button"
               disabled={!data.hasNext}
-              className="rounded border border-slate-700 px-3 py-1 disabled:opacity-40"
+              className="cp-btn cp-btn-secondary"
               onClick={() => patchParams({ page: String(page + 1) })}
             >
               Next

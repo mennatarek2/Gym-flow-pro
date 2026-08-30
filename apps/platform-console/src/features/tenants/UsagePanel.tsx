@@ -8,7 +8,7 @@ const METRIC_ORDER: UsageMetricKey[] = [
   'branches',
 ]
 
-const METRIC_LABELS: Record<string, string> = {
+export const METRIC_LABELS: Record<string, string> = {
   active_members: 'Active Members',
   whatsapp_messages: 'WhatsApp Messages',
   staff_seats: 'Staff Seats',
@@ -80,12 +80,12 @@ const BAR_CLASS: Record<Exclude<CapTone, 'unlimited'>, string> = {
 }
 
 const TEXT_CLASS: Record<Exclude<CapTone, 'unlimited'>, string> = {
-  green: 'text-emerald-300',
-  amber: 'text-amber-200',
-  red: 'text-red-300',
+  green: 'text-emerald-700',
+  amber: 'text-amber-800',
+  red: 'text-red-600',
 }
 
-function metricLabel(metric: string): string {
+export function metricLabel(metric: string): string {
   return METRIC_LABELS[metric] ?? metric.replace(/_/g, ' ')
 }
 
@@ -97,7 +97,7 @@ export function UsagePanel({ usageCounters }: UsagePanelProps) {
   const usage = toTenantUsageView(usageCounters)
 
   return (
-    <section className="rounded-[var(--radius)] border border-slate-700 bg-slate-900/50 p-4">
+    <section className="rounded-[var(--radius)] border border-gray-200 bg-white p-4">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-medium">
           {usage
@@ -105,15 +105,15 @@ export function UsagePanel({ usageCounters }: UsagePanelProps) {
             : 'Usage this period'}
         </h2>
         {usage?.asOfUtc ? (
-          <p className="text-xs text-slate-500">{formatCairoDateTime(usage.asOfUtc)}</p>
+          <p className="text-xs text-gray-500">{formatCairoDateTime(usage.asOfUtc)}</p>
         ) : null}
       </header>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-gray-500">
         Monthly rollup (not live). Caps drive upsell / overage signals.
       </p>
 
       {!usage ? (
-        <p className="mt-3 text-sm text-slate-400">No usage counters for this period yet.</p>
+        <p className="mt-3 text-sm text-gray-500">No usage counters for this period yet.</p>
       ) : (
         <ul className="mt-4 flex flex-col gap-4">
           {usage.metrics.map((m) => {
@@ -131,19 +131,19 @@ export function UsagePanel({ usageCounters }: UsagePanelProps) {
             return (
               <li key={m.metric}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-                  <span className={tone === 'unlimited' ? 'text-slate-200' : TEXT_CLASS[tone]}>
+                  <span className={tone === 'unlimited' ? 'text-gray-800' : TEXT_CLASS[tone]}>
                     {usedCap}
                   </span>
                   {tone !== 'unlimited' ? (
-                    <span className="font-[var(--mono)] text-xs text-slate-500">{pct}%</span>
+                    <span className="font-[var(--mono)] text-xs text-gray-500">{pct}%</span>
                   ) : null}
                 </div>
 
                 {tone === 'unlimited' ? (
-                  <p className="mt-1 text-xs text-slate-500">Unlimited — no cap on this tier.</p>
+                  <p className="mt-1 text-xs text-gray-500">Unlimited — no cap on this tier.</p>
                 ) : (
                   <div
-                    className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-800"
+                    className="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-200"
                     role="progressbar"
                     aria-valuenow={m.count}
                     aria-valuemin={0}
@@ -160,7 +160,7 @@ export function UsagePanel({ usageCounters }: UsagePanelProps) {
                 {m.metric === 'whatsapp_messages' &&
                 m.overageBilledEgp != null &&
                 m.overageBilledEgp > 0 ? (
-                  <p className="mt-1.5 text-xs font-medium text-amber-200">
+                  <p className="mt-1.5 text-xs font-medium text-amber-800">
                     + {formatEgp(m.overageBilledEgp)} overage this period
                   </p>
                 ) : null}

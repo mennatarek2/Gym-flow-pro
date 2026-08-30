@@ -50,10 +50,24 @@
     }, 4200);
   }
 
-  function problemMessage(data, status) {
-    if (!data) return 'Request failed (' + status + ')';
-    var title = data.title || '';
-    var detail = data.detail || data.message || '';
+  function problemMessage(data, status, error) {
+    if (error && error.code && mapCode(error.code)) return mapCode(error.code);
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch (e) { /* keep */ }
+    }
+    if (!data || typeof data !== 'object') {
+      if (error && error.message && !/^Request failed/i.test(error.message)) return error.message;
+      return 'Request failed (' + status + ')';
+    }
+    var title = data.title || data.Title || (error && error.code) || '';
+    var detail = data.detail || data.Detail || data.message || '';
+    var mapped = mapCode(title);
+    if (mapped) return mapped;
+    if (detail && detail.indexOf(' / ') !== -1) return detail.split(' / ')[0].trim();
+    return detail || title || (error && error.message) || ('Request failed (' + status + ')');
+  }
+
+  function mapCode(title) {
     var map = {
       GATEWAY_REFUND_UNSUPPORTED: t('Gateway refunds are not supported. Use cash or account credit.', 'الاسترداد عبر البوابة غير مدعوم. استخدم كاش أو رصيد الحساب.'),
       SELF_APPROVAL_FORBIDDEN: t('You cannot approve your own refund request.', 'لا يمكنك اعتماد طلب استرداد قدّمته بنفسك.'),
@@ -62,22 +76,22 @@
       SALE_FULLY_REFUNDED: t('This sale is already fully refunded.', 'تم استرداد قيمة هذا البيع بالكامل.'),
       SALE_NOT_FOUND: t('Sale not found.', 'عملية البيع غير موجودة.'),
       REFUND_NOT_FOUND: t('Refund not found.', 'طلب الاسترداد غير موجود.'),
-      FEATURE_DISABLED: t('Refund processing is currently disabled for this gym.', 'معالجة الاسترداد مقفولة لهذا النادي.'),
+      FEATURE_DISABLED: t('Refunds are not included in this gym plan. Upgrade to Growth or ask platform support to enable refunds.', 'الاسترداد غير مفعّل في باقة هذا النادي. رقّي إلى Growth أو اطلب تفعيل الاسترداد من المنصة.'),
       REFUND_EXCEEDS_REMAINDER: t('Amount exceeds the refundable remainder.', 'المبلغ يتجاوز القابل للاسترداد.'),
       INSUFFICIENT_CREDIT: t('Insufficient account credit.', 'رصيد الحساب غير كافٍ.'),
       ORIGINAL_SALE_MOVEMENT_MISSING: t('Cannot restore stock — original sale stock movement is missing.', 'مش قادرين نرجّع المخزون — حركة البيع الأصلية ناقصة.'),
       STOCK_RESTORE_FAILED: t('Refund money path failed while restoring retail stock.', 'فشل إرجاع مخزون التجزئة مع الاسترداد.')
     };
-    if (map[title]) return map[title];
-    if (detail && detail.indexOf(' / ') !== -1) return detail.split(' / ')[0].trim();
-    return detail || title || 'Request failed (' + status + ')';
+    return title ? map[title] || null : null;
   }
 
   function refundsEnabled() {
     var F = global.GfpFeatures;
     if (!F || typeof F.isModuleAvailable !== 'function') return true;
     var reg = F.readCache && F.readCache();
-    return F.isModuleAvailable('refunds', reg);
+    // No cache yet → show Refund UI; API still enforces FEATURE_DISABLED.
+    if (!reg || reg.refunds === undefined) return true;
+    return !!reg.refunds;
   }
 
   function canRequest() {
@@ -447,7 +461,7 @@
       reason: reason
     });
     if (!res.ok) {
-      toast(problemMessage(res.data, res.status), 'err');
+      toast(problemMessage(res.data, res.status, res.error), 'err');
       return;
     }
     toast(t('Refund requested.', 'تم طلب الاسترداد.'), 'ok');
@@ -458,7 +472,7 @@
   async function approveRefund(id) {
     var res = await api('POST', '/refunds/' + id + '/approve');
     if (!res.ok) {
-      toast(problemMessage(res.data, res.status), 'err');
+      toast(problemMessage(res.data, res.status, res.error), 'err');
       return;
     }
     var refund = res.data || {};
@@ -488,7 +502,7 @@
     }
     var res = await api('POST', '/refunds/' + rejectId + '/reject', { note: note });
     if (!res.ok) {
-      toast(problemMessage(res.data, res.status), 'err');
+      toast(problemMessage(res.data, res.status, res.error), 'err');
       return;
     }
     rejectId = null;
@@ -501,6 +515,16 @@
     opts = opts || {};
     if (!opts.saleId) {
       toast(t('This document is not linked to a sale.', 'المستند ده مش مربوط ببيع.'), 'err');
+      return;
+    }
+    if (!refundsEnabled()) {
+      toast(
+        t(
+          'Refunds are not enabled for this gym plan yet. Restart the API after the latest update, or enable Refunds in Platform Console.',
+          'الاسترداد غير مفعّل لباقة هذا النادي. أعد تشغيل الـ API بعد التحديث، أو فعّل Refunds من Platform Console.'
+        ),
+        'err'
+      );
       return;
     }
     ensureDom();

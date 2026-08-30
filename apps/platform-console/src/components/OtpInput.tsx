@@ -45,7 +45,7 @@ export function OtpInput({
           autoFocus={autoFocus && index === 0}
           value={digit}
           aria-label={`Digit ${index + 1}`}
-          className="h-12 w-10 rounded-[var(--radius)] border border-slate-600 bg-slate-900 text-center text-lg text-slate-100 focus:border-sky-400"
+          className="h-12 w-10 rounded-[var(--radius)] border border-gray-300 bg-white text-center text-lg text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
           onChange={(e) => {
             const raw = e.target.value.replace(/\D/g, '')
             if (!raw) {

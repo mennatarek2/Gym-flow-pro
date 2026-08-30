@@ -16,6 +16,14 @@ export function cairoMonthStartYmd(): string {
   return `${today.slice(0, 8)}01`
 }
 
+/** Cairo-today + N calendar days, as yyyy-MM-dd — for renewingBefore-style date filters. */
+export function cairoDatePlusDays(days: number): string {
+  const [y, m, d] = cairoTodayYmd().split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  dt.setUTCDate(dt.getUTCDate() + days)
+  return dt.toISOString().slice(0, 10)
+}
+
 export function formatPercent(rate: number | null | undefined, digits = 1): string {
   if (rate == null || Number.isNaN(rate)) return '—'
   return `${(rate * 100).toFixed(digits)}%`

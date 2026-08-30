@@ -20,13 +20,13 @@ This is the MEMBER app, not the staff web desk.
 OWN (build these):
 - Activate account with Gym Code + staff-issued one-time Activation Code
 - Session (JWT + refresh), logout
-- Home: greeting, gym context, current membership summary (read-only), quick actions, live gym occupancy card (GET /api/member/occupancy — see FLUTTER_MEMBER_OCCUPANCY_PROMPT.md), classes (GET /api/member/sessions — see FLUTTER_MEMBER_CLASSES_PROMPT.md)
+- Home: greeting, gym context, current membership summary (read-only), quick actions, live gym occupancy card (GET /api/member/occupancy — see FLUTTER_MEMBER_OCCUPANCY_PROMPT.md), classes / activities (GET /api/member/activity-bookings/… — see FLUTTER_MEMBER_ACTIVITIES_PROMPT.md)
 - QR check-in: scan the gym’s static QR → send gymCode
 - Notifications: list + mark read
 - Invitations: summary, send (name + phone; National ID optional), history
 - Member store (if tenant has inventory feature): browse products, place order, my orders
 - Offers & Promotions (Member App visibility — GET /api/member/offers; see FLUTTER_MEMBER_OFFERS_PROMPT.md)
-- Profile: display name/gym from login + JWT; language & theme settings; logout
+- Profile hub: identity, membership (read-only), invitations, attendance, orders, bookings, settings — see FLUTTER_MEMBER_PROFILE_PROMPT.md
 - Bilingual EN/AR UI; map API bilingual fields (name / nameAr, message / messageAr)
 
 FORBIDDEN (staff / desk only — never call, never UI):
@@ -167,14 +167,21 @@ Show bilingual success/error (message / messageAr). Cache last successful planNa
 DO NOT call: manual-checkin, barcode-checkin, member-search (staff).
 
 --- B) Notifications ---
+See Frontend/FLUTTER_MEMBER_NOTIFICATIONS_PROMPT.md for the full apply prompt.
+
 GET  /api/notifications?page=1&pageSize=20
 → PagedResult<NotificationDto>
+GET  /api/notifications/unread-count
+→ { count }
 POST /api/notifications/{id}/read
 → { message }
+POST /api/notifications/read-all
+→ { message }
 
-NotificationDto: id, title, titleAr, body, bodyAr, channel ("push"|"whatsapp"), sentAt?, isRead
+NotificationDto: id, title, titleAr, body, bodyAr, channel ("in_app"|"push"|"whatsapp"), sentAt?, isRead
 
-Controller resolves the member from JWT (sub fallback). Do not send memberId query.
+Server resolves GymMember from JWT `sub` (Identity id). Do NOT send memberId.
+Do NOT call /api/staff-notifications or POST /api/notifications/send-bulk.
 
 --- C) Invitations ---
 GET  /api/invitation/summary
@@ -275,7 +282,7 @@ Authenticated shell (bottom nav):
 2. Check-in — QR scanner
 3. Activity — notifications (+ optional invitation history segment)
 4. Store — products / cart / my orders (hide if inventory flag off / 404 FEATURE_DISABLED)
-5. Profile — name, gym, language, theme, logout
+5. Profile hub — FLUTTER_MEMBER_PROFILE_PROMPT.md (Phase 1 aggregate; Phase 2 /member/me)
 
 Also:
 - InvitationsScreen (summary + Invite a Friend + history)
@@ -314,7 +321,7 @@ Status colors: Active green, Expired red, Frozen cyan, Pending amber.
 
 1. Scaffold + theme + l10n + Dio + secure storage + GoRouter
 2. Activate + refresh + auth gate
-3. Home shell + Profile logout
+3. Home shell + Profile hub (see FLUTTER_MEMBER_PROFILE_PROMPT.md)
 4. QR check-in
 5. Notifications
 6. Invitations (summary + send + history)
