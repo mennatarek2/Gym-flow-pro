@@ -34,10 +34,11 @@ fs.mkdirSync(outRoot, { recursive: true });
 
 copyRecursive(path.join(srcApp, '(dashboard)'), path.join(outRoot, 'dashboard'));
 copyRecursive(path.join(srcApp, 'auth'), path.join(outRoot, 'auth'));
+copyRecursive(path.join(srcApp, 'member'), path.join(outRoot, 'member'));
 copyRecursive(path.join(srcApp, 'shared'), path.join(outRoot, 'shared'));
 
 for (const dir of ['uploads', 'logs']) {
   fs.mkdirSync(path.join(outRoot, dir), { recursive: true });
 }
 
-console.log('Done. Dashboard → wwwroot/dashboard, auth → wwwroot/auth, shared → wwwroot/shared');
+console.log('Done. Dashboard → wwwroot/dashboard, auth → wwwroot/auth, member → wwwroot/member, shared → wwwroot/shared');

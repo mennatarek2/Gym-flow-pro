@@ -25,9 +25,5 @@
   "devDependencies": {
     "turbo": "^1.10.0",
     "typescript": "^5.0.0"
-  },
-  "overrides": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
   }
 }

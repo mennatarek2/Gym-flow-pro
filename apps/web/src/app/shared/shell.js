@@ -457,7 +457,11 @@
           '"></i>' +
           '<span>' +
           tLabel(item.label, item.labelAr) +
-          '</span></a>';
+          '</span>' +
+          (item.key === 'notifications'
+            ? '<span class="gfp-notif-badge" hidden></span>'
+            : '') +
+          '</a>';
       });
 
       html += '</div></div>';

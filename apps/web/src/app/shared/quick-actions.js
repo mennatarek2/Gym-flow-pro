@@ -116,6 +116,33 @@
       accent: 'qa-freeze',
       href: '/dashboard/memberships/',
       access: { kind: 'permission', value: 'memberships.freeze' }
+    },
+    {
+      key: 'book_class',
+      en: 'Book Class',
+      ar: 'حجز حصة',
+      icon: 'ti-calendar-plus',
+      accent: 'qa-class',
+      href: '/dashboard/classes/',
+      access: { kind: 'permission', value: ['classes.view', 'members.view'] }
+    },
+    {
+      key: 'view_classes',
+      en: 'View Classes',
+      ar: 'عرض الحصص',
+      icon: 'ti-calendar-event',
+      accent: 'qa-class',
+      href: '/dashboard/classes/',
+      access: { kind: 'permission', value: ['classes.view', 'members.view'] }
+    },
+    {
+      key: 'checkin_member',
+      en: 'Check-in Member',
+      ar: 'تسجيل حضور عضو',
+      icon: 'ti-user-check',
+      accent: 'qa-checkin',
+      href: '/dashboard/attendance/',
+      access: { kind: 'permission', value: ['checkin.manual', 'attendance.view'] }
     }
   ];
 

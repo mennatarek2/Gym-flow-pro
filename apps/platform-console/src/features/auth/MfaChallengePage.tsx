@@ -54,32 +54,32 @@ export function MfaChallengePage() {
       <InternalStrip />
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-12">
         <div>
-          <h1 className="text-2xl font-semibold">Enter authenticator code</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="text-2xl font-semibold text-gray-900">Enter authenticator code</h1>
+          <p className="mt-2 text-sm text-gray-500">
             Platform Console access requires two-factor authentication because this tool can view every gym&apos;s account.
           </p>
         </div>
         <form
           onSubmit={onSubmit}
-          className="flex flex-col gap-4 rounded-[var(--radius)] border border-slate-700 bg-slate-900/70 p-6"
+          className="flex flex-col gap-4 rounded-[var(--radius)] border border-gray-200 bg-white p-6"
         >
           <OtpInput value={code} onChange={setCode} autoFocus />
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-gray-500">
             Code not working? Make sure your device&apos;s clock is correct — TOTP drifts when the device time is off.
           </p>
           {error ? (
-            <p role="alert" className="text-sm text-red-300">
+            <p role="alert" className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
               {error}
             </p>
           ) : null}
           <button
             type="submit"
             disabled={submitting || code.length < 6}
-            className="rounded-[var(--radius)] bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-500 disabled:opacity-60"
+            className="rounded-[var(--radius)] bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {submitting ? 'Verifying…' : 'Verify'}
           </button>
-          <Link to="/login" onClick={() => clearMfaFlow()} className="text-center text-sm text-slate-400 underline">
+          <Link to="/login" onClick={() => clearMfaFlow()} className="text-center text-sm text-gray-500 underline">
             Back to login
           </Link>
         </form>

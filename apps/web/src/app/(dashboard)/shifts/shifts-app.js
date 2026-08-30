@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  var API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || ''; // REM-F3
 
   var SHIFT_409 = {
     SHIFT_ALREADY_OPEN: 'A shift is already open for this staff member. Close it before opening another.',

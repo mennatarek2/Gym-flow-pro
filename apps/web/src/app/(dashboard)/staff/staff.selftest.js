@@ -38,6 +38,8 @@ assert(R.isCreatableRole('Trainer') && !R.isCreatableRole('Owner') && !R.isCreat
 assert(R.formatLastLogin(null).text === 'Never logged in', 'null last login');
 assert(R.formatLastLogin(undefined).cls === 'never', 'undefined last login');
 assert(R.formatLastLogin('not-a-date').text === 'Never logged in', 'invalid last login');
+assert(R.parseApiUtc('2026-08-26T17:28:00').getTime() === R.parseApiUtc('2026-08-26T17:28:00Z').getTime(),
+  'UTC without Z treated as UTC');
 
 var rec = R.permissionsForRole('Receptionist');
 assert(rec.indexOf('members.view') !== -1, 'receptionist has members.view');

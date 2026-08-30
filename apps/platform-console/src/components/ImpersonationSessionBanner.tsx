@@ -29,11 +29,11 @@ export function ImpersonationSessionBanner() {
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-800 bg-amber-950/90 px-4 py-2 text-sm text-amber-50"
+      className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
     >
       <span>
         Active support session: <strong>{session.gymName}</strong>
-        <span className="text-amber-200/80"> ({session.gymCode})</span>
+        <span className="text-amber-700"> ({session.gymCode})</span>
         {mins > 0 ? (
           <>
             , expires in <strong>{mins} min</strong>
@@ -44,7 +44,7 @@ export function ImpersonationSessionBanner() {
       </span>
       <button
         type="button"
-        className="rounded border border-amber-700 px-2 py-0.5 text-xs hover:bg-amber-900"
+        className="rounded border border-amber-300 px-2 py-0.5 text-xs text-amber-900 hover:bg-amber-100"
         onClick={() => setSession(null)}
       >
         Dismiss indicator

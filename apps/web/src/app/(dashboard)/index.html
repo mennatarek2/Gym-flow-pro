@@ -9,9 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <!--
-  Operational overview — permission-gated widgets, real APIs only.
-  Hierarchy: KPIs → Quick Actions → occupancy → attendance/finance.
-  No Needs Attention / Today-at-a-glance duplicates.
+  Role-aware gym dashboard — permission-gated widgets, real APIs only.
+  Hierarchy: Financial overview → Today → Quick Actions → Business overview → Operations → Needs attention.
+  Expenses, profit, and margin are shown only when the cash-expense capability and permission exist.
 -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -77,6 +77,11 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .tb-gym-name{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--lts)}
 .tb-gym-name-ar{font-family:var(--fa);font-size:12px;color:var(--ltt);direction:rtl}
 .content{padding:24px 32px;flex:1}
+.dash-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:20px}
+.dash-eyebrow{font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--l600)}
+.dash-intro h1{font-family:var(--fd);font-size:28px;line-height:1.15;margin-top:4px}
+.dash-intro p{font-size:14px;color:var(--ltt);margin-top:5px}
+.dash-intro-meta{font-size:12px;color:var(--ltt);white-space:nowrap}
 
 .widget-grid{
   display:grid;
@@ -99,6 +104,9 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .dash-widget-title i{color:var(--l600)}
 .dash-widget-sub{font-size:12px;color:var(--ltt);margin-top:2px}
 .dash-widget-body{flex:1;min-width:0}
+.dash-section-label{grid-column:1/-1;display:flex;align-items:baseline;gap:10px;padding:6px 2px 0}
+.dash-section-label span{font-family:var(--fd);font-size:15px;font-weight:800}
+.dash-section-label small{font-size:12px;color:var(--ltt)}
 .dash-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .dash-kpi-row.compact{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
 .dash-kpi{background:var(--ls2);border-radius:var(--rmd);padding:12px 14px;cursor:default}
@@ -156,6 +164,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .dash-quick-item.qa-refund .dash-quick-ico{background:var(--dng100);color:var(--dng500)}
 .dash-quick-item.qa-offer .dash-quick-ico{background:var(--suc100);color:var(--suc500)}
 .dash-quick-item.qa-freeze .dash-quick-ico{background:var(--inf100);color:var(--inf500)}
+.dash-quick-item.qa-class .dash-quick-ico{background:var(--l100);color:var(--l600)}
 .dash-quick-item.qa-add{
   border-style:dashed;background:transparent;color:var(--lts);cursor:pointer;
 }
@@ -217,6 +226,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .dash-qa-pick .qa-refund,.dash-quick-ico.qa-refund{background:var(--dng100);color:var(--dng500)}
 .dash-qa-pick .qa-offer,.dash-quick-ico.qa-offer{background:var(--suc100);color:var(--suc500)}
 .dash-qa-pick .qa-freeze,.dash-quick-ico.qa-freeze{background:var(--inf100);color:var(--inf500)}
+.dash-qa-pick .qa-class,.dash-quick-ico.qa-class{background:var(--l100);color:var(--l600)}
 .dash-qa-rows{list-style:none;display:flex;flex-direction:column;gap:8px}
 .dash-qa-row{
   display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--ls3);
@@ -233,6 +243,17 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .dash-toast.show{display:block}
 .dash-toast.ok{background:var(--suc100);color:var(--suc500)}
 .dash-toast.err{background:var(--dng100);color:var(--dng500)}
+.dash-breakdown{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:12px}
+.dash-breakdown>div{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--ls3);border-radius:var(--rsm);font-size:12px}
+.dash-breakdown strong{font-family:var(--fd)}
+.dash-attention-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.dash-attention-item{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1px solid var(--ls3);border-radius:var(--rsm);color:inherit;text-decoration:none}
+.dash-attention-item:hover{border-color:var(--l500);background:var(--l100)}
+.dash-attention-item>.ti{font-size:19px;color:var(--wrn500);flex-shrink:0}
+.dash-attention-item span{flex:1;font-size:13px}
+.dash-attention-item strong{font-family:var(--fd);font-size:13px}
+.dash-empty{display:flex;align-items:center;gap:9px;color:var(--ltt);padding:12px 0}
+.dash-empty .ti{font-size:20px;color:var(--suc500)}
 .dash-alert-list{display:flex;flex-direction:column;gap:8px}
 .dash-alert{
   display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--rmd);
@@ -261,9 +282,12 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 @keyframes dash-skel{to{background-position:-200% 0}}
 .dash-chart-empty{display:flex;align-items:center;justify-content:center;height:100%;text-align:center;padding:12px}
 .dash-chart-hdr{display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--fd);font-size:13px;font-weight:700}
+#financePeriodSeg{max-width:100%;overflow-x:auto}
 .dash-seg{display:inline-flex;border:1px solid var(--ls3);border-radius:var(--rmd);overflow:hidden;margin-inline-start:auto}
 .dash-seg-btn{border:none;background:var(--ls2);padding:4px 10px;font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer;color:var(--lts)}
 .dash-seg-btn.act{background:var(--l500);color:var(--c900)}
+.dash-custom-range{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.dash-custom-range input{max-width:145px;border:1px solid var(--ls3);border-radius:var(--rsm);padding:7px 8px;background:var(--ls1);color:var(--ltp)}
 .dash-local-err{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .dash-local-err p{color:var(--ltt);font-size:13px}
 .occ-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
@@ -299,8 +323,11 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}[dir="rtl"] .main{margin-right:0}
   .content{padding:16px}.topbar{padding:0 16px}
+  .dash-intro{align-items:flex-start;flex-direction:column;gap:8px}
+  .dash-intro h1{font-size:23px}
   .mob-toggle{display:flex!important}
   .dash-quick{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dash-chart-hdr #financePeriodSeg{width:100%;margin-inline-start:0}
 }
 .mob-toggle{display:none!important;width:36px;height:36px;align-items:center;justify-content:center;border:none;background:var(--ls2);border-radius:var(--rmd);cursor:pointer;font-size:18px;color:var(--lts)}
 </style>
@@ -330,7 +357,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
     <header class="topbar">
       <div class="tb-left">
         <button class="mob-toggle" id="mobToggle" type="button"><i class="ti ti-menu-2"></i></button>
-        <div class="tb-breadcrumb">Overview</div>
+        <div class="tb-breadcrumb">Dashboard</div>
       </div>
       <div class="tb-right">
         <div>
@@ -341,6 +368,14 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
     </header>
 
     <div class="content">
+      <div class="dash-intro">
+        <div>
+          <div class="dash-eyebrow">Gym operations</div>
+          <h1 id="dashboardHeadline">Your gym dashboard</h1>
+          <p id="dashboardSubtitle">What is happening in your gym today, and what needs attention?</p>
+        </div>
+        <span class="dash-intro-meta">Live data · Cairo calendar day</span>
+      </div>
       <div class="widget-grid" id="widgetGrid" aria-live="polite">
         <div class="dash-widget" style="grid-column:span 12"><div class="dash-muted">Loading widgets…</div></div>
       </div>
@@ -349,6 +384,6 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 </div>
 
 <script src="/shared/quick-actions.js?v=5"></script>
-<script src="/dashboard/dashboard-home.js?v=theme1"></script>
+<script src="/dashboard/dashboard-home.js?v=roleaware3"></script>
 </body>
 </html>

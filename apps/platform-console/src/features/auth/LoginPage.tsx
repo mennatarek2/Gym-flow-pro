@@ -56,43 +56,43 @@ export function LoginPage() {
       <InternalStrip />
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">Sign in</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="text-2xl font-semibold text-gray-900">Sign in</h1>
+          <p className="mt-2 text-sm text-gray-500">
             Platform Console access requires two-factor authentication because this tool can view every gym&apos;s account.
           </p>
         </div>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-[var(--radius)] border border-slate-700 bg-slate-900/70 p-6">
+        <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-[var(--radius)] border border-gray-200 bg-white p-6">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">Email</span>
+            <span className="text-gray-700">Email</span>
             <input
               type="email"
               required
               autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-[var(--radius)] border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100"
+              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2 text-gray-900"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-300">Password</span>
+            <span className="text-gray-700">Password</span>
             <input
               type="password"
               required
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-[var(--radius)] border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100"
+              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2 text-gray-900"
             />
           </label>
           {error ? (
-            <p role="alert" className="rounded-[var(--radius)] border border-red-800 bg-red-950/50 px-3 py-2 text-sm text-red-200">
+            <p role="alert" className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
               {error}
             </p>
           ) : null}
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-[var(--radius)] bg-sky-600 px-4 py-2 font-medium text-white hover:bg-sky-500 disabled:opacity-60"
+            className="rounded-[var(--radius)] bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {submitting ? 'Signing in…' : 'Continue'}
           </button>

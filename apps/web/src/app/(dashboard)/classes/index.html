@@ -7,7 +7,7 @@
 <meta name="description" content="Front-desk class sessions and bookings.">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="classes.css">
+<link rel="stylesheet" href="classes.css?v=flow6">
 </head>
 <body>
 <div class="app">
@@ -25,29 +25,47 @@
   <div class="page-header">
     <div class="ph-left">
       <h1 class="page-title">Classes <span class="title-ar">/ الحصص</span></h1>
-      <p class="page-subtitle">Today's sessions, bookings, and check-in</p>
+      <p class="page-subtitle">What classes are happening — activity, time, coach, and capacity</p>
     </div>
-    <div class="ph-right date-nav">
-      <button type="button" class="date-btn" id="btnPrev"><i class="ti ti-chevron-left"></i></button>
-      <div class="date-display" id="dateDisplay"></div>
-      <input type="date" id="datePick" class="date-pick">
-      <button type="button" class="date-btn" id="btnNext"><i class="ti ti-chevron-right"></i></button>
-      <button type="button" class="btn-today" id="btnToday">Today</button>
-      <button type="button" class="btn-refresh" id="btnRefresh"><i class="ti ti-refresh"></i></button>
+    <div class="ph-right day-controls">
+      <div class="day-chips" role="group" aria-label="Quick dates">
+        <button type="button" class="day-chip is-active" id="chipToday" data-range="today">Today</button>
+        <button type="button" class="day-chip" id="chipTomorrow" data-range="tomorrow">Tomorrow</button>
+        <button type="button" class="day-chip" id="chipWeek" data-range="week">This week</button>
+      </div>
+      <div class="date-nav" role="group" aria-label="Date navigation">
+        <button type="button" class="date-btn" id="btnPrev" aria-label="Previous day"><i class="ti ti-chevron-left"></i></button>
+        <button type="button" class="date-display" id="dateDisplay" aria-live="polite"></button>
+        <input type="date" id="datePick" class="date-pick" aria-label="Pick date">
+        <button type="button" class="date-btn" id="btnNext" aria-label="Next day"><i class="ti ti-chevron-right"></i></button>
+        <button type="button" class="btn-today" id="btnToday">Today</button>
+        <button type="button" class="btn-refresh" id="btnRefresh" aria-label="Refresh"><i class="ti ti-refresh"></i></button>
+      </div>
     </div>
   </div>
-  <div class="stats-bar">
-    <div class="stat-pill"><i class="ti ti-calendar-event"></i><span id="statSessions">0</span> Sessions</div>
-    <div class="stat-pill"><i class="ti ti-users"></i><span id="statBooked">0</span> Booked</div>
-    <div class="stat-pill active"><i class="ti ti-check"></i><span id="statCheckedIn">0</span> Checked in</div>
+
+  <div class="toolbar">
+    <label class="filter-field">
+      <span class="filter-label">Activity</span>
+      <select id="activityFilter" class="filter-select" aria-label="Filter by activity">
+        <option value="">All Activities</option>
+      </select>
+    </label>
+    <div class="stats-bar" aria-live="polite">
+      <div class="stat-pill"><i class="ti ti-calendar-event"></i><span id="statSessions">0</span> Sessions</div>
+      <div class="stat-pill"><i class="ti ti-users"></i><span id="statBooked">0</span> Booked</div>
+      <div class="stat-pill active"><i class="ti ti-check"></i><span id="statCheckedIn">0</span> Checked in</div>
+    </div>
   </div>
+
   <div class="sessions-list" id="sessionsList"></div>
+  <div id="facilitiesSection" hidden></div>
 </div>
 </div>
 </div>
 <div class="modal-overlay drawer-overlay" id="drawerOverlay"><div class="drawer" id="drawerContent"></div></div>
-<div class="modal-overlay" id="bookOverlay"><div class="modal" id="bookContent"></div></div>
+<div class="modal-overlay" id="bookOverlay"><div class="modal book-modal" id="bookContent"></div></div>
 <div class="toast" id="toast"></div>
-<script src="classes-app.js"></script>
+<script src="classes-app.js?v=flow10"></script>
 </body>
 </html>

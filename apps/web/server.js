@@ -2,28 +2,73 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const text = fs.readFileSync(filePath, 'utf8');
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq < 1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
+function normalizeApiBase(raw) {
+  if (!raw) return '';
+  const c = String(raw).trim().replace(/\/+$/, '');
+  if (!c) return '';
+  return c.endsWith('/api') ? c : `${c}/api`;
+}
+
+loadEnvFile(path.join(__dirname, '.env'));
+loadEnvFile(path.join(__dirname, '.env.local'));
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+const CONFIGURED_API_BASE = normalizeApiBase(
+  process.env.GFP_API_BASE || process.env.NEXT_PUBLIC_API_URL || ''
+);
 const STATIC_ROOT = path.join(__dirname, 'src', 'app');
 const DASH_ROOT = path.join(STATIC_ROOT, '(dashboard)');
+const MEMBER_ROOT = path.join(STATIC_ROOT, 'member');
 const SHARED_ROOT = path.join(STATIC_ROOT, 'shared');
 const SHARED_SCRIPTS = [
   '/shared/api-config.js',
-  '/shared/api-client.js',
+  '/shared/api-client.js?v=refund1',
   '/shared/authz.js',
-  '/shared/features.js?v=5',
+  '/shared/features.js?v=7',
   '/shared/i18n.js',
   '/shared/theme.js?v=1',
   '/shared/nav.js?v=4',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=5',
-  '/shared/shell.js?v=theme1',
+  '/shared/shell.js?v=theme2',
+  '/shared/staff-notifications.js?v=2',
   '/shared/quick-actions.js?v=5',
-  '/shared/refund-action.js?v=1',
+  '/shared/refund-action.js?v=3',
 ];
 
 const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1', '/shared/refund-action.css', '/shared/theme.css?v=2'];
+
+// Member App pages have no staff nav/shell/quick-actions/inventory context.
+const MEMBER_SHARED_SCRIPTS = [
+  '/shared/api-config.js',
+  '/shared/api-client.js',
+  '/shared/authz.js',
+  '/shared/i18n.js',
+  '/shared/theme.js?v=1',
+];
+const MEMBER_SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1', '/shared/theme.css?v=2'];
 
 function sharedScriptTags() {
   return SHARED_SCRIPTS.map((src) => `<script src="${src}"></script>`).join('\n') + '\n';
@@ -41,11 +86,13 @@ function hasStylesheetHref(html, href) {
   return new RegExp('<link[^>]+href=["\']' + esc + '["\']', 'i').test(html);
 }
 
-function sendHtml(res, filePath) {
+function sendHtml(res, filePath, memberScope = false) {
   let html = fs.readFileSync(filePath, 'utf8');
 
-  const missingCss = SHARED_STYLES.filter((href) => !hasStylesheetHref(html, href));
-  const missingJs = SHARED_SCRIPTS.filter((src) => !hasScriptSrc(html, src));
+  const scripts = memberScope ? MEMBER_SHARED_SCRIPTS : SHARED_SCRIPTS;
+  const styles = memberScope ? MEMBER_SHARED_STYLES : SHARED_STYLES;
+  const missingCss = styles.filter((href) => !hasStylesheetHref(html, href));
+  const missingJs = scripts.filter((src) => !hasScriptSrc(html, src));
   const needEarly = !html.includes('data-gfp-early-locale');
   const needThemeBoot = !html.includes('data-gfp-theme-boot');
 
@@ -53,6 +100,10 @@ function sendHtml(res, filePath) {
   // Shared CSS (esp. typography + theme) must load AFTER page styles → end of <head>.
   const headStart = [];
   const headEnd = [];
+  if (CONFIGURED_API_BASE && !/<meta[^>]+name=["']gfp-api-base["']/i.test(html)) {
+    const safe = CONFIGURED_API_BASE.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    headStart.push(`<meta name="gfp-api-base" content="${safe}">`);
+  }
   if (needThemeBoot) {
     headStart.push(
       '<style data-gfp-theme-boot>html[data-theme="dark"]{color-scheme:dark;background:#151716;--lbg:#151716;--ls1:#1C201D;--ls2:#222722;--ls3:#2E342F;--ltp:#E8EBE6;--lts:#B5BBB4;--ltt:#8C948A;--suc100:#16351F;--dng100:#3A1C1C;--wrn100:#3A2E12;--inf100:#1A2A44;--l100:rgba(122,204,0,.16);--sh1:0 1px 2px rgba(0,0,0,.28)}html[data-theme="dark"] body{background:#151716;color:#E8EBE6}</style>'
@@ -212,6 +263,41 @@ app.use((req, res, next) => {
     }
   }
 
+  // -- MEMBER APP --
+  if (url.startsWith('/member')) {
+    const sub = url.replace(/^\/member\/?/, '').replace(/\/+$/, '');
+
+    if (!sub) {
+      if (url === '/member') {
+        res.redirect(301, '/member/');
+        return;
+      }
+      const f = path.join(MEMBER_ROOT, 'index.html');
+      if (fs.existsSync(f)) {
+        sendHtml(res, f, true);
+        return;
+      }
+    }
+
+    const exact = path.join(MEMBER_ROOT, sub);
+    if (fs.existsSync(exact) && fs.statSync(exact).isFile()) {
+      if (exact.endsWith('.html')) sendHtml(res, exact, true);
+      else res.sendFile(exact);
+      return;
+    }
+
+    const idx = path.join(MEMBER_ROOT, sub, 'index.html');
+    if (fs.existsSync(idx)) {
+      if (!url.endsWith('/')) {
+        const q = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+        res.redirect(301, '/member/' + sub + '/' + q);
+        return;
+      }
+      sendHtml(res, idx, true);
+      return;
+    }
+  }
+
   next();
 });
 
@@ -232,7 +318,7 @@ app.listen(PORT, () => {
   ║  Local:  http://localhost:${PORT}                  ║
   ║  Login:  http://localhost:${PORT}/auth/login/      ║
   ║  Admin:  http://localhost:${PORT}/dashboard/       ║
-  ║  API:    https://reach-lullaby-tighten.ngrok-free.dev/api  ║
+  ║  API:    ${CONFIGURED_API_BASE || 'http://localhost:5000/api'}
   ╚═══════════════════════════════════════════════╝
   `);
 });

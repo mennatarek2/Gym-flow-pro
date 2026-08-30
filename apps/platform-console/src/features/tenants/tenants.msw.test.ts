@@ -33,6 +33,10 @@ const server = setupServer(
         riskBand: 'watch',
         healthScore: 62,
         lastLoginAtUtc: '2026-07-28T09:00:00Z',
+        ownerName: 'Sara Haddad',
+        ownerEmail: 'sara@cairofit.example',
+        memberCount: 412,
+        memberCap: 500,
       },
       {
         id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
@@ -46,6 +50,11 @@ const server = setupServer(
         riskBand: 'healthy',
         healthScore: 88,
         lastLoginAtUtc: null,
+        // No active Owner account and no usage rollup yet — both null, not zero.
+        ownerName: null,
+        ownerEmail: null,
+        memberCount: null,
+        memberCap: null,
       },
       ...provisioned.map((p) => ({
         id: p.id,
@@ -59,6 +68,10 @@ const server = setupServer(
         riskBand: null,
         healthScore: null,
         lastLoginAtUtc: null,
+        ownerName: null,
+        ownerEmail: null,
+        memberCount: 0,
+        memberCap: 300,
       })),
     ]
     if (search) items = items.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
@@ -316,6 +329,22 @@ describe('tenants API (MSW)', () => {
     expect(byRisk.items[0].riskBand).toBe('watch')
     expect(byRisk.items[0].healthScore).toBe(62)
     expect(byRisk.items[0].lastLoginAtUtc).toBeTruthy()
+  })
+
+  it('list rows carry owner and member fields, null when unavailable (P2.1)', async () => {
+    const all = await fetchTenants({ page: 1, pageSize: 20 })
+    const withOwner = all.items.find((i) => i.id === 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')!
+    expect(withOwner.ownerName).toBe('Sara Haddad')
+    expect(withOwner.ownerEmail).toBe('sara@cairofit.example')
+    expect(withOwner.memberCount).toBe(412)
+    expect(withOwner.memberCap).toBe(500)
+
+    // No active Owner account and no usage rollup yet — both fields are null, not a fake zero/default.
+    const withoutOwner = all.items.find((i) => i.id === 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')!
+    expect(withoutOwner.ownerName).toBeNull()
+    expect(withoutOwner.ownerEmail).toBeNull()
+    expect(withoutOwner.memberCount).toBeNull()
+    expect(withoutOwner.memberCap).toBeNull()
   })
 
   it('detail includes cancel_at_period_end, trial end, history, invoices', async () => {

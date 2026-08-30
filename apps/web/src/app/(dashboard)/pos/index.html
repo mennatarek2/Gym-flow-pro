@@ -204,7 +204,7 @@
   </div>
 </div>
 <script>
-const API_BASE=window.API_BASE||'https://reach-lullaby-tighten.ngrok-free.dev/api';
+const API_BASE=window.API_BASE||window.GFP_DEFAULT_API_BASE||'';/*REM-F3*/
 function getToken(){return localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');}
 function getH(){const t=getToken();const h={'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};if(t)h['Authorization']='Bearer '+t;return h;}
 function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
@@ -218,6 +218,6 @@ document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp
 (async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
 </script>
 <script src="/shared/refund-action.js?v=2"></script>
-<script src="pos-app.js?v=desk20"></script>
+<script src="pos-app.js?v=desk21"></script>
 </body>
 </html>
