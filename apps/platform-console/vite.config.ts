@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
-  const apiTarget = env.VITE_API_PROXY_TARGET || 'https://localhost:5001'
+  const apiTarget = env.VITE_API_PROXY_TARGET || 'https://reach-lullaby-tighten.ngrok-free.dev'
 
   return {
     plugins: [react(), tailwindcss()] as any,

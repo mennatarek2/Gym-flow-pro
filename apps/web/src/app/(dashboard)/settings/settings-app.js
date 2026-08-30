@@ -30,7 +30,7 @@
 
   function apiOrigin() {
     try {
-      return new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+      return new URL(window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
     } catch (e) {
       return '';
     }
@@ -156,9 +156,9 @@
     var list = [];
     var origin = apiOrigin();
     if (origin) list.push(origin + path);
-    // Dev fallback: FE often uses ngrok API_BASE while uploads land on local API.
-    if (list.indexOf('https://localhost:5001' + path) < 0) list.push('https://localhost:5001' + path);
-    if (list.indexOf('http://localhost:5001' + path) < 0) list.push('http://localhost:5001' + path);
+    if (list.indexOf('https://reach-lullaby-tighten.ngrok-free.dev' + path) < 0) {
+      list.push('https://reach-lullaby-tighten.ngrok-free.dev' + path);
+    }
     return list;
   }
 

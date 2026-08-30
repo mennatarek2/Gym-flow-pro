@@ -143,7 +143,7 @@ async function apiPost(path, body) {
 /** GET text/html (access card). */
 async function apiHtml(path) {
   const Gfp = window.GfpApi;
-  const base = (window.API_BASE || 'https://localhost:5001/api').replace(/\/$/, '');
+  const base = (window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').replace(/\/$/, '');
   const token =
     localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
   const headers = {};

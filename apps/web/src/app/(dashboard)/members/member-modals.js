@@ -75,7 +75,7 @@
   }
 
   // Compat for remaining non-§2 calls (assign uses memberships API)
-  const API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
   function getAuthHeaders(){
     const t=(Gfp&&Gfp.tokens?Gfp.tokens.getAccess():null)||localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');
     const h={'Content-Type':'application/json'};

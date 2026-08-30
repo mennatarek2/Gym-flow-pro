@@ -79,7 +79,7 @@
 
 <div class="toast" id="toast"></div>
 <script>
-const API_BASE=window.API_BASE||'https://localhost:5001/api';
+const API_BASE=window.API_BASE||'https://reach-lullaby-tighten.ngrok-free.dev/api';
 function getH(){const t=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');const h={'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};if(t)h['Authorization']='Bearer '+t;return h;}
 async function apiGet(p){const r=await fetch(API_BASE+p,{headers:getH()});if(r.status===401){window.location.href='/auth/login/';return null;}if(!r.ok)return null;return r.json();}
 async function apiPut(p,b){const r=await fetch(API_BASE+p,{method:'PUT',headers:getH(),body:JSON.stringify(b)});const d=await r.json().catch(()=>null);return{ok:r.ok,status:r.status,data:d};}

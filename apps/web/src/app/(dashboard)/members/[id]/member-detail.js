@@ -642,7 +642,7 @@
     if(window.GfpApi && typeof window.GfpApi.apiBase==='function'){
       return String(window.GfpApi.apiBase()).replace(/\/$/,'');
     }
-    return String(window.API_BASE || API_BASE || 'https://localhost:5001/api').replace(/\/$/,'');
+    return String(window.API_BASE || API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').replace(/\/$/,'');
   }
 
   async function fetchAccessCardHtml(){

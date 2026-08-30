@@ -3,7 +3,7 @@
   // Trials removed from GymFlow Pro product IA
   window.location.replace('/dashboard/');
   return;
-  const API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
 
   function getToken() {
     return localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');

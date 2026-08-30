@@ -48,7 +48,7 @@
       var b = String(global.API_BASE || '').replace(/\/$/, '');
       if (b) list.push(b);
     } catch (e) { /* ignore */ }
-    if (list.indexOf('https://localhost:5001/api') < 0) list.push('https://localhost:5001/api');
+    if (list.indexOf('https://reach-lullaby-tighten.ngrok-free.dev/api') < 0) list.push('https://reach-lullaby-tighten.ngrok-free.dev/api');
     return list;
   }
 
@@ -110,8 +110,7 @@
       var origin = apiOriginFromBase(base);
       if (origin) add(origin + path);
     });
-    add('https://localhost:5001' + path);
-    add('http://localhost:5001' + path);
+    add('https://reach-lullaby-tighten.ngrok-free.dev' + path);
     return out;
   }
 

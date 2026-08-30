@@ -139,9 +139,9 @@
     var origin = String(window.API_BASE || '').replace(/\/api\/?$/i, '');
     if (!origin) {
       try {
-        origin = new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+        origin = new URL(window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
       } catch (e) {
-        origin = 'https://localhost:5001';
+        origin = 'https://reach-lullaby-tighten.ngrok-free.dev';
       }
     }
     return origin + (u.charAt(0) === '/' ? u : '/' + u);

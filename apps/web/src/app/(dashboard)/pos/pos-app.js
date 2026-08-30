@@ -214,9 +214,9 @@
   }
   function apiOrigin() {
     try {
-      return new URL(window.API_BASE || API_BASE || 'https://localhost:5001/api').origin;
+      return new URL(window.API_BASE || API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
     } catch (e) {
-      return 'https://localhost:5001';
+      return 'https://reach-lullaby-tighten.ngrok-free.dev';
     }
   }
   function uploadsPath(url) {
@@ -244,8 +244,7 @@
     }
     const path = uploadsPath(u);
     if (path) {
-      add('https://localhost:5001' + path);
-      add('http://localhost:5001' + path);
+      add('https://reach-lullaby-tighten.ngrok-free.dev' + path);
       add(apiOrigin() + path);
     }
     if (/^https?:\/\//i.test(u)) add(u);

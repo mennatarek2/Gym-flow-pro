@@ -360,9 +360,9 @@
     }
     if (!origin) {
       try {
-        origin = new URL(window.API_BASE || 'https://localhost:5001/api').origin;
+        origin = new URL(window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
       } catch (e) {
-        origin = 'https://localhost:5001';
+        origin = 'https://reach-lullaby-tighten.ngrok-free.dev';
       }
     }
     return origin + (u.charAt(0) === '/' ? u : '/' + u);
@@ -1453,7 +1453,7 @@
       (Gfp && Gfp.tokens && Gfp.tokens.getAccess && Gfp.tokens.getAccess()) ||
       localStorage.getItem('gfp_access_token') ||
       sessionStorage.getItem('gfp_access_token');
-    var base = window.API_BASE || (Gfp && Gfp.apiBase && Gfp.apiBase()) || 'https://localhost:5001/api';
+    var base = window.API_BASE || (Gfp && Gfp.apiBase && Gfp.apiBase()) || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
     var res = await fetch(base + '/inventory/products/image', {
       method: 'POST',
       headers: {

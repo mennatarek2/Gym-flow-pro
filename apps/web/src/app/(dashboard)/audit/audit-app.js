@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
   const PAGE_SIZE = 20;
 
   function getToken() {

@@ -2,12 +2,14 @@
  * GymFlowPro web — shared API origin.
  * Production (same host as API): uses window.location.origin + '/api'
  * Override: <meta name="gfp-api-base" content="https://your-domain.com/api">
- * Dev override: window.API_BASE = 'http://localhost:5000/api'
+ * Dev default: ngrok tunnel (Swagger origin)
  */
 (function (global) {
+  var NGROK_API = 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+
   function resolveDefaultBase() {
     if (typeof window === 'undefined' || !window.location || !window.location.origin) {
-      return 'http://localhost:5000/api';
+      return NGROK_API;
     }
     var meta = document.querySelector('meta[name="gfp-api-base"]');
     if (meta && meta.getAttribute('content')) {
@@ -16,7 +18,7 @@
     }
     var host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:5000/api';
+      return NGROK_API;
     }
     return window.location.origin + '/api';
   }

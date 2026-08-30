@@ -285,13 +285,13 @@
   }
 
   function hubBase() {
-    const api = (window.API_BASE || 'https://localhost:5001/api').replace(/\/$/, '');
+    const api = (window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').replace(/\/$/, '');
     // Hub is sibling of /api → https://host/hubs/attendance
     if (/\/api$/i.test(api)) return api.replace(/\/api$/i, '') + '/hubs/attendance';
     try {
       return new URL(api).origin + '/hubs/attendance';
     } catch (e) {
-      return 'https://localhost:5001/hubs/attendance';
+      return 'https://reach-lullaby-tighten.ngrok-free.dev/hubs/attendance';
     }
   }
 

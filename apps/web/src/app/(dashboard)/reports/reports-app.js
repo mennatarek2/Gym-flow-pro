@@ -241,7 +241,7 @@
       if (!r.ok) throw { status: r.status, data: r.data };
       return r.data;
     }
-    const API_BASE = window.API_BASE || 'https://localhost:5001/api';
+    const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
     const t = getToken();
     const r = await fetch(API_BASE + path, {
       headers: {
