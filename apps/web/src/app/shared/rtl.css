@@ -63,17 +63,41 @@ html[dir='rtl'] .sb-item .nav-badge {
   margin-inline-start: auto;
 }
 
-/* Mobile sidebar slide — override page CSS that uses physical translateX(-100%) */
-@media (max-width: 768px) {
-  html[dir='rtl'] .sidebar,
-  html[dir='rtl'] #sidebar {
+/* Drawer / collapsed — physical translateX so RTL rails hide off the inline-start edge.
+   Persistent expanded width is --sidebar-w (0 in drawer/collapsed). */
+html[dir='rtl'][data-gfp-sb='collapsed'] .sidebar,
+html[dir='rtl'][data-gfp-sb='collapsed'] #sidebar,
+html[dir='rtl'][data-gfp-sb='drawer'] .sidebar,
+html[dir='rtl'][data-gfp-sb='drawer'] #sidebar {
+  transform: translateX(100%) !important;
+}
+
+html[dir='rtl'][data-gfp-sb='drawer'][data-gfp-sb-open] .sidebar,
+html[dir='rtl'][data-gfp-sb='drawer'][data-gfp-sb-open] #sidebar,
+html[dir='rtl'][data-gfp-sb='drawer'] .sidebar.open,
+html[dir='rtl'][data-gfp-sb='drawer'] #sidebar.open,
+html[dir='rtl'][data-gfp-sb='expanded'] .sidebar,
+html[dir='rtl'][data-gfp-sb='expanded'] #sidebar {
+  transform: translateX(0) !important;
+}
+
+html[dir='rtl'][data-gfp-sb='collapsed'] .main,
+html[dir='rtl'][data-gfp-sb='drawer'] .main {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Before shell.js sets data-gfp-sb: keep RTL mobile from reserving 220px */
+@media (max-width: 767.98px) {
+  html[dir='rtl']:not([data-gfp-sb]) .sidebar,
+  html[dir='rtl']:not([data-gfp-sb]) #sidebar {
     transform: translateX(100%) !important;
   }
-  html[dir='rtl'] .sidebar.open,
-  html[dir='rtl'] #sidebar.open {
+  html[dir='rtl']:not([data-gfp-sb]) .sidebar.open,
+  html[dir='rtl']:not([data-gfp-sb]) #sidebar.open {
     transform: translateX(0) !important;
   }
-  html[dir='rtl'] .main {
+  html[dir='rtl']:not([data-gfp-sb]) .main {
     margin-right: 0 !important;
     margin-left: 0 !important;
   }

@@ -79,6 +79,18 @@
       "kpi":   { "size": 36, "weight": 700, "lineHeight": 1.1, "font": "display" }
     }
   },
+  "breakpoints": {
+    "sm": 640,
+    "md": 768,
+    "lg": 1024,
+    "xl": 1280,
+    "notes": {
+      "sm": "Compact forms / stacked field rows",
+      "md": "Phone to tablet (shell padding, wrapping toolbars)",
+      "lg": "Tablet to desktop (restore page-local padding)",
+      "xl": "Wide desktop; page CSS is source of truth above lg"
+    }
+  },
   "spacing": {
     "base": 4,
     "scale": {

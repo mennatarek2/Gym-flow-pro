@@ -52,13 +52,21 @@ const SHARED_SCRIPTS = [
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=5',
-  '/shared/shell.js?v=theme2',
+  '/shared/shell.js?v=hdr1',
   '/shared/staff-notifications.js?v=2',
   '/shared/quick-actions.js?v=5',
   '/shared/refund-action.js?v=3',
 ];
 
-const SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1', '/shared/refund-action.css', '/shared/theme.css?v=2'];
+const SHARED_STYLES = [
+  '/shared/rtl.css',
+  '/shared/typography.css?v=1',
+  '/shared/refund-action.css',
+  '/shared/theme.css?v=2',
+  '/shared/responsive.css?v=1',
+  '/shared/shell-layout.css?v=1',
+  '/shared/shell-header.css?v=1',
+];
 
 // Member App pages have no staff nav/shell/quick-actions/inventory context.
 const MEMBER_SHARED_SCRIPTS = [
@@ -68,7 +76,12 @@ const MEMBER_SHARED_SCRIPTS = [
   '/shared/i18n.js',
   '/shared/theme.js?v=1',
 ];
-const MEMBER_SHARED_STYLES = ['/shared/rtl.css', '/shared/typography.css?v=1', '/shared/theme.css?v=2'];
+const MEMBER_SHARED_STYLES = [
+  '/shared/rtl.css',
+  '/shared/typography.css?v=1',
+  '/shared/theme.css?v=2',
+  '/shared/responsive.css?v=1',
+];
 
 function sharedScriptTags() {
   return SHARED_SCRIPTS.map((src) => `<script src="${src}"></script>`).join('\n') + '\n';
@@ -100,6 +113,9 @@ function sendHtml(res, filePath, memberScope = false) {
   // Shared CSS (esp. typography + theme) must load AFTER page styles → end of <head>.
   const headStart = [];
   const headEnd = [];
+  if (!/<meta[^>]+name=["']viewport["']/i.test(html)) {
+    headStart.push('<meta name="viewport" content="width=device-width, initial-scale=1">');
+  }
   if (CONFIGURED_API_BASE && !/<meta[^>]+name=["']gfp-api-base["']/i.test(html)) {
     const safe = CONFIGURED_API_BASE.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     headStart.push(`<meta name="gfp-api-base" content="${safe}">`);

@@ -46,6 +46,19 @@ html,
 body,
 #root {
   min-height: 100%;
+  max-width: 100%;
+}
+
+html,
+body {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
 }
 
 body {
@@ -56,6 +69,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   font-size: 14px;
+  overflow-wrap: break-word;
 }
 
 a {

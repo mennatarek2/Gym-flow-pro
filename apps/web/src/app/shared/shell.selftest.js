@@ -201,4 +201,69 @@ assert(I18n.displayBilingualText({ message: 'Open shift', messageAr: 'افتح �
 assert(I18n.displayBilingualText('English / العربية', 'ar') === 'العربية', 'slash split');
 assert(I18n.displayApiError({ error: { message: 'A / ب' } }, 'ar') === 'ب', 'displayApiError');
 
+// ── Sidebar layout clamp (Task 2) ──
+assert(Shell.isDrawerViewport(767) === true, 'drawer below 768');
+assert(Shell.isDrawerViewport(768) === false, 'persistent at 768');
+assert(Shell.clampSidebarWidth(100, 1400) === 180, 'sidebar min 180');
+assert(Shell.clampSidebarWidth(500, 1400) === 360, 'sidebar max 360');
+assert(Shell.clampSidebarWidth(220, 1400) === 220, 'default 220 stays');
+assert(Shell.clampSidebarWidth(400, 800) === 320, 'max leaves 480px for main');
+assert(Shell.getSidebarMaxForViewport(1024) === 360, 'desktop max 360');
+assert(Shell.getSidebarMaxForViewport(768) === 288, 'tablet max vw-480');
+assert(Shell.canResizeSidebar(800) === true, 'resize when persistent and room');
+assert(Shell.canResizeSidebar(700) === false, 'no resize in drawer viewport');
+
+// ── Header CSS (Task 3) ──
+var hdrCss = fs.readFileSync(path.join(sharedDir, 'shell-header.css'), 'utf8');
+assert(hdrCss.indexOf('@media (min-width: 1024px)') !== -1, 'header keeps desktop row');
+assert(hdrCss.indexOf('@media (max-width: 1023px)') !== -1, 'header tablet query');
+assert(hdrCss.indexOf('@media (max-width: 767.98px)') !== -1, 'header mobile query');
+assert(hdrCss.indexOf('@media (max-width: 479.98px)') !== -1, 'header compact-phone query');
+assert(hdrCss.indexOf('.gfp-sb-toggle') !== -1, 'header keeps menu trigger unshrunk');
+assert(hdrCss.indexOf('flex: 1 0 100%') !== -1, 'mobile actions move to second row');
+assert(typeof Shell.wrapTopbarGym === 'function', 'wrapTopbarGym exported');
+assert(typeof Shell.initHeaderLayout === 'function', 'initHeaderLayout exported');
+
+(function () {
+  var gymEn = { id: 'gymName', className: 'gym-name', parentNode: null };
+  var gymAr = { id: 'gymNameAr', className: 'gym-name-ar', parentNode: null };
+  var wrapCreated = null;
+  var right = {
+    querySelector: function (sel) {
+      if (String(sel).indexOf('gfp-tb-gym') !== -1) return wrapCreated;
+      if (sel === '#gymName' || sel === '.tb-gym-name' || sel === '.gym-name') return gymEn;
+      if (sel === '#gymNameAr' || sel === '.tb-gym-name-ar' || sel === '.gym-name-ar') return gymAr;
+      return null;
+    },
+    children: [gymEn, gymAr],
+    insertBefore: function (node) {
+      node.parentNode = this;
+      this.children.unshift(node);
+      wrapCreated = node;
+      return node;
+    }
+  };
+  gymEn.parentNode = right;
+  gymAr.parentNode = right;
+  var origQS = sandbox.document.querySelector;
+  sandbox.document.querySelector = function (sel) {
+    if (sel === '.topbar .tb-right' || sel === '.topbar') return right;
+    return origQS.apply(sandbox.document, arguments);
+  };
+  sandbox.document.createElement = function () {
+    return {
+      className: '',
+      children: [],
+      appendChild: function (ch) {
+        ch.parentNode = this;
+        this.children.push(ch);
+        return ch;
+      }
+    };
+  };
+  Shell.wrapTopbarGym();
+  assert(!!wrapCreated && wrapCreated.className === 'gfp-tb-gym', 'wraps sibling gym names');
+  assert(wrapCreated.children.indexOf(gymEn) !== -1 && wrapCreated.children.indexOf(gymAr) !== -1, 'gym names moved into wrap');
+})();
+
 console.log('All Prompt 2 self-tests passed.');

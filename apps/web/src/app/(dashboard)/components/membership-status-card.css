@@ -34,7 +34,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .section-title i{font-size:20px;color:var(--l600)}
 
 /* Grid */
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:32px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;margin-bottom:32px}
 .compact-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:32px;max-width:600px}
 
 /* ── Full Card ── */

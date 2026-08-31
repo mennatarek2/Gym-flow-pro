@@ -557,6 +557,475 @@
     global.location.replace('/dashboard/inventory/products/');
   }
 
+  /* ── Sidebar ↔ main layout (Task 2) ── */
+  var SB_MIN = 180;
+  var SB_MAX = 360;
+  var SB_DEFAULT = 220;
+  var MAIN_MIN = 480;
+  var DRAWER_BP = 768;
+  var WIDTH_KEY = 'gfp_sidebar_w';
+  var COLLAPSE_PREF_KEY = 'gfp_sidebar_collapsed';
+  var layoutBooted = false;
+  var drawerOpen = false;
+  var collapsedPref = false;
+  var savedWidth = SB_DEFAULT;
+  var dragState = null;
+
+  function getViewportWidth() {
+    return (global.innerWidth || (global.document.documentElement && global.document.documentElement.clientWidth) || 1024);
+  }
+
+  function isDrawerViewport(vw) {
+    return (vw == null ? getViewportWidth() : vw) < DRAWER_BP;
+  }
+
+  function getSidebarMaxForViewport(vw) {
+    vw = vw == null ? getViewportWidth() : vw;
+    return Math.max(SB_MIN, Math.min(SB_MAX, vw - MAIN_MIN));
+  }
+
+  function canResizeSidebar(vw) {
+    vw = vw == null ? getViewportWidth() : vw;
+    return !isDrawerViewport(vw) && getSidebarMaxForViewport(vw) > SB_MIN;
+  }
+
+  function clampSidebarWidth(px, vw) {
+    var n = Number(px);
+    if (!isFinite(n)) n = SB_DEFAULT;
+    var max = getSidebarMaxForViewport(vw);
+    return Math.round(Math.min(max, Math.max(SB_MIN, n)));
+  }
+
+  function compactDefaultWidth(vw) {
+    vw = vw == null ? getViewportWidth() : vw;
+    var fallback = vw < 1024 ? 200 : SB_DEFAULT;
+    return clampSidebarWidth(fallback, vw);
+  }
+
+  function readWidthPref() {
+    try {
+      var raw = global.localStorage.getItem(WIDTH_KEY);
+      if (raw == null) return null;
+      var n = parseInt(raw, 10);
+      return isFinite(n) ? n : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeWidthPref(px) {
+    try {
+      global.localStorage.setItem(WIDTH_KEY, String(px));
+    } catch (e) { /* ignore */ }
+  }
+
+  function readCollapsedPref() {
+    try {
+      return global.localStorage.getItem(COLLAPSE_PREF_KEY) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function writeCollapsedPref(value) {
+    try {
+      global.localStorage.setItem(COLLAPSE_PREF_KEY, value ? '1' : '0');
+    } catch (e) { /* ignore */ }
+  }
+
+  function getSidebarEl() {
+    return global.document.getElementById('sidebar') || global.document.querySelector('.sidebar');
+  }
+
+  function isEmbedShell() {
+    var el = global.document.documentElement;
+    return !!(el && (el.classList.contains('stock-embed') || el.classList.contains('hr-embed')));
+  }
+
+  function ensureShellLayoutCss() {
+    if (!global.document || !global.document.head) return;
+    if (global.document.getElementById('gfp-shell-layout-css')) return;
+    if (global.document.querySelector('link[href*="shell-layout.css"]')) return;
+    var link = global.document.createElement('link');
+    link.id = 'gfp-shell-layout-css';
+    link.rel = 'stylesheet';
+    link.href = '/shared/shell-layout.css?v=1';
+    global.document.head.appendChild(link);
+  }
+
+  function ensureShellHeaderCss() {
+    if (!global.document || !global.document.head) return;
+    if (global.document.getElementById('gfp-shell-header-css')) return;
+    if (global.document.querySelector('link[href*="shell-header.css"]')) return;
+    var link = global.document.createElement('link');
+    link.id = 'gfp-shell-header-css';
+    link.rel = 'stylesheet';
+    link.href = '/shared/shell-header.css?v=1';
+    global.document.head.appendChild(link);
+  }
+
+  function wrapTopbarGym() {
+    var right = global.document && global.document.querySelector('.topbar .tb-right');
+    if (!right || right.querySelector('.gfp-tb-gym')) return;
+    var en =
+      right.querySelector('#gymName') ||
+      right.querySelector('.tb-gym-name') ||
+      right.querySelector('.gym-name');
+    if (!en) return;
+    var ar =
+      right.querySelector('#gymNameAr') ||
+      right.querySelector('.tb-gym-name-ar') ||
+      right.querySelector('.gym-name-ar');
+    var parent = en.parentNode;
+    if (parent && parent !== right && parent.children && parent.children.length <= 2) {
+      parent.classList.add('gfp-tb-gym');
+      return;
+    }
+    var wrap = global.document.createElement('div');
+    wrap.className = 'gfp-tb-gym';
+    parent.insertBefore(wrap, en);
+    wrap.appendChild(en);
+    if (ar && ar.parentNode === parent) wrap.appendChild(ar);
+  }
+
+  function initHeaderLayout() {
+    if (!global.document || !global.document.querySelector) return;
+    if (!global.document.querySelector('.topbar')) return;
+    ensureShellHeaderCss();
+    wrapTopbarGym();
+  }
+
+  function injectSidebarChrome() {
+    var doc = global.document;
+    var sidebar = getSidebarEl();
+    if (!sidebar) return;
+
+    if (!sidebar.id) sidebar.id = 'sidebar';
+
+    var hdr = sidebar.querySelector('.sb-hdr');
+    if (hdr && !doc.getElementById('gfpSbClose')) {
+      var close = doc.createElement('button');
+      close.type = 'button';
+      close.id = 'gfpSbClose';
+      close.className = 'gfp-sb-close';
+      close.innerHTML =
+        '<i class="ti ti-x gfp-sb-close-x" aria-hidden="true"></i>' +
+        '<i class="ti ti-chevron-left gfp-sb-close-collapse" aria-hidden="true"></i>';
+      hdr.appendChild(close);
+    }
+
+    if (!sidebar.querySelector('.gfp-sb-resizer')) {
+      var handle = doc.createElement('div');
+      handle.className = 'gfp-sb-resizer';
+      handle.setAttribute('role', 'separator');
+      handle.setAttribute('aria-orientation', 'vertical');
+      handle.tabIndex = 0;
+      sidebar.appendChild(handle);
+    }
+
+    if (!doc.getElementById('gfpSbOverlay')) {
+      var overlay = doc.createElement('button');
+      overlay.type = 'button';
+      overlay.id = 'gfpSbOverlay';
+      overlay.className = 'gfp-sb-overlay';
+      overlay.setAttribute('aria-label', 'Close menu');
+      overlay.tabIndex = -1;
+      doc.body.appendChild(overlay);
+    }
+
+    var existing = doc.getElementById('mobToggle') || doc.querySelector('.mob-toggle');
+    if (existing) {
+      existing.classList.add('gfp-sb-toggle');
+      existing.setAttribute('aria-controls', sidebar.id);
+      if (!existing.getAttribute('aria-label')) {
+        existing.setAttribute('aria-label', 'Open menu');
+      }
+    } else if (!doc.getElementById('gfpSbToggle')) {
+      var host =
+        doc.querySelector('.topbar .tb-left') ||
+        doc.querySelector('.topbar');
+      if (host) {
+        var btn = doc.createElement('button');
+        btn.type = 'button';
+        btn.id = 'gfpSbToggle';
+        btn.className = 'gfp-sb-toggle mob-toggle';
+        btn.setAttribute('aria-controls', sidebar.id);
+        btn.setAttribute('aria-label', 'Open menu');
+        btn.innerHTML = '<i class="ti ti-menu-2" aria-hidden="true"></i>';
+        host.insertBefore(btn, host.firstChild);
+      }
+    }
+  }
+
+  function syncSidebarControls() {
+    var html = global.document.documentElement;
+    var mode = html.getAttribute('data-gfp-sb');
+    var open = html.hasAttribute('data-gfp-sb-open');
+    var expanded = mode === 'expanded';
+    var toggle =
+      global.document.getElementById('gfpSbToggle') ||
+      global.document.getElementById('mobToggle') ||
+      global.document.querySelector('.gfp-sb-toggle');
+    if (toggle) {
+      toggle.setAttribute('aria-expanded', mode === 'drawer' ? (open ? 'true' : 'false') : 'false');
+      toggle.setAttribute(
+        'aria-label',
+        mode === 'drawer'
+          ? tLabel('Open menu', 'فتح القائمة')
+          : tLabel('Open sidebar', 'فتح الشريط الجانبي')
+      );
+      toggle.title = toggle.getAttribute('aria-label');
+    }
+
+    var close = global.document.getElementById('gfpSbClose');
+    if (close) {
+      close.setAttribute(
+        'aria-label',
+        expanded ? tLabel('Collapse sidebar', 'طي الشريط الجانبي') : tLabel('Close menu', 'إغلاق القائمة')
+      );
+      close.title = close.getAttribute('aria-label');
+    }
+
+    var overlay = global.document.getElementById('gfpSbOverlay');
+    if (overlay) {
+      overlay.setAttribute('aria-label', tLabel('Close menu', 'إغلاق القائمة'));
+      overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+
+    var resizer = global.document.querySelector('.gfp-sb-resizer');
+    if (resizer) {
+      var show = expanded && canResizeSidebar();
+      resizer.hidden = !show;
+      resizer.setAttribute('aria-hidden', show ? 'false' : 'true');
+      resizer.setAttribute('aria-label', tLabel('Resize sidebar', 'تغيير عرض الشريط الجانبي'));
+      resizer.setAttribute('aria-valuemin', String(SB_MIN));
+      resizer.setAttribute('aria-valuemax', String(getSidebarMaxForViewport()));
+      resizer.setAttribute('aria-valuenow', String(savedWidth));
+    }
+
+    var sidebar = getSidebarEl();
+    if (sidebar) {
+      var exposed = mode === 'expanded' || (mode === 'drawer' && open);
+      sidebar.setAttribute('aria-hidden', exposed ? 'false' : 'true');
+      if (mode === 'drawer' && open) sidebar.setAttribute('aria-modal', 'true');
+      else sidebar.removeAttribute('aria-modal');
+      if (exposed) sidebar.removeAttribute('inert');
+      else sidebar.setAttribute('inert', '');
+    }
+  }
+
+  function applySidebarLayout() {
+    var html = global.document.documentElement;
+    if (!html || isEmbedShell()) return;
+    var vw = getViewportWidth();
+    var stored = readWidthPref();
+    savedWidth = clampSidebarWidth(stored != null ? stored : compactDefaultWidth(vw), vw);
+    collapsedPref = readCollapsedPref();
+    html.style.setProperty('--gfp-sb-rail-w', savedWidth + 'px');
+
+    var sidebar = getSidebarEl();
+    if (isDrawerViewport(vw)) {
+      html.setAttribute('data-gfp-sb', 'drawer');
+      html.style.setProperty('--sidebar-w', '0px');
+      if (drawerOpen) html.setAttribute('data-gfp-sb-open', '');
+      else html.removeAttribute('data-gfp-sb-open');
+      if (sidebar) {
+        sidebar.classList.toggle('open', drawerOpen);
+        sidebar.classList.toggle('gfp-open', drawerOpen);
+      }
+    } else {
+      drawerOpen = false;
+      html.removeAttribute('data-gfp-sb-open');
+      if (collapsedPref) {
+        html.setAttribute('data-gfp-sb', 'collapsed');
+        html.style.setProperty('--sidebar-w', '0px');
+        if (sidebar) {
+          sidebar.classList.remove('open');
+          sidebar.classList.remove('gfp-open');
+        }
+      } else {
+        html.setAttribute('data-gfp-sb', 'expanded');
+        html.style.setProperty('--sidebar-w', savedWidth + 'px');
+        if (sidebar) {
+          sidebar.classList.remove('open');
+          sidebar.classList.remove('gfp-open');
+        }
+      }
+    }
+    syncSidebarControls();
+  }
+
+  function setDrawerOpen(next) {
+    drawerOpen = !!next;
+    applySidebarLayout();
+    if (drawerOpen) {
+      var close = global.document.getElementById('gfpSbClose');
+      if (close && close.focus) close.focus();
+    } else {
+      var toggle =
+        global.document.getElementById('gfpSbToggle') ||
+        global.document.getElementById('mobToggle');
+      if (toggle && toggle.focus && getViewportWidth() < DRAWER_BP) toggle.focus();
+    }
+  }
+
+  function setCollapsed(next) {
+    collapsedPref = !!next;
+    writeCollapsedPref(collapsedPref);
+    applySidebarLayout();
+    if (collapsedPref) {
+      var toggle =
+        global.document.getElementById('gfpSbToggle') ||
+        global.document.getElementById('mobToggle');
+      if (toggle && toggle.focus) toggle.focus();
+    }
+  }
+
+  function toggleSidebarLayout() {
+    if (isDrawerViewport()) {
+      setDrawerOpen(!drawerOpen);
+      return;
+    }
+    setCollapsed(!collapsedPref);
+  }
+
+  function closeSidebarLayout() {
+    if (isDrawerViewport()) setDrawerOpen(false);
+    else if (!collapsedPref) setCollapsed(true);
+  }
+
+  function onSidebarPointerDown(e) {
+    if (!canResizeSidebar()) return;
+    if (e.button != null && e.button !== 0) return;
+    var html = global.document.documentElement;
+    if (html.getAttribute('data-gfp-sb') !== 'expanded') return;
+    dragState = {
+      x: e.clientX,
+      w: savedWidth,
+      rtl: isRtl()
+    };
+    html.classList.add('gfp-sb-dragging');
+    if (e.currentTarget && e.currentTarget.setPointerCapture && e.pointerId != null) {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch (err) { /* ignore */ }
+    }
+    e.preventDefault();
+  }
+
+  function onSidebarPointerMove(e) {
+    if (!dragState) return;
+    var dx = e.clientX - dragState.x;
+    var next = dragState.w + (dragState.rtl ? -dx : dx);
+    savedWidth = clampSidebarWidth(next, getViewportWidth());
+    global.document.documentElement.style.setProperty('--sidebar-w', savedWidth + 'px');
+    global.document.documentElement.style.setProperty('--gfp-sb-rail-w', savedWidth + 'px');
+    var resizer = global.document.querySelector('.gfp-sb-resizer');
+    if (resizer) resizer.setAttribute('aria-valuenow', String(savedWidth));
+  }
+
+  function onSidebarPointerUp() {
+    if (!dragState) return;
+    dragState = null;
+    global.document.documentElement.classList.remove('gfp-sb-dragging');
+    writeWidthPref(savedWidth);
+    applySidebarLayout();
+  }
+
+  function onSidebarKeyResize(e) {
+    if (!canResizeSidebar()) return;
+    if (global.document.documentElement.getAttribute('data-gfp-sb') !== 'expanded') return;
+    var step = e.shiftKey ? 24 : 8;
+    var rtl = isRtl();
+    var delta = 0;
+    if (e.key === 'ArrowLeft') delta = rtl ? step : -step;
+    else if (e.key === 'ArrowRight') delta = rtl ? -step : step;
+    else if (e.key === 'Home') {
+      savedWidth = SB_MIN;
+      writeWidthPref(savedWidth);
+      applySidebarLayout();
+      e.preventDefault();
+      return;
+    } else if (e.key === 'End') {
+      savedWidth = getSidebarMaxForViewport();
+      writeWidthPref(savedWidth);
+      applySidebarLayout();
+      e.preventDefault();
+      return;
+    } else return;
+    savedWidth = clampSidebarWidth(savedWidth + delta, getViewportWidth());
+    writeWidthPref(savedWidth);
+    applySidebarLayout();
+    e.preventDefault();
+  }
+
+  function bindSidebarLayout() {
+    var doc = global.document;
+    doc.addEventListener(
+      'click',
+      function (e) {
+        var t = e.target;
+        if (!t || !t.closest) return;
+        if (t.closest('.gfp-sb-toggle') || t.closest('#mobToggle') || t.closest('.mob-toggle')) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSidebarLayout();
+        } else if (t.closest('#gfpSbClose')) {
+          e.preventDefault();
+          closeSidebarLayout();
+        } else if (t.closest('#gfpSbOverlay')) {
+          e.preventDefault();
+          setDrawerOpen(false);
+        } else if (isDrawerViewport() && drawerOpen && t.closest('.sidebar a, .sidebar .gfp-nav-item')) {
+          setDrawerOpen(false);
+        }
+      },
+      true
+    );
+
+    doc.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (isDrawerViewport() && drawerOpen) {
+        setDrawerOpen(false);
+        e.preventDefault();
+      }
+    });
+
+    var resizer = doc.querySelector('.gfp-sb-resizer');
+    if (resizer) {
+      resizer.addEventListener('pointerdown', onSidebarPointerDown);
+      resizer.addEventListener('keydown', onSidebarKeyResize);
+    }
+    global.addEventListener('pointermove', onSidebarPointerMove);
+    global.addEventListener('pointerup', onSidebarPointerUp);
+    global.addEventListener('pointercancel', onSidebarPointerUp);
+
+    var resizeTimer = null;
+    global.addEventListener('resize', function () {
+      if (resizeTimer) global.clearTimeout(resizeTimer);
+      resizeTimer = global.setTimeout(function () {
+        applySidebarLayout();
+      }, 80);
+    });
+  }
+
+  function initSidebarLayout() {
+    if (layoutBooted) return;
+    if (!global.document) return;
+    if (isEmbedShell()) {
+      global.document.documentElement.style.setProperty('--sidebar-w', '0px');
+      return;
+    }
+    if (!getSidebarEl()) return;
+    layoutBooted = true;
+    savedWidth = clampSidebarWidth(readWidthPref() != null ? readWidthPref() : compactDefaultWidth(), getViewportWidth());
+    collapsedPref = readCollapsedPref();
+    ensureShellLayoutCss();
+    injectSidebarChrome();
+    bindSidebarLayout();
+    applySidebarLayout();
+  }
+
   async function boot() {
     if (bootDone) return;
     maybeShopUxRedirect();
@@ -573,6 +1042,8 @@
     ensureShellStyles();
     injectLangToggle();
     injectAppearanceToggle();
+    initHeaderLayout();
+    initSidebarLayout();
     clearInlineOwnerOnlyHacks();
     if (global.GfpI18n && global.GfpI18n.applyDocumentLocale) {
       global.GfpI18n.applyDocumentLocale();
@@ -620,6 +1091,7 @@
         global.GfpI18n.applyDocumentLocale();
       }
       renderShellNav(lastRegistry);
+      syncSidebarControls();
     });
   }
 
@@ -649,11 +1121,22 @@
     applyNavVisibility: renderShellNav,
     enforceRouteAccess: enforceRouteAccess,
     shopUxShouldRedirect: shopUxShouldRedirect,
-    boot: boot
+    boot: boot,
+    clampSidebarWidth: clampSidebarWidth,
+    isDrawerViewport: isDrawerViewport,
+    getSidebarMaxForViewport: getSidebarMaxForViewport,
+    canResizeSidebar: canResizeSidebar,
+    initSidebarLayout: initSidebarLayout,
+    wrapTopbarGym: wrapTopbarGym,
+    initHeaderLayout: initHeaderLayout
   };
   global.useVisibleNav = useVisibleNav;
 
   function start() {
+    if (global.location && /\/dashboard(\/|$)/.test(global.location.pathname)) {
+      ensureShellLayoutCss();
+      ensureShellHeaderCss();
+    }
     boot();
   }
 

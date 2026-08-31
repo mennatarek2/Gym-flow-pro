@@ -6,7 +6,7 @@
 .gfp-refund-box .btn.danger{background:#FEE2E2;color:#991B1B}
 .gfp-refund-box .muted{color:#8C8C8C;font-size:13px}
 .gfp-refund-overlay[hidden]{display:none!important}
-.gfp-refund-box{background:var(--ls1);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:20px}
+.gfp-refund-box{background:var(--ls1);border-radius:16px;width:100%;max-width:min(520px,100%);max-height:90vh;max-height:90dvh;overflow:auto;padding:20px;box-sizing:border-box}
 .gfp-refund-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
 .gfp-refund-hdr h3{font-family:var(--fd,inherit);font-size:18px;margin:0}
 .gfp-refund-x{border:none;background:transparent;cursor:pointer;font-size:20px;color:#6B6B6B}
