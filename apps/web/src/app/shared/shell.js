@@ -664,6 +664,154 @@
     global.document.head.appendChild(link);
   }
 
+  var TABLE_WRAP_SEL =
+    '.table-wrap, .tbl-card, .table-card, .roles-table-card, .att-table-wrap, .offers-table-wrap, .gfp-table-scroll, #tblWrap';
+  var TABLE_SKIP_SEL = '.sidebar, #sidebar';
+  var tableLayoutBooted = false;
+  var tableWrapTimer = null;
+
+  function ensureTableLayoutCss() {
+    if (!global.document || !global.document.head) return;
+    if (global.document.getElementById('gfp-table-layout-css')) return;
+    if (global.document.querySelector('link[href*="table-layout.css"]')) return;
+    var link = global.document.createElement('link');
+    link.id = 'gfp-table-layout-css';
+    link.rel = 'stylesheet';
+    link.href = '/shared/table-layout.css?v=1';
+    global.document.head.appendChild(link);
+  }
+
+  function ensureFormLayoutCss() {
+    if (!global.document || !global.document.head) return;
+    if (global.document.getElementById('gfp-form-layout-css')) return;
+    if (global.document.querySelector('link[href*="form-layout.css"]')) return;
+    var link = global.document.createElement('link');
+    link.id = 'gfp-form-layout-css';
+    link.rel = 'stylesheet';
+    link.href = '/shared/form-layout.css?v=1';
+    global.document.head.appendChild(link);
+  }
+
+  function ensureModalLayoutCss() {
+    if (!global.document || !global.document.head) return;
+    if (global.document.getElementById('gfp-modal-layout-css')) return;
+    if (global.document.querySelector('link[href*="modal-layout.css"]')) return;
+    var link = global.document.createElement('link');
+    link.id = 'gfp-modal-layout-css';
+    link.rel = 'stylesheet';
+    link.href = '/shared/modal-layout.css?v=2';
+    global.document.head.appendChild(link);
+  }
+
+  function ensureSweepLayoutCss() {
+    if (!global.document || !global.document.head) return;
+    if (global.document.getElementById('gfp-sweep-layout-css')) return;
+    if (global.document.querySelector('link[href*="sweep-layout.css"]')) return;
+    var link = global.document.createElement('link');
+    link.id = 'gfp-sweep-layout-css';
+    link.rel = 'stylesheet';
+    link.href = '/shared/sweep-layout.css?v=2';
+    global.document.head.appendChild(link);
+  }
+
+  function classListHas(el, name) {
+    if (!el || !name) return false;
+    var cn = el.className;
+    if (cn && typeof cn === 'string') {
+      return (' ' + cn + ' ').indexOf(' ' + name + ' ') !== -1;
+    }
+    if (el.classList && typeof el.classList.contains === 'function') {
+      return el.classList.contains(name);
+    }
+    return false;
+  }
+
+  function isTableWrapEl(el) {
+    return (
+      (el && el.id === 'tblWrap') ||
+      classListHas(el, 'table-wrap') ||
+      classListHas(el, 'tbl-card') ||
+      classListHas(el, 'table-card') ||
+      classListHas(el, 'roles-table-card') ||
+      classListHas(el, 'att-table-wrap') ||
+      classListHas(el, 'offers-table-wrap') ||
+      classListHas(el, 'gfp-table-scroll')
+    );
+  }
+
+  function overflowXOf(el) {
+    if (!el) return '';
+    if (el.style && el.style.overflowX) return String(el.style.overflowX);
+    var attr = el.getAttribute && el.getAttribute('style');
+    if (attr) {
+      var m = /overflow-x\s*:\s*([a-z-]+)/i.exec(attr);
+      if (m) return m[1].toLowerCase();
+    }
+    if (typeof global.getComputedStyle === 'function') {
+      try {
+        var st = global.getComputedStyle(el);
+        if (st && st.overflowX) return String(st.overflowX);
+      } catch (e) { /* ignore */ }
+    }
+    return '';
+  }
+
+  function shouldSkipTable(table) {
+    if (!table) return true;
+    var tag = table.tagName || table.nodeName;
+    if (tag && String(tag).toUpperCase() !== 'TABLE') return true;
+    if (table.closest) {
+      if (table.closest(TABLE_SKIP_SEL)) return true;
+      if (table.closest(TABLE_WRAP_SEL)) return true;
+    }
+    var p = table.parentElement;
+    while (p && p !== global.document.body && p !== global.document.documentElement) {
+      if (isTableWrapEl(p)) return true;
+      var ox = overflowXOf(p);
+      if (ox === 'auto' || ox === 'scroll') return true;
+      p = p.parentElement;
+    }
+    return false;
+  }
+
+  function wrapNakedTables(root) {
+    var doc = global.document;
+    if (!doc || !doc.querySelectorAll) return 0;
+    var scope = root && root.querySelectorAll ? root : doc;
+    var list = scope.querySelectorAll('table');
+    var n = 0;
+    for (var i = 0; i < list.length; i++) {
+      var table = list[i];
+      if (shouldSkipTable(table)) continue;
+      var parent = table.parentNode;
+      if (!parent || !parent.insertBefore) continue;
+      var wrap = doc.createElement('div');
+      wrap.className = 'gfp-table-scroll';
+      parent.insertBefore(wrap, table);
+      wrap.appendChild(table);
+      n++;
+    }
+    return n;
+  }
+
+  function initTableLayout() {
+    if (!global.document) return;
+    ensureTableLayoutCss();
+    wrapNakedTables();
+    if (tableLayoutBooted) return;
+    tableLayoutBooted = true;
+    if (!global.MutationObserver || !global.document.body) return;
+    var obs = new global.MutationObserver(function () {
+      if (tableWrapTimer) global.clearTimeout(tableWrapTimer);
+      tableWrapTimer = global.setTimeout(function () {
+        wrapNakedTables();
+      }, 40);
+    });
+    try {
+      obs.observe(global.document.body, { childList: true, subtree: true });
+    } catch (e) { /* ignore non-Node bodies in tests */ }
+  }
+
   function wrapTopbarGym() {
     var right = global.document && global.document.querySelector('.topbar .tb-right');
     if (!right || right.querySelector('.gfp-tb-gym')) return;
@@ -1044,6 +1192,10 @@
     injectAppearanceToggle();
     initHeaderLayout();
     initSidebarLayout();
+    initTableLayout();
+    ensureFormLayoutCss();
+    ensureModalLayoutCss();
+    ensureSweepLayoutCss();
     clearInlineOwnerOnlyHacks();
     if (global.GfpI18n && global.GfpI18n.applyDocumentLocale) {
       global.GfpI18n.applyDocumentLocale();
@@ -1128,7 +1280,10 @@
     canResizeSidebar: canResizeSidebar,
     initSidebarLayout: initSidebarLayout,
     wrapTopbarGym: wrapTopbarGym,
-    initHeaderLayout: initHeaderLayout
+    initHeaderLayout: initHeaderLayout,
+    TABLE_WRAP_SEL: TABLE_WRAP_SEL,
+    wrapNakedTables: wrapNakedTables,
+    initTableLayout: initTableLayout
   };
   global.useVisibleNav = useVisibleNav;
 
@@ -1136,6 +1291,11 @@
     if (global.location && /\/dashboard(\/|$)/.test(global.location.pathname)) {
       ensureShellLayoutCss();
       ensureShellHeaderCss();
+      ensureTableLayoutCss();
+      ensureFormLayoutCss();
+      ensureModalLayoutCss();
+      ensureSweepLayoutCss();
+      initTableLayout();
     }
     boot();
   }

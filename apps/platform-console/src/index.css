@@ -61,6 +61,55 @@ video {
   height: auto;
 }
 
+/* Tables scroll inside their wrapper; the page stays horizontally stable. */
+.overflow-x-auto {
+  max-width: 100%;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+  form .grid,
+  dialog .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+dialog:not(.fixed) {
+  max-width: min(100%, calc(100vw - 24px));
+  max-height: min(90dvh, calc(100dvh - 24px));
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+dialog.fixed.inset-0 {
+  max-width: 100%;
+  max-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+}
+
+dialog.fixed.inset-0 > * {
+  max-width: 100%;
+  max-height: min(90dvh, calc(100dvh - 32px));
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+main {
+  min-width: 0;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   font-family: var(--font);
@@ -123,6 +172,16 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.cp-card:has(> table.cp-table),
+.cp-card:has(> .overflow-x-auto) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .cp-input {
@@ -213,10 +272,17 @@ textarea {
 /* Trial timeline */
 .trial-rail {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
   align-items: center;
   padding: 0.75rem 0;
+  max-width: 100%;
+}
+
+@media (min-width: 480px) {
+  .trial-rail {
+    grid-template-columns: auto 1fr auto;
+  }
 }
 .trial-rail .rail {
   height: 6px;

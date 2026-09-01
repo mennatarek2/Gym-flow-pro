@@ -52,7 +52,7 @@ const SHARED_SCRIPTS = [
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=5',
-  '/shared/shell.js?v=hdr1',
+  '/shared/shell.js?v=qa1',
   '/shared/staff-notifications.js?v=2',
   '/shared/quick-actions.js?v=5',
   '/shared/refund-action.js?v=3',
@@ -66,6 +66,11 @@ const SHARED_STYLES = [
   '/shared/responsive.css?v=1',
   '/shared/shell-layout.css?v=1',
   '/shared/shell-header.css?v=1',
+  '/shared/dashboard-layout.css?v=1',
+  '/shared/table-layout.css?v=1',
+  '/shared/form-layout.css?v=1',
+  '/shared/modal-layout.css?v=2',
+  '/shared/sweep-layout.css?v=2',
 ];
 
 // Member App pages have no staff nav/shell/quick-actions/inventory context.
@@ -81,6 +86,8 @@ const MEMBER_SHARED_STYLES = [
   '/shared/typography.css?v=1',
   '/shared/theme.css?v=2',
   '/shared/responsive.css?v=1',
+  '/shared/form-layout.css?v=1',
+  '/shared/sweep-layout.css?v=2',
 ];
 
 function sharedScriptTags() {

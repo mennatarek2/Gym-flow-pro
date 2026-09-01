@@ -27,4 +27,17 @@ for (const marker of order) {
   previous = current;
 }
 
+check(source.includes('maintainAspectRatio: false'), 'charts fill their container height');
+check(source.includes('watchChartHost'), 'charts observe host size');
+check(source.includes('resizeDelay: 0'), 'charts resize without delay');
+
+const dashCss = fs.readFileSync(
+  path.join(__dirname, '..', 'shared', 'dashboard-layout.css'),
+  'utf8'
+);
+check(dashCss.indexOf('minmax(min(100%, 140px)') !== -1, 'KPI tracks cannot overflow the card');
+check(dashCss.indexOf('@media (max-width: 767.98px)') !== -1, 'dashboard stacks on phone');
+check(dashCss.indexOf('grid-column: span 6') !== -1, 'tablet keeps two-up widgets');
+check(dashCss.indexOf('.dash-chart-wrap canvas') !== -1, 'chart canvas follows the wrap');
+
 console.log('\nAll dashboard-home selftest checks passed.');

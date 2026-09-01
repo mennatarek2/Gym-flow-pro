@@ -41,6 +41,33 @@
   };
 
   var charts = { attendance: null, revenue: null };
+  var chartHostObserver = null;
+
+  function ensureDashLayoutCss() {
+    if (!global.document || !global.document.head) return;
+    if (global.document.getElementById('gfp-dash-layout-css')) return;
+    if (global.document.querySelector('link[href*="dashboard-layout.css"]')) return;
+    var link = global.document.createElement('link');
+    link.id = 'gfp-dash-layout-css';
+    link.rel = 'stylesheet';
+    link.href = '/shared/dashboard-layout.css?v=1';
+    global.document.head.appendChild(link);
+  }
+
+  function resizeDashboardCharts() {
+    if (charts.attendance) charts.attendance.resize();
+    if (charts.revenue) charts.revenue.resize();
+  }
+
+  function watchChartHost(el) {
+    if (!el || typeof global.ResizeObserver === 'undefined') return;
+    if (!chartHostObserver) {
+      chartHostObserver = new global.ResizeObserver(function () {
+        resizeDashboardCharts();
+      });
+    }
+    chartHostObserver.observe(el);
+  }
 
   function cssVar(name, fallback) {
     try {
@@ -1569,6 +1596,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        resizeDelay: 0,
         plugins: { legend: { display: false } },
         scales: {
           y: {
@@ -1577,12 +1605,13 @@
             grid: { color: chartTheme().grid }
           },
           x: {
-            ticks: { font: { size: 10 }, color: chartTheme().text },
+            ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, color: chartTheme().text },
             grid: { display: false }
           }
         }
       }
     });
+    watchChartHost(host);
   }
 
   // ── Finance widget (money metrics — not duplicated in Today KPIs) ─
@@ -1856,6 +1885,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        resizeDelay: 0,
         plugins: { legend: { display: false } },
         scales: {
           y: {
@@ -1864,12 +1894,13 @@
             grid: { color: ct.grid }
           },
           x: {
-            ticks: { font: { size: 10 }, color: ct.text },
+            ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, color: ct.text },
             grid: { color: ct.grid }
           }
         }
       }
     });
+    watchChartHost(host);
   }
 
   // ── Expiring memberships ───────────────────────────────────────
@@ -2551,6 +2582,7 @@
   }
 
   async function init() {
+    ensureDashLayoutCss();
     if (!paintUserChrome()) return;
     wireChrome();
     loadGymName();
@@ -2558,6 +2590,7 @@
       global.GfpI18n.applyDocumentLocale();
     }
     await bootWidgets();
+    global.addEventListener('resize', resizeDashboardCharts);
   }
 
   if (global.document.readyState === 'loading') {

@@ -224,6 +224,176 @@ assert(hdrCss.indexOf('flex: 1 0 100%') !== -1, 'mobile actions move to second r
 assert(typeof Shell.wrapTopbarGym === 'function', 'wrapTopbarGym exported');
 assert(typeof Shell.initHeaderLayout === 'function', 'initHeaderLayout exported');
 
+// ── Table layout (Task 5) ──
+var tblCss = fs.readFileSync(path.join(sharedDir, 'table-layout.css'), 'utf8');
+assert(tblCss.indexOf('.gfp-table-scroll') !== -1, 'table CSS has generated wrap');
+assert(tblCss.indexOf('.offers-table-wrap') !== -1, 'table CSS includes offers wrap');
+assert(tblCss.indexOf('#tblWrap') !== -1, 'table CSS includes members tblWrap');
+assert(tblCss.indexOf('overflow-x: auto !important') !== -1, 'table wrap beats overflow:hidden');
+assert(tblCss.indexOf('max-width: 100%') !== -1, 'table wrap cannot exceed parent');
+assert(tblCss.indexOf('@media print') !== -1, 'print restores visible overflow');
+assert(tblCss.indexOf('white-space: nowrap') !== -1, 'headers stay readable in the scroll row');
+assert(typeof Shell.wrapNakedTables === 'function', 'wrapNakedTables exported');
+assert(typeof Shell.initTableLayout === 'function', 'initTableLayout exported');
+assert(String(Shell.TABLE_WRAP_SEL).indexOf('.gfp-table-scroll') !== -1, 'TABLE_WRAP_SEL lists generated wrap');
+
+var serverSrc = fs.readFileSync(path.join(sharedDir, '..', '..', '..', 'server.js'), 'utf8');
+assert(serverSrc.indexOf('/shared/table-layout.css') !== -1, 'server injects table-layout.css');
+assert(serverSrc.indexOf('shell.js?v=qa1') !== -1, 'shell cache-bust includes sweep layout');
+
+// ── Form / filter layout (Task 6) ──
+var formCss = fs.readFileSync(path.join(sharedDir, 'form-layout.css'), 'utf8');
+assert(formCss.indexOf('@media (max-width: 1023px)') !== -1, 'forms keep a tablet query');
+assert(formCss.indexOf('@media (max-width: 767.98px)') !== -1, 'forms stack on phone');
+assert(formCss.indexOf('grid-template-columns: minmax(0, 1fr)') !== -1, 'phone stacks form columns');
+assert(formCss.indexOf('.search-box') !== -1, 'search boxes shrink/wrap');
+assert(formCss.indexOf('.filter-bar') !== -1, 'filter bars cannot overflow the page');
+assert(formCss.indexOf('.modal-actions') !== -1, 'form actions wrap');
+assert(formCss.indexOf('input[type=\'date\']') !== -1, 'date controls stay in the viewport');
+assert(formCss.indexOf('flex: 1 1 100%') !== -1, 'phone search uses the full row');
+assert(serverSrc.indexOf('/shared/form-layout.css') !== -1, 'server injects form-layout.css');
+
+// ── Modal / dialog layout (Task 7) ──
+var modalCss = fs.readFileSync(path.join(sharedDir, 'modal-layout.css'), 'utf8');
+assert(modalCss.indexOf('.modal-overlay') !== -1, 'modal CSS targets overlays');
+assert(modalCss.indexOf('.modal-ov') !== -1, 'modal CSS includes call-sheet overlays');
+assert(modalCss.indexOf('.drawer') !== -1, 'modal CSS includes drawers');
+assert(modalCss.indexOf('max-height: min(90vh, 90dvh') !== -1, 'dialogs cannot outgrow the viewport');
+assert(modalCss.indexOf('.modal-body') !== -1, 'long content scrolls inside the dialog');
+assert(modalCss.indexOf('.modal:has(> .modal-body)') !== -1, 'split chrome only when a body exists');
+assert(modalCss.indexOf('@media (max-width: 767.98px)') !== -1, 'modals go full-width on phone');
+assert(modalCss.indexOf('dialog:not(.fixed)') !== -1, 'native dialogs stay in the viewport');
+assert(modalCss.indexOf('max-width: calc(100vw - 24px)') !== -1, 'dropdowns cannot exceed the viewport');
+assert(serverSrc.indexOf('/shared/modal-layout.css') !== -1, 'server injects modal-layout.css');
+
+// ── Full-app responsive sweep (Task 8) ──
+var sweepCss = fs.readFileSync(path.join(sharedDir, 'sweep-layout.css'), 'utf8');
+assert(sweepCss.indexOf('.toast') !== -1, 'sweep CSS constrains toasts');
+assert(sweepCss.indexOf('.tab-nav') !== -1, 'sweep CSS scrolls tab rails');
+assert(sweepCss.indexOf('.empty-state') !== -1, 'sweep CSS covers empty states');
+assert(sweepCss.indexOf('.pay-leg') !== -1, 'sweep CSS stacks POS payment rows');
+assert(sweepCss.indexOf('@media (max-width: 767.98px)') !== -1, 'sweep CSS has phone rules');
+assert(sweepCss.indexOf('.page-title') !== -1, 'sweep CSS constrains page titles');
+assert(sweepCss.indexOf('.heatmap-wrap') !== -1, 'sweep CSS constrains heatmaps');
+assert(serverSrc.indexOf('/shared/sweep-layout.css') !== -1, 'server injects sweep-layout.css');
+
+(function () {
+  function makeEl(className) {
+    return {
+      className: className || '',
+      classList: {
+        contains: function (name) {
+          return (' ' + (className || '') + ' ').indexOf(' ' + name + ' ') !== -1;
+        }
+      },
+      style: { overflowX: '' },
+      parentNode: null,
+      parentElement: null,
+      children: [],
+      getAttribute: function () { return ''; },
+      insertBefore: function (node, ref) {
+        node.parentNode = this;
+        node.parentElement = this;
+        var idx = this.children.indexOf(ref);
+        if (idx < 0) this.children.push(node);
+        else this.children.splice(idx, 0, node);
+        return node;
+      },
+      appendChild: function (ch) {
+        ch.parentNode = this;
+        ch.parentElement = this;
+        this.children.push(ch);
+        return ch;
+      }
+    };
+  }
+
+  function attachClosest(el) {
+    el.closest = function (sel) {
+      var parts = String(sel).split(',');
+      var node = el;
+      while (node) {
+        for (var i = 0; i < parts.length; i++) {
+          var s = parts[i].trim();
+          var cn = ' ' + (node.className || '') + ' ';
+          if (s.charAt(0) === '.' && cn.indexOf(' ' + s.slice(1) + ' ') !== -1) return node;
+          if (s.charAt(0) === '#' && node.id === s.slice(1)) return node;
+        }
+        node = node.parentElement;
+      }
+      return null;
+    };
+  }
+
+  var content = makeEl('content');
+  var table = makeEl('');
+  table.tagName = 'TABLE';
+  table.nodeName = 'TABLE';
+  content.children = [table];
+  table.parentNode = content;
+  table.parentElement = content;
+  attachClosest(content);
+  attachClosest(table);
+
+  var created = [];
+  var origCreate = sandbox.document.createElement;
+  var origQsa = sandbox.document.querySelectorAll;
+  sandbox.document.createElement = function (tag) {
+    var el = makeEl('');
+    el.tagName = String(tag).toUpperCase();
+    created.push(el);
+    attachClosest(el);
+    return el;
+  };
+  sandbox.document.querySelectorAll = function (sel) {
+    if (sel === 'table') return [table];
+    return [];
+  };
+  sandbox.getComputedStyle = function () { return { overflowX: 'visible' }; };
+
+  var n = Shell.wrapNakedTables();
+  assert(n === 1, 'wraps a table that has no scroll parent');
+  assert(created.length === 1 && created[0].className === 'gfp-table-scroll', 'uses gfp-table-scroll');
+  assert(created[0].children.indexOf(table) !== -1, 'moves the table into the wrap');
+
+  n = Shell.wrapNakedTables();
+  assert(n === 0, 'does not wrap a table already inside gfp-table-scroll');
+
+  var card = makeEl('tbl-card');
+  var inner = makeEl('');
+  inner.tagName = 'TABLE';
+  inner.nodeName = 'TABLE';
+  card.children = [inner];
+  inner.parentNode = card;
+  inner.parentElement = card;
+  attachClosest(card);
+  attachClosest(inner);
+  sandbox.document.querySelectorAll = function (sel) {
+    if (sel === 'table') return [inner];
+    return [];
+  };
+  assert(Shell.wrapNakedTables() === 0, 'leaves tables inside tbl-card alone');
+
+  var side = makeEl('sidebar');
+  side.id = 'sidebar';
+  var navTable = makeEl('');
+  navTable.tagName = 'TABLE';
+  navTable.nodeName = 'TABLE';
+  side.children = [navTable];
+  navTable.parentNode = side;
+  navTable.parentElement = side;
+  attachClosest(side);
+  attachClosest(navTable);
+  sandbox.document.querySelectorAll = function (sel) {
+    if (sel === 'table') return [navTable];
+    return [];
+  };
+  assert(Shell.wrapNakedTables() === 0, 'does not wrap tables in the sidebar');
+
+  sandbox.document.createElement = origCreate;
+  sandbox.document.querySelectorAll = origQsa;
+})();
+
 (function () {
   var gymEn = { id: 'gymName', className: 'gym-name', parentNode: null };
   var gymAr = { id: 'gymNameAr', className: 'gym-name-ar', parentNode: null };

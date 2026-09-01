@@ -13,6 +13,11 @@
  * Prefer fluid values (clamp / minmax / min-width: 0) over extra queries.
  * Sidebar ↔ main layout lives in shell-layout.css + shell.js (data-gfp-sb).
  * Header / topbar arrangement lives in shell-header.css.
+ * Dashboard cards / charts live in dashboard-layout.css.
+ * Tables scroll inside their container — see table-layout.css.
+ * Forms / filters / search live in form-layout.css.
+ * Modals / drawers / popovers live in modal-layout.css.
+ * Final overflow / wrap sweep lives in sweep-layout.css.
  */
 
 :root {
@@ -192,16 +197,10 @@ textarea {
   max-width: 100%;
 }
 
-/* ── Tables: scroll inside the card, not the page ── */
-.table-wrap,
-.tbl-card,
-.table-card,
-.roles-table-card,
-.att-table-wrap {
-  max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
+/* ── Tables: overflow-x + wraps live in table-layout.css ── */
+/* ── Forms / filters / search live in form-layout.css ── */
+/* ── Modals / drawers / popovers live in modal-layout.css ── */
+/* ── Final sweep lives in sweep-layout.css ── */
 
 /* ── Drawers: keep authored width on desktop, never exceed the viewport ── */
 .drawer,
@@ -221,26 +220,6 @@ textarea {
   .page {
     padding-inline: var(--gfp-pad-x);
     padding-block: var(--gfp-pad-y);
-  }
-
-  .search-box,
-  .staff-search,
-  .cs-search,
-  .inv-search,
-  .search-wrap {
-    flex: 1 1 100%;
-  }
-}
-
-/* Two-column forms become one column when a column would be unusable */
-@media (max-width: 639px) {
-  .form-row,
-  .form-grid,
-  .mdl-form-row,
-  .easy-form,
-  .gfp-refund-form,
-  .gfp-refund-kpis {
-    grid-template-columns: 1fr;
   }
 }
 

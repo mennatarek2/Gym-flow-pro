@@ -63,6 +63,49 @@ video {
   height: auto;
 }
 
+/* Tables scroll inside their wrapper; the page stays horizontally stable. */
+.overflow-x-auto {
+  max-width: 100%;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+  form .grid,
+  .sm\:grid-cols-\[1fr_200px\] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+[role='dialog'] {
+  max-width: 100%;
+  max-height: min(90dvh, calc(100dvh - 24px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+main,
+.flex-1 {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.toast,
+[role='alert'] {
+  max-width: min(420px, calc(100vw - 32px));
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: var(--fb);
