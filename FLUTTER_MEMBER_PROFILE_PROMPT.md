@@ -67,7 +67,7 @@ Profile card (MemberDetailDto)           ProfileHeaderSection
 Tab: Membership                            same — status, plan, dates, sessions, freeze dates
 Tab: Invitations                           InvitationsSection — existing APIs
 Tab: Attendance                            AttendanceSection — needs Phase 2 API
-Tab: Orders (member-orders staff path)     OrdersSection — GET /member-store/orders
+Tab: Orders (Member App only)              OrdersSection — GET /member/orders (see FLUTTER_MEMBER_ORDERS_PROMPT.md; never staff /member-orders)
 Tab: History (membership history)          MembershipHistorySection — Phase 2 API
 Financial 360, refunds, collect            OMIT (staff)
 Member App activation code                 OMIT (member already activated)
@@ -129,8 +129,15 @@ POST /invitation/send { name, phoneNumber, nationalId?, notes? }  (from Invite s
 
 ── Store orders (feature-gated: inventory) ──
 
+Preferred (isolation SoT — see FLUTTER_MEMBER_ORDERS_PROMPT.md + docs/api/MEMBER_ORDERS_ISOLATION.md):
+GET /member/orders → MemberOrderListItemDto[]
+GET /member/orders/{id} → MemberOrderDto
+
+Legacy aliases (same service; OK if already wired — migrate to /member/orders):
 GET /member-store/orders → MemberOrderListItemDto[]
 GET /member-store/orders/{id} → MemberOrderDto
+
+FORBIDDEN from Member App: GET /member-orders (staff inbox — all gym members)
 
 ── Class bookings ──
 

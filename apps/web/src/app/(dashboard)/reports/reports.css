@@ -181,3 +181,9 @@ tbody a:hover{text-decoration:underline}
   .rpt-table th,.rpt-table td{display:table-cell!important}
   .rpt-table tbody td::before{content:none!important}
 }
+
+.rpt-expense-form{margin-top:8px}
+.rpt-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px}
+.rpt-form-wide{grid-column:1/-1}
+.rpt-form-actions{display:flex;gap:8px;justify-content:flex-end}
+.rpt-form-actions .btn,.rpt-form-actions .btn.secondary{min-height:36px}

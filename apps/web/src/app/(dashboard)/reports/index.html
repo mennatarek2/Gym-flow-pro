@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="../pos/pos.css">
-<link rel="stylesheet" href="reports.css?v=theme1">
+<link rel="stylesheet" href="reports.css?v=theme2">
 </head>
 <body>
 <div class="app">
@@ -114,6 +114,8 @@
       <button type="button" class="hub-tab" data-tab="memberships" id="tabMemberships">Memberships</button>
       <button type="button" class="hub-tab" data-tab="products" id="tabProducts">Products</button>
       <button type="button" class="hub-tab" data-tab="staff" id="tabStaff">Staff & Shifts</button>
+      <button type="button" class="hub-tab" data-tab="cashflow" id="tabCashflow">Cash Flow</button>
+      <button type="button" class="hub-tab" data-tab="expenses" id="tabExpenses">Expenses</button>
     </div>
     <p class="rpt-hint" id="tabHint"></p>
     <div id="salesBoard" hidden>
@@ -160,6 +162,63 @@
     <div id="staffBoard" hidden>
       <div class="sales-kpis" id="staffKpis"></div>
     </div>
+    <div id="profitabilityBoard" hidden>
+      <div class="sales-kpis" id="profitabilityKpis"></div>
+      <section class="sales-panel">
+        <h3>Coverage and reconciliation</h3>
+        <div id="profitabilityIssues"></div>
+      </section>
+    </div>
+    <div id="cashflowBoard" hidden>
+      <div class="sales-kpis" id="cashflowKpis"></div>
+      <section class="sales-panel">
+        <h3>Cash coverage and reconciliation</h3>
+        <div id="cashflowIssues"></div>
+      </section>
+    </div>
+    <div id="expensesBoard" hidden>
+      <div class="sales-kpis" id="expensesKpis"></div>
+      <section class="sales-panel">
+        <h3>Add running cost</h3>
+        <p class="rpt-hint">Posted running costs feed Owner profitability. Payroll and supplier purchases stay separate.</p>
+        <form id="expensesForm" class="rpt-expense-form" hidden>
+          <div class="rpt-form-grid">
+            <label class="flt"><span>Category *</span><select name="category" id="expenseCategory" required></select></label>
+            <label class="flt"><span>Expense type *</span><select name="expenseType" id="expenseType" required></select></label>
+            <label class="flt"><span>Amount *</span><input type="number" name="amount" required min="0.01" step="0.01" placeholder="0.00"></label>
+            <label class="flt"><span>Expense date *</span><input type="date" name="expenseDate" required></label>
+            <label class="flt"><span>Payment method *</span>
+              <select name="paymentMethod" id="expensePaymentMethod">
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="bank_transfer">Bank transfer</option>
+                <option value="wallet">Wallet</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label class="flt"><span>Payee / vendor</span><input type="text" name="payee" placeholder="Vendor name"></label>
+            <label class="flt rpt-form-wide"><span>Description</span><input type="text" name="note" placeholder="Optional notes"></label>
+            <label class="flt"><span>Reference</span><input type="text" name="sourceReference" placeholder="INV-12345"></label>
+            <label class="flt" id="expenseShiftWrap" hidden><span>Shift</span>
+              <select name="shiftId" id="expenseShiftSelect"><option value="">Auto (open shift)</option></select>
+            </label>
+          </div>
+          <div class="rpt-form-actions">
+            <button type="button" class="btn secondary" id="expenseFormCancel">Cancel</button>
+            <button type="submit" class="btn">Save</button>
+          </div>
+        </form>
+      </section>
+      <section class="sales-panel">
+        <h3>Running cost ledger</h3>
+        <div class="table-wrap">
+          <table class="rpt-table">
+            <thead><tr><th>Date</th><th>Category</th><th>Payee / description</th><th>Method</th><th class="amt">Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody id="expensesBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
     <div class="kpi-row" id="kpiRow"></div>
     <div class="rpt-toolbar" id="rptToolbar"></div>
     <div class="rpt-empty rpt-empty-inline" id="detailEmpty" hidden>
@@ -203,6 +262,10 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="reports-app.js?v=ux1"></script>
+<script src="/shared/api-config.js"></script>
+<script src="/shared/authz.js"></script>
+<script src="/shared/cairo-dates.js"></script>
+<script src="/shared/cash-expense-catalog.js"></script>
+<script src="reports-app.js?v=ux6"></script>
 </body>
 </html>

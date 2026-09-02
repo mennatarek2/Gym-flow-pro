@@ -1,4 +1,4 @@
-(function () {
+(function (global) {
   'use strict';
 
   function getToken() {
@@ -28,10 +28,16 @@
     location.href = '/auth/login/';
     return;
   }
-  const role = user.role || '';
-  const perms = getPerms();
-  const canFinance = perms.has('reports.financial.view') || /Owner|Manager/i.test(role);
-  const canMembers = perms.has('members.view') || /Owner|Manager|Trainer|Receptionist/i.test(role);
+  const authz = global.GfpAuthz;
+  const canFinance = authz
+    ? authz.useCan('reports.financial.view')
+    : getPerms().has('reports.financial.view');
+  const canViewExpenses = authz
+    ? authz.useCan('reports.expenses.view')
+    : getPerms().has('reports.expenses.view');
+  const canManageExpenses = authz
+    ? authz.useCan('reports.expenses.manage')
+    : getPerms().has('reports.expenses.manage');
 
   const TABS = {
     sales: {
@@ -45,6 +51,24 @@
       title: 'Refunds',
       pageTitle: 'Refunds',
       hint: 'Review refunded transactions and their impact.',
+    },
+    profitability: {
+      finance: true,
+      title: 'Profitability',
+      pageTitle: 'Profitability & Cash Flow',
+      hint: 'Separate revenue, costs, operating expenses, profit, and cash flow.',
+    },
+    cashflow: {
+      finance: true,
+      title: 'Cash Flow',
+      pageTitle: 'Cash Flow Report',
+      hint: 'See settled inflows and actual cash, payroll, supplier, and expense outflows.',
+    },
+    expenses: {
+      finance: true,
+      title: 'Running costs',
+      pageTitle: 'Running Costs',
+      hint: 'Add posted running costs (utilities, rent, operations). Payroll and supplier purchases stay separate.',
     },
     memberships: {
       finance: false,
@@ -80,6 +104,24 @@
       desc: 'Executed cash and credit refunds. Cancel membership is not a refund.',
     },
     {
+      key: 'profitability',
+      icon: 'ti-chart-donut',
+      title: 'Profitability',
+      desc: 'Reconciled profitability and cash-flow metrics with coverage warnings.',
+    },
+    {
+      key: 'expenses',
+      icon: 'ti-wallet',
+      title: 'Expenses',
+      desc: 'Posted and voided operating expenses with structured audit metadata.',
+    },
+    {
+      key: 'cashflow',
+      icon: 'ti-arrows-exchange',
+      title: 'Cash Flow',
+      desc: 'Settled inflows and actual outflows, kept separate from profit.',
+    },
+    {
       key: 'memberships',
       icon: 'ti-id',
       title: 'Memberships',
@@ -102,7 +144,9 @@
   const params = new URLSearchParams(location.search);
   let activeTab = params.get('tab') || '';
   if (activeTab && !TABS[activeTab]) activeTab = '';
-  if (activeTab && TABS[activeTab].finance && !canFinance) activeTab = canMembers ? 'memberships' : '';
+  if (activeTab && TABS[activeTab].finance
+      && (activeTab === 'expenses' ? !canViewExpenses : !canFinance))
+    activeTab = '';
 
   let methodFilter = params.get('method') || '';
   let staffFilter = params.get('staffId') || '';
@@ -155,6 +199,12 @@
       href: '/dashboard/shifts/',
       cta: 'Current Shift',
     },
+    expenses: {
+      title: 'No expenses for this period',
+      body: 'No recorded operating expenses in this period.',
+      href: '',
+      cta: '',
+    },
   };
 
   function ymd(d) {
@@ -174,17 +224,24 @@
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   }
 
-  const today = new Date();
+  const cairoDates = global.GfpCairoDates;
+  const todayYmd = cairoDates && cairoDates.todayYmd
+    ? cairoDates.todayYmd()
+    : ymd(new Date());
   const fromEl = document.getElementById('dateFrom');
   const toEl = document.getElementById('dateTo');
   if (params.get('from') && params.get('to')) {
     fromEl.value = params.get('from');
     toEl.value = params.get('to');
     rangePreset = 'custom';
+  } else if (cairoDates && cairoDates.presetRange) {
+    const initial = cairoDates.presetRange('last7');
+    fromEl.value = initial.from;
+    toEl.value = initial.to;
   } else {
-    const fromD = new Date(today);
+    const fromD = new Date();
     fromD.setDate(fromD.getDate() - 6);
-    toEl.value = ymd(today);
+    toEl.value = ymd(new Date());
     fromEl.value = ymd(fromD);
   }
 
@@ -228,7 +285,133 @@
   function canSee(key) {
     const meta = TABS[key];
     if (!meta) return false;
-    return meta.finance ? canFinance : canMembers;
+    if (key === 'expenses') return canViewExpenses;
+    if (key === 'memberships') return canFinance;
+    return meta.finance ? canFinance : false;
+  }
+
+  function financialAmount(amount, available) {
+    if (available === false) return 'Unavailable';
+    if (amount == null) return 'Unavailable';
+    return money(amount);
+  }
+
+  async function resolveOpenShiftId() {
+    try {
+      const shift = await apiGet('/shifts/current');
+      if (shift && String(shift.status || '').toLowerCase() === 'open' && shift.id) {
+        return shift.id;
+      }
+    } catch (_) {
+      /* ignore */
+    }
+    return null;
+  }
+
+  function expenseApiMessage(result) {
+    if (!result) return 'Unable to record running cost';
+    var msg = '';
+    if (result.error && result.error.message) msg = String(result.error.message);
+    else if (result.data && result.data.error) msg = String(result.data.error);
+    else if (result.data && result.data.message) msg = String(result.data.message);
+    else return 'Unable to record running cost';
+    if (/^\s*</.test(msg) || /Exception|stack trace| at /i.test(msg)) return 'Unable to record running cost';
+    if (msg.length > 180) msg = msg.slice(0, 177) + '…';
+    return msg;
+  }
+
+  let expenseFormWired = false;
+
+  function expenseCatalog() {
+    return global.GfpCashExpenseCatalog || null;
+  }
+
+  function populateExpenseTypeOptions(categorySelect, typeSelect) {
+    const catalog = expenseCatalog();
+    if (!catalog || !categorySelect || !typeSelect) return;
+    const types = catalog.typesFor(categorySelect.value);
+    typeSelect.innerHTML = types
+      .map((item) => '<option value="' + esc(item) + '">' + esc(item) + '</option>')
+      .join('');
+  }
+
+  function wireExpenseForm() {
+    if (expenseFormWired) return;
+    const form = document.getElementById('expensesForm');
+    const categorySelect = document.getElementById('expenseCategory');
+    const typeSelect = document.getElementById('expenseType');
+    const methodSelect = document.getElementById('expensePaymentMethod');
+    const shiftWrap = document.getElementById('expenseShiftWrap');
+    const shiftSelect = document.getElementById('expenseShiftSelect');
+    const cancelBtn = document.getElementById('expenseFormCancel');
+    if (!form || !categorySelect || !typeSelect) return;
+    expenseFormWired = true;
+    const catalog = expenseCatalog();
+    if (catalog) {
+      categorySelect.innerHTML = catalog.categories
+        .map((item) => '<option value="' + esc(item) + '">' + esc(item) + '</option>')
+        .join('');
+      populateExpenseTypeOptions(categorySelect, typeSelect);
+      categorySelect.onchange = () => populateExpenseTypeOptions(categorySelect, typeSelect);
+    }
+    async function refreshShiftOptions() {
+      if (!shiftSelect) return;
+      shiftSelect.innerHTML = '<option value="">Auto (open shift)</option>';
+      const shift = await apiGet('/shifts/current');
+      if (shift && shift.id && String(shift.status || '').toLowerCase() === 'open') {
+        shiftSelect.innerHTML +=
+          '<option value="' + esc(shift.id) + '">Open shift</option>';
+      }
+    }
+    function toggleShiftField() {
+      if (!shiftWrap || !methodSelect) return;
+      const isCash = methodSelect.value === 'cash';
+      shiftWrap.hidden = !isCash;
+      if (isCash) refreshShiftOptions();
+    }
+    if (methodSelect) {
+      methodSelect.onchange = toggleShiftField;
+      toggleShiftField();
+    }
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        form.reset();
+        if (catalog) populateExpenseTypeOptions(categorySelect, typeSelect);
+        toggleShiftField();
+      };
+    }
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      const payload = {
+        expenseDate: form.expenseDate.value,
+        category: categorySelect.value,
+        amount: Number(form.amount.value),
+        paymentMethod: methodSelect ? methodSelect.value : 'cash',
+        payee: (form.payee && form.payee.value.trim()) || null,
+        description: typeSelect.value,
+        note: (form.note && form.note.value.trim()) || null,
+        sourceReference: (form.sourceReference && form.sourceReference.value.trim()) || null,
+      };
+      if (payload.paymentMethod === 'cash') {
+        const manualShift = shiftSelect && shiftSelect.value;
+        const shiftId = manualShift || await resolveOpenShiftId();
+        if (!shiftId) {
+          toast('Open a shift before recording a cash running cost', 'err');
+          return;
+        }
+        payload.shiftId = shiftId;
+      }
+      const result = await apiWrite('/expenses', 'POST', payload);
+      if (result && result.ok) {
+        form.reset();
+        if (catalog) populateExpenseTypeOptions(categorySelect, typeSelect);
+        toggleShiftField();
+        toast('Running cost recorded');
+        loadExpenses();
+      } else {
+        toast(expenseApiMessage(result), 'err');
+      }
+    };
   }
 
   async function apiGet(path) {
@@ -241,7 +424,7 @@
       if (!r.ok) throw { status: r.status, data: r.data };
       return r.data;
     }
-    const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+    const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
     const t = getToken();
     const r = await fetch(API_BASE + path, {
       headers: {
@@ -261,6 +444,33 @@
     return r.json();
   }
 
+  async function apiWrite(path, method, body) {
+    if (window.GfpApi && window.GfpApi[method.toLowerCase()]) {
+      const r = await window.GfpApi[method.toLowerCase()](path, body);
+      if (r.status === 401) {
+        location.href = '/auth/login/';
+        return null;
+      }
+      return r;
+    }
+    const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
+    const t = getToken();
+    const response = await fetch(API_BASE + path, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+        ...(t ? { Authorization: 'Bearer ' + t } : {}),
+      },
+      body: JSON.stringify(body || {}),
+    });
+    if (response.status === 401) {
+      location.href = '/auth/login/';
+      return null;
+    }
+    return { ok: response.ok, status: response.status, data: await response.json().catch(() => ({})) };
+  }
+
   function setRangeLabel() {
     const { from, to } = dateRange();
     let text = fmtShort(from) + ' – ' + fmtShort(to);
@@ -274,21 +484,27 @@
   }
 
   function applyPreset(preset) {
-    const now = new Date();
     rangePreset = preset;
-    if (preset === 'last7') {
-      const fromD = new Date(now);
-      fromD.setDate(fromD.getDate() - 6);
-      fromEl.value = ymd(fromD);
-      toEl.value = ymd(now);
-    } else if (preset === 'last30') {
-      const fromD = new Date(now);
-      fromD.setDate(fromD.getDate() - 29);
-      fromEl.value = ymd(fromD);
-      toEl.value = ymd(now);
-    } else if (preset === 'thisMonth') {
-      fromEl.value = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
-      toEl.value = ymd(now);
+    if (cairoDates && cairoDates.presetRange) {
+      const range = cairoDates.presetRange(preset);
+      fromEl.value = range.from;
+      toEl.value = range.to;
+    } else {
+      const now = new Date();
+      if (preset === 'last7') {
+        const fromD = new Date(now);
+        fromD.setDate(fromD.getDate() - 6);
+        fromEl.value = ymd(fromD);
+        toEl.value = ymd(now);
+      } else if (preset === 'last30') {
+        const fromD = new Date(now);
+        fromD.setDate(fromD.getDate() - 29);
+        fromEl.value = ymd(fromD);
+        toEl.value = ymd(now);
+      } else if (preset === 'thisMonth') {
+        fromEl.value = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+        toEl.value = ymd(now);
+      }
     }
     setRangeLabel();
   }
@@ -588,6 +804,9 @@
     const isMemberships = activeTab === 'memberships';
     const isProducts = activeTab === 'products';
     const isStaff = activeTab === 'staff';
+    const isProfitability = activeTab === 'profitability';
+    const isCashflow = activeTab === 'cashflow';
+    const isExpenses = activeTab === 'expenses';
     const useFilters = isSales || isRefunds || isMemberships || isProducts || isStaff;
     if (isSales && typeFilter && ['membership', 'product', 'mixed'].indexOf(typeFilter) < 0) typeFilter = '';
     if (isMemberships && typeFilter && ['new', 'renewal'].indexOf(typeFilter) < 0) typeFilter = '';
@@ -604,6 +823,9 @@
     document.getElementById('membershipsBoard').hidden = !isMemberships;
     document.getElementById('productsBoard').hidden = !isProducts;
     document.getElementById('staffBoard').hidden = !isStaff;
+    document.getElementById('profitabilityBoard').hidden = !isProfitability;
+    document.getElementById('cashflowBoard').hidden = !isCashflow;
+    document.getElementById('expensesBoard').hidden = !isExpenses;
     document.getElementById('kpiRow').hidden = useFilters;
     document.querySelectorAll('#hubTabs .hub-tab').forEach((btn) => {
       const key = btn.getAttribute('data-tab');
@@ -961,6 +1183,147 @@
 
   function paintMoreActive() {
     paintMorePop();
+  }
+
+  async function loadProfitability() {
+    const { from, to } = dateRange();
+    const data = await apiGet('/reports/profitability?from=' + from + '&to=' + to);
+    if (!data) return;
+
+    const kpis = [
+      ['Collections', financialAmount(data.collections, true)],
+      ['Settled cash inflow', financialAmount(data.settledCashInflow, data.settledCashAvailable)],
+      ['Revenue', financialAmount(data.revenue, true)],
+      ['Revenue adjustments', financialAmount(data.revenueAdjustments, true)],
+      ['Refunds', financialAmount(data.refunds, true)],
+      ['COGS', financialAmount(data.cogs, data.cogsAvailable)],
+      ['Operating expenses', financialAmount(data.operatingExpenses, true)],
+      ['Payroll expense', financialAmount(data.payrollExpense, data.payrollAvailable)],
+      ['Gross profit', financialAmount(data.grossProfit, data.cogsAvailable)],
+      ['Net profit', financialAmount(data.netProfit, data.netProfitAvailable)],
+      ['Profit margin', data.netProfitAvailable && data.profitMargin != null
+        ? Number(data.profitMargin).toFixed(2) + '%'
+        : 'Unavailable'],
+      ['Net cash flow', financialAmount(data.netCashFlow, data.cashFlowAvailable)],
+      ['Receivables / Payables',
+        financialAmount(data.accountsReceivable, true) + ' / ' + financialAmount(data.accountsPayable, true)],
+    ];
+    document.getElementById('profitabilityKpis').innerHTML = kpis
+      .map(([label, amount]) => '<div class="kpi"><span>' + esc(label) + '</span><strong>' + esc(amount) + '</strong></div>')
+      .join('');
+    const issues = Array.isArray(data.dataIssues) ? data.dataIssues : [];
+    document.getElementById('profitabilityIssues').innerHTML = issues.length
+      ? '<div class="rpt-empty-inline"><strong>Review required</strong><p>' +
+        esc(issues.join(', ')) + '</p></div>'
+      : '<p class="muted">All configured financial sources are available for this period.</p>';
+    lastKpiRows = kpis;
+    lastRows = [];
+    document.getElementById('kpiRow').innerHTML = '';
+    document.getElementById('rptToolbar').innerHTML = '';
+    document.getElementById('tableWrap').hidden = true;
+    document.getElementById('tablePager').hidden = true;
+    document.getElementById('shiftWrap').hidden = true;
+    document.getElementById('txWrap').hidden = true;
+    document.getElementById('truncNote').hidden = true;
+  }
+
+  async function loadCashflow() {
+    const { from, to } = dateRange();
+    const data = await apiGet('/reports/cash-flow?from=' + from + '&to=' + to);
+    if (!data) return;
+    const cashFlowAvailable = data.cashFlowAvailable === true;
+    const settledCashAvailable = data.settledCashAvailable === true;
+    const kpis = [
+      ['Collections', financialAmount(data.collections, true)],
+      ['Settled cash inflow', financialAmount(data.settledCashInflow, settledCashAvailable)],
+      ['Cash refunds', financialAmount(data.cashRefunds, cashFlowAvailable)],
+      ['Operating expenses', financialAmount(data.operatingExpenseCashOutflows, cashFlowAvailable)],
+      ['Payroll paid', financialAmount(data.payrollCashDisbursements, cashFlowAvailable)],
+      ['Supplier payments', financialAmount(data.supplierCashPayments, cashFlowAvailable)],
+      ['Cash outflows', financialAmount(data.cashOutflows, cashFlowAvailable)],
+      ['Net cash flow', financialAmount(data.netCashFlow, cashFlowAvailable)],
+    ];
+    document.getElementById('cashflowKpis').innerHTML = kpis
+      .map(([label, amount]) => '<div class="kpi"><span>' + esc(label) + '</span><strong>' + esc(amount) + '</strong></div>')
+      .join('');
+    const issues = Array.isArray(data.dataIssues) ? data.dataIssues : [];
+    document.getElementById('cashflowIssues').innerHTML = issues.length || !cashFlowAvailable
+      ? '<div class="rpt-empty-inline"><strong>' +
+        esc(cashFlowAvailable ? 'Review required' : 'Cash flow unavailable') +
+        '</strong><p>' +
+        esc(cashFlowAvailable
+          ? issues.join(', ')
+          : 'Settlement or supplier cash evidence is incomplete for this period.') +
+        '</p></div>'
+      : '<p class="muted">Cash sources are available for this period.</p>';
+    lastKpiRows = kpis;
+    lastRows = [];
+    document.getElementById('kpiRow').innerHTML = '';
+    document.getElementById('rptToolbar').innerHTML = '';
+    document.getElementById('tableWrap').hidden = true;
+    document.getElementById('tablePager').hidden = true;
+    document.getElementById('shiftWrap').hidden = true;
+    document.getElementById('txWrap').hidden = true;
+    document.getElementById('truncNote').hidden = true;
+  }
+
+  async function loadExpenses() {
+    const { from, to } = dateRange();
+    const data = await apiGet('/expenses?from=' + from + '&to=' + to);
+    if (!data) return;
+    const rows = Array.isArray(data) ? data : [];
+    const posted = rows.filter((row) => String(row.status || '').toLowerCase() === 'posted');
+    const total = posted.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+    const kpis = [
+      ['Posted running costs', money(total)],
+      ['Entries', String(posted.length)],
+      ['Voided entries', String(rows.length - posted.length)],
+    ];
+    document.getElementById('expensesKpis').innerHTML = kpis
+      .map(([label, amount]) => '<div class="kpi"><span>' + esc(label) + '</span><strong>' + esc(amount) + '</strong></div>')
+      .join('');
+    const body = document.getElementById('expensesBody');
+    body.innerHTML = rows.length
+      ? rows.map((row) => {
+          const status = String(row.status || '').toLowerCase();
+          return '<tr>' +
+            '<td>' + esc(row.expenseDate || '—') + '</td>' +
+            '<td>' + esc(row.category || '—') + '</td>' +
+            '<td>' + esc(row.description || row.payee || row.note || '—') + '</td>' +
+            '<td>' + esc(row.paymentMethod || '—') + '</td>' +
+            '<td class="amt">' + esc(money(row.amount)) + '</td>' +
+            '<td><span class="status ' + (status === 'posted' ? 'success' : 'muted') + '">' + esc(status || 'unknown') + '</span></td>' +
+            '<td>' + (status === 'posted' && canManageExpenses
+              ? '<button class="btn secondary btn-void-expense" data-expense-id="' + esc(row.id) + '">Void</button>'
+              : '—') + '</td>' +
+          '</tr>';
+        }).join('')
+      : '<tr><td colspan="7" class="muted">No expenses recorded for this period.</td></tr>';
+    body.querySelectorAll('.btn-void-expense').forEach((button) => {
+      button.onclick = async () => {
+        if (!window.confirm('Void this expense? This preserves the entry and removes it from posted totals.')) return;
+        const result = await apiWrite('/expenses/' + encodeURIComponent(button.dataset.expenseId), 'PATCH', { status: 'void' });
+        if (result && result.ok) {
+          toast('Expense voided');
+          loadExpenses();
+        } else {
+          toast('Unable to void expense', 'err');
+        }
+      };
+    });
+    document.getElementById('expensesForm').hidden = !canManageExpenses;
+    wireExpenseForm();
+    if (!document.getElementById('expensesForm').expenseDate.value)
+      document.getElementById('expensesForm').expenseDate.value = to;
+    lastKpiRows = kpis;
+    lastRows = rows.map((row) => [row.expenseDate, row.category, row.payee || row.description || row.note || '', row.paymentMethod, row.amount, row.status]);
+    document.getElementById('kpiRow').innerHTML = '';
+    document.getElementById('rptToolbar').innerHTML = '';
+    document.getElementById('tableWrap').hidden = true;
+    document.getElementById('tablePager').hidden = true;
+    document.getElementById('shiftWrap').hidden = true;
+    document.getElementById('txWrap').hidden = true;
+    document.getElementById('truncNote').hidden = true;
   }
 
   async function loadSales() {
@@ -1669,6 +2032,47 @@
   }
 
   function summarizeCard(key, data) {
+    if (key === 'profitability') {
+      const netProfitAvailable = data.netProfitAvailable === true;
+      const cashFlowAvailable = data.cashFlowAvailable === true;
+      return {
+        la: 'Net profit',
+        a: netProfitAvailable && data.netProfit != null ? esc(money(data.netProfit)) : 'Unavailable',
+        lb: 'Net cash flow',
+        b: cashFlowAvailable && data.netCashFlow != null ? esc(money(data.netCashFlow)) : 'Unavailable',
+        activity: data.netCashFlow !== 0 || data.revenue !== 0,
+        export: ['Profitability',
+          netProfitAvailable && data.netProfit != null ? money(data.netProfit) : 'Unavailable',
+          cashFlowAvailable && data.netCashFlow != null ? money(data.netCashFlow) : 'Unavailable'],
+      };
+    }
+    if (key === 'cashflow') {
+      const cashFlowAvailable = data.cashFlowAvailable === true;
+      return {
+        la: 'Net cash flow',
+        a: cashFlowAvailable && data.netCashFlow != null ? esc(money(data.netCashFlow)) : 'Unavailable',
+        lb: 'Cash outflows',
+        b: cashFlowAvailable && data.cashOutflows != null ? esc(money(data.cashOutflows)) : 'Unavailable',
+        activity: cashFlowAvailable
+          && (Number(data.netCashFlow) !== 0 || Number(data.cashOutflows) !== 0),
+        export: ['Cash Flow',
+          cashFlowAvailable && data.netCashFlow != null ? money(data.netCashFlow) : 'Unavailable',
+          cashFlowAvailable && data.cashOutflows != null ? money(data.cashOutflows) : 'Unavailable'],
+      };
+    }
+    if (key === 'expenses') {
+      const rows = Array.isArray(data) ? data : [];
+      const posted = rows.filter((row) => String(row.status || '').toLowerCase() === 'posted');
+      const total = posted.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+      return {
+        la: 'Posted expenses',
+        a: esc(money(total)),
+        lb: 'Entries',
+        b: String(posted.length),
+        activity: posted.length > 0 || total !== 0,
+        export: ['Expenses', money(total), String(posted.length)],
+      };
+    }
     if (key === 'sales') {
       const n = data.transactionCount != null ? data.transactionCount : paymentCount(data);
       return {
@@ -1736,6 +2140,9 @@
     document.getElementById('membershipsBoard').hidden = true;
     document.getElementById('productsBoard').hidden = true;
     document.getElementById('staffBoard').hidden = true;
+    document.getElementById('profitabilityBoard').hidden = true;
+    document.getElementById('cashflowBoard').hidden = true;
+    document.getElementById('expensesBoard').hidden = true;
     document.getElementById('txWrap').hidden = true;
     lastRows = [];
     lastKpiRows = [];
@@ -1746,8 +2153,8 @@
     const loading = {};
     visible.forEach((c) => {
       loading[c.key] = {
-        la: c.key === 'sales' ? 'Net sales' : c.key === 'refunds' ? 'Refund amount' : c.key === 'memberships' ? 'New' : c.key === 'products' ? 'Product revenue' : 'Total sales',
-        lb: c.key === 'sales' ? 'Transactions' : c.key === 'refunds' ? 'Refunds' : c.key === 'memberships' ? 'Renewals' : c.key === 'products' ? 'Units sold' : 'Shifts',
+        la: c.key === 'sales' ? 'Net sales' : c.key === 'refunds' ? 'Refund amount' : c.key === 'memberships' ? 'New' : c.key === 'products' ? 'Product revenue' : c.key === 'profitability' ? 'Net profit' : c.key === 'cashflow' ? 'Net cash flow' : c.key === 'expenses' ? 'Posted expenses' : 'Total sales',
+        lb: c.key === 'sales' ? 'Transactions' : c.key === 'refunds' ? 'Refunds' : c.key === 'memberships' ? 'Renewals' : c.key === 'products' ? 'Units sold' : c.key === 'profitability' ? 'Net cash flow' : c.key === 'cashflow' ? 'Cash outflows' : c.key === 'expenses' ? 'Entries' : 'Shifts',
         a: '…',
         b: '…',
         cls: 'is-load',
@@ -1763,6 +2170,9 @@
       memberships: '/reports/memberships' + q,
       products: '/reports/products' + q,
       staff: '/reports/staff-shifts' + q,
+      profitability: '/reports/profitability' + q,
+      cashflow: '/reports/cash-flow' + q,
+      expenses: '/expenses' + q,
     };
     const states = { ...loading };
     let anyActivity = false;
@@ -1816,12 +2226,19 @@
     else if (activeTab === 'refunds') fillKpiSkeleton('refundsKpis');
     else if (activeTab === 'memberships') fillKpiSkeleton('membershipsKpis');
     else if (activeTab === 'products') fillKpiSkeleton('productsKpis');
+    else if (activeTab === 'profitability' || activeTab === 'cashflow') {
+      document.getElementById(activeTab === 'cashflow' ? 'cashflowKpis' : 'profitabilityKpis').innerHTML = '<div class="kpi">Loading…</div>';
+    }
+    else if (activeTab === 'expenses') document.getElementById('expensesKpis').innerHTML = '<div class="kpi">Loading…</div>';
     else fillKpiSkeleton('staffKpis');
     try {
       if (activeTab === 'sales') await loadSales();
       else if (activeTab === 'refunds') await loadRefunds();
       else if (activeTab === 'memberships') await loadMemberships();
       else if (activeTab === 'products') await loadProducts();
+      else if (activeTab === 'profitability') await loadProfitability();
+      else if (activeTab === 'cashflow') await loadCashflow();
+      else if (activeTab === 'expenses') await loadExpenses();
       else await loadStaff();
     } catch (e) {
       document.getElementById('kpiRow').innerHTML = '';
@@ -1965,4 +2382,4 @@
   setRangeLabel();
   if (activeTab) loadDetail();
   else loadHub();
-})();
+})(typeof window !== 'undefined' ? window : globalThis);

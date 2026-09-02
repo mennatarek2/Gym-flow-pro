@@ -3,10 +3,13 @@
  * Production (same host as API): uses window.location.origin + '/api'
  * Override: <meta name="gfp-api-base" content="https://your-domain.com/api">
  * Dev persist: localStorage.gfp_api_base
- * Dev default: ngrok tunnel (Swagger origin)
+ * Dev default: local HTTPS API (https://localhost:5001/api).
+ * Local API must be started with: dotnet run --launch-profile https
+ * See docs/getting-started/STAFF_WEB_LOCAL_HTTPS.md (W-04).
+ * Remote environments must opt in through the meta tag or gfp_api_base storage key.
  */
 (function (global) {
-  var NGROK_API = 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  var LOCAL_API = 'https://localhost:5001/api';
 
   function normalizeApiBase(raw) {
     if (!raw) return '';
@@ -17,7 +20,7 @@
 
   function resolveDefaultBase() {
     if (typeof window === 'undefined' || !window.location || !window.location.origin) {
-      return NGROK_API;
+      return LOCAL_API;
     }
     var meta = document.querySelector('meta[name="gfp-api-base"]');
     if (meta && meta.getAttribute('content')) {
@@ -30,7 +33,7 @@
     } catch (e) { /* ignore */ }
     var host = window.location.hostname;
     if (host === 'localhost' || host === '127.0.0.1') {
-      return NGROK_API;
+      return LOCAL_API;
     }
     return window.location.origin + '/api';
   }

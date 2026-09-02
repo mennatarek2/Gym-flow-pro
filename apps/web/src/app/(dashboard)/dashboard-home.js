@@ -1,7 +1,7 @@
 /**
  * Dashboard Overview — operational control center.
  *
- * Hierarchy: Financial overview → Today → Quick Actions → Business overview → Operations → Needs attention.
+ * Hierarchy: Executive financial overview (Owner) → Today → Quick Actions → Business → Operations → Needs attention.
  * Real APIs only. Per-widget permission gates.
  *
  * Primary data source:
@@ -23,7 +23,6 @@
     occupancy: null,
     attendanceWeek: null,
     debtorsSummary: null,
-    debtorsPreview: null,
     expiring: null,
     inventory: null,
     ordersPending: null,
@@ -512,6 +511,9 @@
     state.checkinsToday = today.checkinsToday == null
       ? { __err: true }
       : { count: today.checkinsToday };
+    state.debtorsSummary = financial
+      ? { debtorCount: financial.accountsReceivableCount || 0 }
+      : null;
     state.occupancy = operations.maxCapacity == null && operations.currentlyInside == null
       ? { __err: true }
       : {
@@ -545,16 +547,11 @@
         })
       };
     });
-    state.debtorsSummary = financial
-      ? { totalOutstanding: financial.outstanding }
-      : null;
     state.financialPeriod = financial
       ? {
         period: data.period && data.period.key ? data.period.key : 'month',
         from: data.period && data.period.from,
         to: data.period && data.period.to,
-        sales: { netCashIn: financial.cashCollected, cashInTotal: financial.cashCollected },
-        refunds: { total: financial.refunds },
         dashboard: financial
       }
       : null;
@@ -563,7 +560,7 @@
         return action.key;
       }).filter(Boolean);
     }
-    var trend = financial && Array.isArray(financial.cashTrend) ? financial.cashTrend : [];
+    var trend = financial && Array.isArray(financial.revenueTrend) ? financial.revenueTrend : [];
     state.revenueChart = {
       labels: trend.map(function (point) { return String(point.date || '').slice(5); }),
       values: trend.map(function (point) { return Number(point.value) || 0; })
@@ -591,7 +588,8 @@
       state.checkinsToday = { __err: true };
       state.occupancy = { __err: true };
       state.sessionsToday = { __err: true };
-      state.financialPeriod = { sales: { __err: true }, refunds: { __err: true } };
+      state.debtorsSummary = { __err: true };
+      state.financialPeriod = { __err: true };
       return;
     }
     applyDashboardOverview(r.data);
@@ -658,31 +656,9 @@
     });
   }
 
-  async function loadMembershipsPeriod() {
-    // This report DTO contains financial fields and is currently protected by
-    // members.view; only financial viewers may request it.
-    if (!canMembers() || !canFinance()) return;
-    var range = periodRange('month');
-    var path =
-      '/reports/memberships?from=' + range.from + '&to=' + range.to;
-    var r = await apiGetCached('memberships:' + range.from + ':' + range.to, path);
-    state.membershipsPeriod = r.ok ? r.data : { __err: true };
-  }
-
   async function loadFinancialPeriod(period) {
     if (!canFinance()) return;
     await loadDashboardOverview(period || 'month');
-  }
-
-  async function loadDebtors() {
-    if (canFinance()) {
-      var s = await apiGetCached('debtors-summary', '/debtors/summary');
-      state.debtorsSummary = s.ok ? s.data : { __err: true };
-    }
-    if (canSales()) {
-      var p = await apiGetCached('outstanding-preview', '/debtors?page=1&pageSize=5');
-      state.debtorsPreview = p.ok ? p.data : { __err: true };
-    }
   }
 
   async function loadExpiring() {
@@ -727,32 +703,6 @@
     else state.shift = { __err: true };
   }
 
-  async function loadRevenueChartData(months) {
-    if (!canFinance()) return;
-    var m = months || 6;
-    var to = new Date();
-    var from = new Date(to);
-    from.setMonth(from.getMonth() - m);
-    var range = { from: fmtDateOnly(from), to: fmtDateOnly(to) };
-    var r = await apiGetCached(
-      'sales-chart:' + range.from + ':' + range.to,
-      '/reports/sales?from=' + range.from + '&to=' + range.to
-    );
-    if (!r.ok) {
-      state.revenueChart = { __err: true };
-      return;
-    }
-    var days = r.data && (r.data.days || r.data.Days);
-    if (!Array.isArray(days)) days = [];
-    state.revenueChart = {
-      labels: days.map(function (d) {
-        var date = d.date || d.Date;
-        return date ? String(date).slice(5) : '';
-      }),
-      values: days.map(function (d) { return Number(d.cashIn != null ? d.cashIn : d.CashIn) || 0; })
-    };
-  }
-
   // ── Derived KPI values ─────────────────────────────────────────
   function activeMembersValue() {
     if (state.membersStatus && !state.membersStatus.__err && state.membersStatus.active != null)
@@ -762,12 +712,6 @@
 
   function checkinsTodayValue() {
     if (state.checkinsToday && !state.checkinsToday.__err) return state.checkinsToday.count;
-    return null;
-  }
-
-  function debtorsOutstanding() {
-    if (state.debtorsSummary && !state.debtorsSummary.__err)
-      return Number(state.debtorsSummary.totalOutstanding || 0);
     return null;
   }
 
@@ -791,14 +735,14 @@
     var cards;
     if (role === 'owner') {
       cards = [
-        kpiCard(t('Revenue today', 'إيراد اليوم'), today.revenueToday == null ? '—' : money(today.revenueToday), ''),
+        kpiCard(t('Revenue today', 'إيراد اليوم'), today.revenueToday == null ? '—' : money(today.revenueToday), t('Accrual revenue (sales)', 'إيراد مجمّع (مبيعات)')),
         kpiCard(t('Outstanding', 'المستحقات'), today.outstanding == null ? '—' : money(today.outstanding), ''),
         kpiCard(t('Active members', 'الأعضاء النشطون'), today.activeMembers == null ? '—' : num(today.activeMembers), ''),
         kpiCard(t('Renewals due soon', 'تجديدات قريبة'), today.renewalsDueSoon == null ? '—' : num(today.renewalsDueSoon), '')
       ];
     } else if (role === 'manager') {
       cards = [
-        kpiCard(t('Revenue today', 'إيراد اليوم'), today.revenueToday == null ? '—' : money(today.revenueToday), ''),
+        kpiCard(t('Revenue today', 'إيراد اليوم'), today.revenueToday == null ? '—' : money(today.revenueToday), t('Accrual revenue (sales)', 'إيراد مجمّع (مبيعات)')),
         kpiCard(t('Outstanding', 'المستحقات'), today.outstanding == null ? '—' : money(today.outstanding), ''),
         kpiCard(t('Active members', 'الأعضاء النشطون'), today.activeMembers == null ? '—' : num(today.activeMembers), ''),
         kpiCard(t("Today's check-ins", 'حضور اليوم'), today.checkinsToday == null ? '—' : num(today.checkinsToday), '')
@@ -840,6 +784,573 @@
       (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') +
       '</div>'
     );
+  }
+
+  function userRoleLower() {
+    return global.GfpAuthz && global.GfpAuthz.getUserRole
+      ? String(global.GfpAuthz.getUserRole() || '').toLowerCase()
+      : '';
+  }
+
+  function isOwnerFinance() {
+    return canFinance() && userRoleLower() === 'owner';
+  }
+
+  function financialTrustState(financial, key) {
+    if (!financial || !financial.trustStates) return '';
+    return String(financial.trustStates[key] || '').toUpperCase();
+  }
+
+  function periodLabelFor(key) {
+    if (key === 'today') return t('today', 'اليوم');
+    if (key === 'week') return t('this week', 'هذا الأسبوع');
+    if (key === 'last_month') return t('last month', 'الشهر الماضي');
+    if (key === 'year') return t('this year', 'هذه السنة');
+    if (key === 'custom') return t('custom range', 'فترة مخصصة');
+    return t('this month', 'هذا الشهر');
+  }
+
+  function parseYmdDash(ymd) {
+    var parts = String(ymd || '').split('-').map(Number);
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+
+  function isFullCalendarMonth(from, to) {
+    if (!from || !to || from === to) return false;
+    var start = parseYmdDash(from);
+    var end = parseYmdDash(to);
+    if (!start || !end) return false;
+    if (start.getFullYear() !== end.getFullYear() || start.getMonth() !== end.getMonth()) return false;
+    if (start.getDate() !== 1) return false;
+    var lastDay = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+    return end.getDate() === lastDay;
+  }
+
+  function ownerPeriodDisplayLabel(financial, selectedPeriod) {
+    var from = financial && financial.from;
+    var to = financial && financial.to;
+    if (from && to) {
+      var fromD = parseYmdDash(from);
+      var toD = parseYmdDash(to);
+      if (fromD && toD) {
+        var fmt = function (d) {
+          return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        };
+        if (from === to) return fmt(fromD) + ' ' + t('so far', 'حتى الآن');
+        if (!isFullCalendarMonth(from, to)) {
+          return fmt(fromD) + ' – ' + fmt(toD) + ' ' + t('so far', 'حتى الآن');
+        }
+      }
+    }
+    return periodLabelFor(selectedPeriod);
+  }
+
+  function shouldShowPayrollPeriodWarning(financial, payrollAvailable, payrollExpense) {
+    if (!payrollAvailable || payrollExpense == null || payrollExpense <= 0) return false;
+    var from = financial && financial.from;
+    var to = financial && financial.to;
+    if (!from || !to) return false;
+    return !isFullCalendarMonth(from, to);
+  }
+
+  function costToRunCard(opts) {
+    var running = opts.runningCosts == null ? null : Number(opts.runningCosts);
+    var runningDisplay = running == null
+      ? '—'
+      : running === 0
+        ? t('None posted', 'لا يوجد مسجّل')
+        : money(running);
+    var payrollLine = opts.payrollAvailable && opts.payroll != null
+      ? money(opts.payroll)
+      : t('Unavailable', 'غير متاح');
+    var totalDisplay = opts.total != null ? money(opts.total) : '—';
+    var addLink = running === 0 && opts.canManage
+      ? '<a class="dash-link" href="/dashboard/reports/?tab=expenses">' +
+        esc(t('+ Add running cost', '+ إضافة مصروف تشغيل')) + '</a>'
+      : '';
+    return (
+      '<div class="dash-exec-kpi dash-exec-kpi-cost">' +
+      '<span class="lbl">' + esc(t('Cost to run', 'تكلفة التشغيل')) + '</span>' +
+      '<div class="val">' + esc(totalDisplay) + '</div>' +
+      '<span class="sub">' + esc(t('Running costs', 'مصروفات تشغيل') + ': ' + runningDisplay) + '</span>' +
+      '<span class="sub">' + esc(t('Payroll', 'رواتب') + ': ' + payrollLine) + '</span>' +
+      (opts.periodLabel ? '<span class="sub">' + esc(opts.periodLabel) + '</span>' : '') +
+      (addLink ? '<span class="hint">' + addLink + '</span>' : '') +
+      '</div>'
+    );
+  }
+
+  function profitabilityBridgeRow(label, amount, opts) {
+    opts = opts || {};
+    var value = amount == null
+      ? '—'
+      : money(opts.negative ? -Number(amount) : Number(amount));
+    return (
+      '<div class="dash-profit-row' + (opts.emphasis ? ' is-total' : '') + '">' +
+      '<span>' + esc(label) + '</span><strong>' + esc(value) + '</strong></div>'
+    );
+  }
+
+  function profitabilityBridgeHtml(params) {
+    return (
+      '<div class="dash-profit-bridge">' +
+      profitabilityBridgeRow(t('Revenue', 'الإيراد'), params.revenue) +
+      profitabilityBridgeRow(t('COGS', 'تكلفة المبيعات'), params.cogs, { negative: true }) +
+      profitabilityBridgeRow(t('Gross profit', 'إجمالي الربح'), params.gross, { emphasis: true }) +
+      profitabilityBridgeRow(t('Running costs', 'مصروفات تشغيل'), params.running, { negative: true }) +
+      profitabilityBridgeRow(
+        t('Payroll', 'رواتب'),
+        params.payrollAvailable ? params.payroll : null,
+        { negative: true }
+      ) +
+      profitabilityBridgeRow(
+        t('Net profit', 'صافي الربح'),
+        params.netAvailable ? params.net : null,
+        { emphasis: true }
+      ) +
+      '</div>'
+    );
+  }
+
+  function ownerAttentionFromIssues(financial, issues) {
+    var items = [];
+    var codes = {};
+    (issues || []).forEach(function (code) { codes[String(code || '').toLowerCase()] = true; });
+    if (!financial || financial.settledCashAvailable !== true) {
+      items.push({
+        title: t('Settlement evidence unavailable', 'دليل التسوية غير متاح'),
+        body: t(
+          'Some historical payment records cannot currently be verified as settled cash.',
+          'بعض سجلات الدفع التاريخية لا يمكن التحقق من تسويتها النقدية حالياً.'
+        ),
+        href: '/dashboard/reports/?tab=cashflow',
+        cta: t('Review', 'مراجعة')
+      });
+    }
+    if (!financial || financial.netProfitAvailable !== true) {
+      if (codes.no_payroll_period || codes.payroll_data_incomplete) {
+        items.push({
+          title: t('Payroll unavailable', 'الرواتب غير متاحة'),
+          body: t(
+            'Payroll has not been finalized for this period, so Net Profit is unavailable.',
+            'لم يتم إغلاق الرواتب لهذه الفترة، لذلك صافي الربح غير متاح.'
+          ),
+          href: '/dashboard/reports/?tab=profitability',
+          cta: t('Review Payroll', 'مراجعة الرواتب')
+        });
+      }
+    }
+    if (codes.cogs_unavailable || codes.retail_refund_cogs_unavailable) {
+      items.push({
+        title: t('Product costs need review', 'تكاليف المنتجات تحتاج مراجعة'),
+        body: t(
+          'Gross profit may be incomplete until product cost coverage is complete.',
+          'قد يكون إجمالي الربح غير مكتمل حتى تكتمل تغطية تكلفة المنتجات.'
+        ),
+        href: '/dashboard/reports/?tab=profitability',
+        cta: t('Review', 'مراجعة')
+      });
+    }
+    if (codes.payment_allocation_mismatch || codes.supplier_cash_evidence_unavailable) {
+      items.push({
+        title: t('Financial reconciliation required', 'مطلوب تسوية مالية'),
+        body: t(
+          'Some financial data requires reconciliation before it can be treated as fully reliable.',
+          'بعض البيانات المالية تحتاج تسوية قبل أن تُعامل على أنها موثوقة بالكامل.'
+        ),
+        href: '/dashboard/reports/?tab=profitability',
+        cta: t('Review Financial Reports', 'مراجعة التقارير المالية')
+      });
+    }
+    if (!financial || financial.cashFlowAvailable !== true) {
+      var hasCashIssue = items.some(function (item) {
+        return item.title === t('Settlement evidence unavailable', 'دليل التسوية غير متاح');
+      });
+      if (!hasCashIssue) {
+        items.push({
+          title: t('Cash flow unavailable', 'التدفق النقدي غير متاح'),
+          body: t(
+            'Cash settlement or supplier payment evidence is incomplete.',
+            'دليل التسوية النقدية أو مدفوعات الموردين غير مكتمل.'
+          ),
+          href: '/dashboard/reports/?tab=cashflow',
+          cta: t('Review', 'مراجعة')
+        });
+      }
+    }
+    return items;
+  }
+
+  function revenueBreakdownHint(breakdown) {
+    var labels = {
+      memberships: t('Memberships', 'العضويات'),
+      renewals: t('Renewals', 'التجديدات'),
+      products: t('Products', 'المنتجات'),
+      classes: t('Classes', 'الحصص')
+    };
+    var order = ['memberships', 'renewals', 'products', 'classes'];
+    var byKey = {};
+    (breakdown || []).forEach(function (item) {
+      if (!item || !item.key) return;
+      byKey[String(item.key).toLowerCase()] = item;
+    });
+    var parts = order
+      .map(function (key) {
+        var item = byKey[key];
+        if (!item || Number(item.amount) <= 0) return '';
+        return (labels[key] || key) + ' = ' + money(item.amount);
+      })
+      .filter(Boolean);
+    return parts.join(' · ');
+  }
+
+  function executiveKpiCard(opts) {
+    var trust = String(opts.trust || '').toUpperCase();
+    var unavailable = opts.unavailable === true || trust === 'UNAVAILABLE';
+    var warn = trust === 'CONDITIONALLY_TRUSTWORTHY' || trust === 'REQUIRES_RECONCILIATION' || opts.warn === true;
+    var valueHtml = unavailable
+      ? '<div class="val unavailable">' + esc(t('Unavailable', 'غير متاح')) + '</div>'
+      : '<div class="val">' + esc(opts.value) + '</div>';
+    var statusHtml = '';
+    if (unavailable && opts.unavailableNote) {
+      statusHtml = '<span class="status unavailable">' + esc(opts.unavailableNote) + '</span>';
+    } else if (warn && opts.warnNote) {
+      statusHtml = '<span class="status warn">' + esc(opts.warnNote) + '</span>';
+    }
+    return (
+      '<div class="dash-exec-kpi' + (warn ? ' is-warn' : '') + (unavailable ? ' is-muted' : '') + '">' +
+      '<span class="lbl">' + esc(opts.label) + '</span>' +
+      valueHtml +
+      (opts.sub ? '<span class="sub">' + esc(opts.sub) + '</span>' : '') +
+      (opts.hint ? '<span class="hint">' + esc(opts.hint) + '</span>' : '') +
+      statusHtml +
+      '</div>'
+    );
+  }
+
+  function financePeriodControls(selectedPeriod, financial) {
+    var ownerPeriods = ['today', 'week', 'month', 'last_month', 'year', 'custom'];
+    var periods = isOwnerFinance() ? ownerPeriods : ['today', 'week', 'month', 'last_month', 'year', 'last_year', 'custom'];
+    return (
+      '<div class="dash-exec-period">' +
+      '<span class="dash-exec-period-label">' +
+      esc(t('Showing', 'عرض') + ' ' + periodLabelFor(selectedPeriod)) +
+      '</span>' +
+      '<div class="dash-seg" id="financePeriodSeg">' +
+      periods.map(function (period) {
+        var label = period === 'today'
+          ? t('Today', 'اليوم')
+          : period === 'week'
+            ? t('Week', 'أسبوع')
+            : period === 'month'
+              ? t('Month', 'شهر')
+              : period === 'last_month'
+                ? t('Last month', 'الشهر الماضي')
+                : period === 'year'
+                  ? t('Year', 'سنة')
+                  : period === 'last_year'
+                    ? t('Last year', 'السنة الماضية')
+                    : t('Custom', 'مخصص');
+        return '<button type="button" class="dash-seg-btn' +
+          (selectedPeriod === period ? ' act' : '') +
+          '" data-finance-period="' + period + '">' + esc(label) + '</button>';
+      }).join('') +
+      '</div>' +
+      '</div>' +
+      '<div class="dash-custom-range" id="dashCustomRange" ' +
+      (selectedPeriod === 'custom' ? '' : 'hidden') + '>' +
+      '<input type="date" id="dashFromDate" value="' + esc(financial && financial.from || '') + '">' +
+      '<input type="date" id="dashToDate" value="' + esc(financial && financial.to || '') + '">' +
+      '<button type="button" class="dash-btn" data-finance-custom>' +
+      esc(t('Apply', 'تطبيق')) + '</button></div>'
+    );
+  }
+
+  function wireFinancePeriodControls(el) {
+    var periodSeg = el.querySelector('#financePeriodSeg');
+    if (periodSeg) {
+      periodSeg.querySelectorAll('[data-finance-period]').forEach(function (btn) {
+        btn.onclick = async function () {
+          var period = btn.getAttribute('data-finance-period') || 'month';
+          var custom = el.querySelector('#dashCustomRange');
+          if (period === 'custom') {
+            if (custom) custom.hidden = false;
+            return;
+          }
+          if (custom) custom.hidden = true;
+          var host = global.document.getElementById('dashRevChartHost');
+          if (host) host.innerHTML = chartSkeleton();
+          await loadFinancialPeriod(period);
+          renderFinance(el);
+          renderBusiness(global.document.getElementById('wBusiness'));
+        };
+      });
+    }
+    var customApply = el.querySelector('[data-finance-custom]');
+    if (customApply) {
+      customApply.onclick = async function () {
+        var from = (el.querySelector('#dashFromDate') || {}).value;
+        var to = (el.querySelector('#dashToDate') || {}).value;
+        if (!from || !to || from > to) {
+          qaToast(t('Choose a valid date range.', 'اختار فترة زمنية صحيحة.'), 'err');
+          return;
+        }
+        await loadDashboardOverview('custom', from, to, true);
+        renderFinance(el);
+        renderKpis(global.document.getElementById('wKpis'));
+        renderBusiness(global.document.getElementById('wBusiness'));
+      };
+    }
+  }
+
+  function renderFinanceExecutive(el, financial, dashboardFinancial, selectedPeriod) {
+    var periodLabel = ownerPeriodDisplayLabel(financial, selectedPeriod);
+    var revenue = dashboardFinancial && dashboardFinancial.revenue != null
+      ? Number(dashboardFinancial.revenue) : null;
+    var operatingExpenses = dashboardFinancial && dashboardFinancial.operatingExpenses != null
+      ? Number(dashboardFinancial.operatingExpenses)
+      : dashboardFinancial && dashboardFinancial.expenses != null
+        ? Number(dashboardFinancial.expenses)
+        : null;
+    var grossProfit = dashboardFinancial ? dashboardFinancial.grossProfit : null;
+    var cogsAvailable = dashboardFinancial && dashboardFinancial.cogsAvailable === true;
+    var profit = dashboardFinancial ? dashboardFinancial.netProfit : null;
+    var netProfitAvailable = dashboardFinancial && dashboardFinancial.netProfitAvailable === true;
+    var collections = dashboardFinancial && dashboardFinancial.collections != null
+      ? Number(dashboardFinancial.collections) : null;
+    var settledCashAvailable = dashboardFinancial && dashboardFinancial.settledCashAvailable === true;
+    var ar = dashboardFinancial ? dashboardFinancial.accountsReceivable : null;
+    var ap = dashboardFinancial ? dashboardFinancial.accountsPayable : null;
+    var payrollExpense = dashboardFinancial && dashboardFinancial.payrollExpense != null
+      ? Number(dashboardFinancial.payrollExpense) : null;
+    var payrollAvailable = dashboardFinancial
+      && dashboardFinancial.payrollAvailable === true
+      && dashboardFinancial.payrollCoverageStatus === 'COMPLETE';
+    var cogs = dashboardFinancial && dashboardFinancial.cogs != null
+      ? Number(dashboardFinancial.cogs) : null;
+    var grossMargin = revenue > 0 && grossProfit != null && cogsAvailable
+      ? Number(grossProfit) / Number(revenue) * 100
+      : null;
+    var runningCosts = operatingExpenses != null ? operatingExpenses : 0;
+    var costToRunTotal = payrollAvailable && payrollExpense != null
+      ? runningCosts + payrollExpense
+      : (operatingExpenses != null ? operatingExpenses : null);
+    var payrollWarning = shouldShowPayrollPeriodWarning(financial, payrollAvailable, payrollExpense);
+    var canManageExpenses = can('reports.expenses.manage');
+
+    var breakdown = dashboardFinancial && Array.isArray(dashboardFinancial.breakdown)
+      ? dashboardFinancial.breakdown
+      : [];
+    var revenueFromHint = revenueBreakdownHint(breakdown);
+
+    var heroKpis = [
+      executiveKpiCard({
+        label: t('Revenue', 'الإيراد'),
+        value: revenue != null ? money(revenue) : '—',
+        sub: periodLabel,
+        hint: revenueFromHint || t(
+          'Recognized from sales in this period — not the same as cash collected',
+          'مُثبت من المبيعات في هذه الفترة — ليس نفس المبلغ المحصّل نقداً'
+        ),
+        trust: financialTrustState(dashboardFinancial, 'Revenue')
+      }),
+      executiveKpiCard({
+        label: t('Gross profit', 'إجمالي الربح'),
+        value: grossProfit == null || !cogsAvailable ? '—' : money(grossProfit),
+        sub: grossMargin != null
+          ? grossMargin.toFixed(1) + '% ' + t('margin', 'هامش')
+          : t('After product cost', 'بعد تكلفة المنتج'),
+        hint: cogsAvailable && cogs != null
+          ? t('Revenue minus product cost (COGS ', 'الإيراد ناقص تكلفة المنتج (') + money(cogs) + ')'
+          : t('Revenue minus product cost (COGS)', 'الإيراد ناقص تكلفة المنتج'),
+        trust: financialTrustState(dashboardFinancial, 'GrossProfit'),
+        unavailable: grossProfit == null || !cogsAvailable,
+        unavailableNote: t('Product cost data is incomplete', 'بيانات تكلفة المنتج غير مكتملة')
+      }),
+      costToRunCard({
+        runningCosts: runningCosts,
+        payroll: payrollExpense,
+        payrollAvailable: payrollAvailable,
+        total: costToRunTotal,
+        periodLabel: periodLabel,
+        canManage: canManageExpenses
+      }),
+      executiveKpiCard({
+        label: t('Unpaid supplier stock', 'مخزون مورد غير مدفوع'),
+        value: ap == null ? '—' : money(ap),
+        sub: t('Inventory purchased but not yet paid', 'مخزون مشترى ولم يُسدد بعد'),
+        hint: t(
+          'Accounts payable — not rent, payroll, or running costs',
+          'ذمم دائنة للموردين — ليست إيجار أو رواتب أو مصروفات تشغيل'
+        ),
+        trust: financialTrustState(dashboardFinancial, 'AccountsPayable')
+      })
+    ].join('');
+
+    var profitabilityHtml = profitabilityBridgeHtml({
+      revenue: revenue,
+      cogs: cogsAvailable ? cogs : null,
+      gross: grossProfit != null && cogsAvailable ? grossProfit : null,
+      running: operatingExpenses,
+      payroll: payrollExpense,
+      payrollAvailable: payrollAvailable,
+      net: profit,
+      netAvailable: netProfitAvailable
+    });
+
+    var payrollWarningHtml = payrollWarning
+      ? '<p class="dash-exec-callout">' +
+        esc(t(
+          'Salaries shown for the full payroll period. Not prorated.',
+          'الرواتب المعروضة لفترة الرواتب الكاملة. غير مقسّمة يومياً.'
+        )) +
+        '</p>'
+      : '';
+
+    var cashSection =
+      '<div class="dash-exec-owed">' +
+      executiveKpiCard({
+        label: t('Collected', 'المحصّل'),
+        value: collections != null ? money(collections) : '—',
+        sub: t('Successful payment collections', 'تحصيلات الدفع الناجحة'),
+        hint: t(
+          'Money collected from payments — timing may differ from revenue',
+          'أموال محصّلة من الدفعات — قد يختلف توقيتها عن الإيراد'
+        ),
+        trust: financialTrustState(dashboardFinancial, 'Collections'),
+        warn: !settledCashAvailable,
+        warnNote: t('Settlement evidence unavailable', 'دليل التسوية غير متاح')
+      }) +
+      '</div>';
+
+    var owedCards =
+      '<div class="dash-exec-owed">' +
+      '<div>' +
+      executiveKpiCard({
+        label: t('Accounts receivable', 'ذمم مدينة'),
+        value: ar == null ? '—' : money(ar),
+        sub: t('Customers who still owe the gym', 'عملاء ما زالوا مدينين للنادي'),
+        hint: t(
+          'Current balance owed by members — not this period\'s revenue',
+          'الرصيد الحالي المستحق من الأعضاء — ليس إيراد هذه الفترة'
+        ),
+        trust: financialTrustState(dashboardFinancial, 'AccountsReceivable')
+      }) +
+      linkRow('/dashboard/call-sheet/', t('View receivables', 'عرض الذمم المدينة')) +
+      '</div>' +
+      '<div>' +
+      executiveKpiCard({
+        label: t('Unpaid supplier stock', 'مخزون مورد غير مدفوع'),
+        value: ap == null ? '—' : money(ap),
+        sub: t('Inventory purchased but not yet paid', 'مخزون مشترى ولم يُسدد بعد'),
+        hint: t(
+          'Accounts payable — not operating expenses',
+          'ذمم دائنة — ليست مصروفات تشغيل'
+        ),
+        trust: financialTrustState(dashboardFinancial, 'AccountsPayable')
+      }) +
+      linkRow('/dashboard/inventory/suppliers/', t('View payables', 'عرض الذمم الدائنة')) +
+      '</div>' +
+      '</div>';
+
+    var attention = ownerAttentionFromIssues(
+      dashboardFinancial,
+      dashboardFinancial && dashboardFinancial.financialDataIssues
+    );
+
+    var attentionHtml = attention.length
+      ? '<div class="dash-exec-attn">' + attention.map(function (item) {
+        return '<div class="dash-exec-attn-item"><div><strong>' + esc(item.title) +
+          '</strong><p>' + esc(item.body) + '</p></div>' +
+          '<a class="dash-btn secondary" href="' + esc(item.href) + '">' + esc(item.cta) + '</a></div>';
+      }).join('') + '</div>'
+      : '<p class="dash-muted">' +
+        esc(t('No financial issues need your attention right now.', 'لا توجد مشاكل مالية تحتاج انتباهك الآن.')) +
+        '</p>';
+
+    var chartNote = t('Daily line shows revenue only', 'الخط اليومي يعرض الإيراد فقط');
+
+    var glossaryHtml =
+      '<details class="dash-exec-glossary">' +
+      '<summary>' + esc(t('Financial glossary', 'مسرد مالي')) + '</summary>' +
+      '<dl class="dash-exec-glossary-list">' +
+      [
+        [
+          t('Revenue', 'الإيراد'),
+          t(
+            'Recognized from sales in the selected period (financial-v1). Not the same as cash collected that day.',
+            'مُثبت من المبيعات في الفترة المختارة (financial-v1). ليس نفس النقد المحصّل في ذلك اليوم.'
+          )
+        ],
+        [
+          t('Collected / Cash', 'المحصّل / النقد'),
+          t(
+            'Successful payment collections. Timing can differ from revenue recognition.',
+            'تحصيلات الدفع الناجحة. قد يختلف التوقيت عن إثبات الإيراد.'
+          )
+        ],
+        [
+          t('Cost to run', 'تكلفة التشغيل'),
+          t(
+            'Running costs (OpEx from the catalog) plus salaries when a COMPLETE payroll period covers the month. Payroll is never posted as OpEx.',
+            'مصروفات التشغيل من الكتالوج + الرواتب عندما تكون فترة الرواتب COMPLETE. الرواتب لا تُسجَّل كمصروف تشغيل.'
+          )
+        ],
+        [
+          t('Unpaid supplier stock (AP)', 'مخزون مورد غير مدفوع'),
+          t(
+            'Accounts payable for inventory purchased but not yet paid — not rent, payroll, or running costs.',
+            'ذمم دائنة لمخزون مشترى ولم يُسدد — ليست إيجار أو رواتب أو مصروفات تشغيل.'
+          )
+        ],
+        [
+          t('Payroll warning', 'تحذير الرواتب'),
+          t(
+            'When the Owner month is shorter than the payroll period, salaries shown are for the full payroll period (not prorated by day).',
+            'عندما يكون شهر المالك أقصر من فترة الرواتب، تُعرض الرواتب لفترة الرواتب الكاملة (غير مقسّمة يومياً).'
+          )
+        ],
+        [
+          t('Net profit gate', 'بوابة صافي الربح'),
+          t(
+            'Net profit stays unavailable until overlapping payroll periods are COMPLETE and required finance data is present.',
+            'صافي الربح يبقى غير متاح حتى تكتمل فترات الرواتب المتداخلة وتتوافر بيانات المالية المطلوبة.'
+          )
+        ]
+      ].map(function (row) {
+        return '<div><dt>' + esc(row[0]) + '</dt><dd>' + esc(row[1]) + '</dd></div>';
+      }).join('') +
+      '</dl>' +
+      '<p class="dash-muted dash-exec-glossary-foot">' +
+      esc(t('Aligned to financial-v1. Open Running costs in Reports to post OpEx.', 'متوافق مع financial-v1. افتح مصروفات التشغيل في التقارير لتسجيل OpEx.')) +
+      '</p></details>';
+
+    el.innerHTML =
+      financePeriodControls(selectedPeriod, financial) +
+      '<div class="dash-exec-kpis dash-exec-kpis-hero">' + heroKpis + '</div>' +
+      glossaryHtml +
+      '<div class="dash-exec-section"><h3>' + esc(t('Profitability', 'الربحية')) + '</h3>' +
+      profitabilityHtml + payrollWarningHtml + '</div>' +
+      '<div class="dash-exec-section"><h3>' + esc(t('Cash', 'النقد')) + '</h3>' + cashSection + '</div>' +
+      '<div class="dash-exec-section"><h3>' + esc(t('Money owed', 'الأموال المستحقة')) + '</h3>' + owedCards + '</div>' +
+      '<div class="dash-exec-section"><h3>' + esc(t('Revenue trend', 'اتجاه الإيراد')) + '</h3>' +
+      '<div class="dash-chart-wrap" id="dashRevChartHost">' + chartSkeleton() + '</div>' +
+      '<p class="dash-chart-note">' + esc(chartNote) + '</p></div>' +
+      '<div class="dash-exec-section"><h3>' + esc(t('Financial attention', 'تنبيهات مالية')) + '</h3>' + attentionHtml + '</div>' +
+      '<div class="dash-exec-links">' +
+      [
+        ['/dashboard/reports/?tab=profitability', t('Profitability', 'الربحية')],
+        ['/dashboard/reports/?tab=cashflow', t('Cash flow', 'التدفق النقدي')],
+        ['/dashboard/reports/?tab=expenses', t('Running costs', 'مصروفات التشغيل')],
+        ['/dashboard/reports/?tab=profitability', t('Financial reconciliation', 'التسوية المالية')]
+      ].map(function (link) {
+        return '<a href="' + esc(link[0]) + '">' + esc(link[1]) + '</a>';
+      }).join('') +
+      '</div>';
+
+    wireFinancePeriodControls(el);
+    paintRevenueChart();
   }
 
   // ── Quick Actions ──────────────────────────────────────────────
@@ -1629,47 +2140,53 @@
       );
       return;
     }
-    if (
-      financial &&
-      financial.sales &&
-      financial.sales.__err &&
-      financial.refunds &&
-      financial.refunds.__err
-    ) {
+    if (financial && financial.__err) {
       el.innerHTML = errBox(
         t('Unable to load financial data.', 'مش قادرين نحمّل البيانات المالية.'),
         'finance'
       );
       return;
     }
-    var sales = financial && financial.sales && !financial.sales.__err ? financial.sales : null;
-    var refunds = financial && financial.refunds && !financial.refunds.__err ? financial.refunds : null;
     var dashboardFinancial = financial && financial.dashboard ? financial.dashboard : null;
-    var dout = debtorsOutstanding();
     var selectedPeriod = financial ? financial.period : 'month';
-    var periodLabel = selectedPeriod === 'today'
-      ? t('today', 'اليوم')
-      : selectedPeriod === 'week'
-        ? t('this week', 'هذا الأسبوع')
-        : selectedPeriod === 'last_month'
-          ? t('last month', 'الشهر الماضي')
-          : selectedPeriod === 'year'
-            ? t('this year', 'هذه السنة')
-            : selectedPeriod === 'last_year'
-              ? t('last year', 'السنة الماضية')
-              : selectedPeriod === 'custom'
-                ? t('custom range', 'فترة مخصصة')
-              : t('this month', 'هذا الشهر');
-    var cashCollected = dashboardFinancial && dashboardFinancial.cashCollected != null
-      ? Number(dashboardFinancial.cashCollected)
-      : sales && sales.netCashIn != null ? Number(sales.netCashIn) : null;
+    if (isOwnerFinance()) {
+      renderFinanceExecutive(el, financial, dashboardFinancial, selectedPeriod);
+      return;
+    }
+    renderFinanceDetailed(el, financial, dashboardFinancial, selectedPeriod);
+  }
+
+  function renderFinanceDetailed(el, financial, dashboardFinancial, selectedPeriod) {
+    var periodLabel = periodLabelFor(selectedPeriod);
+    var collections = dashboardFinancial && dashboardFinancial.collections != null
+      ? Number(dashboardFinancial.collections) : null;
+    var settledCashAvailable = dashboardFinancial && dashboardFinancial.settledCashAvailable === true;
+    var settledCash = settledCashAvailable
+      ? Number(dashboardFinancial.settledCashInflow) : null;
+    var revenue = dashboardFinancial && dashboardFinancial.revenue != null
+      ? Number(dashboardFinancial.revenue) : null;
     var ref = dashboardFinancial && dashboardFinancial.refunds != null
-      ? Number(dashboardFinancial.refunds)
-      : refunds && refunds.total != null ? Number(refunds.total) : null;
+      ? Number(dashboardFinancial.refunds) : null;
+    var revenueAdjustments = dashboardFinancial && dashboardFinancial.revenueAdjustments != null
+      ? Number(dashboardFinancial.revenueAdjustments) : null;
     var expenses = dashboardFinancial ? dashboardFinancial.expenses : null;
+    var cogs = dashboardFinancial ? dashboardFinancial.cogs : null;
+    var grossProfit = dashboardFinancial ? dashboardFinancial.grossProfit : null;
     var profit = dashboardFinancial ? dashboardFinancial.netProfit : null;
     var margin = dashboardFinancial ? dashboardFinancial.profitMargin : null;
-    var showOutstanding = dout != null;
+    var netProfitAvailable = dashboardFinancial && dashboardFinancial.netProfitAvailable === true;
+    var netCashFlow = dashboardFinancial ? dashboardFinancial.netCashFlow : null;
+    var cashFlowAvailable = dashboardFinancial && dashboardFinancial.cashFlowAvailable === true;
+    var payrollAvailable = dashboardFinancial
+      && dashboardFinancial.payrollAvailable === true
+      && dashboardFinancial.payrollCoverageStatus === 'COMPLETE';
+    var ar = dashboardFinancial ? dashboardFinancial.accountsReceivable : null;
+    var ap = dashboardFinancial ? dashboardFinancial.accountsPayable : null;
+    var financialIssues = dashboardFinancial && Array.isArray(dashboardFinancial.financialDataIssues)
+      ? dashboardFinancial.financialDataIssues : [];
+    var dout = dashboardFinancial && dashboardFinancial.accountsReceivable != null
+      ? Number(dashboardFinancial.accountsReceivable) : null;
+    var showOutstanding = false;
     var preview =
       state.debtorsPreview && !state.debtorsPreview.__err
         ? state.debtorsPreview.items || []
@@ -1715,9 +2232,23 @@
     el.innerHTML =
       '<div class="dash-kpi-row compact">' +
       '<div class="dash-kpi"><span class="lbl">' +
-      esc(t('Cash collected', 'المتحصلات النقدية') + ' · ' + periodLabel + ' (EGP)') +
+      esc(t('Collections', 'إجمالي التحصيلات') + ' · ' + periodLabel + ' (EGP)') +
       '</span><strong>' +
-      esc(cashCollected != null ? money(cashCollected) : '—') +
+      esc(collections != null ? money(collections) : '—') +
+      '</strong><span class="sub">' + esc(t('Successful payment events', 'عمليات الدفع الناجحة')) + '</span></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Settled cash inflow', 'التدفق النقدي المسوّى') + ' · ' + periodLabel + ' (EGP)') +
+      '</span><strong>' +
+      esc(settledCash != null ? money(settledCash) : t('Unavailable', 'غير متاح')) +
+      '</strong><span class="sub">' +
+      esc(settledCashAvailable
+        ? t('Supported by trusted settlement evidence', 'مدعوم بدليل تسوية موثوق')
+        : t('Settlement evidence is incomplete', 'دليل التسوية غير مكتمل')) +
+      '</span></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Revenue', 'الإيراد') + ' · ' + periodLabel + ' (EGP)') +
+      '</span><strong>' +
+      esc(revenue != null ? money(revenue) : '—') +
       '</strong></div>' +
       '<div class="dash-kpi"><span class="lbl">' +
       esc(t('Refunds', 'المرتجعات') + ' · ' + periodLabel + ' (EGP)') +
@@ -1725,21 +2256,65 @@
       esc(ref != null ? money(ref) : '—') +
       '</strong></div>' +
       '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Revenue adjustments', 'تعديلات الإيراد') + ' · ' + periodLabel + ' (EGP)') +
+      '</span><strong>' +
+      esc(revenueAdjustments != null ? money(revenueAdjustments) : '—') +
+      '</strong></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
       esc(t('Expenses', 'المصروفات')) +
       '</span><strong>' +
       esc(expenses == null ? t('Not available', 'غير متاح') : money(expenses)) +
-      '</strong>' + (expenses == null ? '<span class="sub">' +
-      esc(t('No recorded cash expenses', 'لا توجد مصروفات نقدية مسجلة')) + '</span>' : '') + '</div>' +
+      '</strong></div>' +
       '<div class="dash-kpi"><span class="lbl">' +
-      esc(t('Net profit', 'صافي الربح')) +
+      esc(t('Payroll', 'الرواتب')) +
       '</span><strong>' +
-      esc(profit == null ? t('Not available', 'غير متاح') : money(profit)) +
-      '</strong>' + (profit == null ? '<span class="sub">' +
-      esc(t('Requires recorded expenses', 'يحتاج مصروفات مسجلة')) + '</span>' : '') + '</div>' +
+      esc(payrollAvailable && dashboardFinancial.payrollExpense != null
+        ? money(dashboardFinancial.payrollExpense)
+        : t('Unavailable', 'غير متاح')) +
+      '</strong><span class="sub">' +
+      esc(payrollAvailable
+        ? t('Approved/closed payroll period', 'فترة رواتب معتمدة/مغلقة')
+        : t('No complete payroll coverage for this period', 'لا توجد تغطية رواتب مكتملة للفترة')) +
+      '</span></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('COGS', 'تكلفة المبيعات')) +
+      '</span><strong>' +
+      esc(cogs == null ? t('Unavailable', 'غير متاح') : money(cogs)) +
+      '</strong></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Gross profit', 'إجمالي الربح')) +
+      '</span><strong>' +
+      esc(grossProfit == null ? t('Unavailable', 'غير متاح') : money(grossProfit)) +
+      '</strong></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Net profit', 'صافي الربح') + ' · ' + periodLabel) +
+      '</span><strong>' +
+      esc(!netProfitAvailable || profit == null
+        ? t('Unavailable', 'غير متاح')
+        : money(profit)) +
+      '</strong></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Net cash flow', 'صافي التدفق النقدي') + ' · ' + periodLabel) +
+      '</span><strong>' +
+      esc(!cashFlowAvailable || netCashFlow == null
+        ? t('Unavailable', 'غير متاح')
+        : money(netCashFlow)) +
+      '</strong><span class="sub">' +
+      esc(cashFlowAvailable
+        ? t('Verified cash movements', 'حركات نقدية موثقة')
+        : t('Settlement or supplier evidence is incomplete', 'دليل التسوية أو المورد غير مكتمل')) +
+      '</span></div>' +
       '<div class="dash-kpi"><span class="lbl">' +
       esc(t('Profit margin', 'هامش الربح')) +
       '</span><strong>' +
-      esc(margin == null ? t('Not available', 'غير متاح') : Number(margin).toFixed(2) + '%') +
+      esc(!netProfitAvailable || margin == null
+        ? t('Unavailable', 'غير متاح')
+        : Number(margin).toFixed(2) + '%') +
+      '</strong></div>' +
+      '<div class="dash-kpi"><span class="lbl">' +
+      esc(t('Receivables / Payables', 'الذمم المدينة / الدائنة')) +
+      '</span><strong>' +
+      esc(ar == null ? '—' : money(ar) + ' / ' + (ap == null ? '—' : money(ap))) +
       '</strong></div>' +
       (showOutstanding
         ? '<div class="dash-kpi"><span class="lbl">' +
@@ -1750,80 +2325,26 @@
         : '') +
       '</div>' +
       outstandingList +
+      (financialIssues.length
+        ? '<p class="dash-muted" style="margin-top:8px;font-size:11px">' +
+          esc(t('Financial data requires review: ', 'البيانات المالية تحتاج مراجعة: ') + financialIssues.join(', ')) +
+          '</p>'
+        : '') +
       breakdownHtml +
+      financePeriodControls(selectedPeriod, financial) +
       '<div class="dash-chart-hdr">' +
       '<span>' +
-      esc(t('Cash collected trend', 'اتجاه المتحصلات')) +
-      '</span>' +
-      '<div class="dash-seg" id="financePeriodSeg">' +
-      ['today', 'week', 'month', 'last_month', 'year', 'last_year', 'custom'].map(function (period) {
-        var label = period === 'today'
-          ? t('Today', 'اليوم')
-          : period === 'week'
-            ? t('Week', 'أسبوع')
-            : period === 'month'
-              ? t('Month', 'شهر')
-              : period === 'last_month'
-                ? t('Last month', 'الشهر الماضي')
-                : period === 'year'
-                  ? t('Year', 'سنة')
-                : period === 'last_year'
-                  ? t('Last year', 'السنة الماضية')
-                  : t('Custom', 'مخصص');
-        return '<button type="button" class="dash-seg-btn' +
-          (selectedPeriod === period ? ' act' : '') +
-          '" data-finance-period="' + period + '">' + esc(label) + '</button>';
-      }).join('') +
-      '</div>' +
-      '<div class="dash-custom-range" id="dashCustomRange" ' +
-      (selectedPeriod === 'custom' ? '' : 'hidden') + '>' +
-      '<input type="date" id="dashFromDate" value="' + esc(financial && financial.from || '') + '">' +
-      '<input type="date" id="dashToDate" value="' + esc(financial && financial.to || '') + '">' +
-      '<button type="button" class="dash-btn" data-finance-custom>' +
-      esc(t('Apply', 'تطبيق')) + '</button></div>' +
-      '</div>' +
+      esc(t('Revenue trend', 'اتجاه الإيراد')) +
+      '</span></div>' +
       '<div class="dash-chart-wrap" id="dashRevChartHost">' +
       chartSkeleton() +
       '</div>' +
       '<p class="dash-muted" style="margin-top:6px;font-size:11px">' +
-      esc(t('Daily cash-in totals from payment transactions.', 'إجمالي المتحصلات اليومية من معاملات الدفع.')) +
+      esc(t('Daily revenue from canonical sales activity.', 'الإيراد اليومي من نشاط المبيعات المعتمد.')) +
       '</p>' +
       linkRow('/dashboard/reports/', t('View reports', 'عرض التقارير'));
 
-    var periodSeg = el.querySelector('#financePeriodSeg');
-    if (periodSeg) {
-      periodSeg.querySelectorAll('[data-finance-period]').forEach(function (btn) {
-        btn.onclick = async function () {
-          var period = btn.getAttribute('data-finance-period') || 'month';
-          var custom = el.querySelector('#dashCustomRange');
-          if (period === 'custom') {
-            if (custom) custom.hidden = false;
-            return;
-          }
-          if (custom) custom.hidden = true;
-          var host = global.document.getElementById('dashRevChartHost');
-          if (host) host.innerHTML = chartSkeleton();
-          await loadFinancialPeriod(period);
-          renderFinance(el);
-          renderBusiness(global.document.getElementById('wBusiness'));
-        };
-      });
-    }
-    var customApply = el.querySelector('[data-finance-custom]');
-    if (customApply) {
-      customApply.onclick = async function () {
-        var from = (el.querySelector('#dashFromDate') || {}).value;
-        var to = (el.querySelector('#dashToDate') || {}).value;
-        if (!from || !to || from > to) {
-          qaToast(t('Choose a valid date range.', 'اختار فترة زمنية صحيحة.'), 'err');
-          return;
-        }
-        await loadDashboardOverview('custom', from, to, true);
-        renderFinance(el);
-        renderKpis(global.document.getElementById('wKpis'));
-        renderBusiness(global.document.getElementById('wBusiness'));
-      };
-    }
+    wireFinancePeriodControls(el);
     paintRevenueChart();
   }
 
@@ -2254,9 +2775,7 @@
       return;
     }
     var items = [];
-    var attentionError =
-      (canSales() && state.expiring && state.expiring.__err) ||
-      (canFinance() && state.debtorsSummary && state.debtorsSummary.__err);
+    var attentionError = canSales() && state.expiring && state.expiring.__err;
     if (canSales() && Array.isArray(state.expiring) && state.expiring.length) {
       items.push({
         icon: 'ti-calendar-event',
@@ -2265,7 +2784,8 @@
         href: '/dashboard/call-sheet/'
       });
     }
-    if (canFinance() && state.debtorsSummary && !state.debtorsSummary.__err && Number(state.debtorsSummary.debtorCount) > 0) {
+    if (canFinance() && state.debtorsSummary
+      && Number(state.debtorsSummary.debtorCount) > 0) {
       items.push({
         icon: 'ti-receipt',
         label: t('Outstanding payments', 'مدفوعات مستحقة'),
@@ -2329,8 +2849,12 @@
         widgetShell({
           id: 'finance',
           icon: 'ti-currency-dollar',
-          title: t('Financial overview', 'نظرة مالية'),
-          sub: t('Cash collected, refunds, and outstanding balances', 'المتحصلات والمرتجعات والمستحقات'),
+          title: isOwnerFinance()
+            ? t('How is your gym doing?', 'كيف أداء صالتك؟')
+            : t('Financial overview', 'نظرة مالية'),
+          sub: isOwnerFinance()
+            ? t('Executive financial overview', 'نظرة مالية تنفيذية')
+            : t('Cash collected, refunds, and outstanding balances', 'المتحصلات والمرتجعات والمستحقات'),
           bodyId: 'wFinance',
           span: 12
         })
@@ -2441,7 +2965,12 @@
           key === 'business' || key === 'revenue-chart' || key === 'finance' ||
           key === 'attention') {
         try {
-          global.sessionStorage.removeItem(CACHE_PREFIX + cacheScope() + ':overview:');
+          var cachePrefix = CACHE_PREFIX + cacheScope() + ':overview:';
+          for (var cacheIndex = global.sessionStorage.length - 1; cacheIndex >= 0; cacheIndex -= 1) {
+            var cacheKey = global.sessionStorage.key(cacheIndex);
+            if (cacheKey && cacheKey.indexOf(cachePrefix) === 0)
+              global.sessionStorage.removeItem(cacheKey);
+          }
         } catch (e) { /* ignore */ }
         await loadDashboardOverview(
           (state.financialPeriod && state.financialPeriod.period) || 'month',

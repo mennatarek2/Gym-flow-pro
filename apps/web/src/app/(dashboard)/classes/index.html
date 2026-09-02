@@ -7,7 +7,7 @@
 <meta name="description" content="Front-desk class sessions and bookings.">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="classes.css?v=flow6">
+<link rel="stylesheet" href="classes.css?v=flow12">
 </head>
 <body>
 <div class="app">
@@ -65,7 +65,20 @@
 </div>
 <div class="modal-overlay drawer-overlay" id="drawerOverlay"><div class="drawer" id="drawerContent"></div></div>
 <div class="modal-overlay" id="bookOverlay"><div class="modal book-modal" id="bookContent"></div></div>
+<div class="modal-overlay" id="classPrintOverlay">
+  <div class="class-print-box" role="dialog" aria-modal="true" aria-labelledby="classPrintTitle">
+    <div class="class-print-hdr">
+      <h3 id="classPrintTitle">Invoice</h3>
+      <button type="button" class="drawer-close" id="classPrintClose" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <iframe id="classPrintFrame" title="Class booking invoice"></iframe>
+    <div class="class-print-actions">
+      <button type="button" class="btn-book" id="classPrintDo"><i class="ti ti-printer"></i> Print</button>
+      <button type="button" class="btn-cancel" id="classPrintDismiss">Close</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
-<script src="classes-app.js?v=flow10"></script>
+<script src="classes-app.js?v=flow12"></script>
 </body>
 </html>

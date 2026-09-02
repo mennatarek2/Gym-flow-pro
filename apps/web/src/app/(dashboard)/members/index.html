@@ -670,8 +670,14 @@
             <div class="mdl-form-group" style="margin-top:12px">
               <label class="mdl-label">Amount paid (EGP)</label>
               <input type="number" class="mdl-input" id="onboardAmountPaid" min="0" step="0.01">
+              <p class="assign-due-hint" id="onboardDueHint"></p>
             </div>
-            <div class="payment-note show" id="onboardPayNote"><i class="ti ti-info-circle"></i> Cash activates immediately when a shift is open.</div>
+            <div class="mdl-form-group" id="onboardDueDateWrap" hidden style="margin-top:8px">
+              <label class="mdl-label">Balance due date</label>
+              <input type="date" class="mdl-input" id="onboardDueDate">
+              <div style="font-size:11px;color:var(--ltt);margin-top:4px">Required when amount paid is less than the plan price.</div>
+            </div>
+            <div class="payment-note show" id="onboardPayNote"><i class="ti ti-info-circle"></i> Cash activates immediately when a shift is open. Pay less than the full price to leave a balance due.</div>
           </div>
         </div>
 
@@ -843,7 +849,7 @@
 
   <script src="/shared/refund-action.js?v=2"></script>
   <script src="members-app.js"></script>
-  <script src="member-modals.js?v=assign-pay1"></script>
+  <script src="member-modals.js?v=partial-pay1"></script>
 </body>
 
 </html>

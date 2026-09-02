@@ -1254,7 +1254,14 @@
         return;
       }
       const paged=Mo&&Mo.extractPaged?Mo.extractPaged(r.data):{items:(r.data&&r.data.items)||(Array.isArray(r.data)?r.data:[])};
-      const items=(paged.items||[]).map(function(raw){ return Mo&&Mo.normalizeOrder?Mo.normalizeOrder(raw):raw; }).filter(Boolean);
+      // Defense-in-depth: only show this member's orders (API should already filter by memberId).
+      const mid=String(memberId||'');
+      const items=(paged.items||[]).map(function(raw){ return Mo&&Mo.normalizeOrder?Mo.normalizeOrder(raw):raw; }).filter(function(o){
+        if(!o) return false;
+        if(!mid) return true;
+        const oid=o.memberId!=null?String(o.memberId):(o.MemberId!=null?String(o.MemberId):'');
+        return !oid||oid===mid;
+      });
       if(!items.length){
         tbody.innerHTML='';
         if(table) table.style.display='none';

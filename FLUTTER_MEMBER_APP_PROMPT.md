@@ -20,7 +20,8 @@ This is the MEMBER app, not the staff web desk.
 OWN (build these):
 - Activate account with Gym Code + staff-issued one-time Activation Code
 - Session (JWT + refresh), logout
-- Home: greeting, gym context, current membership summary (read-only), quick actions, live gym occupancy card (GET /api/member/occupancy — see FLUTTER_MEMBER_OCCUPANCY_PROMPT.md), classes / activities (GET /api/member/activity-bookings/… — see FLUTTER_MEMBER_ACTIVITIES_PROMPT.md)
+- Home: greeting, gym context, current membership summary (read-only), quick actions, live gym occupancy card (GET /api/member/occupancy — see FLUTTER_MEMBER_OCCUPANCY_PROMPT.md), classes browse (GET /api/member/classes — see FLUTTER_MEMBER_CLASSES_PROMPT.md; read-only, reception books/pays)
+- Profile → Orders: own orders only via GET /api/member/orders (see FLUTTER_MEMBER_ORDERS_PROMPT.md; never staff GET /api/member-orders)
 - QR check-in: scan the gym’s static QR → send gymCode
 - Notifications: list + mark read
 - Invitations: summary, send (name + phone; National ID optional), history
@@ -311,6 +312,8 @@ Status colors: Active green, Expired red, Frozen cyan, Pending amber.
 [ ] No guest-quota, referral-share, or visitDate
 [ ] Notifications list + mark read
 [ ] Member store gated; orders create/list/detail only
+[ ] Profile Orders uses GET /api/member/orders (never /api/member-orders); Member A ≠ Member B
+[ ] Classes browse uses GET /api/member/classes; no book/pay side effects (FLUTTER_MEMBER_CLASSES_PROMPT.md)
 [ ] No Assign / Renew / Freeze / credits / desk check-in UI
 [ ] AR + EN + RTL; bilingual API fields preferred over hardcoding English-only
 [ ] flutter analyze clean; works on Android + iOS simulators

@@ -277,6 +277,37 @@
       if(!iso) return '—';
       return new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
     }
+    function todayYmdOb(){
+      return (window.GfpCairoDates&&window.GfpCairoDates.todayYmd)
+        ? window.GfpCairoDates.todayYmd()
+        : new Date().toISOString().slice(0,10);
+    }
+    function updateOnboardDueHint(){
+      const amtEl=overlay.querySelector('#onboardAmountPaid');
+      const hint=overlay.querySelector('#onboardDueHint');
+      const dueWrap=overlay.querySelector('#onboardDueDateWrap');
+      const dueEl=overlay.querySelector('#onboardDueDate');
+      if(!amtEl||!selectedPlan) return;
+      const price=Number(selectedPlan.price)||0;
+      const paid=parseFloat(amtEl.value);
+      const cash=Number.isFinite(paid)?paid:0;
+      const due=Math.max(0, price-cash);
+      const isPartial=due>0.004;
+      if(dueWrap) dueWrap.hidden=!isPartial;
+      if(isPartial&&dueEl&&!dueEl.value){
+        const startEl=overlay.querySelector('#onboardStartDate');
+        dueEl.value=(startEl&&startEl.value)||todayYmdOb();
+      }
+      if(hint){
+        if(isPartial){
+          hint.textContent='EGP '+due.toLocaleString()+' stays outstanding — collect later from Member 360.';
+          hint.classList.add('has-due');
+        } else {
+          hint.textContent='Pay less than the plan price to record a partial payment.';
+          hint.classList.remove('has-due');
+        }
+      }
+    }
 
     async function loadOnboardPlans(){
       const host=overlay.querySelector('#onboardPlanCards');
@@ -329,6 +360,7 @@
         '<div class="plan-detail-row"><span class="plan-detail-label">End</span><span class="plan-detail-val">'+fmtObDate(end)+'</span></div>'+
         '<div class="plan-detail-row"><span class="plan-detail-label">Price</span><span class="plan-price"><span class="currency">EGP</span> '+(selectedPlan.price||0).toLocaleString()+'</span></div>';
       if(amtEl && (amtEl.value===''||amtEl.value==null)) amtEl.value=String(selectedPlan.price||0);
+      updateOnboardDueHint();
     }
 
     async function completeOnboardPayment(){
@@ -341,11 +373,22 @@
       if(canSell){
         const map={ cash:'cash', paymob:'card_paymob', fawry:'fawry', vodafone_cash:'vodafone' };
         const method=map[pay]||'cash';
+        const price=Number(selectedPlan.price)||0;
         const body={
           planId: selectedPlan.id,
           memberId: createdMember.id,
           payments:[{ method: method, amount: amount }]
         };
+        if(amount<price-0.004){
+          const dueEl=overlay.querySelector('#onboardDueDate');
+          const startEl=overlay.querySelector('#onboardStartDate');
+          const dueDate=(dueEl&&dueEl.value)||(startEl&&startEl.value)||todayYmdOb();
+          if(!dueDate){
+            showAddError('Due date required for partial payment.');
+            return false;
+          }
+          body.partialPayment={ dueDate: dueDate };
+        }
         if(method==='cash'&&amount>0){
           const sh=await Gfp.get('/shifts/current');
           if(!sh.ok||!sh.data||!sh.data.id){
@@ -437,6 +480,8 @@
     ['nameEn','nameAr','dob'].forEach(k=>{
       if(form[k]) form[k].addEventListener('input',validateAddForm);
     });
+    const onboardAmtEl=overlay.querySelector('#onboardAmountPaid');
+    if(onboardAmtEl) onboardAmtEl.addEventListener('input',updateOnboardDueHint);
 
     // Show/hide field errors on blur
     ['nameEn','nameAr'].forEach(k=>{
@@ -503,11 +548,13 @@
             const end=addDaysIso(start, Number(selectedPlan.durationDays)||0);
             const conf=overlay.querySelector('#onboardConfirmText');
             if(conf){
+              const outstanding=Math.max(0, (Number(selectedPlan.price)||0)-(result.amount||0));
               conf.innerHTML=
                 '<div><strong>'+(createdMember.fullName||'')+'</strong></div>'+
                 '<div>'+(selectedPlan.name||'')+'</div>'+
                 '<div>'+fmtObDate(start)+' → '+fmtObDate(end)+'</div>'+
-                '<div>Paid: EGP '+(result.amount||0).toLocaleString()+' ('+result.payMethod+')</div>';
+                '<div>Paid: EGP '+(result.amount||0).toLocaleString()+' ('+result.payMethod+')</div>'+
+                (outstanding>0.004?('<div>Outstanding: EGP '+outstanding.toLocaleString()+'</div>'):'');
             }
             const view=overlay.querySelector('#btnOnboardViewMember');
             if(view&&createdMember.id) view.href='/dashboard/members/'+encodeURIComponent(createdMember.id)+'/';
@@ -615,6 +662,12 @@
       if(cardStatus) cardStatus.textContent='Member access card with barcode.';
       if(btnInv) btnInv.disabled=true;
       if(btnCard) btnCard.disabled=true;
+      const dueEl=overlay.querySelector('#onboardDueDate');
+      const dueHint=overlay.querySelector('#onboardDueHint');
+      const dueWrap=overlay.querySelector('#onboardDueDateWrap');
+      if(dueEl) dueEl.value='';
+      if(dueHint){ dueHint.textContent=''; dueHint.classList.remove('has-due'); }
+      if(dueWrap) dueWrap.hidden=true;
       setOnboardStep(1);
       Object.values(form).forEach(el=>{if(el){el.value='';el.classList.remove('error');}});
       overlay.querySelectorAll('.field-error').forEach(e=>e.classList.remove('show'));

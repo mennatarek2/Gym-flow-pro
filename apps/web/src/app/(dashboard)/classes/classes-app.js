@@ -16,6 +16,7 @@
   var user = getUser();
   if (!user) { window.location.href = '/auth/login/'; return; }
   var canView = Authz ? Authz.canPermission(Authz.getAccessToken(), 'members.view') : false;
+  var canSell = Authz ? Authz.canPermission(Authz.getAccessToken(), 'sales.sell') : false;
   if (!canView) { window.location.href = '/dashboard/'; return; }
 
   var ini = (user.fullName || 'U').split(' ').map(function (w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
@@ -580,6 +581,10 @@
         e.stopPropagation();
         var action = this.dataset.bkAction;
         var bkId = this.dataset.bkId;
+        if (action === 'invoice') {
+          openBookingInvoice(this.dataset.invoiceId, this.dataset.invoiceNumber);
+          return;
+        }
         this.disabled = true;
         if (action === 'checkin') this.innerHTML = '<i class="ti ti-loader-2 spin"></i> Checking in…';
         if (action === 'cancel' && !window.confirm('Cancel this member\u2019s booking?')) {
@@ -616,9 +621,25 @@
     else if (st === 'cancelled-late' || st === 'cancelled_late' || st === 'cancelledlate') { statusIcon = 'ti-clock-x'; st = 'cancelled-late'; statusLabel = 'Cancelled Late'; }
     else if (st === 'no-show' || st === 'no_show' || st === 'noshow') { statusIcon = 'ti-alert-triangle'; st = 'no-show'; statusLabel = 'No Show'; }
 
+    var source = String(bk.source || '').toLowerCase();
+    var saleId = bk.saleId || bk.SaleId || null;
+    var invoiceId = bk.invoiceId || bk.InvoiceId || null;
+    var invoiceNumber = bk.invoiceNumber || bk.InvoiceNumber || '';
+    var isPaid = !!(saleId || source === 'drop_in' || source === 'guest_walk_in');
+    var payHtml = isPaid
+      ? '<div class="booking-pay paid"><i class="ti ti-file-invoice"></i> ' +
+        esc(invoiceNumber || 'Paid drop-in') + '</div>'
+      : '<div class="booking-pay credit"><i class="ti ti-ticket"></i> Plan credit \u2014 no invoice</div>';
+
     var actions = '';
+    if (invoiceId) {
+      actions +=
+        '<button type="button" class="bk-btn invoice" data-bk-action="invoice" data-invoice-id="' +
+        esc(invoiceId) + '" data-invoice-number="' + esc(invoiceNumber) +
+        '"><i class="ti ti-file-invoice"></i> Invoice</button>';
+    }
     if (st === 'booked') {
-      actions =
+      actions +=
         '<button type="button" class="bk-btn checkin" data-bk-action="checkin" data-bk-id="' + esc(bk.id) + '"><i class="ti ti-door-enter"></i> Check In</button>' +
         '<button type="button" class="bk-btn cancel-bk" data-bk-action="cancel" data-bk-id="' + esc(bk.id) + '"><i class="ti ti-x"></i></button>';
     }
@@ -626,8 +647,46 @@
     return '<div class="booking-row">' +
       '<div class="booking-avatar">' + esc(initials) + '</div>' +
       '<div class="booking-info"><div class="booking-name">' + esc(name) + '</div>' +
-      '<div class="booking-status ' + st + '"><i class="ti ' + statusIcon + '"></i> ' + esc(statusLabel) + '</div></div>' +
+      '<div class="booking-status ' + st + '"><i class="ti ' + statusIcon + '"></i> ' + esc(statusLabel) + '</div>' +
+      payHtml + '</div>' +
       '<div class="booking-actions">' + actions + '</div></div>';
+  }
+
+  function openBookingInvoice(invoiceId, invoiceNumber) {
+    if (!invoiceId || !Gfp) return;
+    var overlay = document.getElementById('classPrintOverlay');
+    var frame = document.getElementById('classPrintFrame');
+    var title = document.getElementById('classPrintTitle');
+    if (!overlay || !frame) {
+      toast('Invoice view is not available on this page.', 'error');
+      return;
+    }
+    if (title) title.textContent = invoiceNumber ? ('Invoice ' + invoiceNumber) : 'Invoice';
+    frame.srcdoc = '<p style="padding:16px;font-family:sans-serif;color:#666">Loading invoice…</p>';
+    openOverlay('classPrintOverlay');
+    Gfp.get('/invoices/' + encodeURIComponent(invoiceId) + '/receipt-html?format=a4').then(function (res) {
+      if (res && res.ok && typeof res.data === 'string' && res.data) {
+        frame.srcdoc = res.data;
+        return;
+      }
+      var msg = errMsg(res) || 'Could not load this invoice.';
+      frame.srcdoc = '<p style="padding:16px;font-family:sans-serif;color:#991b1b">' + esc(msg) + '</p>';
+      toast(msg, 'error');
+    }).catch(function () {
+      toast('Could not load this invoice.', 'error');
+    });
+  }
+
+  function printBookingInvoice() {
+    var frame = document.getElementById('classPrintFrame');
+    try {
+      if (frame && frame.contentWindow) {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+      }
+    } catch (e) {
+      toast('Print failed — wait for the invoice to load.', 'error');
+    }
   }
 
   // ── Book Member modal ──
@@ -756,16 +815,28 @@
         '</div>' +
         '<button type="button" class="btn-text" id="eligChange">Change</button>' +
       '</div>' +
-      '<div class="book-note">If this membership includes class credits, booking uses a credit. Otherwise you can take a drop-in payment.</div>' +
+      '<div class="book-note">Use a plan credit when the membership includes this class \u2014 that does not create an invoice or cash movement. Collect a drop-in payment to issue an invoice and record cash in the open shift.</div>' +
       '<div class="elig-status" id="eligStatus" role="status"></div>' +
       '<div class="book-footer">' +
         '<button type="button" class="btn-cancel" id="eligBack">Back</button>' +
-        '<button type="button" class="btn-book" id="eligConfirm"><i class="ti ti-calendar-check"></i> Confirm booking</button>' +
+        (canSell
+          ? '<button type="button" class="btn-pay" id="eligPay"><i class="ti ti-cash"></i> Collect payment</button>'
+          : '') +
+        '<button type="button" class="btn-book" id="eligConfirm"><i class="ti ti-ticket"></i> Use credit</button>' +
       '</div>';
 
     document.getElementById('eligChange').addEventListener('click', function () { resetSearchStep(sessionId); });
     document.getElementById('eligBack').addEventListener('click', function () { resetSearchStep(sessionId); });
     document.getElementById('eligConfirm').addEventListener('click', function () { tryBookWithCredits(sessionId); });
+    var payNow = document.getElementById('eligPay');
+    if (payNow) {
+      payNow.addEventListener('click', async function () {
+        payNow.disabled = true;
+        var price = await resolveDropInPrice();
+        bookCtx.dropInPrice = price;
+        showDropInPayStep(sessionId, price, 'Collect a drop-in payment to issue an invoice and record it in Cash Drawer.');
+      });
+    }
   }
 
   function resetSearchStep(sessionId) {
@@ -895,7 +966,7 @@
     if (flowToken !== bookingFlowToken) return;
 
     if (res && res.ok) {
-      toast('Member booked successfully.');
+      toast('Member booked using membership credit — no invoice and no cash movement (no payment was taken).');
       closeOverlay('bookOverlay');
       await openSessionDrawer(currentSession.id);
       loadSessions();
@@ -916,7 +987,7 @@
     }
     toast(friendly, 'error');
     btn.disabled = false;
-    btn.innerHTML = '<i class="ti ti-calendar-check"></i> Confirm booking';
+    btn.innerHTML = '<i class="ti ti-ticket"></i> Use credit';
   }
 
   function showDropInPayStep(sessionId, price, reasonMsg) {
@@ -970,6 +1041,17 @@
     }
   }
 
+  async function fetchInvoiceForSale(saleId) {
+    for (var attempt = 0; attempt < 6; attempt += 1) {
+      var inv = await Gfp.get('/sales/' + encodeURIComponent(saleId) + '/invoice');
+      if (inv && inv.ok && inv.data && (inv.data.invoiceId || inv.data.invoiceNumber)) {
+        return inv.data;
+      }
+      await new Promise(function (resolve) { setTimeout(resolve, 350); });
+    }
+    return null;
+  }
+
   async function collectDropInAndBook(sessionId) {
     var flowToken = bookingFlowToken;
     var isGuest = !!(bookCtx && !bookCtx.memberId && bookCtx.guestName);
@@ -1002,9 +1084,31 @@
 
     if (res && res.ok) {
       var paid = moneyEGP(bookCtx.dropInPrice);
-      toast(paid
-        ? paid + ' collected — ' + (bookCtx.memberName || bookCtx.guestName || 'guest') + ' booked. Invoice issued.'
-        : 'Drop-in paid — booking created. Invoice issued.');
+      var booking = res.data && (res.data.booking || res.data.Booking);
+      var saleId = (res.data && (res.data.saleId || res.data.SaleId))
+        || (booking && (booking.saleId || booking.SaleId));
+      var invoiceId = booking && (booking.invoiceId || booking.InvoiceId);
+      var invoiceNumber = booking && (booking.invoiceNumber || booking.InvoiceNumber);
+      var invoice = null;
+      if (!invoiceId && saleId) invoice = await fetchInvoiceForSale(saleId);
+      if (!invoiceId && invoice) {
+        invoiceId = invoice.invoiceId || invoice.InvoiceId;
+        invoiceNumber = invoice.invoiceNumber || invoice.InvoiceNumber || invoiceNumber;
+      }
+      if (invoiceId) {
+        toast(
+          (paid ? paid + ' collected — ' : '') +
+          (bookCtx.memberName || bookCtx.guestName || 'Guest') +
+          ' booked. Invoice ' + (invoiceNumber || '') +
+          ' is in Invoices → Classes & drop-ins and in Cash Drawer.'
+        );
+        openBookingInvoice(invoiceId, invoiceNumber);
+      } else {
+        toast(
+          (paid ? paid + ' collected — ' : 'Drop-in paid — ') +
+          'booking created. Invoice issuing — check Invoices → Classes & drop-ins.'
+        );
+      }
       closeOverlay('bookOverlay');
       await openSessionDrawer(currentSession.id);
       loadSessions();
@@ -1032,6 +1136,18 @@
   document.getElementById('bookOverlay').addEventListener('click', function (e) {
     if (e.target === this) closeOverlay('bookOverlay');
   });
+  var printOverlay = document.getElementById('classPrintOverlay');
+  if (printOverlay) {
+    printOverlay.addEventListener('click', function (e) {
+      if (e.target === this) closeOverlay('classPrintOverlay');
+    });
+  }
+  var printClose = document.getElementById('classPrintClose');
+  if (printClose) printClose.addEventListener('click', function () { closeOverlay('classPrintOverlay'); });
+  var printDismiss = document.getElementById('classPrintDismiss');
+  if (printDismiss) printDismiss.addEventListener('click', function () { closeOverlay('classPrintOverlay'); });
+  var printDo = document.getElementById('classPrintDo');
+  if (printDo) printDo.addEventListener('click', printBookingInvoice);
 
   loadSessions().then(function () {
     try {

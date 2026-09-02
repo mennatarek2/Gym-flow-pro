@@ -15,8 +15,21 @@ check(source.includes('/dashboard/overview?period='), 'uses the role-filtered da
 check(source.includes("can('classes.view')"), 'supports Trainer class permission');
 check(source.includes("can('attendance.view')"), 'supports Trainer attendance permission');
 check(source.includes('financial.dashboard'), 'renders canonical financial fields');
+check(source.includes('cashFlowAvailable'), 'finance panel respects cash-flow availability');
+check(source.includes('settledCashAvailable'), 'finance panel respects settled-cash availability');
+check(source.includes('netProfitAvailable'), 'finance panel respects net-profit availability');
+check(source.includes('revenueBreakdownHint'), 'revenue card shows memberships/products breakdown hints');
+check(source.includes('Accrual revenue'), 'revenue today is labeled as accrual revenue');
 check(!source.includes('demoToggle') && !source.includes('role-switch'), 'ships no preview controls');
 check(!source.includes('18,450') && !source.includes('286,400'), 'contains no preview KPI values');
+check(source.includes('Cost to run'), 'owner hero shows cost to run');
+check(source.includes('Unpaid supplier stock'), 'owner labels unpaid supplier stock');
+check(source.includes('profitabilityBridgeHtml'), 'owner shows profitability bridge');
+check(source.includes('ownerPeriodDisplayLabel'), 'owner period uses so-far label');
+check(source.includes('dash-exec-glossary'), 'owner shows financial glossary');
+check(source.includes('Financial glossary'), 'glossary uses financial-v1 language');
+check(source.includes('Net profit gate'), 'glossary covers net profit gate');
+check(source.includes('Payroll warning'), 'glossary covers payroll warning');
 
 const order = ['id: \'finance\'', 'id: \'kpis\'', 'id: \'quick-actions\'',
   'id: \'business\'', 'id: \'occupancy\'', 'id: \'classes\'', 'id: \'attention\''];

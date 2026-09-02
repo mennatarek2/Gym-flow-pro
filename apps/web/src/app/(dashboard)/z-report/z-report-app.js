@@ -1,6 +1,6 @@
-(function () {
+(function (global) {
   'use strict';
-  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
 
   function getToken() {
     return localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
@@ -171,21 +171,28 @@
     });
   }
   function applyPreset(preset) {
-    const now = new Date();
     rangePreset = preset;
-    if (preset === 'last7') {
-      const fromD = new Date(now);
-      fromD.setDate(fromD.getDate() - 6);
-      document.getElementById('dateFrom').value = ymd(fromD);
-      document.getElementById('dateTo').value = ymd(now);
-    } else if (preset === 'last30') {
-      const fromD = new Date(now);
-      fromD.setDate(fromD.getDate() - 29);
-      document.getElementById('dateFrom').value = ymd(fromD);
-      document.getElementById('dateTo').value = ymd(now);
-    } else if (preset === 'thisMonth') {
-      document.getElementById('dateFrom').value = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
-      document.getElementById('dateTo').value = ymd(now);
+    const cairoDates = global.GfpCairoDates;
+    if (cairoDates && cairoDates.presetRange) {
+      const range = cairoDates.presetRange(preset);
+      document.getElementById('dateFrom').value = range.from;
+      document.getElementById('dateTo').value = range.to;
+    } else {
+      const now = new Date();
+      if (preset === 'last7') {
+        const fromD = new Date(now);
+        fromD.setDate(fromD.getDate() - 6);
+        document.getElementById('dateFrom').value = ymd(fromD);
+        document.getElementById('dateTo').value = ymd(now);
+      } else if (preset === 'last30') {
+        const fromD = new Date(now);
+        fromD.setDate(fromD.getDate() - 29);
+        document.getElementById('dateFrom').value = ymd(fromD);
+        document.getElementById('dateTo').value = ymd(now);
+      } else if (preset === 'thisMonth') {
+        document.getElementById('dateFrom').value = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+        document.getElementById('dateTo').value = ymd(now);
+      }
     }
     setRangeLabel();
   }
@@ -702,4 +709,4 @@
     if (shiftId) await loadDetail();
     else await loadList();
   })();
-})();
+})(typeof window !== 'undefined' ? window : globalThis);

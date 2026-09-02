@@ -48,7 +48,6 @@
       var b = String(global.API_BASE || '').replace(/\/$/, '');
       if (b) list.push(b);
     } catch (e) { /* ignore */ }
-    if (list.indexOf('https://reach-lullaby-tighten.ngrok-free.dev/api') < 0) list.push('https://reach-lullaby-tighten.ngrok-free.dev/api');
     return list;
   }
 
@@ -110,7 +109,9 @@
       var origin = apiOriginFromBase(base);
       if (origin) add(origin + path);
     });
-    add('https://reach-lullaby-tighten.ngrok-free.dev' + path);
+    if (typeof window !== 'undefined' && window.location && window.location.origin) {
+      add(window.location.origin + path);
+    }
     return out;
   }
 

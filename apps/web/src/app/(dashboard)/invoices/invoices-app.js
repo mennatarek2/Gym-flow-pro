@@ -1,10 +1,11 @@
 (function () {
   'use strict';
-  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
   const PAGE_SIZE = 20;
   const TABS = {
     sell_membership: { kind: 'sell', lineType: 'membership', title: 'Memberships' },
     sell_products: { kind: 'sell', lineType: 'retail', title: 'Products sold' },
+    sell_classes: { kind: 'sell', lineType: 'drop_in', title: 'Classes & drop-ins' },
     buy: { kind: 'buy', title: 'Bought from suppliers' },
     all: { kind: 'all', title: 'All' },
   };
@@ -75,6 +76,11 @@
   const params = new URLSearchParams(location.search);
   let activeTab = params.get('tab') || 'sell_membership';
   if (!TABS[activeTab]) activeTab = 'sell_membership';
+  if (params.get('tab') && TABS[activeTab]) {
+    document.querySelectorAll('.hub-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === activeTab);
+    });
+  }
   if (params.get('grnId')) activeTab = 'buy';
   const qMember = params.get('memberId');
   if (qMember) {
@@ -154,13 +160,9 @@
     const u = String(url).trim();
     if (!u) return '';
     if (/^(https?:|blob:|data:)/i.test(u)) return u;
-    let origin = String(window.API_BASE || '').replace(/\/api\/?$/i, '');
-    if (!origin) {
-      try {
-        origin = new URL(window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
-      } catch (e) {
-        origin = 'https://reach-lullaby-tighten.ngrok-free.dev';
-      }
+    let origin = String(window.API_BASE || window.GFP_DEFAULT_API_BASE || '').replace(/\/api\/?$/i, '');
+    if (!origin && typeof window !== 'undefined' && window.location && window.location.origin) {
+      origin = window.location.origin;
     }
     return origin + (u.charAt(0) === '/' ? u : '/' + u);
   }

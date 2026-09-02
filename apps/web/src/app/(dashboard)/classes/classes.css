@@ -185,7 +185,12 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .booking-status.checked-in{color:var(--suc500)}
 .booking-status.cancelled{color:var(--dng500);text-decoration:line-through}
 .booking-status.no-show{color:var(--wrn500)}
-.booking-actions{display:flex;gap:6px}
+.booking-pay{font-size:11px;font-weight:600;margin-top:3px;display:flex;align-items:center;gap:4px}
+.booking-pay.credit{color:var(--ltt)}
+.booking-pay.paid{color:var(--l600)}
+.bk-btn.invoice{color:var(--l600)}
+.bk-btn.invoice:hover{border-color:var(--l500);background:var(--l100)}
+.booking-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
 .bk-btn{height:30px;padding:0 10px;border:1px solid var(--ls3);border-radius:var(--rsm);background:var(--ls1);font-family:var(--fb);font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;color:var(--lts);transition:all var(--tf)}
 .bk-btn:hover{border-color:var(--l500);color:var(--l600)}
 .bk-btn.checkin{color:var(--suc500)}
@@ -379,6 +384,18 @@ html[dir="rtl"] .book-summary-row strong,
 html[dir="rtl"] .dropin-card-row strong{text-align:left}
 html[dir="rtl"] .book-footer{flex-direction:row-reverse}
 html[dir="rtl"] .btn-text{margin-inline-start:auto}
+
+.class-print-box{background:var(--ls1);border-radius:var(--rxl);width:min(920px,96vw);height:min(88vh,900px);display:flex;flex-direction:column;box-shadow:var(--sh4);overflow:hidden}
+.class-print-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--ls3)}
+.class-print-hdr h3{font-family:var(--fd);font-size:16px;font-weight:700;margin:0}
+.class-print-box iframe{flex:1;width:100%;border:0;background:#fff}
+.class-print-actions{display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--ls3)}
+@media print{
+  .app,.modal-overlay:not(#classPrintOverlay){display:none!important}
+  #classPrintOverlay{position:static;background:transparent;padding:0}
+  .class-print-box{box-shadow:none;width:100%;height:auto;border-radius:0}
+  .class-print-hdr,.class-print-actions{display:none}
+}
 
 /* ── Responsive ── */
 @media(max-width:900px){

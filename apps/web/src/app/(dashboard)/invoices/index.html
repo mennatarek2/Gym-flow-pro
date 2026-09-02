@@ -55,6 +55,7 @@
   <div class="hub-tabs" id="hubTabs" role="tablist">
     <button type="button" class="hub-tab" data-tab="sell_membership" role="tab" data-en="Memberships" data-ar="الاشتراكات">Memberships</button>
     <button type="button" class="hub-tab" data-tab="sell_products" role="tab" data-en="Products sold" data-ar="منتجات مباعة">Products sold</button>
+    <button type="button" class="hub-tab" data-tab="sell_classes" role="tab" data-en="Classes &amp; drop-ins" data-ar="الحصص والدخول الفردي">Classes &amp; drop-ins</button>
     <button type="button" class="hub-tab" data-tab="buy" role="tab" data-en="Suppliers" data-ar="الموردين">Suppliers</button>
     <button type="button" class="hub-tab" data-tab="all" role="tab" data-en="All" data-ar="الكل">All</button>
   </div>
@@ -161,7 +162,7 @@
 <div class="toast" id="toast"></div>
 <script src="/shared/api-config.js"></script>
 <script>
-const API_BASE=window.API_BASE||'https://reach-lullaby-tighten.ngrok-free.dev/api';
+const API_BASE=window.API_BASE||window.GFP_DEFAULT_API_BASE||'/api';
 function getToken(){return localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');}
 function getH(){const t=getToken();const h={'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};if(t)h['Authorization']='Bearer '+t;return h;}
 function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}
@@ -175,6 +176,6 @@ document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp
 (async()=>{try{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';}}catch(e){}})();
 </script>
 <script src="/shared/refund-action.js?v=2"></script>
-<script src="invoices-app.js?v=9"></script>
+<script src="invoices-app.js?v=10"></script>
 </body>
 </html>
