@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Member App: Classes (Read-Only) Prompt
+# HyMotion — Flutter Member App: Classes (Read-Only) Prompt
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
@@ -15,8 +15,8 @@
 ---
 
 ```
-PROMPT — GymFlowPro Member App: Classes (Read-Only) (Flutter)
-You are a senior Flutter developer extending the GymFlow Pro Member App (Egypt / MENA).
+PROMPT — HyMotion Member App: Classes (Read-Only) (Flutter)
+You are a senior Flutter developer extending the HyMotion Member App (Egypt / MENA).
 Arabic primary + English secondary. RTL when locale is Arabic.
 
 This prompt ADDS or UPDATES the Classes browse experience in the Member App.

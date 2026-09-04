@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Member App: Profile Orders (Isolation) Prompt
+# HyMotion — Flutter Member App: Profile Orders (Isolation) Prompt
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
@@ -16,15 +16,15 @@
 ---
 
 ```
-PROMPT — GymFlowPro Member App: Profile → Orders (Isolation) (Flutter)
-You are a senior Flutter developer extending the GymFlow Pro Member App (Egypt / MENA).
+PROMPT — HyMotion Member App: Profile → Orders (Isolation) (Flutter)
+You are a senior Flutter developer extending the HyMotion Member App (Egypt / MENA).
 Arabic primary + English secondary. RTL when locale is Arabic.
 
 This prompt UPDATES Profile → Orders only.
 It does NOT replace auth, store browse/create, classes, or other Profile sections.
 
 Read and obey Frontend/FLUTTER_MEMBER_APP_PROMPT.md for stack, STYLE A API_BASE, JWT Bearer,
-fonts (Space Grotesk + IBM Plex Sans + IBM Plex Sans Arabic), charcoal #0D0D0D + lime #7ACC00.
+fonts (Cairo), charcoal #0D0D0D + lime #7ACC00.
 
 ═══════════════════════════════════════════════════════════════════
 0) PRODUCT (BINDING — own orders only)

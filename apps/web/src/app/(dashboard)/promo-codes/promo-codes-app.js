@@ -46,10 +46,7 @@
     return d.innerHTML;
   }
   function toast(msg, type) {
-    const el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.textContent = msg;
-    setTimeout(() => el.classList.remove('show'), 3500);
+    return globalThis.toastShared(msg, type);
   }
   async function api(method, path, body) {
     const opts = { method, headers: getH() };

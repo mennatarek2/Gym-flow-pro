@@ -7,7 +7,7 @@
   --dng500:#EF4444;--inf500:#3B82F6;
   --lbg:#F6F7F9;--ls1:#FFF;--ls2:#F5F5F5;--ls3:#E8E8E8;
   --ltp:#1A1A1A;--lts:#4A4A4A;--ltt:#8C8C8C;
-  --fd:'Space Grotesk',sans-serif;--fb:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;--fa:'IBM Plex Sans Arabic',sans-serif;
+  --fd:'Cairo',sans-serif;--fb:'Cairo',sans-serif;--fa:'Cairo',sans-serif;
   --rmd:10px;--rlg:16px;--rpl:9999px;--tf:180ms ease;--sidebar-w:220px;--sh3:0 8px 30px rgba(0,0,0,.12)
 }
 html,body{height:100%}

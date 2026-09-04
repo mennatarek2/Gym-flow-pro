@@ -1,4 +1,4 @@
-# GymFlowPro — Master Context (paste into every coding session)
+# HyMotion — Master Context (paste into every coding session)
 
 > **Usage:** Paste this entire file at the start of a new session. Then paste **only one** feature
 > section (or feature prompt) for the current task. Do **not** paste other feature sections.
@@ -160,7 +160,7 @@ Where a status code isn’t annotated above, default is **400 Bad Request**.
 1. Master Context = cross-cutting only. Feature details come from the **single** section pasted for this prompt.
 2. Do not preemptively build screens out of order.
 3. Prefer `FRONTEND_API_CONTRACTS.ts` over prose when types/routes conflict.
-4. Prefer GymFlowPro design tokens/system for UI; do not invent a second visual language.
+4. Prefer HyMotion design tokens/system for UI; do not invent a second visual language.
 5. After each merged PR, append a line under `## PROGRESS` as:
    `DONE — Prompt N — YYYY-MM-DD — <PR link>`
 

@@ -139,10 +139,7 @@
     return map[m] || m || '—';
   }
   function toast(msg, type) {
-    const el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.textContent = msg;
-    setTimeout(() => el.classList.remove('show'), 4200);
+    return globalThis.toastShared(msg, type);
   }
   function safeError(status) {
     if (!canView || status === 403) return "You don't have permission to view this report.";

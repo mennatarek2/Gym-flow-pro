@@ -1,4 +1,4 @@
-/* ── GymFlowPro Settings — Professional SaaS Settings ── */
+/* ── HyMotion Settings — Professional SaaS Settings ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --c900:#0D0D0D;--c800:#1A1A1A;--c700:#2A2A2A;--c500:#4A4A4A;--c400:#6B6B6B;--c300:#8C8C8C;--c200:#B0B0B0;--c100:#D4D4D4;--c50:#F0F0F0;
@@ -7,7 +7,7 @@
   --dng500:#EF4444;--dng100:#FEE2E2;--inf500:#3B82F6;--inf100:#DBEAFE;
   --lbg:#F6F7F9;--ls1:#FFF;--ls2:#F5F5F5;--ls3:#E8E8E8;--ls4:#D9D9D9;
   --ltp:#1A1A1A;--lts:#4A4A4A;--ltt:#8C8C8C;
-  --fd:'Space Grotesk',sans-serif;--fm:'JetBrains Mono',monospace;--fb:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;--fa:'IBM Plex Sans Arabic',sans-serif;
+  --fd:'Cairo',sans-serif;--fm:'JetBrains Mono',monospace;--fb:'Cairo',sans-serif;--fa:'Cairo',sans-serif;
   --rsm:6px;--rmd:10px;--rlg:16px;--rxl:20px;--rpl:9999px;
   --sh1:0 1px 3px rgba(0,0,0,.06);--sh2:0 4px 12px rgba(0,0,0,.08);--sh3:0 8px 30px rgba(0,0,0,.12);
   --tf:180ms ease;--sidebar-w:220px

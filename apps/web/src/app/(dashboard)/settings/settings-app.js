@@ -15,12 +15,7 @@
   const apiUpload = window.apiUpload;
 
   function toast(msg, type) {
-    type = type || 'success';
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.innerHTML = '<i class="ti ' + (type === 'success' ? 'ti-check' : 'ti-alert-circle') + '"></i>' + msg;
-    t.className = 'toast ' + type + ' show';
-    setTimeout(function () { t.classList.remove('show'); }, 3500);
+    return globalThis.toastShared(msg, type);
   }
 
   function fmtDate(d) {
@@ -462,7 +457,7 @@
     if (!isOwner) return;
     if (
       !window.confirm(
-        'Reset brand colors to GymFlowPro defaults?\n\nThis restores Primary / Secondary / Accent / Card mark and keeps your gym name & logo. Changes will be saved.'
+        'Reset brand colors to HyMotion defaults?\n\nThis restores Primary / Secondary / Accent / Card mark and keeps your gym name & logo. Changes will be saved.'
       )
     ) {
       return;
@@ -710,7 +705,7 @@
       const u = JSON.parse(localStorage.getItem('gfp_user') || sessionStorage.getItem('gfp_user') || 'null');
       if (u && u.gymName) return String(u.gymName);
     } catch (e) { /* ignore */ }
-    return 'GymFlowPro';
+    return 'HyMotion';
   }
 
   async function renderLiveQrPoster(gymCode) {
@@ -724,7 +719,7 @@
       '<div class="poster-sub">Scan to check in</div>' +
       '<canvas id="qrPosterCanvas" width="220" height="220"></canvas>' +
       '<div class="poster-code"></div>' +
-      '<div class="poster-hint">Open GymFlowPro → scan this code<br>Encodes gym code for attendance</div>' +
+      '<div class="poster-hint">Open HyMotion → scan this code<br>Encodes gym code for attendance</div>' +
       '</div>';
     frame.querySelector('.poster-brand').textContent = gymName;
     frame.querySelector('.poster-code').textContent = gymCode;
@@ -802,7 +797,7 @@
       if (posterDataUrl) {
         const a = document.createElement('a');
         a.href = posterDataUrl;
-        a.download = 'gymflowpro-qr-' + code + '.png';
+        a.download = 'HyMotion-qr-' + code + '.png';
         document.body.appendChild(a);
         a.click();
         a.remove();

@@ -49,7 +49,7 @@ They are different GUIDs. Live proof: owner Identity `f8677f57-8b74-46a1-9698-08
 - Staff desk: search, role filter, status filter, Staff 360 (Profile / Account / Access / Activity).
 - Owner row is view-only.
 - Password UI matches Identity (6+, digit, lower, upper; special optional).
-- Email hint: unique across GymFlowPro, not “this gym only”.
+- Email hint: unique across HyMotion, not “this gym only”.
 - `Never logged in` when `lastLoginAt` is null.
 - No National ID / job title / department / hire date / staff number / Branch / Send Invite.
 

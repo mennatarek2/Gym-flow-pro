@@ -34,11 +34,7 @@
   };
 
   function toast(msg, type) {
-    type = type || 'success';
-    var t = document.getElementById('toast');
-    t.innerHTML = '<i class="ti ' + (type === 'success' ? 'ti-check' : 'ti-alert-circle') + '"></i>' + msg;
-    t.className = 'toast ' + type + ' show';
-    setTimeout(function () { t.classList.remove('show'); }, 3500);
+    return globalThis.toastShared(msg, type);
   }
   function esc(s) {
     var d = document.createElement('div');
@@ -404,7 +400,7 @@
         '<div class="fg" id="emailGroup"><label>Email <span class="req">*</span></label>' +
           '<input type="email" name="email" id="addEmail" required placeholder="sara@gymflow.test">' +
           '<div class="error-text" id="emailError">Email is already registered</div>' +
-          '<div class="hint">Must be unique across GymFlowPro, not only this gym.</div></div>' +
+          '<div class="hint">Must be unique across HyMotion, not only this gym.</div></div>' +
         '<div class="fg"><label>Password <span class="req">*</span></label>' +
           '<input type="password" name="password" id="addPassword" required placeholder="6+ characters, upper, lower, digit">' +
           '<div class="pw-strength"><div class="pw-bar"><div class="pw-fill" id="pwFill"></div></div><div class="pw-label" id="pwLabel"></div></div>' +

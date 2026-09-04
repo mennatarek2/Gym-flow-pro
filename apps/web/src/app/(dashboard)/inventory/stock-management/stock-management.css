@@ -5,7 +5,7 @@
   --l600:#5EAF00;--l500:#7ACC00;--l400:#A0E040;--l300:#BEEC73;
   --lbg:#F3F5F2;--ls1:#FFFefb;--ls2:#F4F6F3;--ls3:#E4E8E2;
   --ltp:#1F2420;--lts:#4A524C;--ltt:#7A847C;
-  --fd:'Space Grotesk',sans-serif;--fb:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;
+  --fd:'Cairo',sans-serif;--fb:'Cairo',sans-serif;
   --rmd:12px;--rlg:18px;--sidebar-w:220px;
 }
 html,body{height:100%}

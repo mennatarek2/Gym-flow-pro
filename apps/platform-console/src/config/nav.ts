@@ -13,7 +13,8 @@ import {
 } from 'lucide-react'
 
 export interface NavItem {
-  label: string
+  /** Catalog key under nav.* */
+  labelKey: string
   path: string
   icon: LucideIcon
   /** UX-only: capability not backed by a real domain page yet. */
@@ -21,7 +22,7 @@ export interface NavItem {
 }
 
 export interface NavGroup {
-  label: string
+  labelKey: string
   items: NavItem[]
 }
 
@@ -32,31 +33,31 @@ export interface NavGroup {
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Overview',
-    items: [{ label: 'Dashboard', path: '/overview', icon: LayoutDashboard }],
+    labelKey: 'nav.overview',
+    items: [{ labelKey: 'nav.dashboard', path: '/overview', icon: LayoutDashboard }],
   },
   {
-    label: 'Operations',
+    labelKey: 'nav.operations',
     items: [
-      { label: 'Tenants', path: '/tenants', icon: Building2 },
-      { label: 'Trials', path: '/trials', icon: Hourglass },
-      { label: 'Subscriptions', path: '/subscriptions', icon: CreditCard },
-      { label: 'Risk Queue', path: '/risk-queue', icon: AlertTriangle },
-      { label: 'Usage', path: '/usage', icon: Activity },
+      { labelKey: 'nav.tenants', path: '/tenants', icon: Building2 },
+      { labelKey: 'nav.trials', path: '/trials', icon: Hourglass },
+      { labelKey: 'nav.subscriptions', path: '/subscriptions', icon: CreditCard },
+      { labelKey: 'nav.riskQueue', path: '/risk-queue', icon: AlertTriangle },
+      { labelKey: 'nav.usage', path: '/usage', icon: Activity },
     ],
   },
   {
-    label: 'Business',
+    labelKey: 'nav.business',
     items: [
-      { label: 'Metrics', path: '/metrics', icon: LineChart },
-      { label: 'Plans & Pricing', path: '/plans', icon: Tags },
+      { labelKey: 'nav.metrics', path: '/metrics', icon: LineChart },
+      { labelKey: 'nav.plansPricing', path: '/plans', icon: Tags },
     ],
   },
   {
-    label: 'Governance',
+    labelKey: 'nav.governance',
     items: [
-      { label: 'Audit Log', path: '/audit', icon: ScrollText },
-      { label: 'Platform Users', path: '/platform-users', icon: UserCog },
+      { labelKey: 'nav.auditLog', path: '/audit', icon: ScrollText },
+      { labelKey: 'nav.platformUsers', path: '/platform-users', icon: UserCog },
     ],
   },
 ]

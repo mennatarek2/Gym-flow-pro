@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Employee App: Profile & Employee Data Hub
+# HyMotion — Flutter Employee App: Profile & Employee Data Hub
 
 > **Prefer the master app prompt for greenfield work:** `Frontend/FLUTTER_EMPLOYEE_APP_PROMPT.md`
 > (full Phase 1 app: activate, home, schedule, leave, payroll, documents, profile).
@@ -21,8 +21,8 @@
 ---
 
 ```
-PROMPT — GymFlowPro Employee App: Profile & all employee data (Flutter) — Phase 1
-You are a senior Flutter developer building the GymFlow Pro **Employee App** (Egypt / MENA).
+PROMPT — HyMotion Employee App: Profile & all employee data (Flutter) — Phase 1
+You are a senior Flutter developer building the HyMotion **Employee App** (Egypt / MENA).
 Arabic primary + English secondary. RTL when locale is Arabic.
 
 Phase 1 scope: **activation login + Employee role + self-service /me APIs**.
@@ -200,7 +200,7 @@ Date-only fields: no timezone shift.
 7) DESIGN
 ═══════════════════════════════════════════════════════════════════
 
-Same GymFlowPro tokens: charcoal #0D0D0D, lime #7ACC00, teal #148F8F,
+Same HyMotion tokens: charcoal #0D0D0D, lime #7ACC00, teal #148F8F,
 Space Grotesk + IBM Plex Sans + IBM Plex Sans Arabic.
 
 Employee app UI = professional HR self-service (not member marketing style).

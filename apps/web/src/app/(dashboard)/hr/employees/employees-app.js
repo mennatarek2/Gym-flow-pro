@@ -95,10 +95,7 @@
     return ((first || '')[0] || '').concat((last || '')[0] || '').toUpperCase() || 'E';
   }
   function toast(msg, type) {
-    var el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    setTimeout(function () { el.classList.remove('show'); }, 4000);
+    return globalThis.toastShared(msg, type);
   }
   function apiError(r) {
     if (I18n && I18n.displayApiError) return I18n.displayApiError(r) || t('Request failed', 'فشل الطلب');
@@ -266,7 +263,7 @@
   (async function loadGym() {
     var r = await Gfp.get('/settings');
     if (r.ok && r.data) {
-      document.getElementById('gymName').textContent = r.data.gymName || 'GymFlowPro';
+      document.getElementById('gymName').textContent = r.data.gymName || 'HyMotion';
       var ga = document.getElementById('gymNameAr');
       if (ga) ga.textContent = r.data.gymNameAr || '';
     }
@@ -1743,7 +1740,7 @@
     var d = onboardData;
     var matches = matchStaffCandidates(d);
     var html =
-      '<p class="page-subtitle">' + esc(t('Does this employee need GymFlowPro access?', 'هل يحتاج هذا الموظف إلى صلاحية دخول GymFlowPro؟')) + '</p>' +
+      '<p class="page-subtitle">' + esc(t('Does this employee need HyMotion access?', 'هل يحتاج هذا الموظف إلى صلاحية دخول HyMotion؟')) + '</p>' +
       '<div class="choice-row">' +
         '<div class="choice-card' + (d.needAccess === true ? ' act' : '') + '" data-ob-access="yes"><strong>' + esc(t('Yes', 'نعم')) + '</strong><span>' + esc(t('Link or create a Staff login', 'ربط أو إنشاء حساب دخول')) + '</span></div>' +
         '<div class="choice-card' + (d.needAccess === false ? ' act' : '') + '" data-ob-access="no"><strong>' + esc(t('No, later', 'لا، لاحقاً')) + '</strong><span>' + esc(t('AppUserId stays empty', 'يبقى بدون حساب دخول')) + '</span></div>' +

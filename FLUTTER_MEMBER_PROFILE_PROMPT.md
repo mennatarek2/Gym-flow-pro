@@ -1,18 +1,19 @@
-# GymFlowPro — Flutter Member App: Profile & Member Data Hub
+# HyMotion — Flutter Member App: Profile & Member Data Hub
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
 > Platform rules: `Frontend/FLUTTER_MEMBER_APP_PROMPT.md` (auth, STYLE A API_BASE, JWT `sub`, forbidden staff routes).
 > Staff UX reference (read-only inspiration): `Frontend/apps/web/src/app/(dashboard)/members/[id]/member-detail.js` + `index.html`.
 > DTO shapes: `GMS.Application/DTOs/Members/MemberDetailDto.cs`, `MemberStoreDtos.cs`, `InvitationQuotaDto.cs`, `MemberActivityDtos.cs`.
+> **Attendance 404 fix:** `Frontend/FLUTTER_MEMBER_ATTENDANCE_PROMPT.md` — never call `GET /api/attendance/history` (route does not exist).
 >
 > **There is no `GET /api/member/me` today.** This prompt defines the full Profile hub UI **and** how to ship Phase 1 with existing member APIs, then wire Phase 2 when backend adds self-read endpoints.
 
 ---
 
 ```
-PROMPT — GymFlowPro Member App: Profile & all member data (Flutter)
-You are a senior Flutter developer extending the GymFlow Pro Member App (Egypt / MENA).
+PROMPT — HyMotion Member App: Profile & all member data (Flutter)
+You are a senior Flutter developer extending the HyMotion Member App (Egypt / MENA).
 Arabic primary + English secondary. RTL when locale is Arabic.
 
 This prompt REPLACES the minimal “Profile = name + gym + logout” stub in
@@ -66,7 +67,7 @@ Profile card (MemberDetailDto)           ProfileHeaderSection
   currentMembership (summary)              MembershipSection (read-only)
 Tab: Membership                            same — status, plan, dates, sessions, freeze dates
 Tab: Invitations                           InvitationsSection — existing APIs
-Tab: Attendance                            AttendanceSection — needs Phase 2 API
+Tab: Attendance                            AttendanceSection — Phase 2 GET /member/attendance; NEVER /attendance/history (see FLUTTER_MEMBER_ATTENDANCE_PROMPT.md)
 Tab: Orders (Member App only)              OrdersSection — GET /member/orders (see FLUTTER_MEMBER_ORDERS_PROMPT.md; never staff /member-orders)
 Tab: History (membership history)          MembershipHistorySection — Phase 2 API
 Financial 360, refunds, collect            OMIT (staff)
@@ -202,8 +203,13 @@ Paged past memberships (read-only list for History section).
 ── GET /member/attendance?page=1&pageSize=20 ──
 Paged attendance for self (same fields as AttendanceSummaryDto + totalCount pagination).
 
-Until these ship:
+FORBIDDEN dead path (Flutter already hit this — HTTP 404):
+  GET /attendance/history   ← does not exist; remove from Dio clients immediately
+  See FLUTTER_MEMBER_ATTENDANCE_PROMPT.md for migration + empty-state UX.
+
+Until Phase 2 ships:
 - Show honest empty states (“Membership details will appear after your next visit” / AR equivalent)
+- Attendance: empty or local cache of successful qr-checkin only — never staff /members/{id}/attendance
 - Do NOT call staff URLs with guessed memberId
 - Do NOT block Profile tab — render Phase 1 sections that work (invitations, orders, bookings, settings)
 
@@ -324,7 +330,7 @@ Order status display (member-store): submitted | accepted | ready | completed | 
 Booking status: booked | checked_in | cancelled | cancelled_late | no_show (confirm from API strings)
 
 ═══════════════════════════════════════════════════════════════════
-8) DESIGN (match GymFlowPro — do not invent themes)
+8) DESIGN (match HyMotion — do not invent themes)
 ═══════════════════════════════════════════════════════════════════
 
 Brand: charcoal #0D0D0D + lime CTA #7ACC00 + teal accent #148F8F

@@ -1,4 +1,4 @@
-/* Offers & Promotions — GymFlowPro desk */
+/* Offers & Promotions — HyMotion desk */
 :root {
   --off-warn: #b45309;
   --off-warnbg: #fef3c7;
@@ -482,7 +482,7 @@
   margin-bottom: 8px;
 }
 .offers-empty-title {
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-weight: 700;
   color: var(--ltp, #1a1a1a);
   margin-bottom: 4px;
@@ -604,7 +604,7 @@
   min-height: 480px;
 }
 .wiz-panel h2 {
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-size: 20px;
   margin: 0 0 4px;
 }
@@ -772,7 +772,7 @@
   top: 72px;
 }
 .live-preview h3 {
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-size: 13px;
   color: var(--l400, #a0e040);
   margin: 0 0 12px;
@@ -817,7 +817,7 @@
   margin-bottom: 6px;
 }
 .app-offer-card h4 {
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-size: 18px;
   margin: 0 0 4px;
 }
@@ -855,7 +855,7 @@
   font-size: 14px;
   font-weight: 700;
   margin: 2px 0 10px;
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
 }
 .drop-mock {
   height: 88px;
@@ -881,7 +881,7 @@
   }
 }
 .device-col h3 {
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-size: 14px;
   margin: 0 0 10px;
 }
@@ -911,7 +911,7 @@
   padding: 16px 14px 10px;
   background:var(--ls1);
   border-bottom: 1px solid var(--ls3, #e4e8e2);
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-weight: 700;
   font-size: 16px;
 }
@@ -940,7 +940,7 @@
   color: var(--l400, #a0e040);
 }
 .m-card h4 {
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-size: 16px;
   margin: 0 0 4px;
 }
@@ -975,7 +975,7 @@
 }
 .price-row strong {
   color: var(--ltp, #1f2420);
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
 }
 .price-row.save {
   color: #166534;
@@ -1017,7 +1017,7 @@
 .cart-total {
   display: flex;
   justify-content: space-between;
-  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-family: var(--fd, 'Cairo', sans-serif);
   font-size: 18px;
   font-weight: 700;
   margin-top: 10px;

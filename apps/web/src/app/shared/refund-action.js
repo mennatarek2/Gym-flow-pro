@@ -36,18 +36,7 @@
   }
 
   function toast(msg, type) {
-    var el = document.getElementById('toast');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'toast';
-      el.className = 'toast';
-      document.body.appendChild(el);
-    }
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.textContent = msg;
-    setTimeout(function () {
-      el.classList.remove('show');
-    }, 4200);
+    return globalThis.toastShared(msg, type);
   }
 
   function problemMessage(data, status, error) {

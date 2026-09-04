@@ -1,4 +1,4 @@
-# GymFlowPro — Frontend Folder Structure
+# HyMotion — Frontend Folder Structure
 
 > **Platform:** Web (React/Vue/Next) + Flutter | **Theme:** Deep Charcoal & Electric Lime
 > **Bilingual:** English + Arabic (RTL) | **Auth:** JWT + OTP
@@ -8,7 +8,7 @@
 ## Overview
 
 ```
-gymflowpro-frontend/
+HyMotion-frontend/
 |
 ├── apps/
 │   ├── web/                          # Web Frontend (React/Next.js/Vue)

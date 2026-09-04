@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Member App Developer Prompt
+# HyMotion — Flutter Member App Developer Prompt
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
@@ -8,8 +8,8 @@
 ---
 
 ```
-PROMPT — GymFlowPro Member Mobile App (Flutter)
-You are a senior Flutter developer building the GymFlow Pro Member App — the consumer companion for gym members (Egypt / MENA). Arabic primary + English secondary; RTL when locale is Arabic.
+PROMPT — HyMotion Member Mobile App (Flutter)
+You are a senior Flutter developer building the HyMotion Member App — the consumer companion for gym members (Egypt / MENA). Arabic primary + English secondary; RTL when locale is Arabic.
 
 ═══════════════════════════════════════════════════════════════════
 0) PRODUCT BOUNDARY (BINDING — do not invent staff workflows)
@@ -28,6 +28,7 @@ OWN (build these):
 - Member store (if tenant has inventory feature): browse products, place order, my orders
 - Offers & Promotions (Member App visibility — GET /api/member/offers; see FLUTTER_MEMBER_OFFERS_PROMPT.md)
 - Profile hub: identity, membership (read-only), invitations, attendance, orders, bookings, settings — see FLUTTER_MEMBER_PROFILE_PROMPT.md
+- Attendance history: see FLUTTER_MEMBER_ATTENDANCE_PROMPT.md — **never** `GET /api/attendance/history` (404; route does not exist). Until Phase 2 `GET /api/member/attendance`, use empty/cache UX only.
 - Bilingual EN/AR UI; map API bilingual fields (name / nameAr, message / messageAr)
 
 FORBIDDEN (staff / desk only — never call, never UI):
@@ -35,6 +36,7 @@ FORBIDDEN (staff / desk only — never call, never UI):
 - Create / edit / archive members
 - Assign plan, renew membership, freeze / unfreeze
 - Manual / barcode check-in, desk redeem guest visit
+- `GET /api/attendance/history`, `GET /api/attendance/today`, `GET /api/members/{id}/attendance` (staff)
 - Credits ledger, sales, shifts, refunds, inventory management, PO, warehouses
 - POST /api/members/{id}/app-activation-code (staff generates the code; member only consumes it)
 
@@ -51,7 +53,7 @@ Membership in the Member App is READ-ONLY status display. Commercial membership 
 - Nav: go_router
 - QR scan: mobile_scanner
 - Localize: flutter_localizations + arb (ar + en)
-- Fonts: google_fonts → Space Grotesk (display) + IBM Plex Sans + IBM Plex Sans Arabic
+- Fonts: google_fonts → Cairo
 - Optional later: firebase_messaging, flutter_local_notifications
 
 Dev / ngrok base URL (STYLE A — recommended):
@@ -290,7 +292,7 @@ Also:
 - OrderDetailScreen
 
 ═══════════════════════════════════════════════════════════════════
-7) DESIGN (match GymFlowPro staff web — do not invent a navy/red gym theme)
+7) DESIGN (match HyMotion staff web — do not invent a navy/red gym theme)
 ═══════════════════════════════════════════════════════════════════
 
 Brand: charcoal + lime
@@ -308,6 +310,7 @@ Status colors: Active green, Expired red, Frozen cyan, Pending amber.
 [ ] Tokens in flutter_secure_storage; silent refresh; logout on refresh fail
 [ ] Identity = JWT sub; never call staff /api/members/{id}/* or /api/memberships/*
 [ ] QR check-in posts { gymCode } from scanned poster; shows message/messageAr
+[ ] No Dio call to /attendance/history (FLUTTER_MEMBER_ATTENDANCE_PROMPT.md)
 [ ] Invitations use name + phoneNumber; National ID optional; GET summary for quota
 [ ] No guest-quota, referral-share, or visitDate
 [ ] Notifications list + mark read
@@ -342,6 +345,7 @@ Wait for my go-ahead before scaffolding if this prompt is pasted into an AI codi
 |------|------------|------------|
 | Auth | `POST /api/auth/member-activate` + refresh | Login, issue activation code |
 | Check-in | `POST /api/attendance/qr-checkin` | Manual / barcode |
+| Visit history | Phase 2 `GET /api/member/attendance` (not `/attendance/history`) | `GET /api/members/{id}/attendance` |
 | Invites | send, history, summary | staff list / status PATCH |
 | Store | `/api/member-store/*` | fulfill / reject orders |
 | Membership | Read-only UI from login/JWT/check-in | Assign / Renew / Freeze / Members APIs |

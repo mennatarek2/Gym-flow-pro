@@ -35,11 +35,11 @@ export function sessionFromLogin(response: LoginResponse): SessionSnapshot {
 }
 
 export function getStoredGymCode(): string {
-  return localStorage.getItem('gymflowpro.lastGymCode') ?? ''
+  return localStorage.getItem('HyMotion.lastGymCode') ?? ''
 }
 
 export function rememberGymCode(gymCode: string): void {
-  localStorage.setItem('gymflowpro.lastGymCode', gymCode)
+  localStorage.setItem('HyMotion.lastGymCode', gymCode)
 }
 
 export type SessionListener = (session: SessionSnapshot | null) => void

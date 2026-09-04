@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — feature-flag module probe + cached registry (§0.8).
+ * HyMotion — feature-flag module probe + cached registry (§0.8).
  * FEATURE_DISABLED (404 ProblemDetails title) → module unavailable (hide from nav).
  * Network errors: fail-open for core modules; fail-closed for stock_management (Growth desk).
  *

@@ -40,12 +40,7 @@
 
   // ── Toast helper ──
   function toast(msg,type='success'){
-    let t=document.getElementById('toast');
-    if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
-    t.className='toast '+type;
-    t.innerHTML=`<i class="ti ti-${type==='success'?'circle-check':'circle-x'}"></i>${msg}`;
-    t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),3500);
+    return globalThis.toastShared(msg, type);
   }
 
   // ── Phone validation (Egyptian) ──

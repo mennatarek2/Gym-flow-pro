@@ -88,11 +88,7 @@
   function daysRemaining(end){if(!end) return 0;return Math.max(0,Math.ceil((new Date(end)-new Date())/(1000*60*60*24)));}
   function totalDays(start,end){if(!start||!end) return 30;return Math.max(1,Math.ceil((new Date(end)-new Date(start))/(1000*60*60*24)));}
   function toast(msg,type='success'){
-    const t=document.getElementById('toast');
-    t.className='toast '+type;
-    t.innerHTML=`<i class="ti ti-${type==='success'?'circle-check':'circle-x'}"></i>${msg}`;
-    t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),3000);
+    return globalThis.toastShared(msg, type);
   }
   function fmtEGP(v){return 'EGP '+(v||0).toLocaleString();}
   function fmtPayMethod(m){
@@ -213,7 +209,7 @@
   function renderMember(m){
     memberData=m;
     document.getElementById('breadcrumbName').textContent=m.fullName;
-    document.title='GymFlowPro — '+m.fullName;
+    document.title='HyMotion — '+m.fullName;
 
     document.getElementById('profileAv').textContent=(m.fullName||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     if(m.profilePhotoUrl){

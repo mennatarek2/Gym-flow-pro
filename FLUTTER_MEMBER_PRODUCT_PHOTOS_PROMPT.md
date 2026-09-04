@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Member App: Product photos are blank
+# HyMotion — Flutter Member App: Product photos are blank
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
@@ -9,8 +9,8 @@
 ---
 
 ```
-PROMPT — GymFlowPro Member App: FIX product photos (Flutter)
-You are a senior Flutter developer on the GymFlow Pro Member App (Egypt / MENA).
+PROMPT — HyMotion Member App: FIX product photos (Flutter)
+You are a senior Flutter developer on the HyMotion Member App (Egypt / MENA).
 Arabic primary + English secondary. RTL when locale is Arabic.
 
 This prompt FIXES blank product photos in Store (list, detail, cart, my-order lines).

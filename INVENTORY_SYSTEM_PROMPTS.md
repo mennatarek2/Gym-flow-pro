@@ -1,6 +1,6 @@
 # Inventory System — Conflicts + Implementation Prompts
 
-> Grounded in live GymFlow Pro codebase review (as of 2026-08-07).
+> Grounded in live HyMotion codebase review (as of 2026-08-07).
 > **Rule for every prompt:** extend existing POS / Sales / Refunds / Permissions / tenant EF patterns; do **not** invent a parallel checkout, invoice engine, or branch SaaS stack.
 
 ---
@@ -67,7 +67,7 @@
 
 ## C. Agent preamble (paste above every INVS-N)
 
-> You are implementing GymFlow Pro inventory. Read `Frontend/INVENTORY_SYSTEM_PROMPTS.md` section B conflicts; do not create a second POS or invoice engine; retail = `SaleLine.LineType="retail"` + `ReferenceId=ProductId`; stock on-hand = sum of `stock_movements`; warehouses are not Branches; follow OpenWolf `.wolf/OPENWOLF.md`; multi-tenant EF filters + soft-delete required on new entities.
+> You are implementing HyMotion inventory. Read `Frontend/INVENTORY_SYSTEM_PROMPTS.md` section B conflicts; do not create a second POS or invoice engine; retail = `SaleLine.LineType="retail"` + `ReferenceId=ProductId`; stock on-hand = sum of `stock_movements`; warehouses are not Branches; follow OpenWolf `.wolf/OPENWOLF.md`; multi-tenant EF filters + soft-delete required on new entities.
 
 ---
 

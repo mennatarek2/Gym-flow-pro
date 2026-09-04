@@ -41,21 +41,29 @@ const STATIC_ROOT = path.join(__dirname, 'src', 'app');
 const DASH_ROOT = path.join(STATIC_ROOT, '(dashboard)');
 const MEMBER_ROOT = path.join(STATIC_ROOT, 'member');
 const SHARED_ROOT = path.join(STATIC_ROOT, 'shared');
+const DEV_ROOT = path.join(STATIC_ROOT, 'dev');
 const SHARED_SCRIPTS = [
   '/shared/api-config.js',
   '/shared/api-client.js?v=refund1',
   '/shared/authz.js',
   '/shared/features.js?v=7',
-  '/shared/i18n.js',
+  '/shared/i18n-catalog.js',
+  '/shared/i18n.js?v=loc1',
   '/shared/theme.js?v=1',
   '/shared/nav.js?v=4',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=5',
+  '/shared/analytics.js?v=1',
   '/shared/shell.js?v=qa1',
   '/shared/staff-notifications.js?v=2',
   '/shared/quick-actions.js?v=5',
   '/shared/refund-action.js?v=3',
+  '/shared/toast.js?v=1',
+  '/shared/network-status.js?v=1',
+  '/shared/error-handler.js?v=1',
+  '/shared/session-guard.js?v=1',
+  '/shared/app-version.js?v=1',
 ];
 
 const SHARED_STYLES = [
@@ -78,7 +86,8 @@ const MEMBER_SHARED_SCRIPTS = [
   '/shared/api-config.js',
   '/shared/api-client.js',
   '/shared/authz.js',
-  '/shared/i18n.js',
+  '/shared/i18n-catalog.js',
+  '/shared/i18n.js?v=loc1',
   '/shared/theme.js?v=1',
 ];
 const MEMBER_SHARED_STYLES = [
@@ -160,8 +169,33 @@ function sendHtml(res, filePath, memberScope = false) {
 }
 
 // ── CORS ──
+const CORS_ALLOWED_ORIGINS_RAW = process.env.GFP_CORS_ALLOWED_ORIGINS || process.env.CORS_ALLOWED_ORIGINS || '';
+const CORS_ALLOWED_ORIGINS = String(CORS_ALLOWED_ORIGINS_RAW)
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const CORS_IS_PROD = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  const portSuffix =
+    PORT && String(PORT) !== '80' && String(PORT) !== '443' ? ':' + String(PORT) : '';
+  const selfOrigin = `${req.protocol}://${req.hostname}${portSuffix}`;
+
+  if (origin) {
+    if (CORS_ALLOWED_ORIGINS.length) {
+      if (CORS_ALLOWED_ORIGINS.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+      }
+    } else if (!CORS_IS_PROD) {
+      // Development convenience: wildcard if no explicit allowlist is configured.
+      res.header('Access-Control-Allow-Origin', '*');
+    } else if (origin === selfOrigin) {
+      // Production safety fallback: allow only same-origin when allowlist is missing.
+      res.header('Access-Control-Allow-Origin', origin);
+    }
+  }
+
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Expose-Headers', 'Token-Expired');
@@ -321,6 +355,38 @@ app.use((req, res, next) => {
     }
   }
 
+  // -- DEV TOOLS (font preview — not in customer nav) --
+  if (url.startsWith('/dev')) {
+    const sub = url.replace(/^\/dev\/?/, '').replace(/\/+$/, '');
+
+    if (!sub) {
+      if (url === '/dev') {
+        res.redirect(301, '/dev/');
+        return;
+      }
+      res.redirect(302, '/dev/font-preview/');
+      return;
+    }
+
+    const exact = path.join(DEV_ROOT, sub);
+    if (fs.existsSync(exact) && fs.statSync(exact).isFile()) {
+      if (exact.endsWith('.html')) sendHtml(res, exact, true);
+      else res.sendFile(exact);
+      return;
+    }
+
+    const idx = path.join(DEV_ROOT, sub, 'index.html');
+    if (fs.existsSync(idx)) {
+      if (!url.endsWith('/')) {
+        const q = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+        res.redirect(301, '/dev/' + sub + '/' + q);
+        return;
+      }
+      sendHtml(res, idx, true);
+      return;
+    }
+  }
+
   next();
 });
 
@@ -336,11 +402,12 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`
   ╔═══════════════════════════════════════════════╗
-  ║           GymFlowPro Dev Server                ║
+  ║           HyMotion Dev Server                ║
   ╠═══════════════════════════════════════════════╣
   ║  Local:  http://localhost:${PORT}                  ║
   ║  Login:  http://localhost:${PORT}/auth/login/      ║
   ║  Admin:  http://localhost:${PORT}/dashboard/       ║
+  ║  Fonts:  http://localhost:${PORT}/dev/font-preview/ ║
   ║  API:    ${CONFIGURED_API_BASE || 'http://localhost:5000/api'}
   ╚═══════════════════════════════════════════════╝
   `);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GymFlowPro — System-wide Dark Mode (preview)</title>
+<title>HyMotion — System-wide Dark Mode (preview)</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
@@ -216,7 +216,7 @@ table.data tr.sel td{background:var(--selected)}
 <div class="banner">
   <div>
     DESIGN PREVIEW — not live
-    <div class="note">One global theme system for the whole GymFlowPro desk (Light / Dark / System). This is not a Call Sheet-only skin. Production CSS is unchanged until Product Accept. Open this file to validate the language, then Accept to implement once — not page by page.</div>
+    <div class="note">One global theme system for the whole HyMotion desk (Light / Dark / System). This is not a Call Sheet-only skin. Production CSS is unchanged until Product Accept. Open this file to validate the language, then Accept to implement once — not page by page.</div>
   </div>
   <div class="muted" style="color:#d1fae5">SoT · wait Accept</div>
 </div>
@@ -233,7 +233,7 @@ table.data tr.sel td{background:var(--selected)}
 <div class="page">
   <section data-scene="overview">
     <h1 class="pt">System-wide Dark Mode</h1>
-    <p class="sub">Upgrade GymFlowPro into a multi-theme design system. One token sheet remaps the existing <code>--lbg / --ls1 / --ltp</code> variables so every current module inherits Light and Dark. Future pages use the same tokens — they do not invent another Dark Mode.</p>
+    <p class="sub">Upgrade HyMotion into a multi-theme design system. One token sheet remaps the existing <code>--lbg / --ls1 / --ltp</code> variables so every current module inherits Light and Dark. Future pages use the same tokens — they do not invent another Dark Mode.</p>
     <div class="grid3">
       <div class="card"><div class="card-h">Today</div><div class="card-b muted">Light canvas only. Sidebar is already charcoal. Tokens duplicated per page. No <code>prefers-color-scheme</code>. Tenant branding remaps lime only.</div></div>
       <div class="card"><div class="card-h">After Accept</div><div class="card-b muted">Shared <code>theme.css</code> + boot script in <code>&lt;head&gt;</code> (no flash). Settings → Appearance. Persist <code>gfp_appearance</code> like locale. Print stays white paper.</div></div>
@@ -243,7 +243,7 @@ table.data tr.sel td{background:var(--selected)}
       <div class="mini-wrap">
         <div class="cap">Light — current identity kept</div>
         <div class="desk" data-theme="light" style="min-height:220px;border:0;border-radius:0">
-          <aside class="sb"><div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>GymFlowPro</span></div>
+          <aside class="sb"><div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>HyMotion</span></div>
             <div class="sb-i act">Dashboard</div><div class="sb-i">Members</div></aside>
           <div class="main"><div class="tb"><span class="crumb">Home / <b>Dashboard</b></span></div>
             <div class="ct"><div class="kpis" style="grid-template-columns:1fr 1fr"><div class="kpi"><div class="n">184</div><div class="l">In gym</div></div><div class="kpi"><div class="n">EGP 12.4k</div><div class="l">Today</div></div></div></div>
@@ -253,7 +253,7 @@ table.data tr.sel td{background:var(--selected)}
       <div class="mini-wrap">
         <div class="cap">Dark — professional SaaS + POS</div>
         <div class="desk" data-theme="dark" style="min-height:220px;border:0;border-radius:0">
-          <aside class="sb"><div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>GymFlowPro</span></div>
+          <aside class="sb"><div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>HyMotion</span></div>
             <div class="sb-i act">Dashboard</div><div class="sb-i">Members</div></aside>
           <div class="main"><div class="tb"><span class="crumb">Home / <b>Dashboard</b></span></div>
             <div class="ct"><div class="kpis" style="grid-template-columns:1fr 1fr"><div class="kpi"><div class="n">184</div><div class="l">In gym</div></div><div class="kpi"><div class="n">EGP 12.4k</div><div class="l">Today</div></div></div></div>
@@ -314,7 +314,7 @@ table.data tr.sel td{background:var(--selected)}
     <p class="sub">A simple control next to Gym Identity. Per browser (and user id if we key the store), not per gym. Switching is instant — no reload.</p>
     <div class="desk">
       <aside class="sb">
-        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>GymFlowPro</span></div>
+        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>HyMotion</span></div>
         <div class="sb-i">Dashboard</div>
         <div class="sb-i act"><i class="ti ti-settings"></i> Settings</div>
       </aside>
@@ -322,14 +322,14 @@ table.data tr.sel td{background:var(--selected)}
         <div class="tb"><span class="crumb">Settings / <b>Appearance</b></span></div>
         <div class="ct">
           <h2 style="font-family:'Space Grotesk',sans-serif;font-size:20px;margin-bottom:4px">Appearance</h2>
-          <p class="muted" style="margin-bottom:14px">Choose how GymFlowPro looks. This does not change your gym logo or brand colors.</p>
+          <p class="muted" style="margin-bottom:14px">Choose how HyMotion looks. This does not change your gym logo or brand colors.</p>
           <div class="appear" id="appearOpts">
             <button type="button" class="appear-opt act" data-pref="light">
               <div class="appear-mini" data-theme="light" style="background:#F3F5F2">
                 <div class="s" style="background:#0D0D0D"></div>
                 <div class="c"><div class="bar" style="background:#fff"></div><div class="row" style="background:#E4E8E2"></div><div class="row" style="background:#E4E8E2;width:55%"></div></div>
               </div>
-              <div class="appear-lab">Light<span>Always the current GymFlowPro look.</span></div>
+              <div class="appear-lab">Light<span>Always the current HyMotion look.</span></div>
             </button>
             <button type="button" class="appear-opt" data-pref="dark">
               <div class="appear-mini" data-theme="dark" style="background:#151716">
@@ -393,7 +393,7 @@ table.data tr.sel td{background:var(--selected)}
     <p class="sub">Same widgets, semantic surfaces. Occupancy ring and money stay readable. Charts use theme grid/series colors.</p>
     <div class="desk">
       <aside class="sb">
-        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>GymFlowPro</span></div>
+        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>HyMotion</span></div>
         <div class="sb-i act">Dashboard</div>
       </aside>
       <div class="main">
@@ -524,7 +524,7 @@ table.data tr.sel td{background:var(--selected)}
     <p class="sub">First high-quality consumer of the global theme — not a private Dark Mode. Queue, KPIs, and the log-call dialog all use the same tokens.</p>
     <div class="desk">
       <aside class="sb">
-        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>GymFlowPro</span></div>
+        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>HyMotion</span></div>
         <div class="sb-i act"><i class="ti ti-phone-call"></i> Call sheet</div>
       </aside>
       <div class="main">
@@ -603,7 +603,7 @@ table.data tr.sel td{background:var(--selected)}
     <p class="sub">Dark Mode must not flip direction. Arabic already uses <code>html[dir=rtl]</code> from i18n. Theme only changes color tokens.</p>
     <div class="desk rtl-demo" dir="rtl">
       <aside class="sb">
-        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>GymFlowPro</span></div>
+        <div class="sb-h"><div class="mark"><i class="ti ti-activity"></i></div><span>HyMotion</span></div>
         <div class="sb-i act">لوحة التحكم</div>
         <div class="sb-i">الأعضاء</div>
       </aside>

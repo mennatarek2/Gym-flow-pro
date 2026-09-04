@@ -25,7 +25,7 @@ export function Sidebar() {
         </svg>
         <div>
           <div className="font-[family-name:var(--fd)] text-lg font-bold text-[var(--l400)]">
-            GymFlowPro
+            HyMotion
           </div>
           <div className="text-[11px] text-[var(--c400)]">
             {probeStatus === 'probing'

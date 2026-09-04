@@ -54,16 +54,7 @@
   }
 
   function toast(msg, type) {
-    var el = document.getElementById('toast');
-    if (!el) {
-      window.alert(msg);
-      return;
-    }
-    el.textContent = msg;
-    el.className = 'toast show' + (type === 'err' ? ' err' : type === 'ok' ? ' ok' : '');
-    setTimeout(function () {
-      el.classList.remove('show');
-    }, 4000);
+    return globalThis.toastShared(msg, type);
   }
 
   function applyLocaleUi() {
@@ -91,7 +82,7 @@
   (async function loadGym() {
     var r = await Gfp.get('/settings');
     if (r.ok && r.data) {
-      document.getElementById('gymName').textContent = r.data.gymName || 'GymFlowPro';
+      document.getElementById('gymName').textContent = r.data.gymName || 'HyMotion';
       var ga = document.getElementById('gymNameAr');
       if (ga) ga.textContent = r.data.gymNameAr || '';
     }

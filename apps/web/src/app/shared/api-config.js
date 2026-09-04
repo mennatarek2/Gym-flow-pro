@@ -1,5 +1,5 @@
 /**
- * GymFlowPro web — shared API origin.
+ * HyMotion web — shared API origin.
  * Production (same host as API): uses window.location.origin + '/api'
  * Override: <meta name="gfp-api-base" content="https://your-domain.com/api">
  * Dev persist: localStorage.gfp_api_base

@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — shared API client (§0 + §1)
+ * HyMotion — shared API client (§0 + §1)
  * Bearer injection, silent refresh on Token-Expired: true, dual-shape errors, PagedResult helpers.
  *
  * Gotchas:

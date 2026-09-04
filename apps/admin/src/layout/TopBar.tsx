@@ -1,5 +1,5 @@
 import { staffLogout } from '@/lib/api'
-import { tLabel } from '@/lib/i18n/bilingual'
+import { t } from '@/lib/i18n/bilingual'
 import { useAuthStore } from '@/stores/auth-store'
 import { useFeatureFlagsStore } from '@/stores/feature-flags-store'
 import { useUiStore } from '@/stores/ui-store'
@@ -24,9 +24,9 @@ export function TopBar() {
           type="button"
           onClick={() => toggleLocale()}
           className="rounded-[var(--rpl)] border border-[var(--lbd)] px-3 py-1.5 text-xs font-semibold text-[var(--lts)] transition hover:border-[var(--l500)] hover:text-[var(--l600)]"
-          aria-label={tLabel('Toggle language / RTL', 'تبديل اللغة / الاتجاه', locale)}
+          aria-label={t('common.language', undefined, locale)}
         >
-          {locale === 'ar' ? 'EN' : 'عربي'}
+          {locale === 'ar' ? t('common.switchToEn', undefined, locale) : t('common.switchToAr', undefined, locale)}
         </button>
         <button
           type="button"
@@ -37,7 +37,7 @@ export function TopBar() {
           }}
           className="rounded-[var(--rpl)] border-2 border-[var(--l500)] bg-[var(--l500)] px-4 py-1.5 text-xs font-semibold text-[var(--c900)] transition hover:border-[var(--l400)] hover:bg-[var(--l400)]"
         >
-          {tLabel('Sign out', 'خروج', locale)}
+          {t('auth.logout', undefined, locale)}
         </button>
       </div>
     </header>

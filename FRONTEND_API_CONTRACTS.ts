@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — Frontend API Contracts
+ * HyMotion — Frontend API Contracts
  *
  * Generated directly from GMS.Api / GMS.Application / GMS.Core source (controllers, DTOs,
  * constants, enums). Every type here corresponds to a real C# class/route that exists in the
@@ -1230,7 +1230,7 @@ export const TRIALS_ENDPOINTS = {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // § 13. Outstanding balances (DebtorsController — api/debtors, [Authorize], [FeatureFlag("debtors")])
-// GymFlowPro does not expose Debtors as a primary product module. These APIs remain
+// HyMotion does not expose Debtors as a primary product module. These APIs remain
 // the outstanding-balance query over Sale.AmountDue (buyer = Sale.MemberId).
 // ═══════════════════════════════════════════════════════════════════════════
 

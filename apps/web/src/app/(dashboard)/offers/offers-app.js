@@ -232,12 +232,7 @@
   }
 
   function toast(msg, type) {
-    var el = document.getElementById('toast');
-    el.className = 'toast offer-toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.textContent = msg;
-    setTimeout(function () {
-      el.classList.remove('show');
-    }, 3200);
+    return globalThis.toastShared(msg, type);
   }
 
   function todayStr() {

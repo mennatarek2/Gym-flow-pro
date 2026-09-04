@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — sidebar ↔ main layout (Task 2).
+ * HyMotion — sidebar ↔ main layout (Task 2).
  * Injected after responsive.css. Visual chrome (colors, type, nav) stays in page CSS.
  * Behavior is driven by html[data-gfp-sb] set by shared/shell.js.
  *

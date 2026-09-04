@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — authz (§0.4): JWT `perm` claims + role policies.
+ * HyMotion — authz (§0.4): JWT `perm` claims + role policies.
  * useCan(permission) is the React name; on static web use GfpAuthz.can / window.useCan.
  */
 (function (global) {

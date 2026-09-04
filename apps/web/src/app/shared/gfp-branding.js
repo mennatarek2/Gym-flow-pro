@@ -156,7 +156,7 @@
     var name = b.gymName || b.GymName || '';
     var nameAr = b.gymNameAr || b.GymNameAr || '';
     var shortName = b.shortName || b.ShortName || '';
-    var display = shortName || name || 'GymFlowPro';
+    var display = shortName || name || 'HyMotion';
 
     document.querySelectorAll('#gymName, .tb-gym-name, .gym-name').forEach(function (el) {
       if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return;

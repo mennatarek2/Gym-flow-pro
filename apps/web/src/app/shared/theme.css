@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — global Light / Dark theme.
+ * HyMotion — global Light / Dark theme.
  * Injected last in <head> so html[data-theme="dark"] remaps page :root tokens.
  * Light appearance is unchanged (pages keep their own :root hex).
  * Print always forces a light paper palette.

@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Employee App Developer Prompt (Phase 1)
+# HyMotion — Flutter Employee App Developer Prompt (Phase 1)
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
@@ -11,8 +11,8 @@
 ---
 
 ```
-PROMPT — GymFlowPro Employee Mobile App (Flutter) — Phase 1
-You are a senior Flutter developer building the GymFlow Pro **Employee App** — the workforce
+PROMPT — HyMotion Employee Mobile App (Flutter) — Phase 1
+You are a senior Flutter developer building the HyMotion **Employee App** — the workforce
 companion for gym employees (Egypt / MENA). Arabic primary + English secondary; RTL when locale is Arabic.
 
 This is NOT the Member App. NOT the Staff desk / POS / HR admin web.
@@ -98,7 +98,7 @@ LoginResponse:
   "expiresAtUtc": string,
   "user": {
     "id": string,             // Identity user id (JWT sub) — NOT Employee.Id
-    "email": string,          // often emp-0001@employee.gymflowpro.local
+    "email": string,          // often emp-0001@employee.HyMotion.local
     "fullName": string,
     "role": "Employee",
     "tenantId": string,
@@ -268,7 +268,7 @@ Also:
 - LeaveRequestFormScreen
 
 ═══════════════════════════════════════════════════════════════════
-8) DESIGN (match GymFlowPro — do not invent themes)
+8) DESIGN (match HyMotion — do not invent themes)
 ═══════════════════════════════════════════════════════════════════
 
 Brand: charcoal #0D0D0D + lime CTA #7ACC00 + teal #148F8F

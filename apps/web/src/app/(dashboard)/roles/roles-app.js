@@ -64,12 +64,7 @@
   }
 
   function toast(msg, type) {
-    type = type || 'success';
-    var t = document.getElementById('toast');
-    if (!t) return;
-    t.innerHTML = '<i class="ti ' + (type === 'success' ? 'ti-check' : 'ti-alert-circle') + '"></i>' + esc(msg);
-    t.className = 'toast ' + type + ' show';
-    setTimeout(function () { t.classList.remove('show'); }, 3500);
+    return globalThis.toastShared(msg, type);
   }
 
   function universe() {

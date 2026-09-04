@@ -1,5 +1,6 @@
 /**
- * GymFlowPro — bilingual messages (message / messageAr) + full-page RTL locale toggle.
+ * HyMotion — bilingual messages (message / messageAr) + full-page RTL locale toggle.
+ * Catalog keys via GfpI18n.t (from shared/i18n-catalog.js / @gymflowpro/i18n).
  * html[dir=rtl|ltr] drives shared/rtl.css for the entire page (not sidebar-only).
  */
 (function (global) {
@@ -22,10 +23,6 @@
     return locale;
   }
 
-  /**
-   * Flip the whole document. Pages must not hardcode dir="ltr" as permanent —
-   * this overwrites html.lang / html.dir on every load and toggle.
-   */
   function applyDocumentLocale(locale) {
     locale = locale || getLocale();
     var html = global.document && global.document.documentElement;
@@ -38,12 +35,46 @@
       global.document.body.classList.toggle('gfp-ltr', locale !== 'ar');
     }
     applyDataLocaleAttributes(locale);
+    applyDataI18nAttributes(locale);
+  }
+
+  function getCatalog() {
+    return (global.GfpI18nCatalog) || { en: {}, ar: {} };
+  }
+
+  function applyPlural(template, params) {
+    return String(template).replace(
+      /\{(\w+),\s*plural,\s*one\s*\{([^}]*)\}\s*other\s*\{([^}]*)\}\}/g,
+      function (_, name, one, other) {
+        var n = Number(params[name] != null ? params[name] : 0);
+        var branch = n === 1 ? one : other;
+        return branch.replace(/#/g, String(n));
+      }
+    );
+  }
+
+  function interpolate(template, params) {
+    if (!params) return template;
+    var out = applyPlural(template, params);
+    return out.replace(/\{(\w+)\}/g, function (_, key) {
+      return params[key] != null ? String(params[key]) : '{' + key + '}';
+    });
   }
 
   /**
-   * Elements with data-en / data-ar swap visible text on locale change.
-   * Optional data-en-title / data-ar-title for title/placeholder/aria-label.
+   * Catalog lookup: GfpI18n.t('members.title') or t('members.greeting', { name: 'Ali' })
    */
+  function t(key, params, locale) {
+    locale = locale || getLocale();
+    var cat = getCatalog();
+    var primary = cat[locale] || cat.en || {};
+    var fallback = cat.en || {};
+    var template = primary[key];
+    if (template == null) template = fallback[key];
+    if (template == null) return key;
+    return interpolate(String(template), params);
+  }
+
   function applyDataLocaleAttributes(locale) {
     locale = locale || getLocale();
     var root = global.document;
@@ -54,7 +85,6 @@
       var ar = el.getAttribute('data-ar');
       var text = locale === 'ar' ? ar || en : en || ar;
       if (text == null) return;
-      // Prefer updating a dedicated label child; else textContent if no nested controls
       var label = el.querySelector('[data-i18n-text]');
       if (label) {
         label.textContent = text;
@@ -68,15 +98,39 @@
     root.querySelectorAll('[data-en-title],[data-ar-title]').forEach(function (el) {
       var en = el.getAttribute('data-en-title');
       var ar = el.getAttribute('data-ar-title');
-      var t = locale === 'ar' ? ar || en : en || ar;
-      if (t != null) el.setAttribute('title', t);
+      var tx = locale === 'ar' ? ar || en : en || ar;
+      if (tx != null) el.setAttribute('title', tx);
     });
 
     root.querySelectorAll('[data-en-placeholder],[data-ar-placeholder]').forEach(function (el) {
       var en = el.getAttribute('data-en-placeholder');
       var ar = el.getAttribute('data-ar-placeholder');
-      var t = locale === 'ar' ? ar || en : en || ar;
-      if (t != null) el.setAttribute('placeholder', t);
+      var tx = locale === 'ar' ? ar || en : en || ar;
+      if (tx != null) el.setAttribute('placeholder', tx);
+    });
+  }
+
+  /** Elements with data-i18n="common.save" use the JSON catalog. */
+  function applyDataI18nAttributes(locale) {
+    locale = locale || getLocale();
+    var root = global.document;
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      if (!key) return;
+      var text = t(key, null, locale);
+      var label = el.querySelector('[data-i18n-text]');
+      if (label) label.textContent = text;
+      else if (!el.querySelector('input,select,textarea,button,a,i,svg,img')) el.textContent = text;
+      else if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) el.textContent = text;
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-placeholder');
+      if (key) el.setAttribute('placeholder', t(key, null, locale));
+    });
+    root.querySelectorAll('[data-i18n-title]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n-title');
+      if (key) el.setAttribute('title', t(key, null, locale));
     });
   }
 
@@ -122,7 +176,6 @@
     return '';
   }
 
-  /** Prefer message/messageAr from API result envelopes; else parsed error / detail slash-split. */
   function displayApiError(resultOrError, locale) {
     locale = locale || getLocale();
     if (!resultOrError) return '';
@@ -139,6 +192,9 @@
         }
         return picked;
       }
+      if (obj.error && typeof obj.error === 'string') {
+        return displayBilingualText(obj.error, locale);
+      }
       if (obj.detail) {
         var p2 = splitSlashBilingual(obj.detail);
         return pickBilingual(p2.message, p2.messageAr, locale);
@@ -147,7 +203,9 @@
     }
 
     if (resultOrError.error) {
-      var fromErr = fromObj(resultOrError.error);
+      var fromErr = typeof resultOrError.error === 'string'
+        ? displayBilingualText(resultOrError.error, locale)
+        : fromObj(resultOrError.error);
       if (fromErr) return fromErr;
     }
     if (resultOrError.data) {
@@ -166,6 +224,79 @@
     return pickBilingual(en, ar, locale || getLocale());
   }
 
+  var STATUS_KEY = {
+    active: 'status.active',
+    expired: 'status.expired',
+    pending: 'status.pending',
+    frozen: 'status.frozen',
+    cancelled: 'status.cancelled',
+    canceled: 'status.cancelled',
+    completed: 'status.completed',
+    refunded: 'status.refunded',
+    failed: 'status.failed',
+    draft: 'status.draft',
+    accepted: 'status.accepted',
+    ready: 'status.ready',
+    rejected: 'status.rejected',
+    open: 'status.open',
+    closed: 'status.closed',
+    trialing: 'status.trialing',
+    past_due: 'status.past_due',
+    suspended: 'status.suspended',
+    none: 'membership.none'
+  };
+
+  function statusLabel(code, locale) {
+    locale = locale || getLocale();
+    var key = STATUS_KEY[String(code || '').toLowerCase()];
+    if (!key) return String(code || '');
+    return t(key, null, locale);
+  }
+
+  function formatMoney(amount, locale) {
+    locale = locale || getLocale();
+    var n = Number(amount);
+    var formatted = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(isFinite(n) ? n : 0);
+    return t('format.currency', { amount: formatted }, locale);
+  }
+
+  function formatNumber(value, locale, opts) {
+    locale = locale || getLocale();
+    var n = Number(value);
+    return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', opts || {}).format(
+      isFinite(n) ? n : 0
+    );
+  }
+
+  function formatDate(isoOrDate, locale) {
+    locale = locale || getLocale();
+    var d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
+    if (isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(d);
+  }
+
+  function formatDateTime(isoOrDate, locale) {
+    locale = locale || getLocale();
+    var d = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate);
+    if (isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(d);
+  }
+
   function toggleLocale() {
     return setLocale(getLocale() === 'ar' ? 'en' : 'ar');
   }
@@ -174,7 +305,6 @@
     return getLocale() === 'ar';
   }
 
-  // Apply early so first paint matches stored locale (also set by early head script)
   if (global.document) {
     if (global.document.readyState === 'loading') {
       global.document.addEventListener('DOMContentLoaded', function () {
@@ -191,11 +321,18 @@
     toggleLocale: toggleLocale,
     applyDocumentLocale: applyDocumentLocale,
     applyDataLocaleAttributes: applyDataLocaleAttributes,
+    applyDataI18nAttributes: applyDataI18nAttributes,
     pickBilingual: pickBilingual,
     splitSlashBilingual: splitSlashBilingual,
     displayBilingualText: displayBilingualText,
     displayApiError: displayApiError,
     tLabel: tLabel,
+    t: t,
+    statusLabel: statusLabel,
+    formatMoney: formatMoney,
+    formatNumber: formatNumber,
+    formatDate: formatDate,
+    formatDateTime: formatDateTime,
     isRtl: isRtl
   };
 })(typeof window !== 'undefined' ? window : globalThis);

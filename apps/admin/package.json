@@ -3,6 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "dependencies": {
+    "@gymflowpro/i18n": "*",
+    "@tanstack/react-query": "^5.101.2",
+    "axios": "^1.18.1",
+    "lucide-react": "^0.292.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
+    "zustand": "^5.0.14"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -11,15 +21,6 @@
     "test:nav": "tsx src/config/nav.selftest.ts",
     "test:errors": "tsx src/lib/api/errors.selftest.ts",
     "test:i18n": "tsx src/lib/i18n/bilingual.selftest.ts"
-  },
-  "dependencies": {
-    "@tanstack/react-query": "^5.101.2",
-    "axios": "^1.18.1",
-    "lucide-react": "^0.292.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1",
-    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",

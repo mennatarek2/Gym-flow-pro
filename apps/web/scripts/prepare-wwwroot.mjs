@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { spawnSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.join(__dirname, '..');
@@ -32,10 +33,16 @@ function copyRecursive(src, dest) {
 console.log('Preparing wwwroot at', outRoot);
 fs.mkdirSync(outRoot, { recursive: true });
 
+const syncScript = path.join(__dirname, '../../../scripts/i18n/sync-web-catalog.mjs');
+if (fs.existsSync(syncScript)) {
+  spawnSync(process.execPath, [syncScript], { stdio: 'inherit' });
+}
+
 copyRecursive(path.join(srcApp, '(dashboard)'), path.join(outRoot, 'dashboard'));
 copyRecursive(path.join(srcApp, 'auth'), path.join(outRoot, 'auth'));
 copyRecursive(path.join(srcApp, 'member'), path.join(outRoot, 'member'));
 copyRecursive(path.join(srcApp, 'shared'), path.join(outRoot, 'shared'));
+copyRecursive(path.join(srcApp, 'dev'), path.join(outRoot, 'dev'));
 
 for (const dir of ['uploads', 'logs']) {
   fs.mkdirSync(path.join(outRoot, dir), { recursive: true });

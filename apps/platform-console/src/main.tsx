@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
 
 setUnauthorizedHandler(() => {
   useAuthStore.getState().logout()
-  useUiStore.getState().setBanner('Session expired — please sign in again.')
+  useUiStore.getState().setBanner(useUiStore.getState().t('platform.sessionExpired'))
   if (window.location.pathname !== '/login') {
     window.location.assign(`/login`)
   }
@@ -29,15 +29,16 @@ setUnauthorizedHandler(() => {
 queryClient.getQueryCache().subscribe((event) => {
   if (event.type === 'updated' && event.query.state.status === 'error') {
     const err = event.query.state.error
-    const msg = err instanceof Error ? err.message : 'Something went wrong — please try again'
+    const msg = err instanceof Error ? err.message : useUiStore.getState().t('errors.generic')
     if (!msg.toLowerCase().includes('401') && !msg.toLowerCase().includes('unauthorized')) {
-      // Non-blocking banner for 5xx/network — auth errors redirect separately.
       if (String(err).includes('Network') || (err as { status?: number })?.status && (err as { status: number }).status >= 500) {
-        useUiStore.getState().setBanner('Something went wrong — please try again.')
+        useUiStore.getState().setBanner(useUiStore.getState().t('errors.generic'))
       }
     }
   }
 })
+
+useUiStore.getState().applyDocumentDirection()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

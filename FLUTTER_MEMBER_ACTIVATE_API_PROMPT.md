@@ -6,9 +6,9 @@
 ---
 
 ```
-PROMPT — GymFlowPro Member App Auth: POST member-activate ONLY
+PROMPT — HyMotion Member App Auth: POST member-activate ONLY
 
-You are implementing Member App Stage 0 activation for GymFlowPro (Flutter).
+You are implementing Member App Stage 0 activation for HyMotion (Flutter).
 Do NOT implement phone OTP. Do NOT invent endpoints.
 
 ═══════════════════════════════════════════════════════════════════
@@ -23,7 +23,7 @@ NEVER concatenate:
 
 Pick ONE style and use it for ALL calls (activate, refresh, check-in, etc.):
 
-STYLE A (recommended — matches GymFlowPro web FE):
+STYLE A (recommended — matches HyMotion web FE):
   API_BASE = "https://reach-lullaby-tighten.ngrok-free.dev/api"
   // or local: "https://10.0.2.2:5001/api" (Android emulator)
   // or local: "https://localhost:5001/api" (iOS sim — trust cert / use http if needed)

@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — full-page RTL (Arabic).
+ * HyMotion — full-page RTL (Arabic).
  * Source of truth: html[dir="rtl"] set by shared/i18n.js.
  * Do NOT rely on sidebar-only flips — main content must mirror too.
  */
@@ -9,7 +9,7 @@ html[dir='rtl'] {
 
 /* ── Base typography / alignment ── */
 html[dir='rtl'] body {
-  font-family: var(--fa, 'IBM Plex Sans Arabic'), 'IBM Plex Sans', sans-serif;
+  font-family: var(--fa, 'Cairo'), 'Cairo', sans-serif;
   text-align: start;
   line-height: var(--gfp-lh-ar, 1.7);
 }

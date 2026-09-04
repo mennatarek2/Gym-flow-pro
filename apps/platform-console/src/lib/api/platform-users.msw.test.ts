@@ -15,7 +15,7 @@ import type { PlatformUserDto } from './types'
 let users: PlatformUserDto[] = [
   {
     id: 'admin-1',
-    email: 'admin@gymflowpro.com',
+    email: 'admin@HyMotion.com',
     fullName: 'Platform Admin',
     role: 'platform_admin',
     isActive: true,
@@ -25,7 +25,7 @@ let users: PlatformUserDto[] = [
   },
   {
     id: 'ops-1',
-    email: 'sarah.ops@gymflowpro.com',
+    email: 'sarah.ops@HyMotion.com',
     fullName: 'Sarah Nabil',
     role: 'platform_ops',
     isActive: true,
@@ -112,7 +112,7 @@ describe('platform users API (MSW)', () => {
 
   it('creates a user and it appears in the list', async () => {
     const created = await createPlatformUser({
-      email: 'new@gymflowpro.com',
+      email: 'new@HyMotion.com',
       fullName: 'New Person',
       role: 'platform_support',
       password: 'aVeryLongPassword123',

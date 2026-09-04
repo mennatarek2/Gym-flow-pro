@@ -1,4 +1,4 @@
-# GymFlow Platform Console (Stage 1)
+# HyMotion Platform Console (Stage 1)
 
 Internal ops tool for GymFlow staff. **Separate auth** from the tenant admin dashboard (`apps/admin` / `apps/web`).
 

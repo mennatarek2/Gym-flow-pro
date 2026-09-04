@@ -54,11 +54,7 @@
     return d.innerHTML;
   }
   function toast(msg) {
-    var el = document.getElementById('toast');
-    if (!el) return;
-    el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(function () { el.classList.remove('show'); }, 2800);
+    return globalThis.toastShared(msg);
   }
   function err(r) {
     var d = r && r.data;

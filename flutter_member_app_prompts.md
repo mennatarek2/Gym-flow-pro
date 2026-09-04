@@ -1,4 +1,4 @@
-# GymFlow Pro — Flutter Member App Developer Prompt Pack
+# HyMotion — Flutter Member App Developer Prompt Pack
 
 > **SUPERSEDED for auth + identity:** use [`FLUTTER_MEMBER_APP_PROMPT.md`](./FLUTTER_MEMBER_APP_PROMPT.md).  
 > This pack still documents OTP + a `member_id` JWT claim — both are **obsolete / incorrect** vs production  
@@ -8,7 +8,7 @@
 > are taken directly from the **production codebase** — do not invent endpoints.
 >
 > **Design source of truth:** `Frontend/design-system.html` (same tokens as `apps/web`).  
-> Do **not** invent a navy/red “gym dark” theme — use GymFlowPro lime + charcoal below.
+> Do **not** invent a navy/red “gym dark” theme — use HyMotion lime + charcoal below.
 
 ---
 
@@ -34,7 +34,7 @@
 ## PROMPT 0 — Master Context (paste first, every session)
 
 ```
-You are a senior Flutter developer building the GymFlow Pro Member Mobile Application — a consumer-facing gym companion app for Egyptian/MENA members.
+You are a senior Flutter developer building the HyMotion Member Mobile Application — a consumer-facing gym companion app for Egyptian/MENA members.
 
 PRODUCTION API BASE URL: https://api.gymflowpro.com (dev: http://10.0.2.2:5000 for Android emulator, http://localhost:5000 for iOS)
 
@@ -224,7 +224,7 @@ Wait for my task prompt. Do not scaffold anything yet.
 TASK: Create the complete Flutter project scaffold and core infrastructure. No feature screens yet — only the skeleton that all features will plug into.
 
 1. PROJECT INIT:
-   flutter create gymflow_member --org com.gymflowpro --platforms android,ios
+   flutter create gymflow_member --org com.HyMotion --platforms android,ios
    Add all required pubspec.yaml dependencies (versions pinned to latest stable as of Flutter 3.22):
    flutter_bloc, go_router, dio, flutter_secure_storage, mobile_scanner, qr_flutter,
    flutter_local_notifications, firebase_messaging, image_picker, fl_chart, lottie,
@@ -358,7 +358,7 @@ API calls (exact routes from production code):
 
 3. GymCodeScreen (lib/features/auth/presentation/):
    - Premium welcome screen. Background: light surface (#FAFAFA) or dark c900 with subtle charcoal gradient — NOT navy/red. Optional Lottie accent in lime tones only.
-   - GymFlow Pro mark: lime rounded square logo + Space Grotesk wordmark in l400/l600. Tagline bilingual: "ادارة النادي بذكاء / Smart Gym Management".
+   - HyMotion mark: lime rounded square logo + Space Grotesk wordmark in l400/l600. Tagline bilingual: "ادارة النادي بذكاء / Smart Gym Management".
    - Single text field: "كود النادي / Gym Code" with gym icon prefix. Auto-uppercase. Max 20 chars. Focus ring = lime.
    - "Continue / متابعة" button — full width, solid l500 + c900 text, radius lg (16). No red/pink gradient.
    - If user has previously logged in (gymCode in storage) → skip this screen → go to PhoneScreen with stored gymCode pre-filled.
@@ -382,7 +382,7 @@ API calls (exact routes from production code):
    - "تغيير الرقم / Change number" text button → pop back to PhoneScreen.
 
 6. Splash / App startup:
-   SplashScreen (lib/features/auth/presentation/): GymFlow Pro lime logo centered on light bg or c900. Subtle lime pulse. On init: AuthCubit.checkAuthStatus(). Duration: minimum 1.5s then navigate.
+   SplashScreen (lib/features/auth/presentation/): HyMotion lime logo centered on light bg or c900. Subtle lime pulse. On init: AuthCubit.checkAuthStatus(). Duration: minimum 1.5s then navigate.
 
 7. Input validation (shared):
    - GymCode: non-empty, alphanumeric + dash, trimmed.
@@ -836,7 +836,7 @@ Notification types from the API (map each to icon + AppColors — no invented pu
    
    Local notification channel setup:
    Channel ID: "gymflow_notifications"
-   Channel name: "GymFlow Pro"
+   Channel name: "HyMotion"
    Icon: notification icon (add ic_notification.png to android/app/src/main/res/drawable/)
 
 5. Notification badge:
@@ -1121,7 +1121,7 @@ TASK: No new feature screens — only improvements and release prep.
 11. RELEASE CONFIG:
     android/app/build.gradle:
       minSdkVersion 23, targetSdkVersion 34
-      applicationId "com.gymflowpro.member"
+      applicationId "com.HyMotion.member"
       Version from pubspec: 1.0.0+1
     
     ios/Runner/Info.plist: minimum iOS 13.

@@ -73,6 +73,7 @@ sandbox.globalThis = sandbox;
 
 loadIife(path.join(sharedDir, 'authz.js'), sandbox);
 loadIife(path.join(sharedDir, 'features.js'), sandbox);
+loadIife(path.join(sharedDir, 'i18n-catalog.js'), sandbox);
 loadIife(path.join(sharedDir, 'i18n.js'), sandbox);
 loadIife(path.join(sharedDir, 'nav.js'), sandbox);
 loadIife(path.join(sharedDir, 'shell.js'), sandbox);
@@ -83,6 +84,15 @@ var I18n = sandbox.GfpI18n;
 var Shell = sandbox.GfpShell;
 
 assert(!!Authz && !!Features && !!I18n && !!Shell, 'shared modules attached');
+assert(!!sandbox.GfpI18nCatalog && !!sandbox.GfpI18nCatalog.en, 'i18n catalog loaded');
+assert(I18n.t('common.save', null, 'en') === 'Save', 'GfpI18n.t en');
+assert(I18n.t('common.save', null, 'ar') === 'حفظ', 'GfpI18n.t ar');
+assert(I18n.statusLabel('active', 'ar') === 'نشط', 'statusLabel ar');
+assert(I18n.formatMoney(12500, 'en').indexOf('EGP') !== -1, 'formatMoney');
+I18n.setLocale('ar');
+assert(sandbox.document.documentElement.dir === 'rtl', 'RTL on ar locale');
+I18n.setLocale('en');
+assert(sandbox.document.documentElement.dir === 'ltr', 'LTR on en locale');
 
 // ── Receptionist JWT (no plans.manage / settings.manage) ──
 var receptionistPerms = [

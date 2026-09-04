@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — structured running-cost categories (mirrors GMS.Core.Constants.CashExpenseCatalog).
+ * HyMotion — structured running-cost categories (mirrors GMS.Core.Constants.CashExpenseCatalog).
  */
 (function (global) {
   'use strict';

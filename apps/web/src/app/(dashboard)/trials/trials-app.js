@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  // Trials removed from GymFlow Pro product IA
+  // Trials removed from HyMotion product IA
   window.location.replace('/dashboard/');
   return;
   const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
@@ -49,10 +49,7 @@
     return d.innerHTML;
   }
   function toast(msg, type) {
-    const el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.textContent = msg;
-    setTimeout(() => el.classList.remove('show'), 4200);
+    return globalThis.toastShared(msg, type);
   }
   function problemMessage(data, status) {
     if (!data) return 'Request failed (' + status + ')';

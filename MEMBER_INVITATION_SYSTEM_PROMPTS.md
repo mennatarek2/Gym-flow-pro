@@ -1,6 +1,6 @@
 # Member Invitation / Referral System — Conflicts + Implementation Prompts
 
-> Grounded in the research plan vs live GymFlow Pro codebase (as of 2026-08-06).
+> Grounded in the research plan vs live HyMotion codebase (as of 2026-08-06).
 > **Rule for every prompt:** extend existing guest-invite / credit / check-in / analytics surfaces; do not invent a parallel invitations stack.
 
 ---
@@ -57,7 +57,7 @@ Copy one prompt per agent session. Each ends with acceptance criteria. Do **not*
 
 ### Agent preamble (paste above every INV-N)
 
-> You are implementing GymFlow Pro invitations. Read `Frontend/MEMBER_INVITATION_SYSTEM_PROMPTS.md` section B conflicts; do not create a second invitations table; resolve members via AppUser not JWT-sub-as-GymMember.Id; guest_pass uses InvitationQuota; referrals use referral_rewards + member_credits EntryType extension; no points ledger. Follow OpenWolf `.wolf/OPENWOLF.md`.
+> You are implementing HyMotion invitations. Read `Frontend/MEMBER_INVITATION_SYSTEM_PROMPTS.md` section B conflicts; do not create a second invitations table; resolve members via AppUser not JWT-sub-as-GymMember.Id; guest_pass uses InvitationQuota; referrals use referral_rewards + member_credits EntryType extension; no points ledger. Follow OpenWolf `.wolf/OPENWOLF.md`.
 
 ---
 

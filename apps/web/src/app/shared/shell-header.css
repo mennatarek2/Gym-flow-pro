@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — header / topbar (Task 3).
+ * HyMotion — header / topbar (Task 3).
  * Injected after shell-layout.css. Does not restyle colors, type, or icons.
  * Page chrome (height, 32px desktop padding) stays; this file owns overflow
  * and the tablet/mobile arrangement.

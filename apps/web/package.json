@@ -1,7 +1,7 @@
 {
   "name": "gymflowpro-web",
   "version": "1.0.0",
-  "description": "GymFlowPro Admin Dashboard Web App",
+  "description": "HyMotion Admin Dashboard Web App",
   "private": true,
   "scripts": {
     "dev": "node server.js",

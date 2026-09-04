@@ -871,7 +871,7 @@
       : '';
     return (
       '<div class="dash-exec-kpi dash-exec-kpi-cost">' +
-      '<span class="lbl">' + esc(t('Cost to run', 'تكلفة التشغيل')) + '</span>' +
+      '<span class="lbl">' + esc(global.GfpI18n && global.GfpI18n.t ? global.GfpI18n.t('dashboard.costToRun') : t('Cost to run', 'تكلفة التشغيل')) + '</span>' +
       '<div class="val">' + esc(totalDisplay) + '</div>' +
       '<span class="sub">' + esc(t('Running costs', 'مصروفات تشغيل') + ': ' + runningDisplay) + '</span>' +
       '<span class="sub">' + esc(t('Payroll', 'رواتب') + ': ' + payrollLine) + '</span>' +
@@ -929,12 +929,12 @@
       });
     }
     if (!financial || financial.netProfitAvailable !== true) {
-      if (codes.no_payroll_period || codes.payroll_data_incomplete) {
+      if (codes.no_payroll_period || codes.payroll_data_incomplete || codes.payroll_period_not_fully_covered) {
         items.push({
           title: t('Payroll unavailable', 'الرواتب غير متاحة'),
           body: t(
-            'Payroll has not been finalized for this period, so Net Profit is unavailable.',
-            'لم يتم إغلاق الرواتب لهذه الفترة، لذلك صافي الربح غير متاح.'
+            'Net Profit includes salaries only when the selected range fully covers an approved/closed payroll month. Partial day or month-to-date ranges exclude payroll (not prorated).',
+            'صافي الربح يشمل الرواتب فقط عندما يغطي النطاق المحدد شهر رواتب معتمد/مغلق بالكامل. الفترات الجزئية (يوم أو منذ بداية الشهر) تستبعد الرواتب (بدون تقسيم يومي).'
           ),
           href: '/dashboard/reports/?tab=profitability',
           cta: t('Review Payroll', 'مراجعة الرواتب')
@@ -1202,8 +1202,8 @@
     var payrollWarningHtml = payrollWarning
       ? '<p class="dash-exec-callout">' +
         esc(t(
-          'Salaries shown for the full payroll period. Not prorated.',
-          'الرواتب المعروضة لفترة الرواتب الكاملة. غير مقسّمة يومياً.'
+          'Salaries are recognized only for full payroll months in this range. Not prorated.',
+          'تُحسب الرواتب فقط لأشهر الرواتب الكاملة ضمن هذا النطاق. غير مقسّمة يومياً.'
         )) +
         '</p>'
       : '';
@@ -1307,15 +1307,15 @@
         [
           t('Payroll warning', 'تحذير الرواتب'),
           t(
-            'When the Owner month is shorter than the payroll period, salaries shown are for the full payroll period (not prorated by day).',
-            'عندما يكون شهر المالك أقصر من فترة الرواتب، تُعرض الرواتب لفترة الرواتب الكاملة (غير مقسّمة يومياً).'
+            'Salaries enter Net Profit only when the selected range fully covers the payroll calendar month. Day or month-to-date views exclude payroll (never prorated).',
+            'تدخل الرواتب صافي الربح فقط عندما يغطي النطاق المحدد شهر الرواتب كاملاً. عروض اليوم أو منذ بداية الشهر تستبعد الرواتب (بدون تقسيم يومي).'
           )
         ],
         [
           t('Net profit gate', 'بوابة صافي الربح'),
           t(
-            'Net profit stays unavailable until overlapping payroll periods are COMPLETE and required finance data is present.',
-            'صافي الربح يبقى غير متاح حتى تكتمل فترات الرواتب المتداخلة وتتوافر بيانات المالية المطلوبة.'
+            'Net profit stays unavailable until fully covered payroll months are COMPLETE and required finance data is present.',
+            'صافي الربح يبقى غير متاح حتى تكتمل أشهر الرواتب المغطاة بالكامل وتتوافر بيانات المالية المطلوبة.'
           )
         ]
       ].map(function (row) {

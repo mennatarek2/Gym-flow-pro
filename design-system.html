@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GymFlowPro — Design System</title>
+<title>HyMotion — Design System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -21,7 +21,7 @@
 --pnd600:#D97706;--pnd500:#FBBF24;--pnd100:#FEF3C7;--pndtxt:#92400E;
 --lbg:#FAFAFA;--ls1:#FFF;--ls2:#F5F5F5;--ls3:#EBEBEB;--ltp:#1A1A1A;--lts:#4A4A4A;--ltt:#8C8C8C;--lbd:#D4D4D4;
 --dbg:#0D0D0D;--ds1:#1A1A1A;--ds2:#2A2A2A;--ds3:#3A3A3A;--dtp:#F0F0F0;--dts:#B0B0B0;--dtt:#6B6B6B;--dbd:#4A4A4A;
---fd:'Space Grotesk',sans-serif;--fb:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;--fa:'IBM Plex Sans Arabic',sans-serif;
+--fd:'Cairo',sans-serif;--fb:'Cairo',sans-serif;--fa:'Cairo',sans-serif;
 --rsm:6px;--rmd:10px;--rlg:16px;--rxl:24px;--rpl:9999px;--rfl:50%;
 --sh1:0 1px 2px rgba(0,0,0,.06);--sh2:0 2px 8px rgba(0,0,0,.08);--sh3:0 4px 16px rgba(0,0,0,.12);--sh4:0 8px 32px rgba(0,0,0,.18);--shg:0 0 20px var(--lglow);
 --tf:150ms ease;--tb:250ms ease;--ts:400ms ease;
@@ -210,7 +210,7 @@ body{font-family:var(--fb);background:var(--c900);color:var(--dtp);line-height:1
 <header class="hero">
 <div class="hero-logo">
 <svg viewBox="0 0 56 56" fill="none"><rect width="56" height="56" rx="14" fill="#A0E040"/><path d="M18 38L28 16L38 38" stroke="#0D0D0D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 32H34" stroke="#0D0D0D" stroke-width="3" stroke-linecap="round"/></svg>
-<span>GymFlowPro</span>
+<span>HyMotion</span>
 </div>
 <p class="hero-tag">Design System — Deep Charcoal & Electric Lime</p>
 <p class="hero-tag-ar">نظام التصميم — فحم داكن و ليمون كهربائي</p>
@@ -261,7 +261,7 @@ body{font-family:var(--fb);background:var(--c900);color:var(--dtp);line-height:1
 <!-- 2. TYPOGRAPHY -->
 <section class="sec">
 <div class="sec-hdr"><span class="sec-num">2</span><h2 class="sec-title">Typography</h2></div>
-<div class="note">Display: <b>Space Grotesk</b> (headings, KPIs) — Body: <b>IBM Plex Sans</b> + <b>IBM Plex Sans Arabic</b></div>
+<div class="note">Display + Body + Arabic: <b>Cairo</b></div>
 <h3 class="sub">English Scale</h3>
 <div class="tp-row"><span class="tp-lbl">H1</span><span class="tp-spec">36px/700/1.1</span><span class="tp-en" style="font-family:var(--fd);font-size:36px;font-weight:700">Dashboard Overview</span></div>
 <div class="tp-row"><span class="tp-lbl">H2</span><span class="tp-spec">28px/700/1.2</span><span class="tp-en" style="font-family:var(--fd);font-size:28px;font-weight:700">Member Details</span></div>
@@ -402,7 +402,7 @@ body{font-family:var(--fb);background:var(--c900);color:var(--dtp);line-height:1
 <div class="mode mode-l"><div class="mode-lbl">☀️ Light Mode</div>
 <h3 class="sub" style="color:var(--c600)">Web Sidebar</h3>
 <div class="sb">
-<div class="sb-hdr"><svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#7ACC00"/><path d="M9 19L14 8L19 19" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/><path d="M11 16H17" stroke="#0D0D0D" stroke-width="1.5" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<div class="sb-hdr"><svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#7ACC00"/><path d="M9 19L14 8L19 19" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/><path d="M11 16H17" stroke="#0D0D0D" stroke-width="1.5" stroke-linecap="round"/></svg><span>HyMotion</span></div>
 <div class="sb-nav">
 <div class="sb-item act">📊 Dashboard</div>
 <div class="sb-item">👥 Members</div>
@@ -430,7 +430,7 @@ body{font-family:var(--fb);background:var(--c900);color:var(--dtp);line-height:1
 <div class="mode mode-d"><div class="mode-lbl">🌙 Dark Mode</div>
 <h3 class="sub">Web Sidebar</h3>
 <div class="sb">
-<div class="sb-hdr"><svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#7ACC00"/><path d="M9 19L14 8L19 19" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/><path d="M11 16H17" stroke="#0D0D0D" stroke-width="1.5" stroke-linecap="round"/></svg><span>GymFlowPro</span></div>
+<div class="sb-hdr"><svg viewBox="0 0 28 28" fill="none"><rect width="28" height="28" rx="7" fill="#7ACC00"/><path d="M9 19L14 8L19 19" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/><path d="M11 16H17" stroke="#0D0D0D" stroke-width="1.5" stroke-linecap="round"/></svg><span>HyMotion</span></div>
 <div class="sb-nav">
 <div class="sb-item act">📊 Dashboard</div>
 <div class="sb-item">👥 Members</div>
@@ -617,7 +617,7 @@ body{font-family:var(--fb);background:var(--c900);color:var(--dtp);line-height:1
 /* Surfaces */  dark:  bg #0D0D0D, s1 #1A1A1A, s2 #2A2A2A, s3 #3A3A3A
 /* Radius */    sm 6px | md 10px | lg 16px | xl 24px | pill 9999px
 /* Shadows */   1: 0 1px 2px | 2: 0 2px 8px | 3: 0 4px 16px | 4: 0 8px 32px | glow: 0 0 20px lime-glow
-/* Fonts */     display: 'Space Grotesk' | body: 'IBM Plex Sans' | arabic: 'IBM Plex Sans Arabic'
+/* Fonts */     display/body/arabic: 'Cairo'
 /* Spacing */   4px base → 4, 8, 12, 16, 20, 24, 28, 32, 40, 48, 64, 80
 </pre>
 </div>

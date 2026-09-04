@@ -59,7 +59,7 @@ export function StaffLoginPage() {
               <path d="M18 28H30" stroke="#0D0D0D" strokeWidth="2.5" strokeLinecap="round" />
             </svg>
             <span className="font-[family-name:var(--fd)] text-[28px] font-bold tracking-tight text-[var(--l400)]">
-              GymFlowPro
+              HyMotion
             </span>
           </div>
           <h2 className="mb-2 font-[family-name:var(--fd)] text-[22px] font-semibold leading-snug">

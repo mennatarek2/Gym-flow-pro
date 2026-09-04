@@ -1,5 +1,5 @@
 {
-  "name": "GymFlowPro",
+  "name": "HyMotion",
   "version": "1.0",
   "colors": {
     "charcoal": {
@@ -55,9 +55,9 @@
   },
   "typography": {
     "families": {
-      "display": "'Space Grotesk', sans-serif",
-      "body": "'IBM Plex Sans', 'IBM Plex Sans Arabic', sans-serif",
-      "arabic": "'IBM Plex Sans Arabic', sans-serif"
+      "display": "'Cairo', sans-serif",
+      "body": "'Cairo', 'Cairo', sans-serif",
+      "arabic": "'Cairo', sans-serif"
     },
     "weights": {
       "light": 300,

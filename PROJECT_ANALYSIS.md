@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**GymFlowPro** is a comprehensive gym management system with a modern tech stack spanning web (React/Next.js) and mobile (Flutter) platforms. The project is a monorepo containing documentation, design system specifications, shared packages, and architectural blueprints. Currently, the project is in the **design & architecture phase** with complete documentation but minimal implementation code.
+**HyMotion** is a comprehensive gym management system with a modern tech stack spanning web (React/Next.js) and mobile (Flutter) platforms. The project is a monorepo containing documentation, design system specifications, shared packages, and architectural blueprints. Currently, the project is in the **design & architecture phase** with complete documentation but minimal implementation code.
 
 ---
 

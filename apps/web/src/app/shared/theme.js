@@ -1,5 +1,5 @@
 /**
- * GymFlowPro appearance: light | dark | system.
+ * HyMotion appearance: light | dark | system.
  * Preference is browser-local (optionally keyed by user id). Not Tenant.Settings.
  */
 (function (global) {

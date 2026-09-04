@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — sidebar/topbar shell (Prompt 2B).
+ * HyMotion — sidebar/topbar shell (Prompt 2B).
  * Consumes useVisibleNav(): grouped collapsible categories, RTL-aware, active route,
  * claim-driven default landing, empty-nav friendly state.
  */
@@ -185,7 +185,7 @@
       '.gfp-nav-item i{font-size:19px;opacity:.9;flex-shrink:0}',
       '.gfp-nav-empty{padding:20px 16px;text-align:center;color:var(--c400,#9CA3AF);font-size:var(--gfp-fs-md,14px);line-height:1.5}',
       '.gfp-nav-empty i{font-size:28px;display:block;margin-bottom:10px;opacity:.7}',
-      '.gfp-nav-empty .ar{font-family:var(--fa,"IBM Plex Sans Arabic"),sans-serif;direction:rtl;margin-top:8px;font-size:var(--gfp-fs-sm,13px)}',
+      '.gfp-nav-empty .ar{font-family:var(--fa,"Cairo"),sans-serif;direction:rtl;margin-top:8px;font-size:var(--gfp-fs-sm,13px)}',
       '.gfp-shell-empty-main{display:flex;align-items:center;justify-content:center;min-height:50vh;padding:40px 24px;text-align:center}',
       '.gfp-shell-empty-main .card{max-width:420px;padding:32px;border-radius:16px;background:var(--ls1,#fff);border:1px solid var(--ls3,#E8E8E8);box-shadow:var(--sh2,0 4px 16px rgba(0,0,0,.06))}',
       '.gfp-shell-empty-main i{font-size:40px;color:var(--l500,#7ACC00);margin-bottom:12px;display:block}',
@@ -1176,6 +1176,115 @@
 
   async function boot() {
     if (bootDone) return;
+    // Beta analytics: app opened (no-op unless analytics explicitly enabled/configured)
+    try {
+      if (
+        global.GfpAnalytics &&
+        typeof global.GfpAnalytics.track === 'function' &&
+        !global.GfpAnalytics._appOpenedTracked
+      ) {
+        global.GfpAnalytics._appOpenedTracked = true;
+        global.GfpAnalytics.track('app_opened', {
+          path: global.location && global.location.pathname ? global.location.pathname : ''
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    // Beta feedback (lightweight): copy a prefilled template to clipboard.
+    try {
+      if (typeof global.document !== 'undefined' && global.document.body && !global.document.getElementById('gfpBetaFeedbackBtn')) {
+        if (typeof isEmbedShell === 'function' && isEmbedShell()) {
+          // Embedded shell: keep UI minimal.
+        } else {
+          var dir = global.document.documentElement && global.document.documentElement.dir ? global.document.documentElement.dir : '';
+          var isRtl = dir === 'rtl';
+
+          var btn = global.document.createElement('button');
+          btn.type = 'button';
+          btn.id = 'gfpBetaFeedbackBtn';
+          btn.className = 'gfp-beta-feedback-btn';
+          btn.setAttribute('aria-label', global.GfpI18n && typeof global.GfpI18n.t === 'function' ? global.GfpI18n.t('beta.feedback') : 'beta.feedback');
+          btn.textContent =
+            global.GfpI18n && typeof global.GfpI18n.t === 'function'
+              ? global.GfpI18n.t('beta.feedback')
+              : 'beta.feedback';
+          btn.style.cssText =
+            'position:fixed;bottom:24px;z-index:10000;' +
+            (isRtl ? 'left:24px;' : 'right:24px;') +
+            'padding:10px 14px;border-radius:var(--rmd,8px);' +
+            'background:var(--l100,#d9f99d);color:var(--l500,#7cfc00);' +
+            'border:1px solid rgba(122,204,0,.35);font-size:13px;font-weight:700;cursor:pointer;';
+
+          btn.addEventListener('click', function () {
+            try {
+              var promptTitle =
+                global.GfpI18n && typeof global.GfpI18n.t === 'function'
+                  ? global.GfpI18n.t('beta.feedbackPrompt')
+                  : 'beta.feedbackPrompt';
+              var details = global.prompt ? global.prompt(promptTitle) : null;
+              if (details == null) return; // cancelled
+              details = String(details).trim();
+              if (!details) return;
+
+              var version =
+                global.GfpVersion && typeof global.GfpVersion.get === 'function' ? global.GfpVersion.get() : '';
+              var env =
+                global.GfpVersion && typeof global.GfpVersion.env === 'function' ? global.GfpVersion.env() : '';
+              var url =
+                global.location && global.location.href ? String(global.location.href) : '';
+
+              var template =
+                global.GfpI18n && typeof global.GfpI18n.t === 'function'
+                  ? global.GfpI18n.t('beta.feedbackTemplate', { version: version, env: env, url: url })
+                  : 'beta.feedbackTemplate';
+
+              var body = template + '\\n\\n' + details;
+
+              function ok() {
+                if (global.GfpToast && global.GfpI18n && typeof global.GfpI18n.t === 'function') {
+                  global.GfpToast.success(global.GfpI18n.t('beta.feedbackCopied'));
+                } else if (global.GfpToast) {
+                  global.GfpToast.success('beta.feedbackCopied');
+                }
+              }
+              function fail() {
+                if (global.GfpToast && global.GfpI18n && typeof global.GfpI18n.t === 'function') {
+                  global.GfpToast.error(global.GfpI18n.t('beta.feedbackCopyFailed'));
+                } else if (global.GfpToast) {
+                  global.GfpToast.error('beta.feedbackCopyFailed');
+                }
+              }
+
+              if (global.navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                navigator.clipboard.writeText(body).then(ok).catch(fail);
+                return;
+              }
+
+              // Fallback copy
+              var ta = global.document.createElement('textarea');
+              ta.value = body;
+              ta.setAttribute('readonly', '');
+              ta.style.position = 'fixed';
+              ta.style.left = '-9999px';
+              ta.style.top = '0';
+              global.document.body.appendChild(ta);
+              ta.select();
+              try {
+                var copied = global.document.execCommand && global.document.execCommand('copy');
+                global.document.body.removeChild(ta);
+                copied ? ok() : fail();
+              } catch (e2) {
+                try { global.document.body.removeChild(ta); } catch (e3) {}
+                fail();
+              }
+            } catch (e) { /* ignore */ }
+          });
+
+          global.document.body.appendChild(btn);
+        }
+      }
+    } catch (e) { /* ignore */ }
+
     maybeShopUxRedirect();
     if (!/\/dashboard(\/|$)/.test(global.location.pathname)) return;
     if (!global.GfpAuthz) return;

@@ -11,12 +11,7 @@
     return d.innerHTML;
   }
   function toast(msg, type) {
-    type = type || 'success';
-    var el = document.getElementById('toast');
-    if (!el) return;
-    el.innerHTML = '<i class="ti ' + (type === 'success' ? 'ti-check' : 'ti-alert-circle') + '"></i>' + esc(msg);
-    el.className = 'toast ' + type + ' show';
-    setTimeout(function () { el.classList.remove('show'); }, 3500);
+    return globalThis.toastShared(msg, type);
   }
   function timeAgo(d) {
     if (!d) return '';

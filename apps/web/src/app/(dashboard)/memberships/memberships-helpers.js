@@ -81,18 +81,7 @@ function daysChip(d) {
   return '<span class="dl green">' + d + 'd</span>';
 }
 function toast(msg, type) {
-  type = type || 'success';
-  const el = document.createElement('div');
-  el.className = 'toast ' + type;
-  el.innerHTML =
-    '<i class="ti ' +
-    (type === 'success' ? 'ti-check' : 'ti-alert-circle') +
-    '"></i>' +
-    msg;
-  document.getElementById('toasts').appendChild(el);
-  setTimeout(function () {
-    el.remove();
-  }, 3500);
+  return globalThis.toastShared(msg, type);
 }
 function skeleton(n) {
   let h = '';

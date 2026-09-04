@@ -86,12 +86,7 @@
     }
   }
   function toast(msg, type) {
-    var el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    setTimeout(function () {
-      el.classList.remove('show');
-    }, 4200);
+    return globalThis.toastShared(msg, type);
   }
   function apiError(r) {
     if (!r) return 'Request failed';
@@ -210,7 +205,7 @@
     if (r.ok && r.data) {
       var gn = document.getElementById('gymName');
       var ga = document.getElementById('gymNameAr');
-      if (gn) gn.textContent = r.data.gymName || 'GymFlowPro';
+      if (gn) gn.textContent = r.data.gymName || 'HyMotion';
       if (ga) ga.textContent = r.data.gymNameAr || '';
     }
   })();

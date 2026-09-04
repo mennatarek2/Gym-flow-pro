@@ -274,10 +274,7 @@
       : d.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
   function toast(msg, type) {
-    const el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : '');
-    el.textContent = msg;
-    setTimeout(() => el.classList.remove('show'), 3200);
+    return globalThis.toastShared(msg, type);
   }
   function dateRange() {
     return { from: fromEl.value, to: toEl.value };
@@ -1981,6 +1978,10 @@
   }
 
   function errText() {
+    // i18n-ignore-next-line — fallback if catalog not injected
+    if (global.GfpI18n && typeof global.GfpI18n.t === 'function') {
+      return global.GfpI18n.t('reports.loadError');
+    }
     return "We couldn't load this report.";
   }
 

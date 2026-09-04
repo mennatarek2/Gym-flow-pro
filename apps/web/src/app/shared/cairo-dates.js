@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — Cairo calendar helpers for report date presets.
+ * HyMotion — Cairo calendar helpers for report date presets.
  * Financial APIs interpret DateOnly ranges in Africa/Cairo.
  */
 (function (global) {

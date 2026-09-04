@@ -100,10 +100,7 @@
     return t(en, ar);
   }
   function toast(msg, type) {
-    const el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.textContent = msg;
-    setTimeout(() => el.classList.remove('show'), 4200);
+    return globalThis.toastShared(msg, type);
   }
   function problemMessage(data, status) {
     if (!data) return t('Request failed', 'فشل الطلب') + ' (' + status + ')';
@@ -1501,6 +1498,19 @@
     setSalesDisabledBanner(false);
     const sale = res.data;
     clearIdemKey();
+    try {
+      if (globalThis.GfpAnalytics && typeof globalThis.GfpAnalytics.track === 'function') {
+        globalThis.GfpAnalytics.track('sale_created', {
+          isReplay: !!(sale && sale.isReplay),
+          hasRetail: retailCart && retailCart.length > 0
+        });
+        if (retailCart && retailCart.length > 0) {
+          globalThis.GfpAnalytics.track('inventory_sale_completed', {
+            isReplay: !!(sale && sale.isReplay)
+          });
+        }
+      }
+    } catch (_) { /* ignore */ }
     const due = sale.totals && Number(sale.totals.amountDue);
     const warnList = (sale.warnings || []).filter(Boolean);
     const refundLines = retailCart.map(function (l) {

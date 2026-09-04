@@ -1,5 +1,5 @@
 /**
- * GymFlow Pro — tenant Quick Actions catalog + settings client.
+ * HyMotion — tenant Quick Actions catalog + settings client.
  *
  * Whitelist is fixed. Do not accept arbitrary routes.
  * Persist via GET/PUT /settings/quick-actions (AnyStaff read, ManagerOrAbove write).

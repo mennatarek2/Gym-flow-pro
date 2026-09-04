@@ -36,7 +36,7 @@ Copy into every agent session:
 
 ### Agent preamble (paste above every FE-INVS-N)
 
-> You are integrating GymFlow Pro inventory into **`apps/web` only**. Use real `/api/inventory/*` and updated `/api/sales` / `/api/refunds`. Extend `GfpNav` / `GfpFeatures` / existing POS & refunds pages — do not scaffold `apps/admin` inventory. No QtyOnHand on product. Feature flag `inventory`. Follow OpenWolf `.wolf/OPENWOLF.md`.
+> You are integrating HyMotion inventory into **`apps/web` only**. Use real `/api/inventory/*` and updated `/api/sales` / `/api/refunds`. Extend `GfpNav` / `GfpFeatures` / existing POS & refunds pages — do not scaffold `apps/admin` inventory. No QtyOnHand on product. Feature flag `inventory`. Follow OpenWolf `.wolf/OPENWOLF.md`.
 
 ### Execution discipline
 

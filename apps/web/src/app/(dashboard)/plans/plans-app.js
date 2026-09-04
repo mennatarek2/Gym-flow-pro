@@ -141,14 +141,7 @@
   };
 
   function toast(msg, type) {
-    type = type || 'success';
-    const t = document.getElementById('toast');
-    const icon = type === 'success' ? 'ti-check' : 'ti-alert-circle';
-    t.innerHTML = '<i class="ti ' + icon + '"></i>' + msg;
-    t.className = 'toast ' + type + ' show';
-    setTimeout(function () {
-      t.classList.remove('show');
-    }, 4000);
+    return globalThis.toastShared(msg, type);
   }
 
   function errMsg(r) {

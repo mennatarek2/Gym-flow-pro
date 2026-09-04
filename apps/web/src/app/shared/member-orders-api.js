@@ -1,5 +1,5 @@
 /**
- * GymFlowPro — Member Orders (staff fulfillment) path helpers.
+ * HyMotion — Member Orders (staff fulfillment) path helpers.
  * Backend owns status transitions; FE must not invent stock/payment math.
  */
 (function (global) {

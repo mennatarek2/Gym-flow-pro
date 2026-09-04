@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 :root {
@@ -36,8 +36,8 @@
   --dbg: #0d0d0d;
   --dtp: #f0f0f0;
   --dts: #b0b0b0;
-  --fd: 'Space Grotesk', sans-serif;
-  --fb: 'IBM Plex Sans', 'IBM Plex Sans Arabic', sans-serif;
+  --fd: 'Cairo', sans-serif;
+  --fb: 'Cairo', sans-serif;
   --rmd: 10px;
   --rpl: 9999px;
   --shg: 0 0 20px var(--lglow);

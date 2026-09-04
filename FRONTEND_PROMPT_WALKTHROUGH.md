@@ -1,4 +1,4 @@
-# GymFlow Pro — Frontend Build Walkthrough
+# HyMotion — Frontend Build Walkthrough
 ### How to apply every section of `FRONTEND_INTEGRATION_PROMPTS.md` with an AI coding assistant
 
 This walkthrough turns the 24-section integration contract into an ordered, one-prompt-per-PR

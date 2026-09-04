@@ -8,7 +8,7 @@
 
 ## 1. Current architecture
 
-GymFlowPro has **two discount surfaces**. They are related, not interchangeable.
+HyMotion has **two discount surfaces**. They are related, not interchangeable.
 
 ```
 Offer  (offers table)                    Product concept the owner manages

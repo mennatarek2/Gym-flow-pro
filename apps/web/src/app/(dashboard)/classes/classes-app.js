@@ -61,12 +61,7 @@
 
   // ── Helpers ──
   function toast(msg, type) {
-    type = type || 'success';
-    var t = document.getElementById('toast');
-    var icon = type === 'success' ? 'ti-check' : 'ti-alert-circle';
-    t.innerHTML = '<i class="ti ' + icon + '"></i>' + esc(msg);
-    t.className = 'toast ' + type + ' show';
-    setTimeout(function () { t.classList.remove('show'); }, 4000);
+    return globalThis.toastShared(msg, type);
   }
 
   function errMsg(r) {

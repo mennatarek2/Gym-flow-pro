@@ -1,4 +1,11 @@
-import { displayBilingualText, pickBilingual, splitSlashBilingual } from './bilingual.ts'
+import {
+  t,
+  pickBilingual,
+  splitSlashBilingual,
+  displayBilingualText,
+  tLabel,
+  statusLabel,
+} from './bilingual.ts'
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg)
@@ -13,5 +20,9 @@ assert(
   displayBilingualText({ message: 'Hello', messageAr: 'مرحبا' }, 'ar') === 'مرحبا',
   'explicit fields',
 )
+assert(t('common.save', undefined, 'en') === 'Save', 'catalog en')
+assert(t('common.save', undefined, 'ar') === 'حفظ', 'catalog ar')
+assert(statusLabel('active', 'ar') === 'نشط', 'status')
+assert(tLabel('Edit', 'تعديل', 'ar') === 'تعديل', 'tLabel')
 
 console.log('bilingual.selftest: OK')

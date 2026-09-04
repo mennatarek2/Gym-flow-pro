@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Member App: Notifications Inbox
+# HyMotion — Flutter Member App: Notifications Inbox
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
@@ -10,8 +10,8 @@
 ---
 
 ```
-PROMPT — GymFlowPro Member App: Notifications (Flutter)
-You are a senior Flutter developer APPLYING the Notifications module to the GymFlow Pro Member App (Egypt / MENA).
+PROMPT — HyMotion Member App: Notifications (Flutter)
+You are a senior Flutter developer APPLYING the Notifications module to the HyMotion Member App (Egypt / MENA).
 Arabic primary + English secondary. RTL when locale is Arabic.
 
 This prompt ADDS an in-app notification inbox + badge.
@@ -219,7 +219,7 @@ Authenticated shell:
 - Entry: AppBar bell (preferred) and/or Profile row
 - Do NOT add a 6th bottom-nav tab unless Product insists — badge on bell is enough
 
-Deep links later: gymflowpro://notifications — optional stub; ignore unknown ids.
+Deep links later: HyMotion://notifications — optional stub; ignore unknown ids.
 
 ═══════════════════════════════════════════════════════════════════
 5) COPY (EN / AR)

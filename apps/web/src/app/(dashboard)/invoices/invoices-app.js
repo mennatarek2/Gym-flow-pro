@@ -235,10 +235,7 @@
     }
   }
   function toast(msg, type, htmlExtra) {
-    const el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.innerHTML = esc(msg) + (htmlExtra || '');
-    setTimeout(() => el.classList.remove('show'), 5200);
+    return globalThis.toastShared(msg, type, htmlExtra);
   }
   function problemMessage(data, status) {
     if (!data) return 'Request failed (' + status + ')';

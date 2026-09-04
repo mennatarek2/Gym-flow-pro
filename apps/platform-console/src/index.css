@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss';
 
 :root {
@@ -25,7 +25,7 @@
   --warning: #d97706;
   --focus: #2563eb;
   --strip: #0b1220;
-  --font: 'DM Sans', system-ui, sans-serif;
+  --font: 'Cairo', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --radius: 8px;
   --radius-lg: 12px;

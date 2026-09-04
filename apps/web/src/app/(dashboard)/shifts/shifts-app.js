@@ -95,17 +95,7 @@
   var historyLoaded = false;
 
   function toast(msg, type) {
-    var el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.innerHTML =
-      '<i class="ti ' +
-      (type === 'err' ? 'ti-alert-circle' : 'ti-check') +
-      '"></i><span>' +
-      esc(msg) +
-      '</span>';
-    setTimeout(function () {
-      el.classList.remove('show');
-    }, 4200);
+    return globalThis.toastShared(msg, type);
   }
 
   function esc(s) {

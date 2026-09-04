@@ -1,4 +1,4 @@
-# GymFlowPro Admin (Vite)
+# HyMotion Admin (Vite)
 
 Prompt 1 — API client & auth infrastructure.
 

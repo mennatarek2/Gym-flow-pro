@@ -1,4 +1,4 @@
-/* GymFlowPro — Cash Drawer / Shifts */
+/* HyMotion — Cash Drawer / Shifts */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --c900:#0D0D0D;--c800:#1A1A1A;--c700:#2A2A2A;--c400:#6B6B6B;--c300:#8C8C8C;
@@ -7,7 +7,7 @@
   --suc500:#22C55E;--suc100:#DCFCE7;--inf100:#DBEAFE;--inf500:#3B82F6;
   --lbg:#F6F7F9;--ls1:#FFF;--ls2:#F5F5F5;--ls3:#E8E8E8;
   --ltp:#1A1A1A;--lts:#4A4A4A;--ltt:#8C8C8C;
-  --fd:'Space Grotesk',sans-serif;--fb:'IBM Plex Sans','IBM Plex Sans Arabic',sans-serif;
+  --fd:'Cairo',sans-serif;--fb:'Cairo',sans-serif;
   --rmd:10px;--rlg:16px;--rpl:9999px;
   --sh1:0 1px 3px rgba(0,0,0,.06);--sh2:0 4px 12px rgba(0,0,0,.08);
   --tf:180ms ease;--sidebar-w:220px;

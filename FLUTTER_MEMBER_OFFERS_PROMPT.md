@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Member App: Offers & Promotions Prompt
+# HyMotion — Flutter Member App: Offers & Promotions Prompt
 
 > **Copy everything inside the `PROMPT` fence below** into a Flutter AI session / hand to a Flutter developer.
 >
@@ -12,8 +12,8 @@
 ---
 
 ```
-PROMPT — GymFlowPro Member App: Offers & Promotions (Flutter)
-You are a senior Flutter developer extending the GymFlow Pro Member App (Egypt / MENA). Arabic primary + English secondary; RTL when locale is Arabic.
+PROMPT — HyMotion Member App: Offers & Promotions (Flutter)
+You are a senior Flutter developer extending the HyMotion Member App (Egypt / MENA). Arabic primary + English secondary; RTL when locale is Arabic.
 
 This prompt ADDS Offers & Promotions to the existing Member App.
 It does NOT replace auth, check-in, invitations, or store scaffolding.
@@ -260,7 +260,7 @@ Add Offers to the authenticated shell:
 - Option B: 6th tab only if Product insists — prefer not crowding bottom nav;
   Home + Store entry points are enough.
 
-Deep links later: gymflowpro://offers/{id} — stub in go_router, ignore unknown ids.
+Deep links later: HyMotion://offers/{id} — stub in go_router, ignore unknown ids.
 
 ═══════════════════════════════════════════════════════════════════
 7) API CONTRACT (LIVE)

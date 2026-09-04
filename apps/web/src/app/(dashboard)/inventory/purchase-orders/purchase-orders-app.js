@@ -89,13 +89,8 @@
     if (n == null || Number.isNaN(Number(n))) return '—';
     return new Intl.NumberFormat('en-EG', { style: 'currency', currency: 'EGP' }).format(Number(n));
   }
-  function toast(msg, type) {
-    var el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    setTimeout(function () {
-      el.classList.remove('show');
-    }, 4200);
+  function toast(msg, type, htmlExtra) {
+    return globalThis.toastShared(msg, type, htmlExtra);
   }
   function apiError(r) {
     if (I18n && I18n.displayApiError) return I18n.displayApiError(r) || t('Request failed', 'فشل الطلب');
@@ -235,7 +230,7 @@
   (async function loadGym() {
     var r = await Gfp.get('/settings');
     if (r.ok && r.data) {
-      document.getElementById('gymName').textContent = r.data.gymName || 'GymFlowPro';
+      document.getElementById('gymName').textContent = r.data.gymName || 'HyMotion';
       var ga = document.getElementById('gymNameAr');
       if (ga) ga.textContent = r.data.gymNameAr || '';
     }
@@ -756,13 +751,15 @@
           t('Open purchase invoice', 'فتح فاتورة الشراء') +
           '</a>'
         : '';
-    var el = document.getElementById('toast');
-    el.className = 'toast show ok';
-    el.innerHTML =
-      esc(t('Quantity updated on the products.', 'تم تحديث كمية المنتجات.')) + cta;
-    setTimeout(function () {
-      el.classList.remove('show');
-    }, 6000);
+    if (globalThis.GfpToast && typeof globalThis.GfpToast.show === 'function') {
+      globalThis.GfpToast.show(
+        t('Quantity updated on the products.', 'تم تحديث كمية المنتجات.'),
+        'success',
+        { html: cta, duration: 6000 }
+      );
+    } else {
+      toast(t('Quantity updated on the products.', 'تم تحديث كمية المنتجات.'), 'success', cta);
+    }
     await loadList();
     await loadDetail(current.id);
   });

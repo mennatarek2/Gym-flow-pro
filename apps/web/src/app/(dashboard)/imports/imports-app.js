@@ -84,10 +84,7 @@
     return d.innerHTML;
   }
   function toast(msg, type) {
-    const el = document.getElementById('toast');
-    el.className = 'toast show ' + (type === 'err' ? 'err' : 'ok');
-    el.textContent = msg;
-    setTimeout(() => el.classList.remove('show'), 4200);
+    return globalThis.toastShared(msg, type);
   }
   function problemMessage(data, status) {
     if (!data) return 'Request failed (' + status + ')';

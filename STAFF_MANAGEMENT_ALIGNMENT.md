@@ -245,7 +245,7 @@ Live desk: `apps/web/src/app/(dashboard)/staff/` (OwnerOnly). `apps/admin` has n
 
 **Screen 1 — List:** search, role filter, status filter, table (Employee, Role, Email, Status, Last Login, Created, Actions). Owner: View only. No staff number / department / branch / job title. No Send Invite.
 
-**Screen 2 — Create:** Full Name, Email, Password, Role (Manager / Trainer / Receptionist). Email hint: unique across GymFlowPro (Identity global unique). Password = backend policy.
+**Screen 2 — Create:** Full Name, Email, Password, Role (Manager / Trainer / Receptionist). Email hint: unique across HyMotion (Identity global unique). Password = backend policy.
 
 **Screen 3 — Staff 360:** Profile (name, email, avatar fallback; photo if `profilePhotoUrl` present), Account (created, last login, Active/Inactive), Access (role + effective permissions from canonical map), Activity (`GET /api/audit?entityType=Staff&entityId=`). No National ID / job title / department / hire date / staff number / branch.
 

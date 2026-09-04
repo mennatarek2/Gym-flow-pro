@@ -4,7 +4,7 @@
 **Preview:** `previews/member-outstanding-balance.html`  
 **Date:** 2026-08-16
 
-This is not a new financial subsystem. GymFlowPro already stores remaining amounts on sales and already records follow-on payments against a specific sale. This proposal makes that truth visible and collectable on Member 360.
+This is not a new financial subsystem. HyMotion already stores remaining amounts on sales and already records follow-on payments against a specific sale. This proposal makes that truth visible and collectable on Member 360.
 
 ---
 

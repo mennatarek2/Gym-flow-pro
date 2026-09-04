@@ -1,4 +1,4 @@
-# GymFlowPro API — Frontend & Flutter Developer Documentation
+# HyMotion API — Frontend & Flutter Developer Documentation
 
 > **Base URL:** `https://your-domain.com` (or `http://localhost:5000` for local dev)  
 > **API Prefix:** `/api`  

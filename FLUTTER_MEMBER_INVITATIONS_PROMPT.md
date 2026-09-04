@@ -1,4 +1,4 @@
-# GymFlowPro — Flutter Member App: APPLY Invitations
+# HyMotion — Flutter Member App: APPLY Invitations
 
 > Hand this file to the Flutter developer (or paste the `PROMPT` fence into a Flutter AI session).
 >
@@ -14,8 +14,8 @@
 ---
 
 ```
-PROMPT — APPLY GymFlowPro Member App: Invitations (Flutter)
-You are a senior Flutter developer APPLYING the Invitations module to the GymFlow Pro Member App (Egypt / MENA).
+PROMPT — APPLY HyMotion Member App: Invitations (Flutter)
+You are a senior Flutter developer APPLYING the Invitations module to the HyMotion Member App (Egypt / MENA).
 Arabic primary + English secondary. RTL when locale is Arabic.
 
 Replace Invite Guest + Share Referral Code with ONE feature named Invitations.
