@@ -1,8 +1,11 @@
 /**
- * GymFlowPro — header / topbar (Task 3).
- * Injected after shell-layout.css. Does not restyle colors, type, or icons.
- * Page chrome (height, 32px desktop padding) stays; this file owns overflow
- * and the tablet/mobile arrangement.
+ * GymFlowPro — header / topbar.
+ * Injected after shell-layout.css. Owns overflow, tablet/mobile wrap,
+ * and visual polish for shared controls (theme / language).
+ *
+ * Gym English + Arabic names live in the sidebar only. The topbar used to
+ * repeat them; Arabic (#gymNameAr) often clipped under overflow+RTL to a
+ * single glyph (ه) that looked like a stray Latin "h".
  */
 
 .topbar,
@@ -14,6 +17,13 @@ header.topbar {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+  /* One height on every page (beats page CSS that uses 56px / auto / wrap). */
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
+  padding-block: 0 !important;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .topbar .tb-left,
@@ -30,16 +40,19 @@ header.topbar .tb-right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  flex: 0 1 auto;
+  gap: 10px;
+  flex: 0 0 auto;
   min-width: 0;
+  max-width: 100%;
 }
 
-/* Menu trigger never shrinks away */
-.topbar .gfp-sb-toggle,
-.topbar #mobToggle,
-.topbar .mob-toggle {
-  flex-shrink: 0;
+/* Compact action cluster (theme + language) — avoids a sparse right edge */
+.topbar .gfp-tb-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .topbar .tb-breadcrumb {
@@ -49,36 +62,138 @@ header.topbar .tb-right {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ltp, #1a1a1a);
 }
 
 .topbar .tb-breadcrumb a,
 .topbar .tb-breadcrumb span {
   max-width: 100%;
+  color: inherit;
+  text-decoration: none;
 }
 
-.topbar .gfp-lang-toggle,
+/* Menu trigger never shrinks away; visibility owned by shell-layout.css */
+.topbar .gfp-sb-toggle,
+.topbar #mobToggle,
+.topbar .mob-toggle {
+  flex-shrink: 0;
+}
+
+/* Hide redundant gym labels in the topbar (sidebar already shows the gym).
+   Scoped to .topbar so settings form fields with the same ids stay usable. */
+.topbar .gfp-tb-gym,
+.topbar .gym-chip,
+.topbar .tb-gym-name,
+.topbar .tb-gym-name-ar,
+.topbar .gym-name,
+.topbar .gym-name-ar,
+.topbar #gymName,
+.topbar #gymNameAr,
+.topbar .gfp-tb-gym-hidden {
+  display: none !important;
+}
+
+/* Theme segmented control — one shared track, active segment highlighted */
 .topbar .gfp-appear-toggle,
+.topbar .gfp-lang-toggle,
 .topbar .lang-toggle {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-.topbar .gfp-tb-gym,
-.topbar .gym-chip {
-  flex: 0 1 14rem;
-  min-width: 0;
-  max-width: min(14rem, 36vw);
+.topbar .gfp-appear-toggle {
+  display: inline-flex;
+  align-items: stretch;
+  padding: 3px;
+  gap: 0;
+  border: 1px solid var(--ls3, #ebebeb);
+  background: var(--ls2, #f5f5f5);
+  border-radius: var(--rmd, 10px);
+  box-sizing: border-box;
 }
 
-.topbar .tb-gym-name,
-.topbar .tb-gym-name-ar,
-.topbar .gym-name,
-.topbar .gym-name-ar {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.topbar .gfp-appear-toggle button {
+  height: 28px;
+  min-width: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: calc(var(--rmd, 10px) - 2px);
+  background: transparent;
+  color: var(--ltt, #8c8c8c);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.topbar .gfp-appear-toggle button:hover {
+  color: var(--lts, #4a4a4a);
+}
+
+.topbar .gfp-appear-toggle button.act {
+  background: var(--ls1, #fff);
+  color: var(--ltp, #1a1a1a);
+  box-shadow: var(--sh1, 0 1px 2px rgba(0, 0, 0, 0.06));
+  font-weight: 700;
+}
+
+.topbar .gfp-appear-toggle button.act i {
+  color: var(--l600, #5eaf00);
+}
+
+.topbar .gfp-appear-toggle button:focus-visible {
+  outline: 2px solid var(--l400, #a0e040);
+  outline-offset: 1px;
+}
+
+.topbar .gfp-lang-toggle,
+.topbar .lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--ls3, #ebebeb);
+  background: var(--ls1, #fff);
+  border-radius: var(--rmd, 10px);
+  font-family: var(--fd, 'Space Grotesk', sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--lts, #4a4a4a);
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.topbar .gfp-lang-toggle:hover,
+.topbar .lang-toggle:hover {
+  border-color: var(--l500, #7acc00);
+  color: var(--l600, #5eaf00);
+  background: var(--l100, #edfcd8);
+}
+
+html[data-theme='dark'] .topbar .gfp-appear-toggle {
+  background: var(--ls2, #222);
+  border-color: var(--ls3, #333);
+}
+
+html[data-theme='dark'] .topbar .gfp-appear-toggle button.act {
+  background: var(--ls1, #1a1a1a);
+  color: var(--ltp, #f0f0f0);
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .topbar .gfp-lang-toggle,
+html[data-theme='dark'] .topbar .lang-toggle {
+  background: var(--ls1, #1a1a1a);
+  border-color: var(--ls3, #333);
+  color: var(--lts, #b0b0b0);
 }
 
 /* ── Desktop: keep the authored single row ── */
@@ -94,17 +209,12 @@ header.topbar .tb-right {
   }
 }
 
-/* ── Tablet: tighter gaps, wrap only if the row cannot fit ── */
+/* ── Tablet: tighter gaps; keep the same 60px height ── */
 @media (max-width: 1023px) {
   .topbar,
   header.topbar {
-    height: auto;
-    min-height: 56px;
     padding-inline: var(--gfp-pad-x, 16px);
-    padding-block: 8px;
-    flex-wrap: wrap;
     column-gap: 12px;
-    row-gap: 8px;
   }
 
   .topbar .tb-left,
@@ -114,25 +224,21 @@ header.topbar .tb-right {
 
   .topbar .tb-right,
   header.topbar .tb-right {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
   }
 
-  .topbar .gfp-tb-gym,
-  .topbar .gym-chip {
-    max-width: min(12rem, 30vw);
+  .topbar .gfp-tb-actions {
+    gap: 6px;
   }
 }
 
-/* ── Mobile: menu + title on row 1; actions on row 2 ── */
+/* ── Mobile: still one row / 60px; actions stay on the right ── */
 @media (max-width: 767.98px) {
   .topbar,
   header.topbar {
-    min-height: 52px;
     padding-inline: 12px;
-    padding-block: 8px;
     column-gap: 8px;
-    row-gap: 8px;
   }
 
   .topbar .tb-left,
@@ -143,29 +249,28 @@ header.topbar .tb-right {
 
   .topbar .tb-right,
   header.topbar .tb-right {
-    flex: 1 0 100%;
+    flex: 0 0 auto;
     justify-content: flex-end;
     gap: 6px;
   }
 
-  .topbar .gfp-tb-gym,
-  .topbar .gym-chip {
-    flex: 1 1 8rem;
-    max-width: 100%;
+  .topbar .gfp-tb-actions {
+    flex: 0 0 auto;
+    justify-content: flex-end;
   }
 }
 
 @media (max-width: 479.98px) {
   .topbar .gfp-appear-toggle button {
-    min-width: 28px;
-    height: 24px;
-    padding: 0 6px;
+    min-width: 30px;
+    height: 26px;
+    padding: 0 8px;
   }
 
   .topbar .gfp-lang-toggle,
   .topbar .lang-toggle {
-    height: 28px;
-    padding-inline: 8px;
+    height: 30px;
+    padding-inline: 10px;
     font-size: 12px;
   }
 }

@@ -162,12 +162,14 @@
     var css = global.document.createElement('style');
     css.id = 'gfp-shell-css';
     css.textContent = [
-      '.gfp-lang-toggle{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--ls3,#E8E8E8);background:var(--ls1,#fff);border-radius:999px;font-size:var(--gfp-fs-sm,13px);font-weight:700;cursor:pointer;color:var(--lts,#4A4A4A);flex-shrink:0}',
-      '.gfp-lang-toggle:hover{border-color:var(--l500,#7ACC00);color:var(--l600,#5EAF00)}',
-      '.gfp-appear-toggle{display:inline-flex;align-items:center;padding:2px;border:1px solid var(--ls3,#E8E8E8);background:var(--ls2,#F5F5F5);border-radius:999px;flex-shrink:0;gap:2px}',
-      '.gfp-appear-toggle button{height:26px;min-width:30px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:var(--lts,#4A4A4A);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px}',
-      '.gfp-appear-toggle button.act{background:var(--l500,#7ACC00);color:#0D0D0D}',
+      '.gfp-lang-toggle{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--ls3,#E8E8E8);background:var(--ls1,#fff);border-radius:var(--rmd,10px);font-size:var(--gfp-fs-sm,13px);font-weight:700;cursor:pointer;color:var(--lts,#4A4A4A);flex-shrink:0}',
+      '.gfp-lang-toggle:hover{border-color:var(--l500,#7ACC00);color:var(--l600,#5EAF00);background:var(--l100,#EDFCD8)}',
+      '.gfp-appear-toggle{display:inline-flex;align-items:stretch;padding:3px;border:1px solid var(--ls3,#E8E8E8);background:var(--ls2,#F5F5F5);border-radius:var(--rmd,10px);flex-shrink:0;gap:0}',
+      '.gfp-appear-toggle button{height:28px;min-width:34px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--ltt,#8C8C8C);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:15px}',
+      '.gfp-appear-toggle button.act{background:var(--ls1,#fff);color:var(--ltp,#1A1A1A);box-shadow:var(--sh1,0 1px 2px rgba(0,0,0,.06))}',
+      '.gfp-appear-toggle button.act i{color:var(--l600,#5EAF00)}',
       '.gfp-appear-toggle button:focus-visible{outline:2px solid var(--l400,#A0E040);outline-offset:1px}',
+      '.gfp-tb-actions{display:inline-flex;align-items:center;gap:8px;flex-shrink:0}',
       'html[dir=rtl] .sidebar{left:auto;right:0}',
       'html[dir=rtl] .main{margin-left:0;margin-right:var(--sidebar-w,220px)}',
       '.gfp-sb-nav{display:flex;flex-direction:column;gap:4px;padding:8px 0}',
@@ -660,7 +662,7 @@
     var link = global.document.createElement('link');
     link.id = 'gfp-shell-header-css';
     link.rel = 'stylesheet';
-    link.href = '/shared/shell-header.css?v=1';
+    link.href = '/shared/shell-header.css?v=hdr4';
     global.document.head.appendChild(link);
   }
 
@@ -812,28 +814,69 @@
     } catch (e) { /* ignore non-Node bodies in tests */ }
   }
 
+  /**
+   * Topbar used to repeat the gym English + Arabic names (sidebar already
+   * shows them). Arabic (#gymNameAr) often clipped under overflow + RTL to a
+   * single glyph (ه) that looked like a stray Latin "h". Hide those labels
+   * in the topbar only — never touch settings form inputs.
+   */
   function wrapTopbarGym() {
     var right = global.document && global.document.querySelector('.topbar .tb-right');
-    if (!right || right.querySelector('.gfp-tb-gym')) return;
-    var en =
-      right.querySelector('#gymName') ||
-      right.querySelector('.tb-gym-name') ||
-      right.querySelector('.gym-name');
-    if (!en) return;
-    var ar =
-      right.querySelector('#gymNameAr') ||
-      right.querySelector('.tb-gym-name-ar') ||
-      right.querySelector('.gym-name-ar');
-    var parent = en.parentNode;
-    if (parent && parent !== right && parent.children && parent.children.length <= 2) {
-      parent.classList.add('gfp-tb-gym');
-      return;
+    if (!right) return;
+
+    var selectors = [
+      '#gymName',
+      '#gymNameAr',
+      '.tb-gym-name',
+      '.tb-gym-name-ar',
+      '.gym-name',
+      '.gym-name-ar',
+      '.gfp-tb-gym',
+      '.gym-chip'
+    ];
+    var i;
+    for (i = 0; i < selectors.length; i++) {
+      Array.prototype.forEach.call(right.querySelectorAll(selectors[i]), function (el) {
+        if (!el || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return;
+        el.classList.add('gfp-tb-gym-hidden');
+        el.setAttribute('hidden', '');
+        el.setAttribute('aria-hidden', 'true');
+      });
     }
-    var wrap = global.document.createElement('div');
-    wrap.className = 'gfp-tb-gym';
-    parent.insertBefore(wrap, en);
-    wrap.appendChild(en);
-    if (ar && ar.parentNode === parent) wrap.appendChild(ar);
+
+    Array.prototype.forEach.call(right.children, function (child) {
+      if (!child || child.nodeType !== 1) return;
+      if (child.id === 'gfpLangToggle' || child.id === 'gfpAppearToggle') return;
+      if (child.classList && child.classList.contains('gfp-tb-actions')) return;
+      if (child.classList && child.classList.contains('gfp-sb-toggle')) return;
+      var hasControl = child.querySelector && child.querySelector('button, a, input, select, textarea');
+      var hasGym =
+        (child.classList && (child.classList.contains('gfp-tb-gym') || child.classList.contains('gym-chip'))) ||
+        (child.querySelector &&
+          child.querySelector('#gymName, #gymNameAr, .tb-gym-name, .tb-gym-name-ar, .gym-name, .gym-name-ar'));
+      if (!hasControl && hasGym) {
+        child.classList.add('gfp-tb-gym-hidden');
+        child.setAttribute('hidden', '');
+        child.setAttribute('aria-hidden', 'true');
+      }
+    });
+  }
+
+  function ensureTopbarActions() {
+    var right = global.document && global.document.querySelector('.topbar .tb-right');
+    if (!right) return;
+    var appear = global.document.getElementById('gfpAppearToggle');
+    var lang = global.document.getElementById('gfpLangToggle');
+    if (!appear && !lang) return;
+
+    var cluster = right.querySelector('.gfp-tb-actions');
+    if (!cluster) {
+      cluster = global.document.createElement('div');
+      cluster.className = 'gfp-tb-actions';
+      right.insertBefore(cluster, right.firstChild);
+    }
+    if (appear && appear.parentNode !== cluster) cluster.appendChild(appear);
+    if (lang && lang.parentNode !== cluster) cluster.appendChild(lang);
   }
 
   function initHeaderLayout() {
@@ -841,6 +884,7 @@
     if (!global.document.querySelector('.topbar')) return;
     ensureShellHeaderCss();
     wrapTopbarGym();
+    ensureTopbarActions();
   }
 
   function injectSidebarChrome() {
@@ -1280,6 +1324,7 @@
     canResizeSidebar: canResizeSidebar,
     initSidebarLayout: initSidebarLayout,
     wrapTopbarGym: wrapTopbarGym,
+    ensureTopbarActions: ensureTopbarActions,
     initHeaderLayout: initHeaderLayout,
     TABLE_WRAP_SEL: TABLE_WRAP_SEL,
     wrapNakedTables: wrapNakedTables,

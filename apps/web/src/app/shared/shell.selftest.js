@@ -220,7 +220,9 @@ assert(hdrCss.indexOf('@media (max-width: 1023px)') !== -1, 'header tablet query
 assert(hdrCss.indexOf('@media (max-width: 767.98px)') !== -1, 'header mobile query');
 assert(hdrCss.indexOf('@media (max-width: 479.98px)') !== -1, 'header compact-phone query');
 assert(hdrCss.indexOf('.gfp-sb-toggle') !== -1, 'header keeps menu trigger unshrunk');
-assert(hdrCss.indexOf('flex: 1 0 100%') !== -1, 'mobile actions move to second row');
+assert(hdrCss.indexOf('height: 60px !important') !== -1, 'header locks 60px height on all pages');
+assert(hdrCss.indexOf('max-height: 60px !important') !== -1, 'header cannot grow past 60px');
+assert(hdrCss.indexOf('flex-wrap: nowrap') !== -1, 'header stays one row so height stays even');
 assert(typeof Shell.wrapTopbarGym === 'function', 'wrapTopbarGym exported');
 assert(typeof Shell.initHeaderLayout === 'function', 'initHeaderLayout exported');
 
@@ -239,7 +241,11 @@ assert(String(Shell.TABLE_WRAP_SEL).indexOf('.gfp-table-scroll') !== -1, 'TABLE_
 
 var serverSrc = fs.readFileSync(path.join(sharedDir, '..', '..', '..', 'server.js'), 'utf8');
 assert(serverSrc.indexOf('/shared/table-layout.css') !== -1, 'server injects table-layout.css');
-assert(serverSrc.indexOf('shell.js?v=qa1') !== -1, 'shell cache-bust includes sweep layout');
+assert(serverSrc.indexOf('shell.js?v=hdr3') !== -1, 'shell cache-bust includes header cleanup');
+assert(serverSrc.indexOf('shell-header.css?v=hdr4') !== -1, 'header CSS cache-bust includes fixed height');
+assert(hdrCss.indexOf('gfp-tb-gym-hidden') !== -1, 'header hides redundant gym labels');
+assert(hdrCss.indexOf('.gfp-appear-toggle') !== -1, 'header styles theme segmented control');
+assert(hdrCss.indexOf('.gfp-tb-actions') !== -1, 'header clusters theme + language');
 
 // ── Form / filter layout (Task 6) ──
 var formCss = fs.readFileSync(path.join(sharedDir, 'form-layout.css'), 'utf8');
@@ -395,23 +401,44 @@ assert(serverSrc.indexOf('/shared/sweep-layout.css') !== -1, 'server injects swe
 })();
 
 (function () {
-  var gymEn = { id: 'gymName', className: 'gym-name', parentNode: null };
-  var gymAr = { id: 'gymNameAr', className: 'gym-name-ar', parentNode: null };
-  var wrapCreated = null;
+  var attrs = {};
+  var gymEn = {
+    id: 'gymName',
+    className: 'gym-name',
+    tagName: 'DIV',
+    parentNode: null,
+    classList: {
+      add: function (n) { this._n = (this._n || '') + ' ' + n; },
+      contains: function (n) { return (this._n || '').indexOf(n) !== -1; }
+    },
+    setAttribute: function (k, v) { attrs[k] = v; },
+    getAttribute: function (k) { return attrs[k]; }
+  };
+  var gymAr = {
+    id: 'gymNameAr',
+    className: 'gym-name-ar',
+    tagName: 'DIV',
+    parentNode: null,
+    textContent: 'ه',
+    classList: {
+      add: function (n) { this._n = (this._n || '') + ' ' + n; },
+      contains: function (n) { return (this._n || '').indexOf(n) !== -1; }
+    },
+    setAttribute: function (k, v) { attrs['ar-' + k] = v; }
+  };
   var right = {
     querySelector: function (sel) {
-      if (String(sel).indexOf('gfp-tb-gym') !== -1) return wrapCreated;
-      if (sel === '#gymName' || sel === '.tb-gym-name' || sel === '.gym-name') return gymEn;
-      if (sel === '#gymNameAr' || sel === '.tb-gym-name-ar' || sel === '.gym-name-ar') return gymAr;
+      if (sel === '.gfp-tb-actions') return null;
       return null;
     },
+    querySelectorAll: function (sel) {
+      if (sel === '#gymName' || sel === '.gym-name' || sel === '.tb-gym-name') return [gymEn];
+      if (sel === '#gymNameAr' || sel === '.gym-name-ar' || sel === '.tb-gym-name-ar') return [gymAr];
+      if (sel === '.gfp-tb-gym' || sel === '.gym-chip') return [];
+      return [];
+    },
     children: [gymEn, gymAr],
-    insertBefore: function (node) {
-      node.parentNode = this;
-      this.children.unshift(node);
-      wrapCreated = node;
-      return node;
-    }
+    insertBefore: function () {}
   };
   gymEn.parentNode = right;
   gymAr.parentNode = right;
@@ -420,20 +447,10 @@ assert(serverSrc.indexOf('/shared/sweep-layout.css') !== -1, 'server injects swe
     if (sel === '.topbar .tb-right' || sel === '.topbar') return right;
     return origQS.apply(sandbox.document, arguments);
   };
-  sandbox.document.createElement = function () {
-    return {
-      className: '',
-      children: [],
-      appendChild: function (ch) {
-        ch.parentNode = this;
-        this.children.push(ch);
-        return ch;
-      }
-    };
-  };
   Shell.wrapTopbarGym();
-  assert(!!wrapCreated && wrapCreated.className === 'gfp-tb-gym', 'wraps sibling gym names');
-  assert(wrapCreated.children.indexOf(gymEn) !== -1 && wrapCreated.children.indexOf(gymAr) !== -1, 'gym names moved into wrap');
+  assert(gymEn.classList.contains('gfp-tb-gym-hidden'), 'hides English gym name in topbar');
+  assert(gymAr.classList.contains('gfp-tb-gym-hidden'), 'hides Arabic gym name that caused stray glyph');
+  assert(attrs.hidden === '' || attrs.hidden != null, 'marks gym label as hidden');
 })();
 
 console.log('All Prompt 2 self-tests passed.');

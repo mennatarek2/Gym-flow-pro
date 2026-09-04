@@ -10,7 +10,7 @@
   var Gfp = window.GfpApi;
   var Authz = window.GfpAuthz;
   var I18n = window.GfpI18n;
-  var API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  var API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
 
   function getToken() {
     return localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');

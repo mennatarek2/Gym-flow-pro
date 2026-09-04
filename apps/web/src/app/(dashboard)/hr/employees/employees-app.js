@@ -10,7 +10,7 @@
   var Gfp = window.GfpApi;
   var Authz = window.GfpAuthz;
   var I18n = window.GfpI18n;
-  var API_BASE = window.API_BASE || 'https://localhost:5001/api';
+  var API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
 
   function getToken() {
     return localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
@@ -805,7 +805,7 @@
         listHtml = '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No shifts assigned in the next 7 days.', 'لا توجد ورديات معينة خلال الأيام السبعة القادمة.')) + '</p>';
       } else {
         listHtml = '<h3 class="emp-inline-title">' + esc(t('Next 7 days', 'الأيام السبعة القادمة')) + '</h3>' +
-          '<table><thead><tr><th>' + esc(t('Date', 'التاريخ')) + '</th><th>' + esc(t('Shift', 'الوردية')) + '</th><th>' + esc(t('Notes', 'ملاحظات')) + '</th>' +
+          '<div class="gfp-table-scroll"><table><thead><tr><th>' + esc(t('Date', 'التاريخ')) + '</th><th>' + esc(t('Shift', 'الوردية')) + '</th><th>' + esc(t('Notes', 'ملاحظات')) + '</th>' +
           (canScheduleManage ? '<th></th>' : '') + '</tr></thead><tbody>' +
           sched.map(function (a) {
             return '<tr><td>' + esc(a.date) + '</td><td>' + esc(a.employeeShiftName || '—') + '</td><td>' + esc(a.notes || '—') + '</td>' +
@@ -813,7 +813,7 @@
                 ? '<td><button type="button" class="act-btn danger" data-hub-rm="' + esc(a.date) + '" title="' + esc(t('Remove', 'إزالة')) + '"><i class="ti ti-trash"></i></button></td>'
                 : '') +
               '</tr>';
-          }).join('') + '</tbody></table>';
+          }).join('') + '</tbody></table></div>';
       }
       panel.innerHTML = assignHtml + listHtml;
 
@@ -906,11 +906,11 @@
         ahtml = '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No attendance in the last 14 days.', 'لا يوجد حضور خلال آخر 14 يوماً.')) + '</p>';
       } else {
         ahtml = '<h3 class="emp-inline-title">' + esc(t('Last 14 days', 'آخر 14 يوماً')) + '</h3>' +
-          '<table><thead><tr><th>' + esc(t('Date', 'التاريخ')) + '</th><th>' + esc(t('In', 'حضور')) + '</th><th>' + esc(t('Out', 'انصراف')) + '</th><th>' + esc(t('Worked', 'عمل')) + '</th><th>' + esc(t('Status', 'الحالة')) + '</th></tr></thead><tbody>' +
+          '<div class="gfp-table-scroll"><table><thead><tr><th>' + esc(t('Date', 'التاريخ')) + '</th><th>' + esc(t('In', 'حضور')) + '</th><th>' + esc(t('Out', 'انصراف')) + '</th><th>' + esc(t('Worked', 'عمل')) + '</th><th>' + esc(t('Status', 'الحالة')) + '</th></tr></thead><tbody>' +
           att.map(function (a) {
             return '<tr><td>' + esc(a.attendanceDate) + '</td><td>' + esc(fmtTime(a.checkInAtUtc)) + '</td><td>' + esc(fmtTime(a.checkOutAtUtc)) + '</td><td>' + esc(fmtMinutes(a.workedMinutes)) + '</td>' +
               '<td><span class="status-badge ' + attStatusClass(a.status) + '"><span class="dot"></span>' + esc(attStatusLabel(a.status)) + '</span></td></tr>';
-          }).join('') + '</tbody></table>';
+          }).join('') + '</tbody></table></div>';
       }
       panel.innerHTML = opsHtml + ahtml;
       var attHint = document.getElementById('hubAttHint');
@@ -999,7 +999,7 @@
         lhtml = '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No leave requests yet.', 'لا توجد طلبات إجازة بعد.')) + '</p>';
       } else {
         lhtml = '<h3 class="emp-inline-title">' + esc(t('Requests', 'الطلبات')) + '</h3>' +
-          '<table><thead><tr><th>' + esc(t('Type', 'النوع')) + '</th><th>' + esc(t('From', 'من')) + '</th><th>' + esc(t('To', 'إلى')) + '</th><th>' + esc(t('Status', 'الحالة')) + '</th><th></th></tr></thead><tbody>' +
+          '<div class="gfp-table-scroll"><table><thead><tr><th>' + esc(t('Type', 'النوع')) + '</th><th>' + esc(t('From', 'من')) + '</th><th>' + esc(t('To', 'إلى')) + '</th><th>' + esc(t('Status', 'الحالة')) + '</th><th></th></tr></thead><tbody>' +
           leaves.map(function (l) {
             var acts = '';
             if (String(l.status) === 'Pending') {
@@ -1014,7 +1014,7 @@
             return '<tr><td>' + esc(leaveTypeLabel(l.leaveType)) + '</td><td>' + esc(l.startDate) + '</td><td>' + esc(l.endDate) + '</td>' +
               '<td><span class="status-badge ' + leaveStatusClass(l.status) + '"><span class="dot"></span>' + esc(leaveStatusLabel(l.status)) + '</span></td>' +
               '<td class="inline-act-row" style="margin:0;gap:4px">' + acts + '</td></tr>';
-          }).join('') + '</tbody></table>';
+          }).join('') + '</tbody></table></div>';
       }
 
       panel.innerHTML = balHtml + formHtml + lhtml;
@@ -1147,10 +1147,10 @@
         adjHtml += '<p class="form-hint" style="color:var(--ltt);margin-top:10px">' +
           esc(t('No adjustments for this employee in this period.', 'لا توجد تعديلات لهذا الموظف في هذه الفترة.')) + '</p>';
       } else {
-        adjHtml += '<table style="margin-top:10px"><thead><tr><th>' + esc(t('Type', 'النوع')) + '</th><th>' + esc(t('Amount', 'المبلغ')) + '</th><th>' + esc(t('Reason', 'السبب')) + '</th></tr></thead><tbody>' +
+        adjHtml += '<div class="gfp-table-scroll" style="margin-top:10px"><table><thead><tr><th>' + esc(t('Type', 'النوع')) + '</th><th>' + esc(t('Amount', 'المبلغ')) + '</th><th>' + esc(t('Reason', 'السبب')) + '</th></tr></thead><tbody>' +
           adjustments.map(function (a) {
             return '<tr><td>' + esc(adjTypeLabel(a.type)) + '</td><td>' + esc(money(a.amount)) + '</td><td>' + esc(a.reason || '—') + '</td></tr>';
-          }).join('') + '</tbody></table>';
+          }).join('') + '</tbody></table></div>';
       }
       adjHtml += '</div>';
 
@@ -1257,11 +1257,11 @@
       if (!docs.length) {
         dhtml += '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No documents yet.', 'لا توجد مستندات بعد.')) + '</p>';
       } else {
-        dhtml += '<table><thead><tr><th>' + esc(t('Name', 'الاسم')) + '</th><th>' + esc(t('Type', 'النوع')) + '</th><th>' + esc(t('Expiry', 'الانتهاء')) + '</th><th></th></tr></thead><tbody>' +
+        dhtml += '<div class="gfp-table-scroll"><table><thead><tr><th>' + esc(t('Name', 'الاسم')) + '</th><th>' + esc(t('Type', 'النوع')) + '</th><th>' + esc(t('Expiry', 'الانتهاء')) + '</th><th></th></tr></thead><tbody>' +
           docs.map(function (d) {
             return '<tr><td>' + esc(d.fileName || '—') + '</td><td>' + esc(docTypeLabel(d.documentType)) + '</td><td>' + esc(d.expiryDate || '—') + '</td>' +
               '<td><button type="button" class="act-btn" data-doc-dl="' + esc(d.id) + '" data-filename="' + esc(d.fileName || 'document') + '" title="' + esc(t('Download', 'تنزيل')) + '"><i class="ti ti-download"></i></button></td></tr>';
-          }).join('') + '</tbody></table>';
+          }).join('') + '</tbody></table></div>';
       }
       panel.innerHTML = dhtml;
       var upBtn = document.getElementById('btnHubUploadDoc');
