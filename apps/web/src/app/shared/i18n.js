@@ -64,6 +64,14 @@
   /**
    * Catalog lookup: GfpI18n.t('members.title') or t('members.greeting', { name: 'Ali' })
    */
+  function hasCatalogKey(key, locale) {
+    locale = locale || getLocale();
+    var cat = getCatalog();
+    var primary = cat[locale] || {};
+    var fallback = cat.en || {};
+    return primary[key] != null || fallback[key] != null;
+  }
+
   function t(key, params, locale) {
     locale = locale || getLocale();
     var cat = getCatalog();
@@ -117,7 +125,8 @@
     if (!root || !root.querySelectorAll) return;
     root.querySelectorAll('[data-i18n]').forEach(function (el) {
       var key = el.getAttribute('data-i18n');
-      if (!key) return;
+      // Missing catalog keys must NOT wipe HTML (login used to show "emailLabel").
+      if (!key || !hasCatalogKey(key, locale)) return;
       var text = t(key, null, locale);
       var label = el.querySelector('[data-i18n-text]');
       if (label) label.textContent = text;
@@ -126,11 +135,13 @@
     });
     root.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
       var key = el.getAttribute('data-i18n-placeholder');
-      if (key) el.setAttribute('placeholder', t(key, null, locale));
+      if (!key || !hasCatalogKey(key, locale)) return;
+      el.setAttribute('placeholder', t(key, null, locale));
     });
     root.querySelectorAll('[data-i18n-title]').forEach(function (el) {
       var key = el.getAttribute('data-i18n-title');
-      if (key) el.setAttribute('title', t(key, null, locale));
+      if (!key || !hasCatalogKey(key, locale)) return;
+      el.setAttribute('title', t(key, null, locale));
     });
   }
 
@@ -322,6 +333,7 @@
     applyDocumentLocale: applyDocumentLocale,
     applyDataLocaleAttributes: applyDataLocaleAttributes,
     applyDataI18nAttributes: applyDataI18nAttributes,
+    hasCatalogKey: hasCatalogKey,
     pickBilingual: pickBilingual,
     splitSlashBilingual: splitSlashBilingual,
     displayBilingualText: displayBilingualText,

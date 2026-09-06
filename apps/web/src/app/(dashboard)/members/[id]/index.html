@@ -135,9 +135,9 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
       <div class="tb-left">
         <button class="mob-toggle" id="mobToggle"><i class="ti ti-menu-2"></i></button>
         <div class="tb-breadcrumb">
-          <a href="/dashboard/">🏠</a>
+          <a href="/dashboard/" data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</a>
           <span class="sep">/</span>
-          <a href="/dashboard/members/">Members</a>
+          <a href="/dashboard/members/" data-en="Members" data-ar="الأعضاء">Members</a>
           <span class="sep">/</span>
           <span class="cur" id="breadcrumbName">Loading...</span>
         </div>
@@ -155,12 +155,12 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
       <!-- Action Bar -->
       <div class="action-bar">
         <div class="action-bar-left">
-          <a class="back-btn" href="/dashboard/members/"><i class="ti ti-arrow-left"></i> Back to Members</a>
+          <a class="back-btn" href="/dashboard/members/"><i class="ti ti-arrow-left"></i> <span data-en="Back to Members" data-ar="العودة للأعضاء">Back to Members</span></a>
         </div>
         <div class="action-bar-right">
           <button class="btn-action outline" id="btnReprintCard" type="button"><i class="ti ti-printer"></i> <span data-en="Reprint card" data-ar="إعادة طباعة الكارنيه">Reprint card</span></button>
-          <button class="btn-action outline" id="btnNotify"><i class="ti ti-bell"></i> Send Notification</button>
-          <button class="btn-action primary" id="btnEdit"><i class="ti ti-edit"></i> Edit Member</button>
+          <button class="btn-action outline" id="btnNotify"><i class="ti ti-bell"></i> <span data-en="Send Notification" data-ar="إرسال إشعار">Send Notification</span></button>
+          <button class="btn-action primary" id="btnEdit"><i class="ti ti-edit"></i> <span data-en="Edit Member" data-ar="تعديل العضو">Edit Member</span></button>
         </div>
       </div>
 
@@ -232,7 +232,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
               <!-- Invitation remaining -->
               <div class="quota-chip">
                 <i class="ti ti-user-plus"></i>
-                <span class="q-label">Invitations left</span>
+                <span class="q-label" data-en="Invitations left" data-ar="دعوات متبقية">Invitations left</span>
                 <span class="q-num" id="profileQuota">0</span>
               </div>
 
@@ -288,8 +288,8 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 
               <!-- Quick actions -->
               <div class="quick-actions">
-                <button class="qa-btn" id="btnEdit2"><i class="ti ti-edit"></i> Edit</button>
-                <button class="qa-btn danger" id="btnDeactivate"><i class="ti ti-trash"></i> Deactivate</button>
+                <button class="qa-btn" id="btnEdit2"><i class="ti ti-edit"></i> <span data-en="Edit" data-ar="تعديل">Edit</span></button>
+                <button class="qa-btn danger" id="btnDeactivate"><i class="ti ti-trash"></i> <span data-en="Deactivate" data-ar="إلغاء التفعيل">Deactivate</span></button>
               </div>
             </div>
           </div>
@@ -307,11 +307,11 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
             <div class="tabs-card">
               <!-- Tab bar -->
               <div class="tab-bar">
-                <button class="tab-btn act" data-tab="tabMs"><i class="ti ti-id-badge"></i> Membership</button>
-                <button class="tab-btn" data-tab="tabInv"><i class="ti ti-user-plus"></i> Invitations</button>
-                <button class="tab-btn" data-tab="tabAtt"><i class="ti ti-door-enter"></i> Attendance</button>
-                <button class="tab-btn" data-tab="tabOrders"><i class="ti ti-shopping-bag"></i> Orders</button>
-                <button class="tab-btn" data-tab="tabHist"><i class="ti ti-history"></i> History</button>
+                <button class="tab-btn act" data-tab="tabMs"><i class="ti ti-id-badge"></i> <span data-en="Membership" data-ar="العضوية">Membership</span></button>
+                <button class="tab-btn" data-tab="tabInv"><i class="ti ti-user-plus"></i> <span data-en="Invitations" data-ar="الدعوات">Invitations</span></button>
+                <button class="tab-btn" data-tab="tabAtt"><i class="ti ti-door-enter"></i> <span data-en="Attendance" data-ar="الحضور">Attendance</span></button>
+                <button class="tab-btn" data-tab="tabOrders"><i class="ti ti-shopping-bag"></i> <span data-en="Orders" data-ar="الطلبات">Orders</span></button>
+                <button class="tab-btn" data-tab="tabHist"><i class="ti ti-history"></i> <span data-en="History" data-ar="السجل">History</span></button>
               </div>
 
               <!-- TAB 1: Membership -->
@@ -321,7 +321,9 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                 </div>
                 <div id="recentAttWrap" style="display:none;margin-top:20px;padding-top:16px;border-top:1px solid var(--ls3,#E8E8E8)">
                   <div style="font-size:12px;font-weight:700;color:var(--lts,#4A4A4A);margin-bottom:10px;display:flex;align-items:center;gap:6px">
-                    <i class="ti ti-clock"></i> Recent attendance <span style="font-weight:500;color:var(--ltt,#8C8C8C)">(last 5)</span>
+                    <i class="ti ti-clock"></i>
+                    <span data-en="Recent attendance" data-ar="آخر الحضور">Recent attendance</span>
+                    <span style="font-weight:500;color:var(--ltt,#8C8C8C)" data-en="(last 5)" data-ar="(آخر 5)">(last 5)</span>
                   </div>
                   <div id="recentAttList"></div>
                 </div>
@@ -330,30 +332,46 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
               <!-- TAB: Invitations -->
               <div class="tab-pane" id="tabInv">
                 <div class="inv360-kpis" id="inv360Kpis" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px">
-                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Total</span><strong id="inv360Total" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
-                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">New</span><strong id="inv360New" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
-                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Contacted</span><strong id="inv360Contacted" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
-                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Interested</span><strong id="inv360Interested" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
-                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)">Converted</span><strong id="inv360Converted" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)" data-en="Total" data-ar="الإجمالي">Total</span><strong id="inv360Total" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)" data-en="New" data-ar="جديد">New</span><strong id="inv360New" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)" data-en="Contacted" data-ar="تم التواصل">Contacted</span><strong id="inv360Contacted" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)" data-en="Interested" data-ar="مهتم">Interested</span><strong id="inv360Interested" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
+                  <div class="kpi" style="background:var(--ls2);border-radius:12px;padding:12px"><span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ltt)" data-en="Converted" data-ar="تم التحويل">Converted</span><strong id="inv360Converted" style="font-family:var(--fd);font-size:20px;display:block">0</strong></div>
                 </div>
                 <form id="inv360Form" style="background:var(--ls2);border-radius:12px;padding:14px;margin-bottom:14px">
-                  <div style="font-size:13px;font-weight:700;margin-bottom:10px">Invite a friend for this member</div>
-                  <p id="inv360QuotaHint" style="font-size:12px;color:var(--ltt);margin:0 0 10px">Quota loads with the list.</p>
+                  <div style="font-size:13px;font-weight:700;margin-bottom:10px" data-en="Invite a friend for this member" data-ar="ادعُ صديقاً لهذا العضو">Invite a friend for this member</div>
+                  <p id="inv360QuotaHint" style="font-size:12px;color:var(--ltt);margin:0 0 10px" data-en="Quota loads with the list." data-ar="يتم تحميل الحصة مع القائمة.">Quota loads with the list.</p>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                    <input id="inv360Name" type="text" maxlength="200" placeholder="Friend’s name" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
-                    <input id="inv360Phone" type="tel" maxlength="20" placeholder="Phone" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
-                    <input id="inv360Nid" type="text" maxlength="14" placeholder="National ID (optional)" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
-                    <input id="inv360Notes" type="text" maxlength="1000" placeholder="Notes (optional)" style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                    <input id="inv360Name" type="text" maxlength="200"
+                      placeholder="Friend's name"
+                      data-en-placeholder="Friend's name"
+                      data-ar-placeholder="اسم الصديق"
+                      style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                    <input id="inv360Phone" type="tel" maxlength="20"
+                      placeholder="Phone"
+                      data-en-placeholder="Phone"
+                      data-ar-placeholder="الهاتف"
+                      style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                    <input id="inv360Nid" type="text" maxlength="14"
+                      placeholder="National ID (optional)"
+                      data-en-placeholder="National ID (optional)"
+                      data-ar-placeholder="الرقم القومي (اختياري)"
+                      style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
+                    <input id="inv360Notes" type="text" maxlength="1000"
+                      placeholder="Notes (optional)"
+                      data-en-placeholder="Notes (optional)"
+                      data-ar-placeholder="ملاحظات (اختياري)"
+                      style="height:40px;border:1px solid var(--ls3);border-radius:10px;padding:0 10px;font:inherit">
                   </div>
-                  <button type="submit" class="btn-action primary" id="btnInv360Create" style="margin-top:10px"><i class="ti ti-user-plus"></i> Create invitation</button>
+                  <button type="submit" class="btn-action primary" id="btnInv360Create" style="margin-top:10px"><i class="ti ti-user-plus"></i> <span data-en="Create invitation" data-ar="إنشاء دعوة">Create invitation</span></button>
                 </form>
                 <div style="overflow-x:auto">
                   <table class="att-tbl">
                     <thead>
                       <tr>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Status</th>
+                        <th data-en="Name" data-ar="الاسم">Name</th>
+                        <th data-en="Phone" data-ar="الهاتف">Phone</th>
+                        <th data-en="Status" data-ar="الحالة">Status</th>
                       </tr>
                     </thead>
                     <tbody id="inv360Tbody"></tbody>
@@ -361,7 +379,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                 </div>
                 <div class="no-data" id="inv360Empty" style="display:none">
                   <i class="ti ti-user-plus"></i>
-                  <p>No invitations yet</p>
+                  <p data-en="No invitations yet" data-ar="لا توجد دعوات بعد">No invitations yet</p>
                 </div>
               </div>
 
@@ -369,15 +387,15 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
               <div class="tab-pane" id="tabAtt">
                 <!-- Heatmap -->
                 <div class="heatmap-wrap">
-                  <div class="heatmap-title">12-Week Attendance Pattern</div>
+                  <div class="heatmap-title" data-en="12-Week Attendance Pattern" data-ar="نمط الحضور — ١٢ أسبوعاً">12-Week Attendance Pattern</div>
                   <div class="heatmap" id="heatmap"></div>
                   <div class="hm-legend">
-                    <span>Less</span>
+                    <span data-en="Less" data-ar="أقل">Less</span>
                     <div class="hm-day"></div>
                     <div class="hm-day l1"></div>
                     <div class="hm-day l2"></div>
                     <div class="hm-day l3"></div>
-                    <span>More</span>
+                    <span data-en="More" data-ar="أكثر">More</span>
                   </div>
                 </div>
                 <!-- Table -->
@@ -385,11 +403,11 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                   <table class="att-tbl">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Check In</th>
-                        <th>Check Out</th>
-                        <th>Method</th>
-                        <th>Duration</th>
+                        <th data-en="Date" data-ar="التاريخ">Date</th>
+                        <th data-en="Check In" data-ar="دخول">Check In</th>
+                        <th data-en="Check Out" data-ar="خروج">Check Out</th>
+                        <th data-en="Method" data-ar="الطريقة">Method</th>
+                        <th data-en="Duration" data-ar="المدة">Duration</th>
                       </tr>
                     </thead>
                     <tbody id="attTbody"></tbody>
@@ -397,26 +415,26 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                 </div>
                 <div class="no-data" id="attEmpty" style="display:none">
                   <i class="ti ti-door-enter"></i>
-                  <p>No attendance records found</p>
+                  <p data-en="No attendance records found" data-ar="لا توجد سجلات حضور">No attendance records found</p>
                 </div>
               </div>
 
               <!-- TAB 3: Member Orders -->
               <div class="tab-pane" id="tabOrders">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
-                  <div style="font-size:13px;color:var(--ltt)">Orders placed from the Member App</div>
+                  <div style="font-size:13px;color:var(--ltt)" data-en="Orders placed from the Member App" data-ar="طلبات من تطبيق العضو">Orders placed from the Member App</div>
                   <a class="btn secondary" href="/dashboard/member-orders/" style="height:34px;padding:0 10px;font-size:12px">
-                    <i class="ti ti-shopping-bag"></i> Inbox
+                    <i class="ti ti-shopping-bag"></i> <span data-en="Inbox" data-ar="الوارد">Inbox</span>
                   </a>
                 </div>
                 <div style="overflow-x:auto">
                   <table class="att-tbl">
                     <thead>
                       <tr>
-                        <th>Order #</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Created</th>
+                        <th data-en="Order #" data-ar="رقم الطلب">Order #</th>
+                        <th data-en="Total" data-ar="الإجمالي">Total</th>
+                        <th data-en="Status" data-ar="الحالة">Status</th>
+                        <th data-en="Created" data-ar="أُنشئ">Created</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -425,7 +443,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
                 </div>
                 <div class="no-data" id="ordersEmpty" style="display:none">
                   <i class="ti ti-shopping-bag"></i>
-                  <p>No member orders yet</p>
+                  <p data-en="No member orders yet" data-ar="لا توجد طلبات بعد">No member orders yet</p>
                 </div>
               </div>
 
@@ -462,7 +480,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
     </div>
     <div class="form-group">
       <label class="form-label">Reason (optional)</label>
-      <input type="text" class="form-input" id="freezeReason" placeholder="e.g. Travel / سفر">
+      <input type="text" class="form-input" id="freezeReason" placeholder="e.g. Travel / سفر" data-en-placeholder="e.g. Travel / سفر" data-ar-placeholder="مثال: سفر">
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('modalFreeze')">Cancel</button>
@@ -475,13 +493,13 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 <div class="modal-overlay" id="modalDeactivate">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title" id="deactivateModalTitle">Deactivate Member?</div>
+      <div class="modal-title" id="deactivateModalTitle" data-en="Deactivate Member?" data-ar="إلغاء تفعيل العضو؟">Deactivate Member?</div>
       <button class="modal-close"><i class="ti ti-x"></i></button>
     </div>
-    <p style="font-size:13px;color:var(--lts);margin-bottom:20px">This sets the <strong>account</strong> to inactive (cannot check in). Existing membership plans are <strong>not</strong> cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only.</p>
+    <p style="font-size:13px;color:var(--lts);margin-bottom:20px" data-en="This sets the account to inactive (cannot check in). Existing membership plans are not cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only." data-ar="هذا يوقف الحساب (لا يمكن تسجيل الدخول). خطط العضوية الحالية لا تُلغى ولا تنتهي. يمكن تفعيل الحساب لاحقاً دون تعيين خطة جديدة. للمالك فقط.">This sets the <strong>account</strong> to inactive (cannot check in). Existing membership plans are <strong>not</strong> cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only.</p>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal('modalDeactivate')">Cancel</button>
-      <button class="btn-confirm danger" id="btnConfirmDeactivate"><i class="ti ti-trash"></i> Deactivate</button>
+      <button class="btn-cancel" onclick="closeModal('modalDeactivate')"><span data-en="Cancel" data-ar="إلغاء">Cancel</span></button>
+      <button class="btn-confirm danger" id="btnConfirmDeactivate"><i class="ti ti-trash"></i> <span data-en="Deactivate" data-ar="إلغاء التفعيل">Deactivate</span></button>
     </div>
   </div>
 </div>
@@ -700,11 +718,11 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
     <p style="font-size:12px;color:var(--ltt);margin-bottom:16px">To: <strong id="notifMemberName">—</strong></p>
     <div class="form-group">
       <label class="form-label">Title *</label>
-      <input type="text" class="form-input" id="notifTitle" placeholder="Membership Reminder">
+      <input type="text" class="form-input" id="notifTitle" placeholder="Membership Reminder" data-en-placeholder="Membership Reminder" data-ar-placeholder="تذكير بالعضوية">
     </div>
     <div class="form-group">
       <label class="form-label">Message *</label>
-      <textarea class="form-input" id="notifBody" rows="3" placeholder="Your membership expires soon..."></textarea>
+      <textarea class="form-input" id="notifBody" rows="3" placeholder="Your membership expires soon..." data-en-placeholder="Your membership expires soon..." data-ar-placeholder="عضويتك تنتهي قريباً..."></textarea>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('modalNotify')">Cancel</button>
@@ -779,7 +797,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
         <div class="section-hdr"><div class="section-title"><i class="ti ti-user"></i> Personal Information</div></div>
         <div class="mdl-form-group">
           <label class="mdl-label">Full Name (English) <span class="req">*</span></label>
-          <input type="text" class="mdl-input" id="editNameEn" placeholder="e.g. Ahmed Ali">
+          <input type="text" class="mdl-input" id="editNameEn" placeholder="e.g. Ahmed Ali" data-en-placeholder="e.g. Ahmed Ali" data-ar-placeholder="مثال: Ahmed Ali">
         </div>
         <div class="mdl-form-group">
           <label class="mdl-label">Full Name (Arabic) <span class="req">*</span></label>

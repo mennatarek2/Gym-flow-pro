@@ -425,7 +425,11 @@
       <header class="topbar">
         <div class="tb-left">
           <button class="mob-toggle" id="mobToggle"><i class="ti ti-menu-2"></i></button>
-          <div class="tb-breadcrumb"><span>🏠</span> Dashboard / <strong>Members</strong></div>
+          <div class="tb-breadcrumb">
+            <span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span>
+            <span class="sep">/</span>
+            <strong data-en="Members" data-ar="الأعضاء">Members</strong>
+          </div>
         </div>
         <div class="tb-right">
           <div>
@@ -440,29 +444,32 @@
         <!-- Page Header -->
         <div class="pg-hdr">
           <div class="pg-title">
-            <h1>Members <span>/ الأعضاء</span></h1>
+            <h1 data-en="Members" data-ar="الأعضاء">Members</h1>
             <span class="pg-badge" id="totalBadge">0</span>
           </div>
-          <button class="btn-primary" id="btnAddMember"><i class="ti ti-plus"></i> Add Member</button>
+          <button class="btn-primary" id="btnAddMember"><i class="ti ti-plus"></i> <span data-en="Add Member" data-ar="إضافة عضو">Add Member</span></button>
         </div>
 
         <!-- Search -->
         <div class="controls">
           <div class="search-box">
             <i class="ti ti-search"></i>
-            <input type="text" id="searchInput" placeholder="Search by name, phone, or member number...">
+            <input type="text" id="searchInput"
+              placeholder="Search by name, phone, or member number..."
+              data-en-placeholder="Search by name, phone, or member number..."
+              data-ar-placeholder="ابحث بالاسم أو الهاتف أو رقم العضو...">
           </div>
         </div>
 
         <!-- Filter Chips — person-primary only (P12-R1 / P6). Membership status filters removed. -->
         <div class="filters">
-          <button class="f-chip act" data-status="all">All</button>
-          <button class="f-chip" data-status="inactive">Archived</button>
+          <button class="f-chip act" data-status="all" data-en="All" data-ar="الكل">All</button>
+          <button class="f-chip" data-status="inactive" data-en="Archived" data-ar="مؤرشف">Archived</button>
         </div>
 
         <!-- People count from list API (not membership Expired/Frozen KPIs) -->
         <div class="q-stats">
-          <div class="q-chip"><span class="q-dot active"></span><span class="q-val" id="statPeople">0</span> People
+          <div class="q-chip"><span class="q-dot active"></span><span class="q-val" id="statPeople">0</span> <span data-en="People" data-ar="أشخاص">People</span>
           </div>
         </div>
 
@@ -502,12 +509,12 @@
             <table class="m-tbl">
               <thead>
                 <tr>
-                  <th>Member</th>
-                  <th>Status</th>
-                  <th>Plan</th>
-                  <th>Expiry</th>
-                  <th>Remaining</th>
-                  <th style="width:130px">Actions</th>
+                  <th data-en="Member" data-ar="العضو">Member</th>
+                  <th data-en="Status" data-ar="الحالة">Status</th>
+                  <th data-en="Plan" data-ar="الباقة">Plan</th>
+                  <th data-en="Expiry" data-ar="الانتهاء">Expiry</th>
+                  <th data-en="Remaining" data-ar="المتبقي">Remaining</th>
+                  <th style="width:130px" data-en="Actions" data-ar="إجراءات">Actions</th>
                 </tr>
               </thead>
               <tbody id="tblBody"></tbody>
@@ -517,15 +524,15 @@
           <!-- Empty State -->
           <div class="empty" id="emptyState" style="display:none">
             <div class="empty-icon"><i class="ti ti-users-minus"></i></div>
-            <h3>No members found matching your search</h3>
-            <p>Try adjusting your filters or search term</p>
+            <h3 data-en="No members found matching your search" data-ar="لا يوجد أعضاء مطابقون لبحثك">No members found matching your search</h3>
+            <p data-en="Try adjusting your filters or search term" data-ar="جرّب تعديل الفلاتر أو كلمة البحث">Try adjusting your filters or search term</p>
           </div>
 
           <!-- Pagination -->
           <div class="pagi" id="pagination" style="display:none">
-            <button class="pagi-btn" id="pagiPrev"><i class="ti ti-chevron-left"></i> Previous</button>
+            <button class="pagi-btn" id="pagiPrev"><i class="ti ti-chevron-left"></i> <span data-en="Previous" data-ar="السابق">Previous</span></button>
             <span class="pagi-info" id="pagiInfo">Page <strong>1</strong> of <strong>1</strong></span>
-            <button class="pagi-btn" id="pagiNext">Next <i class="ti ti-chevron-right"></i></button>
+            <button class="pagi-btn" id="pagiNext"><span data-en="Next" data-ar="التالي">Next</span> <i class="ti ti-chevron-right"></i></button>
           </div>
         </div>
 
@@ -542,8 +549,7 @@
       <!-- Header -->
       <div class="mdl-hdr">
         <div class="mdl-title-wrap">
-          <div class="mdl-title"><i class="ti ti-user-plus" style="color:var(--l500)"></i> Add New Member</div>
-          <div class="mdl-subtitle">إضافة عضو جديد</div>
+          <div class="mdl-title"><i class="ti ti-user-plus" style="color:var(--l500)"></i> <span data-en="Add New Member" data-ar="إضافة عضو جديد">Add New Member</span></div>
         </div>
         <button class="mdl-close"><i class="ti ti-x"></i></button>
       </div>

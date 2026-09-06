@@ -205,11 +205,14 @@ html[data-gfp-sb] .sb-hdr span {
   white-space: nowrap;
 }
 
-/* ── Drag handle (persistent expanded only) ── */
+/* ── Drag handle (persistent expanded only) ──
+   Must NOT steal clicks from the footer logout control (inline-end of .sb-ft). */
 .gfp-sb-resizer {
   display: none;
   position: absolute;
-  inset-block: 0;
+  inset-block-start: 0;
+  /* Leave the footer strip free — logout lives on the inline-end edge */
+  inset-block-end: var(--gfp-sb-ft-h, 72px);
   inset-inline-end: 0;
   width: 6px;
   z-index: 120;
@@ -229,6 +232,43 @@ html[data-gfp-sb='expanded'] .gfp-sb-resizer:not([hidden]) {
 .gfp-sb-resizer:hover,
 html.gfp-sb-dragging .gfp-sb-resizer {
   background: color-mix(in srgb, var(--l500, #7acc00) 55%, transparent);
+}
+
+/* Footer + logout above the resizer; keep footer pinned while nav scrolls */
+html[data-gfp-sb] .sidebar,
+html[data-gfp-sb] #sidebar {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+html[data-gfp-sb] .sb-nav,
+html[data-gfp-sb] .gfp-sb-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+html[data-gfp-sb] .sb-ft {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 130;
+  isolation: isolate;
+}
+
+html[data-gfp-sb] .sb-logout,
+html[data-gfp-sb] #btnLogout {
+  position: relative;
+  z-index: 131;
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 html.gfp-sb-dragging,

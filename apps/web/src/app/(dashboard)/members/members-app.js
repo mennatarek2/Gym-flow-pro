@@ -12,6 +12,23 @@
     catch(e){return null;}
   }
 
+  function tLabel(en, ar) {
+    if (window.GfpI18n && typeof window.GfpI18n.tLabel === 'function') {
+      return window.GfpI18n.tLabel(en, ar);
+    }
+    try {
+      return (localStorage.getItem('gfp_locale') || 'en') === 'ar' ? ar : en;
+    } catch (e) {
+      return en;
+    }
+  }
+
+  function pickMemberName(m) {
+    var en = m.fullName || '';
+    var ar = m.fullNameAr || '';
+    return tLabel(en, ar) || en || ar;
+  }
+
   // ── Sidebar user ──
   const user = getUser();
   if(!user){window.location.href='/auth/login/';return;}
@@ -184,6 +201,7 @@
       const info = resolveListStatus(m);
       const nameEn = m.fullName || '';
       const nameAr = m.fullNameAr || '';
+      const displayName = pickMemberName(m);
       const phone = m.phone || '';
       const memberNum = m.memberNumber || '';
 
@@ -197,18 +215,17 @@
       const remDays = info.days;
       const sessions = m.sessionsRemaining != null ? m.sessionsRemaining : (m.remainingSessions != null ? m.remainingSessions : null);
       let remaining = '—';
-      if(sessions != null) remaining = sessions + ' sess';
-      else if(remDays != null) remaining = remDays + 'd';
+      if(sessions != null) remaining = sessions + ' ' + tLabel('sess', 'حصة');
+      else if(remDays != null) remaining = remDays + tLabel('d', 'ي');
       const memLabel = info.mem && info.mem !== 'none' ? info.mem : '';
 
       return `<tr class="${rowCls}">
         <td>
           <div class="m-cell">
-            <div class="m-av ${!info.accountOk ? 'm-av-muted' : ''}">${getInitials(nameEn)}</div>
+            <div class="m-av ${!info.accountOk ? 'm-av-muted' : ''}">${getInitials(nameEn || nameAr)}</div>
             <div class="m-info">
               <div class="m-num">#${memberNum}</div>
-              <div class="m-name">${nameEn}</div>
-              ${nameAr ? '<div class="m-name-ar">'+nameAr+'</div>' : ''}
+              <div class="m-name">${displayName}</div>
               ${phone ? '<div class="m-name-ar" style="font-size:11px">'+phone+'</div>' : ''}
             </div>
           </div>
@@ -279,6 +296,13 @@
 
   window.loadMembers = loadMembers;
   window.loadStats = loadStats;
+
+  window.addEventListener('gfp:locale', function () {
+    if (window.GfpI18n && window.GfpI18n.applyDocumentLocale) {
+      window.GfpI18n.applyDocumentLocale();
+    }
+    if (membersData && membersData.length) render();
+  });
 
   loadTenant();
   loadStats();

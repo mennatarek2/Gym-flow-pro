@@ -82,8 +82,24 @@
 
   // ── Helpers ──
   function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  function fmtDate(d){if(!d) return '—';return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
-  function fmtTime(d){if(!d) return '—';const dt=new Date(d);return dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+  function fmtDate(d){
+    if(!d) return '—';
+    var loc = (window.GfpI18n && window.GfpI18n.getLocale && window.GfpI18n.getLocale() === 'ar') ? 'ar-EG' : 'en-GB';
+    return new Date(d).toLocaleDateString(loc,{day:'2-digit',month:'short',year:'numeric'});
+  }
+  function fmtTime(d){
+    if(!d) return '—';
+    var loc = (window.GfpI18n && window.GfpI18n.getLocale && window.GfpI18n.getLocale() === 'ar') ? 'ar-EG' : 'en-GB';
+    const dt=new Date(d);
+    return dt.toLocaleTimeString(loc,{hour:'2-digit',minute:'2-digit'});
+  }
+  function entryMethodLabel(m){
+    var k=String(m||'').toLowerCase();
+    if(k==='qr') return t('QR','QR');
+    if(k==='barcode'||k==='card') return t('Card','كارنيه');
+    if(k==='manual') return t('Manual','يدوي');
+    return m||'—';
+  }
   function calcAge(dob){if(!dob) return '';const d=new Date(dob),now=new Date();let a=now.getFullYear()-d.getFullYear();if(now<new Date(now.getFullYear(),d.getMonth(),d.getDate())) a--;return a;}
   function daysRemaining(end){if(!end) return 0;return Math.max(0,Math.ceil((new Date(end)-new Date())/(1000*60*60*24)));}
   function totalDays(start,end){if(!start||!end) return 30;return Math.max(1,Math.ceil((new Date(end)-new Date(start))/(1000*60*60*24)));}
@@ -97,19 +113,19 @@
   }
   function membershipStatusLabel(st){
     return ({
-      pending:'Waiting for payment',
-      active:'Active',
-      frozen:'Frozen',
-      expired:'Expired',
-      cancelled:'Cancelled',
-      scheduled:'Scheduled'
+      pending:t('Waiting for payment','بانتظار الدفع'),
+      active:t('Active','نشط'),
+      frozen:t('Frozen','مجمّد'),
+      expired:t('Expired','منتهٍ'),
+      cancelled:t('Cancelled','ملغى'),
+      scheduled:t('Scheduled','مجدول')
     })[st]||st||'—';
   }
   let inviteQuotaSnap={ remaining:null, total:null, planName:'' };
   function inviteFactText(st){
-    if(st==='pending') return '0 · starts when paid';
+    if(st==='pending') return '0 · '+t('starts when paid','تبدأ عند الدفع');
     if(inviteQuotaSnap.remaining==null && inviteQuotaSnap.total==null) return '—';
-    return (inviteQuotaSnap.remaining!=null?inviteQuotaSnap.remaining:0)+' of '+(inviteQuotaSnap.total!=null?inviteQuotaSnap.total:0);
+    return (inviteQuotaSnap.remaining!=null?inviteQuotaSnap.remaining:0)+' '+t('of','من')+' '+(inviteQuotaSnap.total!=null?inviteQuotaSnap.total:0);
   }
   function applyInviteQuota(quota){
     quota=quota||{};
@@ -208,28 +224,38 @@
 
   function renderMember(m){
     memberData=m;
-    document.getElementById('breadcrumbName').textContent=m.fullName;
-    document.title='HyMotion — '+m.fullName;
+    document.getElementById('breadcrumbName').textContent = (window.GfpI18n && window.GfpI18n.tLabel)
+      ? window.GfpI18n.tLabel(m.fullName, m.fullNameAr || m.fullName)
+      : m.fullName;
+    document.title='HyMotion — '+document.getElementById('breadcrumbName').textContent;
 
-    document.getElementById('profileAv').textContent=(m.fullName||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    document.getElementById('profileAv').textContent=(m.fullName||m.fullNameAr||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     if(m.profilePhotoUrl){
-      document.getElementById('profileAv').innerHTML=`<img src="${m.profilePhotoUrl}" alt="${m.fullName}">`;
+      document.getElementById('profileAv').innerHTML=`<img src="${m.profilePhotoUrl}" alt="${m.fullName||m.fullNameAr||''}">`;
     }
     document.getElementById('profileMemberNum').textContent='#'+m.memberNumber;
     renderAccessBarcode(m.memberNumber);
-    document.getElementById('profileNameEn').textContent=m.fullName;
-    document.getElementById('profileNameAr').textContent=m.fullNameAr||'';
+    var loc = (window.GfpI18n && window.GfpI18n.getLocale) ? window.GfpI18n.getLocale() : 'en';
+    var primaryName = loc === 'ar' ? (m.fullNameAr || m.fullName || '') : (m.fullName || m.fullNameAr || '');
+    var secondaryName = loc === 'ar' ? (m.fullName && m.fullNameAr && m.fullName !== m.fullNameAr ? m.fullName : '') : (m.fullNameAr && m.fullNameAr !== m.fullName ? m.fullNameAr : '');
+    document.getElementById('profileNameEn').textContent=primaryName;
+    document.getElementById('profileNameAr').textContent=secondaryName;
+    document.getElementById('profileNameAr').style.display = secondaryName ? '' : 'none';
     document.getElementById('profilePhone').href='tel:'+m.phone;
     document.getElementById('profilePhone').textContent=m.phone;
     document.getElementById('profileEmail').textContent=m.email||'—';
     if(m.email) document.getElementById('profileEmail').href='mailto:'+m.email;
     const age=calcAge(m.dateOfBirth);
-    document.getElementById('profileDob').textContent=m.dateOfBirth?fmtDate(m.dateOfBirth)+' ('+age+' yrs)':'—';
-    document.getElementById('profileJoin').textContent=fmtDate(m.createdAtUtc);
+    document.getElementById('profileDob').textContent=m.dateOfBirth?fmtDate(m.dateOfBirth)+' ('+age+' '+t('yrs','سنة')+')':'—';
+    var joinEl=document.getElementById('profileJoin');
+    if(joinEl){
+      var joinDate=fmtDate(m.createdAtUtc);
+      joinEl.innerHTML=t('Joined','انضم')+' <span dir="ltr">'+joinDate+'</span>';
+    }
     document.getElementById('profileQuota').textContent=m.invitationQuotaRemaining||0;
     const toggle=document.getElementById('statusToggle');
     toggle.checked=!!m.isActive;
-    document.getElementById('statusLabel').textContent=m.isActive?'Active':'Archived';
+    document.getElementById('statusLabel').textContent=m.isActive?t('Active','نشط'):t('Archived','مؤرشف');
     document.getElementById('statusLabel').style.color=m.isActive?'var(--suc500)':'var(--dng500)';
     document.getElementById('profileStatusDot').className='status-dot '+(m.isActive?'active':'inactive');
 
@@ -246,11 +272,11 @@
       toggle.disabled=false;
       // Account flag ≠ membership status — label the action correctly.
       if(m.isActive){
-        btnDeact.innerHTML='<i class="ti ti-user-off"></i> Deactivate';
+        btnDeact.innerHTML='<i class="ti ti-user-off"></i> '+t('Deactivate','إلغاء التفعيل');
         btnDeact.classList.add('danger');
         btnDeact.classList.remove('primary');
       } else {
-        btnDeact.innerHTML='<i class="ti ti-user-check"></i> Activate account';
+        btnDeact.innerHTML='<i class="ti ti-user-check"></i> '+t('Activate account','تفعيل الحساب');
         btnDeact.classList.remove('danger');
         btnDeact.classList.add('primary');
       }
@@ -907,8 +933,8 @@
     });
   }
   window.addEventListener('gfp:locale',function(){
-    if(memberData) renderMemberApp(memberData);
-    applyLocaleBits(document.getElementById('memberAppCard'));
+    if(memberData) renderMember(memberData);
+    applyLocaleBits(document);
   });
 
   async function reconcileCurrentMembership(){
@@ -936,10 +962,15 @@
       return;
     }
     wrap.style.display='block';
-    list.innerHTML='<table class="att-tbl" style="width:100%"><thead><tr><th>Date</th><th>In</th><th>Out</th><th>Method</th></tr></thead><tbody>'+
+    list.innerHTML='<table class="att-tbl" style="width:100%"><thead><tr>'+
+      '<th data-en="Date" data-ar="التاريخ">'+t('Date','التاريخ')+'</th>'+
+      '<th data-en="In" data-ar="دخول">'+t('In','دخول')+'</th>'+
+      '<th data-en="Out" data-ar="خروج">'+t('Out','خروج')+'</th>'+
+      '<th data-en="Method" data-ar="الطريقة">'+t('Method','الطريقة')+'</th>'+
+      '</tr></thead><tbody>'+
       items.map(function(a){
-        return '<tr><td>'+fmtDate(a.checkInAtUtc)+'</td><td>'+fmtTime(a.checkInAtUtc)+'</td><td>'+
-          (a.checkOutAtUtc?fmtTime(a.checkOutAtUtc):'—')+'</td><td>'+(a.entryMethod||'—')+'</td></tr>';
+        return '<tr><td dir="ltr">'+fmtDate(a.checkInAtUtc)+'</td><td dir="ltr">'+fmtTime(a.checkInAtUtc)+'</td><td dir="ltr">'+
+          (a.checkOutAtUtc?fmtTime(a.checkOutAtUtc):'—')+'</td><td>'+entryMethodLabel(a.entryMethod)+'</td></tr>';
       }).join('')+'</tbody></table>';
   }
 
@@ -950,8 +981,8 @@
       container.innerHTML=`
         <div class="no-data">
           <i class="ti ti-id-off"></i>
-          <p style="margin-bottom:16px">No membership on file</p>
-          ${canMgr?`<button type="button" class="btn-ms primary" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> Assign Membership</button>`:''}
+          <p style="margin-bottom:16px">${t('No membership on file','لا توجد عضوية مسجّلة')}</p>
+          ${canMgr?`<button type="button" class="btn-ms primary" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> ${t('Assign Membership','تعيين عضوية')}</button>`:''}
         </div>`;
       return;
     }
@@ -1057,27 +1088,27 @@
       '</div>';
 
     const periodBody=showPeriod?`
-      <div class="ms-hero-num">${days} days left</div>
-      <div class="ms-hero-lbl">Ends ${fmtDate(ms.endDate)}</div>
+      <div class="ms-hero-num">${days} ${t('days left','يوم متبقٍ')}</div>
+      <div class="ms-hero-lbl">${t('Ends','تنتهي')} <span dir="ltr">${fmtDate(ms.endDate)}</span></div>
       <div class="progress-wrap">
         <div class="progress-bar"><div class="progress-fill" style="width:${usedPct}%"></div></div>
-        <div class="progress-label"><span>Used ${used} of ${tot} days</span><span>${fmtDate(ms.startDate)}</span></div>
+        <div class="progress-label"><span>${t('Used','مستخدم')} ${used} ${t('of','من')} ${tot} ${t('days','أيام')}</span><span dir="ltr">${fmtDate(ms.startDate)}</span></div>
       </div>`:'';
 
     const primary=isPending
-      ? `<button type="button" class="btn-ms primary" onclick="refreshMembershipStatus()"><i class="ti ti-refresh"></i> Refresh status</button>`
-      : (canRenew?`<button type="button" class="btn-ms primary" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> Renew</button>`:'');
+      ? `<button type="button" class="btn-ms primary" onclick="refreshMembershipStatus()"><i class="ti ti-refresh"></i> ${t('Refresh status','تحديث الحالة')}</button>`
+      : (canRenew?`<button type="button" class="btn-ms primary" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> ${t('Renew','تجديد')}</button>`:'');
     const renewAnyway=isPending&&canRenew
-      ? `<button type="button" class="btn-ms" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> Renew</button>`:'';
+      ? `<button type="button" class="btn-ms" onclick="openModal('modalRenew')"><i class="ti ti-refresh"></i> ${t('Renew','تجديد')}</button>`:'';
     const assignBtn=canAssign
-      ? `<button type="button" class="btn-ms${isPending||canRenew?'':' primary'}" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> Assign</button>`:'';
+      ? `<button type="button" class="btn-ms${isPending||canRenew?'':' primary'}" onclick="window.openAssignModal&&window.openAssignModal('${memberId}')"><i class="ti ti-plus"></i> ${t('Assign','تعيين')}</button>`:'';
     const freezeBtn=canFreeze&&!isFrozen&&(st==='active'||st==='scheduled')
-      ? `<button type="button" class="btn-ms" onclick="openModal('modalFreeze')"><i class="ti ti-snowflake"></i> Freeze</button>`:'';
+      ? `<button type="button" class="btn-ms" onclick="openModal('modalFreeze')"><i class="ti ti-snowflake"></i> ${t('Freeze','تجميد')}</button>`:'';
     const unfreezeBtn=canFreeze&&isFrozen
-      ? `<button type="button" class="btn-ms" onclick="unfreeze()"><i class="ti ti-sun"></i> Unfreeze</button>`:'';
+      ? `<button type="button" class="btn-ms" onclick="unfreeze()"><i class="ti ti-sun"></i> ${t('Unfreeze','إلغاء التجميد')}</button>`:'';
     const canCancel=canMgr&&(st==='active'||st==='frozen'||st==='scheduled'||st==='pending');
     const cancelBtn=canCancel
-      ? `<button type="button" class="btn-ms danger" onclick="openCancelMembership()"><i class="ti ti-ban"></i> Cancel</button>`:'';
+      ? `<button type="button" class="btn-ms danger" onclick="openCancelMembership()"><i class="ti ti-ban"></i> ${t('Cancel','إلغاء')}</button>`:'';
 
     container.innerHTML=`
       <div class="ms-hero ${st}">
@@ -1091,10 +1122,10 @@
         ${expiredNote}${cancelledNote}${scheduledNote}${accountNote}${pendingBanner}
         ${periodBody}
         <div class="ms-facts">
-          <div class="ms-fact">Invitations<b id="msInviteVal">${inviteFactText(st)}</b></div>
-          <div class="ms-fact">Paid<b>${escHtml(fmtEGP(ms.amountPaid)+' · '+pay)}</b></div>
-          ${sessionsFact?`<div class="ms-fact">Sessions<b>${escHtml(sessionsFact)}</b></div>`:''}
-          ${ms.frozenUntilDate?`<div class="ms-fact">Hold<b>${escHtml(fmtDate(ms.frozenUntilDate))}</b></div>`:''}
+          <div class="ms-fact">${t('Invitations','الدعوات')}<b id="msInviteVal">${inviteFactText(st)}</b></div>
+          <div class="ms-fact">${t('Paid','مدفوع')}<b>${escHtml(fmtEGP(ms.amountPaid)+' · '+pay)}</b></div>
+          ${sessionsFact?`<div class="ms-fact">${t('Sessions','الحصص')}<b>${escHtml(sessionsFact)}</b></div>`:''}
+          ${ms.frozenUntilDate?`<div class="ms-fact">${t('Hold','إيقاف')}<b dir="ltr">${escHtml(fmtDate(ms.frozenUntilDate))}</b></div>`:''}
         </div>
         <div class="ms-actions">
           ${primary}${renewAnyway}${assignBtn}${freezeBtn}${unfreezeBtn}${cancelBtn}
@@ -1261,27 +1292,28 @@
       if(!items.length){
         tbody.innerHTML='';
         if(table) table.style.display='none';
-        if(empty){ empty.style.display='flex'; empty.querySelector('p').textContent='No member orders yet'; }
+        if(empty){ empty.style.display='flex'; empty.querySelector('p').textContent=t('No member orders yet','لا توجد طلبات بعد'); }
         return;
       }
       if(table) table.style.display='';
       if(empty) empty.style.display='none';
       tbody.innerHTML=items.map(function(o){
         const num=o.orderNumber!=null?('#'+o.orderNumber):(o.id||'').slice(0,8);
-        const total=o.total!=null?Number(o.total).toLocaleString('en-EG',{style:'currency',currency:o.currency||'EGP'}):'—';
+        const loc=(window.GfpI18n&&window.GfpI18n.getLocale&&window.GfpI18n.getLocale()==='ar')?'ar-EG':'en-EG';
+        const total=o.total!=null?Number(o.total).toLocaleString(loc,{style:'currency',currency:o.currency||'EGP'}):'—';
         const st=o.status||'—';
         return '<tr>'+
           '<td dir="ltr"><strong>'+escHtml(num)+'</strong></td>'+
-          '<td><strong>'+escHtml(total)+'</strong></td>'+
+          '<td dir="ltr"><strong>'+escHtml(total)+'</strong></td>'+
           '<td>'+escHtml(st)+'</td>'+
-          '<td>'+escHtml(o.createdAt?fmtDate(o.createdAt):'—')+'</td>'+
-          '<td><a class="btn secondary" style="height:30px;padding:0 8px;font-size:12px" href="/dashboard/member-orders/?orderId='+encodeURIComponent(o.id||'')+'">View</a></td>'+
+          '<td dir="ltr">'+escHtml(o.createdAt?fmtDate(o.createdAt):'—')+'</td>'+
+          '<td><a class="btn secondary" style="height:30px;padding:0 8px;font-size:12px" href="/dashboard/member-orders/?orderId='+encodeURIComponent(o.id||'')+'">'+t('View','عرض')+'</a></td>'+
           '</tr>';
       }).join('');
     }catch(e){
       tbody.innerHTML='';
       if(table) table.style.display='none';
-      if(empty){ empty.style.display='flex'; empty.querySelector('p').textContent='Unable to load member orders'; }
+      if(empty){ empty.style.display='flex'; empty.querySelector('p').textContent=t('Unable to load member orders','تعذّر تحميل الطلبات'); }
     }
   }
 
@@ -1325,14 +1357,18 @@
     }
     if(table) table.style.display='';
     if(empty) empty.style.display='none';
-    tbody.innerHTML=data.map(a=>`
+    tbody.innerHTML=data.map(a=>{
+      const method=(a.entryMethod||'').toLowerCase();
+      const icon=method==='qr'?'qrcode':(method==='barcode'||method==='card')?'barcode':'user-check';
+      return `
       <tr>
-        <td>${fmtDate(a.checkInAtUtc)}</td>
-        <td>${fmtTime(a.checkInAtUtc)}</td>
-        <td>${a.checkOutAtUtc?fmtTime(a.checkOutAtUtc):'<span style="color:var(--ltt)">—</span>'}</td>
-        <td><span class="method-badge ${a.entryMethod}"><i class="ti ti-${a.entryMethod==='qr'?'qrcode':'user-check'}"></i>${a.entryMethod==='qr'?'QR':'Manual'}</span></td>
-        <td>${calcDuration(a.checkInAtUtc,a.checkOutAtUtc)}</td>
-      </tr>`).join('');
+        <td dir="ltr">${fmtDate(a.checkInAtUtc)}</td>
+        <td dir="ltr">${fmtTime(a.checkInAtUtc)}</td>
+        <td dir="ltr">${a.checkOutAtUtc?fmtTime(a.checkOutAtUtc):'<span style="color:var(--ltt)">—</span>'}</td>
+        <td><span class="method-badge ${escHtml(method)}"><i class="ti ti-${icon}"></i>${entryMethodLabel(a.entryMethod)}</span></td>
+        <td dir="ltr">${calcDuration(a.checkInAtUtc,a.checkOutAtUtc)}</td>
+      </tr>`;
+    }).join('');
   }
 
   function renderHeatmap(data){
@@ -1498,7 +1534,7 @@
     const wantActive=this.checked;
     if(!wantActive){
       this.checked=true; // revert until confirm
-      document.getElementById('deactivateModalTitle').textContent='Deactivate '+((memberData&&memberData.fullName)||'Member')+'?';
+      document.getElementById('deactivateModalTitle').textContent=t('Deactivate','إلغاء تفعيل')+' '+((memberData&&memberData.fullName)||t('Member','العضو'))+'?';
       openModal('modalDeactivate');
       return;
     }
@@ -1532,7 +1568,7 @@
     if(!isOwner){toast('Only Owners can change account status','error');return;}
     if(!memberData) return;
     if(memberData.isActive){
-      document.getElementById('deactivateModalTitle').textContent='Deactivate '+memberData.fullName+'?';
+      document.getElementById('deactivateModalTitle').textContent=t('Deactivate','إلغاء تفعيل')+' '+memberData.fullName+'?';
       openModal('modalDeactivate');
       return;
     }

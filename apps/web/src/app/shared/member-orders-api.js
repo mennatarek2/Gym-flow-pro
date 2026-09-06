@@ -86,6 +86,9 @@
       currency: pick(raw, ['currency', 'currencyCode'], 'EGP'),
       createdAt: pick(raw, ['createdAtUtc', 'createdAt', 'orderedAtUtc', 'created'], null),
       note: pick(raw, ['note', 'notes', 'rejectReason', 'rejectionReason'], null),
+      saleId: pick(raw, ['saleId', 'SaleId'], null),
+      invoiceId: pick(raw, ['invoiceId', 'InvoiceId'], null),
+      invoiceNumber: pick(raw, ['invoiceNumber', 'InvoiceNumber'], null),
       lines: lines.map(function (l) {
         return {
           productId: pick(l, ['productId', 'id'], null),

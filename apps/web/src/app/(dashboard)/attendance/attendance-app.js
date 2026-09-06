@@ -99,6 +99,25 @@
     return d.innerHTML;
   }
 
+  function t(en, ar) {
+    if (window.GfpI18n && typeof window.GfpI18n.tLabel === 'function') {
+      return window.GfpI18n.tLabel(en, ar);
+    }
+    try {
+      return (localStorage.getItem('gfp_locale') || 'en') === 'ar' ? ar : en;
+    } catch (e) {
+      return en;
+    }
+  }
+
+  function entryMethodLabel(m) {
+    var k = String(m || '').toLowerCase();
+    if (k === 'qr') return t('QR', 'QR');
+    if (k === 'barcode' || k === 'card') return t('Card', 'كارنيه');
+    if (k === 'manual') return t('Manual', 'يدوي');
+    return m || '—';
+  }
+
   function fmtTime(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -345,7 +364,10 @@
     const barcodeEl = document.getElementById('barcodeCount');
     if (barcodeEl) barcodeEl.textContent = barcode;
     document.getElementById('currentlyIn').textContent = inGym;
-    document.getElementById('recordCount').textContent = total + ' records';
+    document.getElementById('recordCount').textContent =
+      total === 1
+        ? t('1 record', 'سجل واحد')
+        : t('{n} records', '{n} سجل').replace('{n}', String(total));
 
     const hours = {};
     records.forEach(function (r) {
@@ -366,11 +388,18 @@
     if (peakH >= 0) {
       const end = (peakH + 1) % 24;
       peakInfo.innerHTML =
-        '<i class="ti ti-chart-arrows-vertical"></i>Peak: <strong>' +
+        '<i class="ti ti-chart-arrows-vertical"></i>' +
+        esc(t('Peak', 'الذروة')) +
+        ': <strong dir="ltr">' +
         peakH.toString().padStart(2, '0') +
         ':00–' +
         end.toString().padStart(2, '0') +
         ':00</strong>';
+    } else {
+      peakInfo.innerHTML =
+        '<i class="ti ti-chart-arrows-vertical"></i>' +
+        esc(t('Peak', 'الذروة')) +
+        ': <strong dir="ltr">—</strong>';
     }
   }
 
@@ -378,7 +407,9 @@
     const tbody = document.getElementById('attBody');
     if (!records.length) {
       tbody.innerHTML =
-        '<tr><td colspan="5" class="empty-msg"><i class="ti ti-mood-empty" style="font-size:32px;display:block;margin-bottom:8px;color:var(--ls4)"></i>No check-ins today</td></tr>';
+        '<tr><td colspan="5" class="empty-msg"><i class="ti ti-mood-empty" style="font-size:32px;display:block;margin-bottom:8px;color:var(--ls4)"></i>' +
+        esc(t('No check-ins today', 'لا يوجد حضور اليوم')) +
+        '</td></tr>';
       return;
     }
     tbody.innerHTML = records
@@ -404,7 +435,7 @@
           esc(r.memberNumber || '') +
           '</div></div>' +
           '</div></td>' +
-          '<td><span class="time-cell">' +
+          '<td><span class="time-cell" dir="ltr">' +
           fmtTime(r.checkInAtUtc) +
           '</span></td>' +
           '<td><span class="method-badge ' +
@@ -416,17 +447,17 @@
               ? 'ti-barcode'
               : 'ti-hand-stop') +
           '"></i>' +
-          method.toUpperCase() +
+          esc(entryMethodLabel(method)) +
           '</span></td>' +
           '<td><span class="plan-cell">' +
           esc(r.planName || '—') +
           '</span></td>' +
           '<td>' +
           (isIn
-            ? '<span class="status-in"><i class="ti ti-login"></i>IN</span>'
-            : '<span class="status-out"><i class="ti ti-logout"></i>' +
+            ? '<span class="status-in"><i class="ti ti-login"></i>' + esc(t('IN', 'داخل')) + '</span>'
+            : '<span class="status-out"><i class="ti ti-logout"></i><span dir="ltr">' +
               fmtTime(r.checkOutAtUtc) +
-              '</span>') +
+              '</span></span>') +
           '</td></tr>'
         );
       })
@@ -981,6 +1012,11 @@
   loadHeatmap();
   startSignalR();
   reconcileTimer = setInterval(loadAttendance, 15000);
+  window.addEventListener('gfp:locale', function () {
+    if (window.GfpI18n && window.GfpI18n.applyDocumentLocale) window.GfpI18n.applyDocumentLocale();
+    renderTable(allRecords || []);
+    updateLiveBar(allRecords || []);
+  });
 
   // ── Guest invite redeem (INV-2) — no GymMember / attendance row ──
   (function initGuestInviteRedeem() {

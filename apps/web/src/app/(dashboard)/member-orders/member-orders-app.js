@@ -1,6 +1,6 @@
-﻿/**
- * Member Orders — staff packing desk (no payment / POS logic).
- * Real APIs via GfpApi + GfpMemberOrdersApi.
+/**
+ * Member Orders — staff packing desk.
+ * Complete creates a paid retail sale + invoice (open shift required for cash).
  */
 (function () {
   'use strict';
@@ -55,11 +55,19 @@
     if (title === 'FORBIDDEN' || r.status === 403) {
       return t('You do not have permission for this action.', 'مش عندك صلاحية لهذا الإجراء.');
     }
-    var detail = d.detail || d.message || (d.error && d.error.message) || '';
-    if (detail && String(detail).indexOf(' / ') !== -1) {
-      detail = String(detail).split(' / ')[0].trim();
+    var detail = d.detail || d.message || d.error || (d.error && d.error.message) || '';
+    if (typeof detail === 'object' && detail.message) detail = detail.message;
+    detail = String(detail || '');
+    if (detail.indexOf('OPEN_SHIFT_REQUIRED') !== -1) {
+      return t(
+        'Open a shift first to complete and take cash.',
+        'افتح وردية أولاً لإتمام الطلب وقبض النقد.'
+      );
     }
-    if (detail && !/^[A-Z][A-Z0-9_]+$/.test(String(detail))) return String(detail);
+    // "CODE|English / Arabic" → prefer English segment before slash
+    if (detail.indexOf('|') !== -1) detail = detail.split('|').slice(1).join('|').trim();
+    if (detail.indexOf(' / ') !== -1) detail = detail.split(' / ')[0].trim();
+    if (detail && !/^[A-Z][A-Z0-9_]+$/.test(detail)) return detail;
     if (r.status === 0) return t('Network error — try again.', 'مشكلة شبكة — حاول تاني.');
     return t('Unable to update this order. Please try again.', 'مش قدرنا نحدّث الطلب. حاول تاني.');
   }
@@ -516,8 +524,8 @@
       );
     } else if (st === 'Completed') {
       hint.textContent = t(
-        'Done. If they still need to pay, take it on Sale.',
-        'تمام. لو لسه محتاج يدفع، خد الفلوس من البيع.'
+        'Done. Invoice ready — print if needed.',
+        'تمام. الفاتورة جاهزة — اطبع لو محتاج.'
       );
     } else if (st === 'Rejected') {
       hint.textContent = t("Couldn't fulfill this order.", 'مش قدرنا نجهّز الطلب.');
@@ -541,7 +549,7 @@
     var host = document.getElementById('dActions');
     host.innerHTML = '';
     document.getElementById('rejectBox').classList.remove('show');
-    if (!canAct || !o) return;
+    if (!o) return;
     var st = Mo.normalizeStatus(o.status);
 
     function addBtn(id, labelEn, labelAr, cls) {
@@ -554,22 +562,130 @@
       return b;
     }
 
-    if (st === 'Pending') {
-      addBtn('btnAccept', 'I’ll pack this', 'هجهّزه', 'primary').onclick = function () {
-        runAction('accept');
-      };
-      addBtn('btnReject', "Can't fulfill", 'مش قادرين', 'secondary').onclick = function () {
-        document.getElementById('rejectBox').classList.add('show');
-      };
-    } else if (st === 'Accepted') {
-      addBtn('btnReady', 'It’s ready', 'جاهز', 'primary').onclick = function () {
-        runAction('ready');
-      };
-    } else if (st === 'Ready') {
-      addBtn('btnComplete', 'They collected it', 'استلموه', 'primary').onclick = function () {
-        runAction('complete');
+    if (canAct) {
+      if (st === 'Pending') {
+        addBtn('btnAccept', 'I’ll pack this', 'هجهّزه', 'primary').onclick = function () {
+          runAction('accept');
+        };
+        addBtn('btnReject', "Can't fulfill", 'مش قادرين', 'secondary').onclick = function () {
+          document.getElementById('rejectBox').classList.add('show');
+        };
+      } else if (st === 'Accepted') {
+        addBtn('btnReady', 'It’s ready', 'جاهز', 'primary').onclick = function () {
+          runAction('ready');
+        };
+      } else if (st === 'Ready') {
+        addBtn('btnComplete', 'They collected it', 'استلموه', 'primary').onclick = function () {
+          runAction('complete');
+        };
+      }
+    }
+
+    if (st === 'Completed' && (o.invoiceId || o.saleId)) {
+      addBtn('btnPrintInvoice', 'Print invoice', 'اطبع الفاتورة', 'secondary').onclick = function () {
+        printOrderInvoice(o, true);
       };
     }
+  }
+
+  function sleep(ms) {
+    return new Promise(function (resolve) {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  async function waitForSaleInvoice(saleId) {
+    if (!Gfp || !saleId) return null;
+    for (var i = 0; i < 30; i++) {
+      var res = await Gfp.get('/sales/' + encodeURIComponent(saleId) + '/invoice');
+      if (res.ok && res.data && (res.data.invoiceId || res.data.InvoiceId)) {
+        return {
+          invoiceId: res.data.invoiceId || res.data.InvoiceId,
+          invoiceNumber: res.data.invoiceNumber || res.data.InvoiceNumber || ''
+        };
+      }
+      if (res.status && res.status !== 404) return null;
+      await sleep(i < 8 ? 150 : 350);
+    }
+    return null;
+  }
+
+  function closeMoPrint() {
+    var ov = document.getElementById('moPrintOverlay');
+    if (ov) ov.hidden = true;
+    var frame = document.getElementById('moPrintFrame');
+    if (frame) frame.srcdoc = '';
+  }
+
+  async function openOrderReceiptPrint(invoiceId, invoiceNumber, autoPrint) {
+    var overlay = document.getElementById('moPrintOverlay');
+    var frame = document.getElementById('moPrintFrame');
+    var title = document.getElementById('moPrintTitle');
+    if (!overlay || !frame || !invoiceId) {
+      toast(t('Print view not available.', 'شاشة الطباعة مش متاحة.'), 'err');
+      return;
+    }
+    if (title) {
+      title.textContent = invoiceNumber
+        ? t('Invoice', 'فاتورة') + ' ' + invoiceNumber
+        : t('Receipt', 'إيصال');
+    }
+    overlay.hidden = false;
+    frame.srcdoc =
+      '<p style="padding:16px;font-family:sans-serif;color:#666">' +
+      esc(t('Loading receipt…', 'جاري تحميل الإيصال…')) +
+      '</p>';
+
+    var htmlRes = Gfp
+      ? await Gfp.get('/invoices/' + encodeURIComponent(invoiceId) + '/receipt-html')
+      : { ok: false };
+    if (htmlRes.status === 401) {
+      location.href = '/auth/login/';
+      return;
+    }
+    var text = typeof htmlRes.data === 'string' ? htmlRes.data : '';
+    if (!htmlRes.ok || !text) {
+      var detail = t('Could not load receipt.', 'مش قدرنا نحمّل الإيصال.');
+      toast(detail, 'err');
+      frame.srcdoc =
+        '<p style="padding:16px;font-family:sans-serif;color:#991b1b">' + esc(detail) + '</p>';
+      return;
+    }
+    frame.srcdoc = text;
+    if (autoPrint) {
+      setTimeout(function () {
+        try {
+          frame.contentWindow.focus();
+          frame.contentWindow.print();
+        } catch (e) {
+          toast(t('Allow pop-ups / try Print again.', 'اسمح بالنوافذ أو اضغط طباعة تاني.'), 'err');
+        }
+      }, 450);
+    }
+  }
+
+  async function printOrderInvoice(o, autoPrint) {
+    if (!o) return;
+    var invoiceId = o.invoiceId;
+    var invoiceNumber = o.invoiceNumber || '';
+    if (!invoiceId && o.saleId) {
+      toast(t('Preparing invoice…', 'جاري تجهيز الفاتورة…'), 'ok');
+      var inv = await waitForSaleInvoice(o.saleId);
+      if (inv) {
+        invoiceId = inv.invoiceId;
+        invoiceNumber = inv.invoiceNumber || invoiceNumber;
+        o.invoiceId = invoiceId;
+        o.invoiceNumber = invoiceNumber;
+      }
+    }
+    if (!invoiceId) {
+      toast(
+        t('Invoice still preparing — try Print again.', 'الفاتورة لسه بت تجهز — حاول اطبع تاني.'),
+        'err'
+      );
+      return;
+    }
+    await openOrderReceiptPrint(invoiceId, invoiceNumber, !!autoPrint);
   }
 
   async function runAction(kind) {
@@ -617,6 +733,9 @@
       selectedOrder = Mo.normalizeOrder(r.data);
       rememberLines(selectedOrder);
       renderDetail(selectedOrder);
+      if (kind === 'complete' && (selectedOrder.invoiceId || selectedOrder.saleId)) {
+        printOrderInvoice(selectedOrder, true);
+      }
     } else {
       await openDetail(selectedId);
     }
@@ -638,8 +757,38 @@
     if (e.target === this) closeDrawer();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && drawerOpen()) closeDrawer();
+    if (e.key === 'Escape') {
+      var ov = document.getElementById('moPrintOverlay');
+      if (ov && !ov.hidden) {
+        closeMoPrint();
+        return;
+      }
+      if (drawerOpen()) closeDrawer();
+    }
   });
+
+  var moPrintOverlay = document.getElementById('moPrintOverlay');
+  if (moPrintOverlay) {
+    moPrintOverlay.addEventListener('click', function (e) {
+      if (e.target === moPrintOverlay) closeMoPrint();
+    });
+  }
+  var btnMoPrintClose = document.getElementById('btnMoPrintClose');
+  if (btnMoPrintClose) btnMoPrintClose.onclick = closeMoPrint;
+  var btnMoPrintDo = document.getElementById('btnMoPrintDo');
+  if (btnMoPrintDo) {
+    btnMoPrintDo.onclick = function () {
+      var frame = document.getElementById('moPrintFrame');
+      try {
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.focus();
+          frame.contentWindow.print();
+        }
+      } catch (e) {
+        toast(t('Allow pop-ups / try Print again.', 'اسمح بالنوافذ أو اضغط طباعة تاني.'), 'err');
+      }
+    };
+  }
 
   document.querySelectorAll('#statusFilters .chip').forEach(function (chip) {
     chip.onclick = function () {

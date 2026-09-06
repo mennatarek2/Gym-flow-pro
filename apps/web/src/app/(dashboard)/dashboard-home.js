@@ -3057,12 +3057,12 @@
     var subtitle = global.document.getElementById('dashboardSubtitle');
     var role = String(user.role || '').toLowerCase();
     var context = role === 'owner'
-      ? ['Owner dashboard', 'The most important numbers for the whole gym']
+      ? [t('Owner dashboard', 'لوحة تحكم المالك'), t('The most important numbers for the whole gym', 'أهم الأرقام للصالة كلها')]
       : role === 'manager'
-        ? ['Manager dashboard', 'Business and operations within your permissions']
+        ? [t('Manager dashboard', 'لوحة تحكم المدير'), t('Business and operations within your permissions', 'الأعمال والتشغيل حسب صلاحياتك')]
         : role === 'receptionist'
-          ? ['Reception dashboard', 'The next actions at the front desk']
-          : ['Trainer dashboard', 'Your classes, attendance, and members today'];
+          ? [t('Reception dashboard', 'لوحة تحكم الاستقبال'), t('The next actions at the front desk', 'الخطوات التالية في الاستقبال')]
+          : [t('Trainer dashboard', 'لوحة تحكم المدرب'), t('Your classes, attendance, and members today', 'حصصك والحضور والأعضاء اليوم')];
     if (headline) headline.textContent = context[0];
     if (subtitle) subtitle.textContent = context[1];
     return true;
@@ -3120,6 +3120,13 @@
     }
     await bootWidgets();
     global.addEventListener('resize', resizeDashboardCharts);
+    global.addEventListener('gfp:locale', function () {
+      paintUserChrome();
+      if (global.GfpI18n && global.GfpI18n.applyDocumentLocale) {
+        global.GfpI18n.applyDocumentLocale();
+      }
+      bootWidgets();
+    });
   }
 
   if (global.document.readyState === 'loading') {

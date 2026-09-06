@@ -207,9 +207,22 @@
     btn.type = 'button';
     btn.id = 'gfpLangToggle';
     btn.className = 'gfp-lang-toggle';
-    btn.title = 'Toggle Arabic / English';
     function paint() {
-      btn.textContent = I18n.getLocale() === 'ar' ? 'EN' : 'عربي';
+      // Show the CURRENT language (not the target). "EN" while Arabic was active
+      // made owners think English was selected while the sidebar stayed Arabic.
+      var loc = I18n.getLocale();
+      var isAr = loc === 'ar';
+      btn.textContent = isAr ? 'AR' : 'EN';
+      btn.setAttribute('data-locale', loc);
+      btn.setAttribute(
+        'aria-label',
+        isAr
+          ? 'Current language: Arabic. Click to switch to English'
+          : 'Current language: English. Click to switch to Arabic'
+      );
+      btn.title = isAr
+        ? 'العربية — انقر للإنجليزية'
+        : 'English — click for Arabic';
     }
     paint();
     btn.addEventListener('click', function () {
@@ -1190,9 +1203,15 @@
       }
     } catch (e) { /* ignore */ }
 
-    // Beta feedback (lightweight): copy a prefilled template to clipboard.
+    // Beta feedback (lightweight): desk only — not on auth/login (clipboard-only, not a product inbox).
     try {
-      if (typeof global.document !== 'undefined' && global.document.body && !global.document.getElementById('gfpBetaFeedbackBtn')) {
+      var onDashboard = global.location && /\/dashboard(\/|$)/.test(global.location.pathname);
+      if (
+        onDashboard &&
+        typeof global.document !== 'undefined' &&
+        global.document.body &&
+        !global.document.getElementById('gfpBetaFeedbackBtn')
+      ) {
         if (typeof isEmbedShell === 'function' && isEmbedShell()) {
           // Embedded shell: keep UI minimal.
         } else {
@@ -1293,6 +1312,37 @@
     if (!token || !global.GfpAuthz.useCanRole('AnyStaff')) {
       global.location.href = '/auth/login/';
       return;
+    }
+
+    // Sidebar logout: pages wire #btnLogout, but the resize handle used to cover it.
+    // Delegate so a single reliable path always works on the desk.
+    if (!global.document.documentElement.getAttribute('data-gfp-logout-bound')) {
+      global.document.documentElement.setAttribute('data-gfp-logout-bound', '1');
+      global.document.addEventListener(
+        'click',
+        function (ev) {
+          var t = ev.target;
+          if (!t || !t.closest) return;
+          var btn = t.closest('#btnLogout, .sb-logout');
+          if (!btn) return;
+          ev.preventDefault();
+          ev.stopPropagation();
+          try {
+            if (global.GfpApi && typeof global.GfpApi.logout === 'function') {
+              global.GfpApi.logout();
+              return;
+            }
+          } catch (e) { /* fall through */ }
+          try {
+            ['gfp_access_token', 'gfp_refresh_token', 'gfp_user', 'gfp_expires_at', 'gfp_persist'].forEach(function (k) {
+              try { global.localStorage.removeItem(k); } catch (e1) {}
+              try { global.sessionStorage.removeItem(k); } catch (e2) {}
+            });
+          } catch (e3) {}
+          global.location.href = '/auth/login/';
+        },
+        true
+      );
     }
 
     bootDone = true;

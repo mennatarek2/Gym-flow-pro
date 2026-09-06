@@ -39,21 +39,21 @@
 <div class="main">
 <div class="live-bar">
   <div class="live-bar-left">
-    <div class="live-indicator"><span class="live-dot"></span>LIVE</div>
-    <div class="live-counter"><span class="counter-val" id="liveCount">0</span><span class="counter-label">checked in today</span></div>
+    <div class="live-indicator"><span class="live-dot"></span><span data-en="LIVE" data-ar="مباشر">LIVE</span></div>
+    <div class="live-counter"><span class="counter-val" id="liveCount">0</span><span class="counter-label" data-en="checked in today" data-ar="حضور اليوم">checked in today</span></div>
   </div>
   <div class="live-bar-center">
-    <div class="live-stat"><i class="ti ti-qrcode"></i><span id="qrCount">0</span> QR</div>
+    <div class="live-stat"><i class="ti ti-qrcode"></i><span id="qrCount">0</span> <span data-en="QR" data-ar="QR">QR</span></div>
     <div class="live-divider"></div>
-    <div class="live-stat"><i class="ti ti-barcode"></i><span id="barcodeCount">0</span> Card</div>
+    <div class="live-stat"><i class="ti ti-barcode"></i><span id="barcodeCount">0</span> <span data-en="Card" data-ar="كارنيه">Card</span></div>
     <div class="live-divider"></div>
-    <div class="live-stat"><i class="ti ti-hand-stop"></i><span id="manualCount">0</span> Manual</div>
+    <div class="live-stat"><i class="ti ti-hand-stop"></i><span id="manualCount">0</span> <span data-en="Manual" data-ar="يدوي">Manual</span></div>
     <div class="live-divider"></div>
-    <div class="live-stat"><i class="ti ti-login"></i><span id="currentlyIn">0</span> In Gym</div>
+    <div class="live-stat"><i class="ti ti-login"></i><span id="currentlyIn">0</span> <span data-en="In Gym" data-ar="في الصالة">In Gym</span></div>
   </div>
   <div class="live-bar-right">
-    <div class="peak-indicator" id="peakInfo"><i class="ti ti-chart-arrows-vertical"></i>Peak: <strong>—</strong></div>
-    <div class="signal-status" id="signalStatus"><span class="signal-dot offline"></span>SignalR</div>
+    <div class="peak-indicator" id="peakInfo"><i class="ti ti-chart-arrows-vertical"></i><span data-en="Peak" data-ar="الذروة">Peak</span>: <strong dir="ltr">—</strong></div>
+    <div class="signal-status" id="signalStatus"><span class="signal-dot offline"></span><span data-en="SignalR" data-ar="الاتصال">SignalR</span></div>
   </div>
 </div>
 
@@ -102,7 +102,7 @@
         </div>
         <div class="search-box">
           <i class="ti ti-search search-icon"></i>
-          <input type="text" id="memberSearch" placeholder="Search member by name, phone, or ID..." autocomplete="off">
+          <input type="text" id="memberSearch" placeholder="Search member by name, phone, or ID..." data-en-placeholder="Search member by name, phone, or ID..." data-ar-placeholder="ابحث بالاسم أو الهاتف أو الرقم..." autocomplete="off">
           <div class="search-results" id="searchResults"></div>
         </div>
         <div class="selected-member" id="selectedMember" style="display:none"></div>
@@ -115,7 +115,7 @@
             <label class="reason-card"><input type="radio" name="reason" value="4"><i class="ti ti-dots"></i><span>Other<br><small>أخرى</small></span></label>
           </div>
           <div class="notes-field" id="notesField" style="display:none">
-            <textarea id="notes" placeholder="Enter reason details..." rows="2"></textarea>
+            <textarea id="notes" placeholder="Enter reason details..." data-en-placeholder="Enter reason details..." data-ar-placeholder="اكتب تفاصيل السبب..." rows="2"></textarea>
           </div>
           <button type="button" class="btn-checkin" id="btnCheckin" disabled><i class="ti ti-login"></i> Check In</button>
         </div>
@@ -129,34 +129,34 @@
       <div class="panel-card">
         <div class="panel-header">
           <div class="panel-title-row">
-            <h2 class="panel-title"><i class="ti ti-list-check"></i> Today's Attendance</h2>
-            <span class="record-count" id="recordCount">0 records</span>
+            <h2 class="panel-title"><i class="ti ti-list-check"></i> <span data-en="Today's Attendance" data-ar="حضور اليوم">Today's Attendance</span></h2>
+            <span class="record-count" id="recordCount"><span data-en="0 records" data-ar="٠ سجل">0 records</span></span>
           </div>
           <div class="filter-tabs">
-            <button type="button" class="filter-tab active" data-filter="all"><i class="ti ti-list"></i> All</button>
-            <button type="button" class="filter-tab" data-filter="qr"><i class="ti ti-qrcode"></i> QR</button>
-            <button type="button" class="filter-tab" data-filter="barcode"><i class="ti ti-barcode"></i> Card</button>
-            <button type="button" class="filter-tab" data-filter="manual"><i class="ti ti-hand-stop"></i> Manual</button>
+            <button type="button" class="filter-tab active" data-filter="all"><i class="ti ti-list"></i> <span data-en="All" data-ar="الكل">All</span></button>
+            <button type="button" class="filter-tab" data-filter="qr"><i class="ti ti-qrcode"></i> <span data-en="QR" data-ar="QR">QR</span></button>
+            <button type="button" class="filter-tab" data-filter="barcode"><i class="ti ti-barcode"></i> <span data-en="Card" data-ar="كارنيه">Card</span></button>
+            <button type="button" class="filter-tab" data-filter="manual"><i class="ti ti-hand-stop"></i> <span data-en="Manual" data-ar="يدوي">Manual</span></button>
           </div>
         </div>
         <div class="att-table-wrap">
           <table class="att-table">
             <thead><tr>
-              <th>Member</th>
-              <th>Check-in</th>
-              <th>Method</th>
-              <th>Plan</th>
-              <th>Status</th>
+              <th data-en="Member" data-ar="العضو">Member</th>
+              <th data-en="Check-in" data-ar="دخول">Check-in</th>
+              <th data-en="Method" data-ar="الطريقة">Method</th>
+              <th data-en="Plan" data-ar="الخطة">Plan</th>
+              <th data-en="Status" data-ar="الحالة">Status</th>
             </tr></thead>
-            <tbody id="attBody"><tr><td colspan="5" class="empty-msg"><div class="loader-sm"></div>Loading...</td></tr></tbody>
+            <tbody id="attBody"><tr><td colspan="5" class="empty-msg"><div class="loader-sm"></div> <span data-en="Loading..." data-ar="جاري التحميل...">Loading...</span></td></tr></tbody>
           </table>
         </div>
       </div>
 
       <div class="panel-card heatmap-card">
         <div class="panel-header">
-          <h2 class="panel-title"><i class="ti ti-flame"></i> Attendance Heatmap</h2>
-          <span class="heatmap-legend"><span class="hl-low"></span>Low<span class="hl-high"></span>High</span>
+          <h2 class="panel-title"><i class="ti ti-flame"></i> <span data-en="Attendance Heatmap" data-ar="خريطة الحضور الحرارية">Attendance Heatmap</span></h2>
+          <span class="heatmap-legend"><span class="hl-low"></span><span data-en="Low" data-ar="منخفض">Low</span><span class="hl-high"></span><span data-en="High" data-ar="مرتفع">High</span></span>
         </div>
         <div class="heatmap-wrap" id="heatmapWrap"></div>
       </div>
@@ -171,7 +171,7 @@
         <div class="checkin-body">
           <div class="search-box">
             <i class="ti ti-search search-icon"></i>
-            <input type="text" id="guestInviteSearch" placeholder="Search guest by name or phone..." autocomplete="off">
+            <input type="text" id="guestInviteSearch" placeholder="Search guest by name or phone..." data-en-placeholder="Search guest by name or phone..." data-ar-placeholder="ابحث عن الضيف بالاسم أو الهاتف..." autocomplete="off">
             <div class="search-results" id="guestInviteResults"></div>
           </div>
           <div class="selected-member" id="selectedGuestInvite" style="display:none"></div>

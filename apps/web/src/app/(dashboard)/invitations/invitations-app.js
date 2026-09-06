@@ -14,13 +14,24 @@
     return globalThis.toastShared(msg);
   }
 
+  function t(en, ar) {
+    if (window.GfpI18n && typeof window.GfpI18n.tLabel === 'function') {
+      return window.GfpI18n.tLabel(en, ar);
+    }
+    try {
+      return (localStorage.getItem('gfp_locale') || 'en') === 'ar' ? ar : en;
+    } catch (e) {
+      return en;
+    }
+  }
+
   function statusLabel(s) {
     var map = {
-      new: 'New',
-      contacted: 'Contacted',
-      interested: 'Interested',
-      not_interested: 'Not Interested',
-      converted: 'Converted'
+      new: t('New', 'جديد'),
+      contacted: t('Contacted', 'تم التواصل'),
+      interested: t('Interested', 'مهتم'),
+      not_interested: t('Not Interested', 'غير مهتم'),
+      converted: t('Converted', 'تم التحويل')
     };
     return map[String(s || '').toLowerCase()] || s || '—';
   }
@@ -29,7 +40,8 @@
     if (!iso) return '—';
     var d = new Date(iso);
     if (isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    var loc = (window.GfpI18n && window.GfpI18n.getLocale && window.GfpI18n.getLocale() === 'ar') ? 'ar-EG' : 'en-GB';
+    return d.toLocaleDateString(loc, { day: 'numeric', month: 'short' });
   }
 
   function unwrap(payload) {
@@ -50,12 +62,12 @@
     var r = await Gfp.get(path);
     var tbody = document.getElementById('invTbody');
     if (!r.ok) {
-      tbody.innerHTML = '<tr><td colspan="7" class="muted">Could not load invitations</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="muted">' + esc(t('Could not load invitations', 'تعذّر تحميل الدعوات')) + '</td></tr>';
       return;
     }
     rows = unwrap(r.data);
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="muted">No invitations yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="muted">' + esc(t('No invitations yet', 'لا توجد دعوات بعد')) + '</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (row) {
@@ -63,12 +75,12 @@
       return (
         '<tr data-id="' + esc(row.id) + '">' +
         '<td>' + esc(row.name || row.guestName) + '</td>' +
-        '<td>' + esc(row.phoneNumber || row.guestPhoneNumber) + '</td>' +
+        '<td dir="ltr">' + esc(row.phoneNumber || row.guestPhoneNumber) + '</td>' +
         '<td>' + esc(row.invitedByName) + '</td>' +
-        '<td>' + fmtDate(row.createdAtUtc || row.sentAtUtc) + '</td>' +
+        '<td dir="ltr">' + fmtDate(row.createdAtUtc || row.sentAtUtc) + '</td>' +
         '<td><span class="st ' + esc(st) + '">' + esc(statusLabel(st)) + '</span></td>' +
-        '<td>' + fmtDate(row.contactedAtUtc) + '</td>' +
-        '<td><button type="button" class="btn" data-view="' + esc(row.id) + '">View</button></td>' +
+        '<td dir="ltr">' + fmtDate(row.contactedAtUtc) + '</td>' +
+        '<td><button type="button" class="btn" data-view="' + esc(row.id) + '">' + esc(t('View', 'عرض')) + '</button></td>' +
         '</tr>'
       );
     }).join('');
@@ -87,11 +99,13 @@
     selected = rows.find(function (r) { return String(r.id) === String(id); }) || null;
     if (!selected) return;
     var phone = selected.phoneNumber || selected.guestPhoneNumber || '';
-    document.getElementById('invModalTitle').textContent = selected.name || selected.guestName || 'Invitation';
-    document.getElementById('invModalMeta').textContent =
-      phone + ' · Invited by ' + (selected.invitedByName || '—') + ' · ' + fmtDate(selected.createdAtUtc || selected.sentAtUtc);
-    var nid = selected.nationalId ? 'National ID ' + selected.nationalId : 'National ID not provided';
-    var notes = selected.notes ? 'Notes: ' + selected.notes : '';
+    document.getElementById('invModalTitle').textContent = selected.name || selected.guestName || t('Invitation', 'دعوة');
+    document.getElementById('invModalMeta').innerHTML =
+      '<span dir="ltr">' + esc(phone) + '</span> · ' + esc(t('Invited by', 'مدعو بواسطة')) + ' ' + esc(selected.invitedByName || '—') + ' · <span dir="ltr">' + esc(fmtDate(selected.createdAtUtc || selected.sentAtUtc)) + '</span>';
+    var nid = selected.nationalId
+      ? t('National ID', 'الرقم القومي') + ' ' + selected.nationalId
+      : t('National ID not provided', 'لم يُذكر الرقم القومي');
+    var notes = selected.notes ? t('Notes', 'ملاحظات') + ': ' + selected.notes : '';
     document.getElementById('invModalNotes').textContent = [nid, notes].filter(Boolean).join(' · ');
     document.getElementById('invModalStatus').value = String(selected.status || 'new').toLowerCase();
     document.getElementById('btnCall').href = phone ? 'tel:' + phone : '#';
@@ -115,7 +129,7 @@
       toast(apiErr(r) || 'Could not update status');
       return;
     }
-    toast('Status saved');
+    toast(t('Status saved', 'تم حفظ الحالة'));
     closeModal();
     loadList();
   }
@@ -325,6 +339,10 @@
   document.getElementById('btnCreateSave').addEventListener('click', createInvitation);
   document.getElementById('createModal').addEventListener('click', function (e) {
     if (e.target.id === 'createModal') closeCreateModal();
+  });
+  window.addEventListener('gfp:locale', function () {
+    if (window.GfpI18n && window.GfpI18n.applyDocumentLocale) window.GfpI18n.applyDocumentLocale();
+    loadList();
   });
   document.getElementById('createMemberQ').addEventListener('input', function () {
     clearTimeout(memberSearchTimer);

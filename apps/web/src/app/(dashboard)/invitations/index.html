@@ -37,14 +37,14 @@
   </div>
 
   <div class="inv-toolbar">
-    <div class="inv-search"><i class="ti ti-search"></i><input id="searchQ" type="search" placeholder="Search name or phone…" autocomplete="off"></div>
-    <select id="filterStatus" aria-label="Status">
-      <option value="">All statuses</option>
-      <option value="new">New</option>
-      <option value="contacted">Contacted</option>
-      <option value="interested">Interested</option>
-      <option value="not_interested">Not Interested</option>
-      <option value="converted">Converted</option>
+    <div class="inv-search"><i class="ti ti-search"></i><input id="searchQ" type="search" placeholder="Search name or phone…" data-en-placeholder="Search name or phone…" data-ar-placeholder="ابحث بالاسم أو الهاتف…" autocomplete="off"></div>
+    <select id="filterStatus" aria-label="Status" data-en-title="Status" data-ar-title="الحالة">
+      <option value="" data-en="All statuses" data-ar="كل الحالات">All statuses</option>
+      <option value="new" data-en="New" data-ar="جديد">New</option>
+      <option value="contacted" data-en="Contacted" data-ar="تم التواصل">Contacted</option>
+      <option value="interested" data-en="Interested" data-ar="مهتم">Interested</option>
+      <option value="not_interested" data-en="Not Interested" data-ar="غير مهتم">Not Interested</option>
+      <option value="converted" data-en="Converted" data-ar="تم التحويل">Converted</option>
     </select>
   </div>
 
@@ -53,16 +53,16 @@
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Invited by</th>
-            <th>Created</th>
-            <th>Status</th>
-            <th>Last contact</th>
+            <th data-en="Name" data-ar="الاسم">Name</th>
+            <th data-en="Phone" data-ar="الهاتف">Phone</th>
+            <th data-en="Invited by" data-ar="مدعو بواسطة">Invited by</th>
+            <th data-en="Created" data-ar="أُنشئ">Created</th>
+            <th data-en="Status" data-ar="الحالة">Status</th>
+            <th data-en="Last contact" data-ar="آخر تواصل">Last contact</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="invTbody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
+        <tbody id="invTbody"><tr><td colspan="7" class="muted" data-en="Loading…" data-ar="جاري التحميل…">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -72,49 +72,49 @@
 
 <div class="modal-overlay" id="invModal" hidden>
   <div class="modal-box" role="dialog" aria-labelledby="invModalTitle">
-    <h3 id="invModalTitle">Invitation</h3>
+    <h3 id="invModalTitle" data-en="Invitation" data-ar="دعوة">Invitation</h3>
     <p class="inv-meta" id="invModalMeta"></p>
     <p class="inv-notes" id="invModalNotes"></p>
-    <label>Status</label>
+    <label data-en="Status" data-ar="الحالة">Status</label>
     <select id="invModalStatus">
-      <option value="new">New</option>
-      <option value="contacted">Contacted</option>
-      <option value="interested">Interested</option>
-      <option value="not_interested">Not Interested</option>
-      <option value="converted">Converted</option>
+      <option value="new" data-en="New" data-ar="جديد">New</option>
+      <option value="contacted" data-en="Contacted" data-ar="تم التواصل">Contacted</option>
+      <option value="interested" data-en="Interested" data-ar="مهتم">Interested</option>
+      <option value="not_interested" data-en="Not Interested" data-ar="غير مهتم">Not Interested</option>
+      <option value="converted" data-en="Converted" data-ar="تم التحويل">Converted</option>
     </select>
-    <p class="hint">Converted is also set automatically when this phone becomes a paying member. Trial stays on Trials — not a status here.</p>
+    <p class="hint" data-en="Converted is also set automatically when this phone becomes a paying member. Trial stays on Trials — not a status here." data-ar="يُضبط «تم التحويل» تلقائياً عندما يصبح هذا الهاتف عضواً دافعاً. التجربة تبقى في التجارب — وليست حالة هنا.">Converted is also set automatically when this phone becomes a paying member. Trial stays on Trials — not a status here.</p>
     <div class="inv-actions">
-      <button type="button" class="btn primary" id="btnSaveStatus">Save status</button>
-      <a class="btn" id="btnCall" href="tel:">Call</a>
-      <a class="btn" id="btnNewMember" href="/dashboard/members/">New member</a>
-      <button type="button" class="btn secondary" id="btnCloseModal">Close</button>
+      <button type="button" class="btn primary" id="btnSaveStatus"><span data-en="Save status" data-ar="حفظ الحالة">Save status</span></button>
+      <a class="btn" id="btnCall" href="tel:"><span data-en="Call" data-ar="اتصال">Call</span></a>
+      <a class="btn" id="btnNewMember" href="/dashboard/members/"><span data-en="New member" data-ar="عضو جديد">New member</span></a>
+      <button type="button" class="btn secondary" id="btnCloseModal"><span data-en="Close" data-ar="إغلاق">Close</span></button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="createModal" hidden>
   <div class="modal-box" role="dialog" aria-labelledby="createModalTitle">
-    <h3 id="createModalTitle">New invitation</h3>
-    <p class="hint">Counts against the member’s current membership. Frozen, expired, or cancelled members have 0 left.</p>
-    <label for="createMemberQ">Member</label>
+    <h3 id="createModalTitle" data-en="New invitation" data-ar="دعوة جديدة">New invitation</h3>
+    <p class="hint" data-en="Counts against the member’s current membership. Frozen, expired, or cancelled members have 0 left." data-ar="تُحسب من عضوية العضو الحالية. المجمدون والمنتهون والملغون لديهم ٠ متبقية.">Counts against the member’s current membership. Frozen, expired, or cancelled members have 0 left.</p>
+    <label for="createMemberQ" data-en="Member" data-ar="العضو">Member</label>
     <div class="inv-member-pick">
-      <input id="createMemberQ" type="search" placeholder="Search member name or phone…" autocomplete="off">
+      <input id="createMemberQ" type="search" placeholder="Search member name or phone…" data-en-placeholder="Search member name or phone…" data-ar-placeholder="ابحث باسم العضو أو الهاتف…" autocomplete="off">
       <div id="createMemberResults" class="inv-results" hidden></div>
       <div id="createMemberSelected" class="inv-selected" hidden></div>
     </div>
     <p class="hint" id="createQuotaHint"></p>
-    <label for="createName">Friend’s name</label>
+    <label for="createName" data-en="Friend’s name" data-ar="اسم الصديق">Friend’s name</label>
     <input id="createName" type="text" maxlength="200" autocomplete="off">
-    <label for="createPhone">Phone</label>
+    <label for="createPhone" data-en="Phone" data-ar="الهاتف">Phone</label>
     <input id="createPhone" type="tel" inputmode="tel" maxlength="20" autocomplete="off" placeholder="01xxxxxxxxx">
-    <label for="createNid">National ID (optional)</label>
+    <label for="createNid" data-en="National ID (optional)" data-ar="الرقم القومي (اختياري)">National ID (optional)</label>
     <input id="createNid" type="text" inputmode="numeric" maxlength="14" autocomplete="off">
-    <label for="createNotes">Notes (optional)</label>
+    <label for="createNotes" data-en="Notes (optional)" data-ar="ملاحظات (اختياري)">Notes (optional)</label>
     <textarea id="createNotes" rows="2" maxlength="1000"></textarea>
     <div class="inv-actions">
-      <button type="button" class="btn primary" id="btnCreateSave">Create invitation</button>
-      <button type="button" class="btn secondary" id="btnCreateCancel">Cancel</button>
+      <button type="button" class="btn primary" id="btnCreateSave"><span data-en="Create invitation" data-ar="إنشاء دعوة">Create invitation</span></button>
+      <button type="button" class="btn secondary" id="btnCreateCancel"><span data-en="Cancel" data-ar="إلغاء">Cancel</span></button>
     </div>
   </div>
 </div>

@@ -37,7 +37,7 @@
   <div class="page-header">
     <div>
       <h1 class="page-title"><i class="ti ti-shopping-bag"></i> <span data-en="From the app" data-ar="من التطبيق">From the app</span></h1>
-      <p class="page-subtitle" data-en="Pack what the member asked for. Tap a row. Take money on Sale only if they still need to pay." data-ar="جهّز اللي العضو طلبه. اضغط الصف. خد الفلوس من البيع لو لسه محتاج يدفع.">Pack what the member asked for. Tap a row. Take money on Sale only if they still need to pay.</p>
+      <p class="page-subtitle" data-en="Pack what the member asked for. Completing creates the sale invoice — print from the order." data-ar="جهّز اللي العضو طلبه. عند الاستلام تتولد فاتورة البيع — اطبعها من الطلب.">Pack what the member asked for. Completing creates the sale invoice — print from the order.</p>
     </div>
     <div class="hdr-actions">
       <button type="button" class="btn secondary" id="btnRefresh"><i class="ti ti-refresh"></i> <span data-en="Refresh" data-ar="تحديث">Refresh</span></button>
@@ -104,8 +104,18 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="/shared/member-orders-api.js?v=2"></script>
+<div class="pos-print-overlay" id="moPrintOverlay" hidden>
+  <div class="pos-print-sheet" role="dialog" aria-modal="true" aria-labelledby="moPrintTitle">
+    <div class="pos-print-actions">
+      <button type="button" class="btn primary" id="btnMoPrintDo"><i class="ti ti-printer"></i> <span data-en="Print" data-ar="طباعة">Print</span></button>
+      <button type="button" class="btn secondary" id="btnMoPrintClose"><i class="ti ti-x"></i> <span data-en="Close" data-ar="إغلاق">Close</span></button>
+    </div>
+    <p class="pos-print-caption" id="moPrintTitle" data-en="Receipt" data-ar="إيصال">Receipt</p>
+    <iframe id="moPrintFrame" title="Receipt print"></iframe>
+  </div>
+</div>
+<script src="/shared/member-orders-api.js?v=3"></script>
 <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
-<script src="member-orders-app.js?v=3"></script>
+<script src="member-orders-app.js?v=4"></script>
 </body>
 </html>

@@ -98,7 +98,7 @@
   "members.edit": "تعديل العضو",
   "members.delete": "حذف العضو",
   "members.empty": "لا يوجد أعضاء",
-  "members.searchPlaceholder": "بحث عن أعضاء",
+  "members.searchPlaceholder": "ابحث بالاسم أو الهاتف أو رقم العضو...",
   "members.errors.notFound": "العضو غير موجود",
   "members.created": "تم إنشاء العضو بنجاح",
   "members.updated": "تم تحديث العضو بنجاح",

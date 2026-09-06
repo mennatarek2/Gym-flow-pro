@@ -85,12 +85,9 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 [dir="rtl"] .form-input{text-align:right}
 [dir="rtl"] .pw-wrap .form-input{padding-right:16px;padding-left:44px}
 [dir="rtl"] .pw-toggle{right:auto;left:2px;border-radius:var(--rmd) 0 0 var(--rmd)}
-[dir="rtl"] .check-row{flex-direction:row-reverse}
 [dir="rtl"] .tooltip-content{text-align:right}
 [dir="rtl"] .feat{flex-direction:row-reverse;text-align:right}
 [dir="rtl"] .alert-err{flex-direction:row-reverse;text-align:right}
-[dir="rtl"] .token-banner{flex-direction:row-reverse;text-align:right}
-[dir="rtl"] .role-chip{flex-direction:row-reverse}
 
 /* ═══════════════════════════════════════════════════════════════
    Split Layout — components/layout/
@@ -143,8 +140,7 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 .logo-row span{font-family:var(--fd);font-size:30px;font-weight:700;letter-spacing:-.5px;color:var(--l400)}
 
 /* Tagline — lib/i18n/en.json + ar.json */
-.tagline{font-family:var(--fd);font-size:24px;font-weight:700;line-height:1.25;color:var(--dtp);margin-bottom:6px}
-.tagline-ar{font-family:var(--fa);font-size:18px;font-weight:500;color:var(--c400);margin-bottom:32px;direction:rtl;line-height:1.5}
+.tagline{font-family:var(--fd);font-size:24px;font-weight:700;line-height:1.25;color:var(--dtp);margin-bottom:12px}
 .tagline-sub{font-size:15px;color:var(--c400);margin-bottom:36px;line-height:1.5}
 
 /* Feature Bullets — components/composite/ */
@@ -188,8 +184,7 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 
 .login-card{width:100%;max-width:440px}
 .login-card h1{font-family:var(--fd);font-size:30px;font-weight:700;color:var(--ltp);margin-bottom:2px;letter-spacing:-.3px}
-.login-card .sub-label{font-size:15px;color:var(--ltt);margin-bottom:8px}
-.login-card .sub-label-ar{font-family:var(--fa);font-size:14px;color:var(--c400);direction:rtl;margin-bottom:32px}
+.login-card .sub-label{font-size:15px;color:var(--ltt);margin-bottom:32px}
 
 /* ═══════════════════════════════════════════════════════════════
    Form — components/ui/form/ + components/ui/input/ + components/ui/button/
@@ -246,12 +241,10 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 [dir="rtl"] .tooltip-content{transform:translateX(50%)}
 [dir="rtl"] .tooltip-trigger:hover+.tooltip-content,.tooltip-content:hover{transform:translateX(50%)}
 
-/* Checkbox + Forgot — components/ui/ */
-.check-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+/* Remember me */
+.check-row{display:flex;align-items:center;margin-bottom:28px}
 .check-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--lts);cursor:pointer}
 .check-label input[type="checkbox"]{width:16px;height:16px;accent-color:var(--l600);cursor:pointer;border-radius:3px}
-.forgot-link{font-size:13px;color:var(--t500);text-decoration:none;font-weight:500;transition:color var(--tf)}
-.forgot-link:hover{color:var(--t400);text-decoration:underline}
 
 /* Login Button — components/ui/button/Button.tsx */
 .btn-login{
@@ -280,51 +273,8 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 .alert-err.show{display:flex}
 .alert-err svg{width:18px;height:18px;flex-shrink:0;margin-top:1px;color:var(--dng500)}
 
-/* Token Info Banner — auth flow documentation */
-.token-banner{
-  display:flex;align-items:flex-start;gap:10px;
-  padding:14px 16px;border-radius:var(--rmd);
-  background:var(--inf100);border:1px solid rgba(59,130,246,.2);color:var(--inftxt);
-  font-size:12px;line-height:1.6;margin-top:24px;
-}
-.token-banner svg{width:16px;height:16px;flex-shrink:0;margin-top:2px;color:var(--inf500)}
-.token-banner strong{font-weight:600}
-.token-banner code{font-family:'Cairo',monospace;font-size:11px;background:rgba(59,130,246,.08);padding:1px 5px;border-radius:3px}
-
 /* ═══════════════════════════════════════════════════════════════
-   Role Chips — lib/constants/roles.ts
-   Enum: Owner | Manager | Trainer | Member
-   ═══════════════════════════════════════════════════════════════ */
-.role-section{margin-top:32px;padding-top:24px;border-top:1px solid var(--ls3)}
-.role-section .role-title{font-size:11px;font-weight:600;color:var(--ltt);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
-.role-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.role-chip{
-  display:flex;align-items:center;gap:7px;
-  padding:8px 16px;border-radius:var(--rpl);
-  font-size:12px;font-weight:600;border:1px solid;
-  transition:all var(--tf);cursor:default;
-}
-.role-chip .chip-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
-
-.role-chip.owner{background:rgba(160,224,64,.06);border-color:rgba(160,224,64,.25);color:var(--l600)}
-.role-chip.owner .chip-dot{background:var(--l500)}
-.role-chip.owner:hover{background:rgba(160,224,64,.12);border-color:rgba(160,224,64,.4)}
-
-.role-chip.manager{background:rgba(20,143,143,.05);border-color:rgba(20,143,143,.2);color:var(--t500)}
-.role-chip.manager .chip-dot{background:var(--t500)}
-.role-chip.manager:hover{background:rgba(20,143,143,.1);border-color:rgba(20,143,143,.35)}
-
-.role-chip.trainer{background:rgba(251,191,36,.05);border-color:rgba(251,191,36,.2);color:#D97706}
-.role-chip.trainer .chip-dot{background:#FBBF24}
-.role-chip.trainer:hover{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.35)}
-
-.role-desc{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-.role-desc-item{font-size:11px;color:var(--ltt);line-height:1.4}
-.role-desc-item strong{font-weight:600;color:var(--lts)}
-.role-note{font-size:11px;color:var(--ltt);font-style:italic}
-
-/* ═══════════════════════════════════════════════════════════════
-   Responsive — hooks/use-media-query.ts
+   Responsive
    ═══════════════════════════════════════════════════════════════ */
 @media(max-width:1024px){
   .brand-panel{width:38%;padding:40px 28px}
@@ -343,7 +293,6 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 @media(max-width:480px){
   .login-panel{padding:28px 16px}
   .brand-panel{padding:28px 16px}
-  .role-chips{flex-direction:column}
 }
 </style>
 </head>
@@ -368,10 +317,9 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
         <span>HyMotion</span>
       </div>
 
-      <!-- Tagline — lib/i18n/en.json + ar.json -->
-      <div class="tagline" data-i18n="tagline">Manage your gym<br>with clarity</div>
-      <div class="tagline-ar" data-i18n="taglineAr">أدّر ناديك بوضوح</div>
-      <div class="tagline-sub" data-i18n="taglineSub">The operations platform built for fitness businesses across the region.</div>
+      <!-- Tagline — one locale at a time (no dual EN+AR paint) -->
+      <div class="tagline" data-login-i18n="tagline">Manage your gym<br>with clarity</div>
+      <div class="tagline-sub" data-login-i18n="taglineSub">The operations platform built for fitness businesses across the region.</div>
 
       <!-- Feature Bullets — components/composite/ -->
       <div class="features">
@@ -380,8 +328,8 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
           </div>
           <div class="feat-text">
-            <h4 data-i18n="feat1Title">Real-time Dashboard</h4>
-            <p data-i18n="feat1Desc">Live attendance, revenue, and member metrics at a glance.</p>
+            <h4 data-login-i18n="feat1Title">Real-time Dashboard</h4>
+            <p data-login-i18n="feat1Desc">Live attendance, revenue, and member metrics at a glance.</p>
           </div>
         </div>
         <div class="feat">
@@ -389,8 +337,8 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
           </div>
           <div class="feat-text">
-            <h4 data-i18n="feat2Title">Member Management</h4>
-            <p data-i18n="feat2Desc">Track memberships, freeze accounts, and manage renewals.</p>
+            <h4 data-login-i18n="feat2Title">Member Management</h4>
+            <p data-login-i18n="feat2Desc">Track memberships, freeze accounts, and manage renewals.</p>
           </div>
         </div>
         <div class="feat">
@@ -398,8 +346,8 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div class="feat-text">
-            <h4 data-i18n="feat3Title">Role-based Access</h4>
-            <p data-i18n="feat3Desc">Owner, Manager, and Trainer roles with scoped permissions.</p>
+            <h4 data-login-i18n="feat3Title">Role-based Access</h4>
+            <p data-login-i18n="feat3Desc">Owner, Manager, and Trainer roles with scoped permissions.</p>
           </div>
         </div>
       </div>
@@ -415,23 +363,22 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
        ═══════════════════════════════════════════════════════════ -->
   <div class="login-panel">
 
-    <!-- Language Toggle — components/layout/lang-switcher/LangSwitcher.tsx -->
+    <!-- Language Toggle — shows CURRENT locale -->
     <button class="lang-toggle" id="langToggle" type="button">
       <span class="lang-dot"></span>
-      <span id="langLabel">AR عربي</span>
+      <span id="langLabel">EN English</span>
     </button>
 
     <div class="login-card">
 
-      <!-- Heading — lib/i18n/en.json + ar.json -->
-      <h1 data-i18n="welcomeBack">Welcome back</h1>
-      <p class="sub-label" data-i18n="staffPortal">Staff Portal</p>
-      <p class="sub-label-ar" data-i18n="staffPortalAr">بوابة الموظفين</p>
+      <!-- Heading — one locale at a time -->
+      <h1 data-login-i18n="welcomeBack">Welcome back</h1>
+      <p class="sub-label" data-login-i18n="staffPortal">Staff Portal</p>
 
       <!-- Error Alert — State: Error -->
       <div class="alert-err" id="alertErr">
         <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-11.25a.75.75 0 011.5 0v4.5a.75.75 0 01-1.5 0v-4.5zM10 14a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
-        <span data-i18n="errInvalid">Invalid credentials or gym code. Please check and try again.</span>
+        <span data-login-i18n="errInvalid">Invalid credentials or gym code. Please check and try again.</span>
       </div>
 
       <!--
@@ -445,89 +392,57 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 
         <!-- Email — components/ui/input/ -->
         <div class="form-group">
-          <label for="email" data-i18n="emailLabel">Email <span class="req">*</span></label>
+          <label for="email" data-login-i18n="emailLabel">Email <span class="req">*</span></label>
           <input class="form-input" type="email" id="email" name="email"
                  placeholder="you@gym.com" autocomplete="email" required
-                 data-i18n-placeholder="emailPh">
-          <div class="form-err-text" id="emailErr" data-i18n="emailErr">Please enter a valid email address</div>
+                 data-login-i18n-placeholder="emailPh">
+          <div class="form-err-text" id="emailErr" data-login-i18n="emailErr">Please enter a valid email address</div>
         </div>
 
         <!-- Password — components/ui/input/ + show/hide toggle -->
         <div class="form-group">
-          <label for="password" data-i18n="pwLabel">Password <span class="req">*</span></label>
+          <label for="password" data-login-i18n="pwLabel">Password <span class="req">*</span></label>
           <div class="pw-wrap">
             <input class="form-input" type="password" id="password" name="password"
                    placeholder="Enter your password" autocomplete="current-password" required
-                   data-i18n-placeholder="pwPh">
+                   data-login-i18n-placeholder="pwPh">
             <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password visibility">
               <svg id="eyeOpen" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <svg id="eyeClosed" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
-          <div class="form-err-text" id="pwErr" data-i18n="pwErr">Password is required</div>
+          <div class="form-err-text" id="pwErr" data-login-i18n="pwErr">Password is required</div>
         </div>
 
-        <!-- Gym Code — Multi-tenant identifier -->
+        <!-- Gym Code — tenant identifier from your gym owner -->
         <div class="form-group">
           <label for="gymCode">
-            <span data-i18n="gymCodeLabel">Gym Code</span> <span class="req">*</span>
+            <span data-login-i18n="gymCodeLabel">Gym Code</span> <span class="req">*</span>
             <span class="tooltip-wrap">
               <button type="button" class="tooltip-trigger" aria-label="What is a gym code?">?</button>
-              <span class="tooltip-content" data-i18n="gymCodeTooltip">A unique identifier for your gym branch (e.g. <strong>GYM-CAIRO-01</strong>). Provided by your gym owner or found in your invitation email.</span>
+              <span class="tooltip-content" data-login-i18n="gymCodeTooltip">The code for your gym. Ask your gym owner or manager if you do not have it.</span>
             </span>
           </label>
           <input class="form-input" type="text" id="gymCode" name="gymCode"
-                 placeholder="GYM-CAIRO-01" autocomplete="organization" required
-                 data-i18n-placeholder="gymCodePh">
-          <div class="form-hint" data-i18n="gymCodeHint">Identifies your gym branch for multi-tenant access</div>
-          <div class="form-err-text" id="gymCodeErr" data-i18n="gymCodeErr">Gym code is required</div>
+                 placeholder="Your gym code" autocomplete="organization" required
+                 data-login-i18n-placeholder="gymCodePh">
+          <div class="form-hint" data-login-i18n="gymCodeHint">Ask your gym owner if you do not know this code</div>
+          <div class="form-err-text" id="gymCodeErr" data-login-i18n="gymCodeErr">Gym code is required</div>
         </div>
 
-        <!-- Remember me + Forgot password -->
+        <!-- Remember me (no self-service password reset) -->
         <div class="check-row">
           <label class="check-label">
             <input type="checkbox" name="remember" id="remember">
-            <span data-i18n="rememberMe">Remember me</span>
+            <span data-login-i18n="rememberMe">Remember me</span>
           </label>
-          <a href="#" class="forgot-link" data-i18n="forgotPw" id="forgotPwLink">Forgot password?</a>
         </div>
 
-        <!-- Login Button — components/ui/button/Button.tsx -->
-        <!-- States: Default → Loading (spinner) → Error (alert) -->
         <button type="submit" class="btn-login" id="btnLogin">
-          <span class="btn-text" data-i18n="signIn">Sign In</span>
+          <span class="btn-text" data-login-i18n="signIn">Sign In</span>
           <span class="spinner"><span class="spinner-circle"></span></span>
         </button>
       </form>
-
-      <p style="margin:16px 0 0;font-size:13px;text-align:center;color:var(--ltt)">
-        <a href="/auth/member-otp/" class="forgot-link" data-i18n="memberOtpLink">Member phone OTP (stub)</a>
-      </p>
-
-      <!-- Token Info Banner — Token-Expired silent refresh (§1) -->
-      <div class="token-banner">
-        <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm6.5-.25A.75.75 0 017.25 7h1a.75.75 0 01.75.75v2.75h.25a.75.75 0 010 1.5h-2a.75.75 0 010-1.5h.25v-2h-.25a.75.75 0 01-.75-.75zM8 4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
-        <span data-i18n="tokenInfo"><strong>Session security:</strong> Access token <code>15 min</code> · Refresh token <code>30 days</code> · Silent refresh when <code>Token-Expired: true</code></span>
-      </div>
-
-      <!-- ═══════════════════════════════════════════════════════
-           Role Context — lib/constants/roles.ts
-           Enum: Owner | Manager | Trainer | Member
-           ═══════════════════════════════════════════════════════ -->
-      <div class="role-section">
-        <div class="role-title" data-i18n="roleTitle">Available Roles</div>
-        <div class="role-chips">
-          <span class="role-chip owner"><span class="chip-dot"></span><span data-i18n="roleOwner">Owner</span></span>
-          <span class="role-chip manager"><span class="chip-dot"></span><span data-i18n="roleManager">Manager</span></span>
-          <span class="role-chip trainer"><span class="chip-dot"></span><span data-i18n="roleTrainer">Trainer</span></span>
-        </div>
-        <div class="role-desc">
-          <div class="role-desc-item"><strong data-i18n="roleOwnerDesc">Owner</strong> — <span data-i18n="roleOwnerDetail">Full access: billing, staff, plans, settings</span></div>
-          <div class="role-desc-item"><strong data-i18n="roleManagerDesc">Manager</strong> — <span data-i18n="roleManagerDetail">Members, memberships, attendance, reports</span></div>
-          <div class="role-desc-item"><strong data-i18n="roleTrainerDesc">Trainer</strong> — <span data-i18n="roleTrainerDetail">Attendance check-in, member view only</span></div>
-        </div>
-        <div class="role-note" data-i18n="roleNote">Your role is determined by your administrator.</div>
-      </div>
 
     </div>
   </div>
@@ -543,17 +458,15 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
   const translations = {
     en: {
       tagline: 'Manage your gym<br>with clarity',
-      taglineAr: 'أدّر ناديك بوضوح',
       taglineSub: 'The operations platform built for fitness businesses across the region.',
       feat1Title: 'Real-time Dashboard',
       feat1Desc: 'Live attendance, revenue, and member metrics at a glance.',
       feat2Title: 'Member Management',
       feat2Desc: 'Track memberships, freeze accounts, and manage renewals.',
       feat3Title: 'Role-based Access',
-      feat3Desc: 'Owner, Manager, and Trainer roles with scoped permissions.',
+      feat3Desc: 'Owner, Manager, Trainer, and Receptionist roles with scoped permissions.',
       welcomeBack: 'Welcome back',
       staffPortal: 'Staff Portal',
-      staffPortalAr: 'بوابة الموظفين',
       emailLabel: 'Email <span class="req">*</span>',
       emailPh: 'you@gym.com',
       emailErr: 'Please enter a valid email address',
@@ -561,41 +474,25 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
       pwPh: 'Enter your password',
       pwErr: 'Password is required',
       gymCodeLabel: 'Gym Code',
-      gymCodePh: 'GYM-CAIRO-01',
-      gymCodeHint: 'Identifies your gym branch for multi-tenant access',
+      gymCodePh: 'Your gym code',
+      gymCodeHint: 'Ask your gym owner if you do not know this code',
       gymCodeErr: 'Gym code is required',
-      gymCodeTooltip: 'A unique identifier for your gym branch (e.g. <strong>GYM-CAIRO-01</strong>). Provided by your gym owner or found in your invitation email.',
+      gymCodeTooltip: 'The code for your gym. Ask your gym owner or manager if you do not have it.',
       rememberMe: 'Remember me',
-      forgotPw: 'Forgot password?',
       signIn: 'Sign In',
-      errInvalid: 'Invalid credentials or gym code. Please check and try again.',
-      memberOtpLink: 'Member phone OTP (stub)',
-      tokenInfo: '<strong>Session security:</strong> Access token <code>15 min</code> · Refresh token <code>30 days</code> · Silent refresh when <code>Token-Expired: true</code>',
-      roleTitle: 'AVAILABLE ROLES',
-      roleOwner: 'Owner',
-      roleManager: 'Manager',
-      roleTrainer: 'Trainer',
-      roleOwnerDesc: 'Owner',
-      roleOwnerDetail: 'Full access: billing, staff, plans, settings',
-      roleManagerDesc: 'Manager',
-      roleManagerDetail: 'Members, memberships, attendance, reports',
-      roleTrainerDesc: 'Trainer',
-      roleTrainerDetail: 'Attendance check-in, member view only',
-      roleNote: 'Your role is determined by your administrator.'
+      errInvalid: 'Invalid credentials or gym code. Please check and try again.'
     },
     ar: {
       tagline: 'أدّر ناديك<br>بوضوح',
-      taglineAr: 'أدّر ناديك بوضوح',
       taglineSub: 'منصة العمليات المصممة لأعمال اللياقة في المنطقة.',
       feat1Title: 'لوحة تحكم فورية',
       feat1Desc: 'الحضور والإيرادات وإحصائيات الأعضاء في لمحة.',
       feat2Title: 'إدارة الأعضاء',
       feat2Desc: 'تتبع الاشتراكات، وجّم الحسابات، وأدِر التجديدات.',
       feat3Title: 'صلاحيات حسب الدور',
-      feat3Desc: 'أدوار المالك والمدير والمدرب مع صلاحيات محددة.',
+      feat3Desc: 'أدوار المالك والمدير والمدرب والاستقبال مع صلاحيات محددة.',
       welcomeBack: 'مرحباً بعودتك',
       staffPortal: 'بوابة الموظفين',
-      staffPortalAr: 'بوابة الموظفين',
       emailLabel: 'البريد الإلكتروني <span class="req">*</span>',
       emailPh: 'you@gym.com',
       emailErr: 'يرجى إدخال بريد إلكتروني صالح',
@@ -603,53 +500,67 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
       pwPh: 'أدخل كلمة المرور',
       pwErr: 'كلمة المرور مطلوبة',
       gymCodeLabel: 'رمز النادي',
-      gymCodePh: 'GYM-CAIRO-01',
-      gymCodeHint: 'يُعرّف فرع ناديك للوصول المتعدد المستأجرين',
+      gymCodePh: 'رمز ناديك',
+      gymCodeHint: 'اسأل مالك النادي إذا لم تعرف هذا الرمز',
       gymCodeErr: 'رمز النادي مطلوب',
-      gymCodeTooltip: 'معرّف فريد لفرع ناديك (مثال <strong>GYM-CAIRO-01</strong>). يُقدّمه مالك النادي أو تجده في بريد الدعوة.',
+      gymCodeTooltip: 'رمز ناديك. اسأل مالك النادي أو المدير إذا لم يكن لديك.',
       rememberMe: 'تذكرني',
-      forgotPw: 'نسيت كلمة المرور؟',
       signIn: 'تسجيل الدخول',
-      errInvalid: 'بيانات اعتماد أو رمز نادي غير صالح. يرجى التحقق والمحاولة مرة أخرى.',
-      memberOtpLink: 'دخول العضو برمز الهاتف (تجريبي)',
-      tokenInfo: '<strong>أمان الجلسة:</strong> رمز الوصول <code>15 دقيقة</code> · رمز التحديث <code>30 يوم</code> · تحديث صامت عند <code>Token-Expired: true</code>',
-      roleTitle: 'الأدوار المتاحة',
-      roleOwner: 'مالك',
-      roleManager: 'مدير',
-      roleTrainer: 'مدرب',
-      roleOwnerDesc: 'مالك',
-      roleOwnerDetail: 'وصول كامل: الفواتير، الموظفين، الخطط، الإعدادات',
-      roleManagerDesc: 'مدير',
-      roleManagerDetail: 'الأعضاء، الاشتراكات، الحضور، التقارير',
-      roleTrainerDesc: 'مدرب',
-      roleTrainerDetail: 'تسجيل الحضور، عرض الأعضاء فقط',
-      roleNote: 'يتم تحديد دورك من قبل مسؤول النظام.'
+      errInvalid: 'بيانات اعتماد أو رمز نادي غير صالح. يرجى التحقق والمحاولة مرة أخرى.'
     }
   };
 
   let currentLang = 'en';
 
   function applyTranslations(lang) {
-    currentLang = lang;
-    const t = translations[lang];
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
+    currentLang = lang === 'ar' ? 'ar' : 'en';
+    const t = translations[currentLang];
+    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = currentLang;
 
-    document.querySelectorAll('[data-i18n]').forEach(function(el) {
-      const key = el.getAttribute('data-i18n');
+    document.querySelectorAll('[data-login-i18n]').forEach(function(el) {
+      const key = el.getAttribute('data-login-i18n');
       if (t[key] !== undefined) el.innerHTML = t[key];
     });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
-      const key = el.getAttribute('data-i18n-placeholder');
+    document.querySelectorAll('[data-login-i18n-placeholder]').forEach(function(el) {
+      const key = el.getAttribute('data-login-i18n-placeholder');
       if (t[key] !== undefined) el.placeholder = t[key];
     });
 
-    document.getElementById('langLabel').textContent = lang === 'en' ? 'AR عربي' : 'EN English';
+    document.getElementById('langLabel').textContent = currentLang === 'en' ? 'EN English' : 'AR عربي';
+
+    try {
+      if (window.GfpI18n && typeof window.GfpI18n.setLocale === 'function') {
+        // Persist for desk pages; avoid infinite loop if setLocale re-enters.
+        if (window.GfpI18n.getLocale() !== currentLang) {
+          window.GfpI18n.setLocale(currentLang);
+        }
+      } else {
+        localStorage.setItem('gfp_locale', currentLang);
+      }
+    } catch (e) { /* ignore */ }
   }
+
+  // Boot from shared locale — never leave raw keys on screen.
+  try {
+    currentLang = (window.GfpI18n && window.GfpI18n.getLocale)
+      ? window.GfpI18n.getLocale()
+      : (localStorage.getItem('gfp_locale') || 'en');
+  } catch (e) { currentLang = 'en'; }
+  applyTranslations(currentLang === 'ar' ? 'ar' : 'en');
 
   // ── Language Toggle — components/layout/lang-switcher/LangSwitcher.tsx ──
   document.getElementById('langToggle').addEventListener('click', function() {
     applyTranslations(currentLang === 'en' ? 'ar' : 'en');
+  });
+  window.addEventListener('gfp:locale', function() {
+    var loc = 'en';
+    try {
+      loc = (window.GfpI18n && window.GfpI18n.getLocale)
+        ? window.GfpI18n.getLocale()
+        : (localStorage.getItem('gfp_locale') || 'en');
+    } catch (e) {}
+    if (loc !== currentLang) applyTranslations(loc === 'ar' ? 'ar' : 'en');
   });
 
   // ── Password Toggle — components/ui/input/ ──
@@ -822,19 +733,6 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
       if (errEl) errEl.classList.remove('show');
     });
   });
-
-  // ── Forgot Password — no self-service reset; direct to gym owner ──
-  var forgotLink = document.getElementById('forgotPwLink');
-  if (forgotLink) {
-    forgotLink.addEventListener('click', function(e) {
-      e.preventDefault();
-      var msg =
-        window.GfpI18n && typeof window.GfpI18n.t === 'function'
-          ? window.GfpI18n.t('auth.forgotPwNotAvailable')
-          : 'auth.forgotPwNotAvailable';
-      alert(msg);
-    });
-  }
 
   // ── Auto-restore session if token exists → claim-driven default landing ──
   (async function checkExistingSession() {
