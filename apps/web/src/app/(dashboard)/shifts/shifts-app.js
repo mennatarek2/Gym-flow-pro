@@ -8,6 +8,12 @@
 
   var API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || ''; // REM-F3
 
+  function t(en, ar) {
+    var I18n = window.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return en;
+  }
+
   var SHIFT_409 = {
     SHIFT_ALREADY_OPEN: 'A shift is already open for this staff member. Close it before opening another.',
     NO_OPEN_SHIFT: 'No open shift. Open a drawer with an opening float first.',
@@ -426,47 +432,47 @@
 
     var expectedCell =
       s.status === 'open'
-        ? '<strong class="muted">Hidden (blind)</strong>'
+        ? '<strong class="muted">' + esc(t('Hidden (blind)', 'مخفي (تعمية)')) + '</strong>'
         : '<strong class="stat-val">' + esc(money(s.expectedCash)) + '</strong>';
 
     var html =
       '<div class="kv">' +
-      '<div class="kv-row"><span class="stat-lbl">Staff</span><strong>' +
+      '<div class="kv-row"><span class="stat-lbl">' + esc(t('Staff', 'الموظف')) + '</span><strong>' +
       esc(s.userName || s.userId) +
       '</strong></div>' +
-      '<div class="kv-row"><span class="stat-lbl">Opened</span><strong>' +
+      '<div class="kv-row"><span class="stat-lbl">' + esc(t('Opened', 'وقت الفتح')) + '</span><strong>' +
       esc(dt(s.openedAt)) +
       '</strong></div>' +
-      '<div class="kv-row"><span class="stat-lbl">Opening float</span><strong class="stat-val">' +
+      '<div class="kv-row"><span class="stat-lbl">' + esc(t('Opening float', 'رصيد الفتح')) + '</span><strong class="stat-val">' +
       esc(money(s.openingFloat)) +
       '</strong></div>' +
-      '<div class="kv-row"><span class="stat-lbl">Expected cash</span>' +
+      '<div class="kv-row"><span class="stat-lbl">' + esc(t('Expected cash', 'النقدية المتوقعة')) + '</span>' +
       expectedCell +
       '</div>';
 
     if (s.status !== 'open') {
       html +=
-        '<div class="kv-row"><span class="stat-lbl">Counted</span><strong class="stat-val">' +
+        '<div class="kv-row"><span class="stat-lbl">' + esc(t('Counted', 'المحسوب')) + '</span><strong class="stat-val">' +
         esc(money(s.countedCash)) +
         '</strong></div>' +
-        '<div class="kv-row"><span class="stat-lbl">Variance</span><div>' +
+        '<div class="kv-row"><span class="stat-lbl">' + esc(t('Variance', 'الفرق')) + '</span><div>' +
         varianceHtml(s.variance) +
         '</div></div>';
     }
 
     html +=
-      '<div class="kv-row"><span class="stat-lbl">Movements</span><strong class="stat-val" style="font-size:18px" id="movCountVal">' +
+      '<div class="kv-row"><span class="stat-lbl">' + esc(t('Movements', 'الحركات')) + '</span><strong class="stat-val" style="font-size:18px" id="movCountVal">' +
       esc(String(movementTotalCount)) +
       '</strong></div></div>';
 
     if (s.status === 'open') {
       html +=
-        '<div class="blind-note"><i class="ti ti-eye-off"></i> Blind count active — expected cash is null until you submit the physical count. Do not calculate it from the movements list.</div>';
+        '<div class="blind-note"><i class="ti ti-eye-off"></i> ' + esc(t('Blind count active — expected cash is null until you submit the physical count. Do not calculate it from the movements list.', 'التعمية شغالة — النقدية المتوقعة هتفضل فاضية لحد ما تدخل الجرد الفعلي. متحسبهاش من قايمة الحركات.')) + '</div>';
     } else if (canFinancial && s.id) {
       html +=
         '<p class="hint" style="margin-top:12px"><a href="/dashboard/z-report/?shiftId=' +
         encodeURIComponent(s.id) +
-        '">View Z-Report</a></p>';
+        '">' + esc(t('View Z-Report', 'عرض تقرير Z')) + '</a></p>';
     }
 
     document.getElementById('currentBody').innerHTML = html;
@@ -506,20 +512,20 @@
   function renderOpenActions(el, s) {
     if (s.status !== 'open') {
       el.innerHTML =
-        '<p class="muted">Current shift is <strong>' + esc(s.status) + '</strong>.</p>';
+        '<p class="muted">' + esc(t('Current shift is', 'الوردية الحالية')) + ' <strong>' + esc(s.status) + '</strong>.</p>';
       return;
     }
-    var html = '<p class="muted">Close with a physical count. Variance appears only after submit.</p>';
+    var html = '<p class="muted">' + esc(t('Close with a physical count. Variance appears only after submit.', 'اقفل الوردية بجرد فعلي. الفرق هيظهر بعد التسليم بس.')) + '</p>';
     if (canClose) {
       html +=
         '<form class="form-stack" id="closeForm">' +
-        '<label>Counted cash (EGP)<input type="number" id="countedCash" step="0.01" min="0" required></label>' +
+        '<label>' + esc(t('Counted cash (EGP)', 'النقدية المحسوبة (جنيه)')) + '<input type="number" id="countedCash" step="0.01" min="0" required></label>' +
         '<div class="count-hint" id="countedHint"></div>' +
-        '<label>Variance note (optional)<textarea id="varianceNote" rows="2" placeholder="Required by policy if variance is large"></textarea></label>' +
-        '<button class="btn primary" type="submit" id="btnCloseShift"><i class="ti ti-lock"></i> Close shift (blind count)</button>' +
+        '<label>' + esc(t('Variance note (optional)', 'ملاحظة الفرق (اختياري)')) + '<textarea id="varianceNote" rows="2" placeholder="' + esc(t('Required by policy if variance is large', 'مطلوبة لو الفرق كبير')) + '"></textarea></label>' +
+        '<button class="btn primary" type="submit" id="btnCloseShift"><i class="ti ti-lock"></i> ' + esc(t('Close shift (blind count)', 'قفل الوردية (تعمية)')) + '</button>' +
         '</form>';
     } else {
-      html += '<p class="muted">Missing <code>shift.close</code>.</p>';
+      html += '<p class="muted">' + esc(t('Missing', 'ناقص')) + ' <code>shift.close</code>.</p>';
     }
     el.innerHTML = html;
 
@@ -535,10 +541,10 @@
             return;
           }
           if (v < 0) {
-            hint.textContent = 'Counted cash must be ≥ 0.';
+            hint.textContent = t('Counted cash must be ≥ 0.', 'النقدية المحسوبة لازم تكون ≥ 0.');
             return;
           }
-          hint.textContent = 'Ready to submit physical count: ' + money(v);
+          hint.textContent = t('Ready to submit physical count:', 'جاهز لتسليم الجرد الفعلي:') + ' ' + money(v);
         }, 350);
       });
     }

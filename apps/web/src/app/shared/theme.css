@@ -65,6 +65,16 @@ html[data-theme="dark"] {
   --dng500: #F87171;
   --inf100: #1A2A44;
   --inf500: #60A5FA;
+  /* "Frozen" status family (membership freeze badges) — declared ad-hoc per-page in light mode
+     (memberships.css / members.css / member-detail.css each redeclare --frz100/--frz500 in
+     their own :root); overridden here the same way suc/wrn/dng/inf are, since theme.css loads
+     last and this custom property wins over those page-local :root declarations. */
+  --frz100: #123A42;
+  --frz500: #22D3EE;
+  --frztxt: #67E8F9;
+  /* "Pending" reuses the warning family's light hue (--pnd100 == --wrn100 in every page that
+     declares it) — keep it in the same family for dark mode too. */
+  --pnd100: #3A2E12;
   --gfp-bg-app: #151716;
   --gfp-surface: #1C201D;
   --gfp-surface-2: #222722;

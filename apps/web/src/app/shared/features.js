@@ -7,6 +7,9 @@
  * Catalog = Products table + Suppliers table + Purchases. Hide warehouse /
  * transfers / counts / insights from owner nav. Engines + default warehouse stay.
  * PHASE_HIDE_STOCK_MANAGEMENT is forced on while shop UX is the product direction.
+ *
+ * PHASE_HIDE_OFFERS (2026-09-06 — pilot stage): Offers & Promotions is paused for the
+ * current phase — nav entry hidden, API/data untouched. Flip to false to bring it back.
  */
 (function (global) {
   'use strict';
@@ -17,6 +20,9 @@
   /** Shop UX: hide Stock Management hub / warehouses / transfers / counts for all tiers. */
   var SHOP_OWNER_UX = true;
   var PHASE_HIDE_STOCK_MANAGEMENT = SHOP_OWNER_UX;
+
+  /** Pilot stage: Offers & Promotions paused (nav hidden only — /api/offers untouched). */
+  var PHASE_HIDE_OFFERS = true;
 
   var FEATURE_MODULES = [
     'sales',
@@ -95,6 +101,7 @@
 
   async function probeModuleAvailable(module) {
     if (module === 'stock_management' && PHASE_HIDE_STOCK_MANAGEMENT) return false;
+    if (module === 'offers') return !PHASE_HIDE_OFFERS;
     var probe = PROBES[module];
     if (!probe) return !FAIL_CLOSED[module];
     try {
@@ -149,6 +156,7 @@
   function isModuleAvailable(key, registry) {
     if (!key) return true;
     if (key === 'stock_management' && PHASE_HIDE_STOCK_MANAGEMENT) return false;
+    if (key === 'offers') return !PHASE_HIDE_OFFERS;
     if (registry == null) return false;
     if (registry[key] === undefined) return false;
     return !!registry[key];
@@ -157,6 +165,7 @@
   var GfpFeatures = {
     FEATURE_MODULES: FEATURE_MODULES,
     PHASE_HIDE_STOCK_MANAGEMENT: PHASE_HIDE_STOCK_MANAGEMENT,
+    PHASE_HIDE_OFFERS: PHASE_HIDE_OFFERS,
     SHOP_OWNER_UX: SHOP_OWNER_UX,
     probeModuleAvailable: probeModuleAvailable,
     probeAllModules: probeAllModules,

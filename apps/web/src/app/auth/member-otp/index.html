@@ -12,7 +12,8 @@ body{font-family:var(--fb);background:var(--ls2);color:var(--ltp);min-height:100
 .card{background:var(--ls1);border:1px solid var(--ls3);border-radius:16px;padding:28px;width:100%;max-width:420px;box-shadow:0 8px 30px rgba(0,0,0,.08)}
 h1{font-family:var(--fd);font-size:22px;margin-bottom:4px}
 .sub{font-size:13px;color:var(--ltt);margin-bottom:20px;line-height:1.45}
-.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:#FEF3C7;color:#92400E;margin-bottom:12px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--wrn100,#FEF3C7);color:#92400E;margin-bottom:12px}
+html[data-theme="dark"] .badge{color:var(--gfp-wrn,#FCD34D)}
 label{display:block;font-size:12px;font-weight:600;margin:12px 0 6px}
 input{width:100%;height:44px;padding:0 12px;border:1px solid var(--ls3);border-radius:var(--rmd);font:inherit}
 .row{display:flex;gap:8px;margin-top:16px}
@@ -22,6 +23,7 @@ button{flex:1;height:44px;border:none;border-radius:var(--rmd);font-weight:700;c
 .msg{margin-top:14px;font-size:13px;min-height:1.2em}
 .msg.err{color:var(--dng)}
 .msg.ok{color:#166534}
+html[data-theme="dark"] .msg.ok{color:var(--gfp-suc,#86EFAC)}
 a{color:#148F8F;font-size:13px}
 </style>
 </head>

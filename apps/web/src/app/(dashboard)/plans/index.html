@@ -7,7 +7,7 @@
 <meta name="description" content="Manage membership plans, pricing, and plan types for your gym.">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="plans.css">
+<link rel="stylesheet" href="plans.css?v=theme1">
 </head>
 <body>
 <div class="app">
@@ -39,11 +39,11 @@
 <div class="main">
 <header class="topbar">
   <div class="tb-left">
-    <div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current">Membership Plans</span></div>
+    <div class="tb-breadcrumb"><span data-en="Catalog" data-ar="الكتالوج">Catalog</span><span class="sep">/</span><span class="current" data-en="Membership Plans" data-ar="باقات العضوية">Membership Plans</span></div>
   </div>
   <div class="tb-right">
     <div class="gym-name" id="gymName">Fitness Hub</div>
-    <div class="gym-name-ar" id="gymNameAr"></div>
+    <div class="gym-name-ar" id="gymNameAr" hidden></div>
   </div>
 </header>
 
@@ -51,19 +51,19 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="ph-left">
-      <h1 class="page-title">Membership Plans <span class="title-ar">/ باقات العضوية</span></h1>
-      <p class="page-subtitle">Manage your gym's pricing plans and packages</p>
+      <h1 class="page-title" data-en="Membership Plans" data-ar="باقات العضوية">Membership Plans</h1>
+      <p class="page-subtitle" data-en="Manage your gym's pricing plans and packages" data-ar="إدارة باقات وأسعار النادي">Manage your gym's pricing plans and packages</p>
     </div>
     <div class="ph-right">
-      <button class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> Create Plan</button>
+      <button class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="Create Plan" data-ar="إنشاء باقة">Create Plan</span></button>
     </div>
   </div>
 
   <!-- Stats Bar -->
   <div class="stats-bar" id="statsBar">
-    <div class="stat-pill"><i class="ti ti-package"></i><span id="statTotal">0</span> Plans</div>
-    <div class="stat-pill active"><i class="ti ti-check"></i><span id="statActive">0</span> Active</div>
-    <div class="stat-pill inactive"><i class="ti ti-x"></i><span id="statInactive">0</span> Inactive</div>
+    <div class="stat-pill"><i class="ti ti-package"></i><span id="statTotal">0</span> <span data-en="Plans" data-ar="باقات">Plans</span></div>
+    <div class="stat-pill active"><i class="ti ti-check"></i><span id="statActive">0</span> <span data-en="Active" data-ar="نشط">Active</span></div>
+    <div class="stat-pill inactive"><i class="ti ti-x"></i><span id="statInactive">0</span> <span data-en="Inactive" data-ar="غير نشط">Inactive</span></div>
   </div>
 
   <!-- Plans Grid -->
@@ -88,6 +88,6 @@
 <div class="toast" id="toast"></div>
 
 <!-- Auth, GfpApi, plans.manage gate, and page logic live in plans-app.js (§3) -->
-<script src="plans-app.js?v=ent2"></script>
+<script src="plans-app.js?v=locale1"></script>
 </body>
 </html>

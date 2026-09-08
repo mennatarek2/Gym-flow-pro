@@ -34,6 +34,7 @@
       global.document.body.classList.toggle('gfp-rtl', locale === 'ar');
       global.document.body.classList.toggle('gfp-ltr', locale !== 'ar');
     }
+    normalizeLegacySlashTitles();
     applyDataLocaleAttributes(locale);
     applyDataI18nAttributes(locale);
   }
@@ -83,6 +84,26 @@
     return interpolate(String(template), params);
   }
 
+  /** Convert leftover `Title <span class="title-ar">/ الترجمة</span>` into data-en/data-ar. */
+  function normalizeLegacySlashTitles() {
+    var root = global.document;
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('.title-ar, .title-ar-sm').forEach(function (span) {
+      var parent = span.parentNode;
+      if (!parent || parent.nodeType !== 1) return;
+      var ar = String(span.textContent || '').replace(/^\s*\/\s*/, '').trim();
+      var enBits = [];
+      Array.prototype.forEach.call(parent.childNodes, function (n) {
+        if (n === span) return;
+        if (n.nodeType === 3 && String(n.textContent).trim()) enBits.push(String(n.textContent).trim());
+      });
+      var en = enBits.join(' ');
+      if (!parent.getAttribute('data-en') && en) parent.setAttribute('data-en', en);
+      if (!parent.getAttribute('data-ar') && ar) parent.setAttribute('data-ar', ar);
+      if (span.parentNode) span.parentNode.removeChild(span);
+    });
+  }
+
   function applyDataLocaleAttributes(locale) {
     locale = locale || getLocale();
     var root = global.document;
@@ -100,6 +121,14 @@
         el.textContent = text;
       } else if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
         el.textContent = text;
+      } else {
+        var tn = null;
+        var i;
+        for (i = 0; i < el.childNodes.length; i++) {
+          var n = el.childNodes[i];
+          if (n.nodeType === 3 && String(n.textContent).trim()) tn = n;
+        }
+        if (tn) tn.textContent = ' ' + text;
       }
     });
 

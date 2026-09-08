@@ -9,7 +9,7 @@
  * | Members         | Members, Attendance                                           |
  * | Front desk      | Sale, Member Orders, Call sheet                                |
  * | Shifts          | Current Shift, Z-Reports                                  |
- * | Money           | Offers & Promotions, Invoices, Reports                     |
+ * | Money           | Invoices, Reports (Offers & Promotions paused — pilot phase)  |
  * | Catalog         | Plans, Products, Suppliers, Purchases                         |
  * | Stock Management| hidden in shop UX (engines remain)                            |
  * | Inventory       | hidden in shop UX (Overview / Insights / Warehouses)          |
@@ -38,8 +38,8 @@
    *   path: string,
    *   icon: string,
    *   access: NavAccess,
-   *   featureFlag?: 'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr',
-   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr'>
+   *   featureFlag?: 'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr'|'offers',
+   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr'|'offers'>
    * }} NavItem
    */
 
@@ -171,13 +171,15 @@
       labelAr: 'المالية',
       items: [
         {
+          // Paused for the pilot phase (2026-09-06) — PHASE_HIDE_OFFERS in features.js.
+          // Page, API, and data are untouched; only the nav entry is hidden.
           key: 'offers',
           label: 'Offers & Promotions',
           labelAr: 'العروض والترويج',
           path: '/dashboard/offers/',
           icon: 'ti-discount-2',
           access: { kind: 'permission', value: ['sales.sell', 'plans.manage'] },
-          featureFlag: 'sales'
+          featureFlag: 'offers'
         },
         {
           key: 'invoices',

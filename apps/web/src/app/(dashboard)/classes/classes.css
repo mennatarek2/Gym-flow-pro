@@ -45,7 +45,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .tb-breadcrumb .current{color:var(--ltp)}
 .tb-right{text-align:right}
 .gym-name{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--ltp)}
-.gym-name-ar{font-family:var(--fa);font-size:11px;color:var(--ltt);direction:rtl}
+.gym-name-ar{display:none}
 .content{padding:28px 32px;flex:1}
 
 /* ── Page Header ── */

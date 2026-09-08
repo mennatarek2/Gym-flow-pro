@@ -249,6 +249,9 @@
 .offer-dates.warn .sub {
   color: #a16207;
 }
+html[data-theme="dark"] .offer-dates.warn .sub {
+  color: var(--gfp-wrn);
+}
 .offer-dates.mute {
   color: var(--ltt, #8c8c8c);
 }
@@ -342,6 +345,9 @@
 }
 .offer-menu button.danger {
   color: #991b1b;
+}
+html[data-theme="dark"] .offer-menu button.danger {
+  color: var(--gfp-dng);
 }
 .offer-drawer-ov {
   position: fixed;
@@ -664,6 +670,13 @@
 }
 .field.invalid .err {
   display: block;
+}
+html[data-theme="dark"] .field .err {
+  color: var(--gfp-dng);
+}
+html[data-theme="dark"] .field.invalid input,
+html[data-theme="dark"] .field.invalid textarea {
+  background: rgba(239, 68, 68, 0.12);
 }
 .seg {
   display: flex;

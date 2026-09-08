@@ -25,6 +25,11 @@
 .recv-line{border:1px solid var(--ls3);border-radius:var(--rmd);padding:12px;margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;background:var(--ls2)}
 .recv-line h4{grid-column:1/-1;font-family:var(--fd);font-size:14px;margin:0 0 4px}
 .trunc-banner{background:var(--wrn100);color:#92400e;border:1px solid rgba(245,158,11,.35);border-radius:var(--rmd);padding:10px 12px;margin-bottom:12px;font-size:13px}
+html[data-theme="dark"] .badge-approved{color:var(--gfp-inf)}
+html[data-theme="dark"] .badge-partial,
+html[data-theme="dark"] .trunc-banner{color:var(--gfp-wrn)}
+html[data-theme="dark"] .badge-received{color:var(--gfp-suc)}
+html[data-theme="dark"] .badge-cancelled{color:var(--gfp-dng)}
 .muted{font-size:12px;color:var(--ltt)}
 .stock-link{font-weight:700;color:var(--inf500);text-decoration:none}
 .inv .prod-cell{display:flex;align-items:center;gap:10px}

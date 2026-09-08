@@ -102,14 +102,16 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .badge i{font-size:12px}
 .b-active{background:var(--suc100);color:var(--suc500)}
 .b-frozen{background:var(--frz100);color:#0891B2}
+html[data-theme="dark"] .b-frozen,
+html[data-theme="dark"] .freeze-banner{color:var(--frztxt)}
 .b-expired{background:var(--dng100);color:var(--dng500)}
 .b-pending{background:var(--wrn100);color:var(--wrn500)}
 .b-cancelled{background:var(--ls2);color:var(--ltt)}
 .b-monthly{background:var(--inf100);color:var(--inf500)}
 .b-sessions{background:var(--wrn100);color:var(--wrn500)}
-.b-time{background:#F3E8FF;color:#7C3AED}
-.b-pt{background:#CCFBF1;color:#0D9488}
-.b-family{background:#FFF1F2;color:#E11D48}
+.b-time{background:rgba(124,58,237,.1);color:#7C3AED}
+.b-pt{background:rgba(13,148,136,.1);color:#0D9488}
+.b-family{background:rgba(225,29,72,.1);color:#E11D48}
 
 /* Days Left Chip */
 .dl{font-size:12px;font-weight:700}

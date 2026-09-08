@@ -1,6 +1,12 @@
 (function (global) {
   'use strict';
 
+  function t(en, ar) {
+    var I18n = global.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return en;
+  }
+
   function getToken() {
     return localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
   }
@@ -42,102 +48,115 @@
   const TABS = {
     sales: {
       finance: true,
-      title: 'Sales',
-      pageTitle: 'Sales Report',
-      hint: 'Track sales and revenue performance.',
+      titleEn: 'Sales', titleAr: 'المبيعات',
+      pageTitleEn: 'Sales Report', pageTitleAr: 'تقرير المبيعات',
+      hintEn: 'Track sales and revenue performance.', hintAr: 'تابع أداء المبيعات والإيرادات.',
     },
     refunds: {
       finance: true,
-      title: 'Refunds',
-      pageTitle: 'Refunds',
-      hint: 'Review refunded transactions and their impact.',
+      titleEn: 'Refunds', titleAr: 'المرتجعات',
+      pageTitleEn: 'Refunds', pageTitleAr: 'المرتجعات',
+      hintEn: 'Review refunded transactions and their impact.', hintAr: 'راجع عمليات الاسترجاع وتأثيرها.',
     },
     profitability: {
       finance: true,
-      title: 'Profitability',
-      pageTitle: 'Profitability & Cash Flow',
-      hint: 'Separate revenue, costs, operating expenses, profit, and cash flow.',
+      titleEn: 'Profitability', titleAr: 'الربحية',
+      pageTitleEn: 'Profitability & Cash Flow', pageTitleAr: 'الربحية والتدفق النقدي',
+      hintEn: 'Separate revenue, costs, operating expenses, profit, and cash flow.', hintAr: 'الإيرادات والتكاليف والمصروفات التشغيلية والربح والتدفق النقدي كل على حدة.',
     },
     cashflow: {
       finance: true,
-      title: 'Cash Flow',
-      pageTitle: 'Cash Flow Report',
-      hint: 'See settled inflows and actual cash, payroll, supplier, and expense outflows.',
+      titleEn: 'Cash Flow', titleAr: 'التدفق النقدي',
+      pageTitleEn: 'Cash Flow Report', pageTitleAr: 'تقرير التدفق النقدي',
+      hintEn: 'See settled inflows and actual cash, payroll, supplier, and expense outflows.', hintAr: 'اطّلع على المقبوضات المسواة والمصروفات النقدية الفعلية للرواتب والموردين والمصاريف.',
     },
     expenses: {
       finance: true,
-      title: 'Running costs',
-      pageTitle: 'Running Costs',
-      hint: 'Add posted running costs (utilities, rent, operations). Payroll and supplier purchases stay separate.',
+      titleEn: 'Running costs', titleAr: 'التكاليف التشغيلية',
+      pageTitleEn: 'Running Costs', pageTitleAr: 'التكاليف التشغيلية',
+      hintEn: 'Add posted running costs (utilities, rent, operations). Payroll and supplier purchases stay separate.', hintAr: 'أضف التكاليف التشغيلية المرحّلة (مرافق، إيجار، تشغيل). الرواتب ومشتريات الموردين تبقى منفصلة.',
     },
     memberships: {
       finance: false,
-      title: 'Memberships',
-      pageTitle: 'Memberships',
-      hint: 'Track new memberships and renewals.',
+      titleEn: 'Memberships', titleAr: 'العضويات',
+      pageTitleEn: 'Memberships', pageTitleAr: 'العضويات',
+      hintEn: 'Track new memberships and renewals.', hintAr: 'تابع العضويات الجديدة والتجديدات.',
     },
     products: {
       finance: true,
-      title: 'Products',
-      pageTitle: 'Products',
-      hint: 'See which products are selling and generating revenue.',
+      titleEn: 'Products', titleAr: 'المنتجات',
+      pageTitleEn: 'Products', pageTitleAr: 'المنتجات',
+      hintEn: 'See which products are selling and generating revenue.', hintAr: 'اطّلع على المنتجات الأكثر مبيعًا وإيرادًا.',
     },
     staff: {
       finance: true,
-      title: 'Staff & Shifts',
-      pageTitle: 'Staff & Shifts',
-      hint: 'Review sales and shift activity by staff.',
+      titleEn: 'Staff & Shifts', titleAr: 'الموظفون والورديات',
+      pageTitleEn: 'Staff & Shifts', pageTitleAr: 'الموظفون والورديات',
+      hintEn: 'Review sales and shift activity by staff.', hintAr: 'راجع المبيعات ونشاط الورديات لكل موظف.',
     },
   };
+
+  function tabTitle(key) {
+    const m = TABS[key];
+    return m ? t(m.titleEn, m.titleAr) : '';
+  }
+  function tabPageTitle(key) {
+    const m = TABS[key];
+    return m ? t(m.pageTitleEn || m.titleEn, m.pageTitleAr || m.titleAr) : '';
+  }
+  function tabHint(key) {
+    const m = TABS[key];
+    return m ? t(m.hintEn, m.hintAr) : '';
+  }
 
   const CARDS = [
     {
       key: 'sales',
       icon: 'ti-receipt',
-      title: 'Sales',
-      desc: 'Money taken in this period, after cash refunds.',
+      titleEn: 'Sales', titleAr: 'المبيعات',
+      descEn: 'Money taken in this period, after cash refunds.', descAr: 'الأموال المحصّلة في هذه الفترة، بعد المرتجعات النقدية.',
     },
     {
       key: 'refunds',
       icon: 'ti-arrow-back-up',
-      title: 'Refunds',
-      desc: 'Executed cash and credit refunds. Cancel membership is not a refund.',
+      titleEn: 'Refunds', titleAr: 'المرتجعات',
+      descEn: 'Executed cash and credit refunds. Cancel membership is not a refund.', descAr: 'المرتجعات النقدية والائتمانية المنفّذة. إلغاء العضوية ليس مرتجعًا.',
     },
     {
       key: 'profitability',
       icon: 'ti-chart-donut',
-      title: 'Profitability',
-      desc: 'Reconciled profitability and cash-flow metrics with coverage warnings.',
+      titleEn: 'Profitability', titleAr: 'الربحية',
+      descEn: 'Reconciled profitability and cash-flow metrics with coverage warnings.', descAr: 'مؤشرات الربحية والتدفق النقدي المطابَقة مع تنبيهات التغطية.',
     },
     {
       key: 'expenses',
       icon: 'ti-wallet',
-      title: 'Expenses',
-      desc: 'Posted and voided operating expenses with structured audit metadata.',
+      titleEn: 'Expenses', titleAr: 'المصروفات',
+      descEn: 'Posted and voided operating expenses with structured audit metadata.', descAr: 'المصروفات التشغيلية المرحّلة والملغاة مع بيانات تدقيق منظمة.',
     },
     {
       key: 'cashflow',
       icon: 'ti-arrows-exchange',
-      title: 'Cash Flow',
-      desc: 'Settled inflows and actual outflows, kept separate from profit.',
+      titleEn: 'Cash Flow', titleAr: 'التدفق النقدي',
+      descEn: 'Settled inflows and actual outflows, kept separate from profit.', descAr: 'المقبوضات المسواة والمصروفات الفعلية، منفصلة عن الربح.',
     },
     {
       key: 'memberships',
       icon: 'ti-id',
-      title: 'Memberships',
-      desc: 'New memberships and renewals that started in this period.',
+      titleEn: 'Memberships', titleAr: 'العضويات',
+      descEn: 'New memberships and renewals that started in this period.', descAr: 'العضويات الجديدة والتجديدات التي بدأت في هذه الفترة.',
     },
     {
       key: 'products',
       icon: 'ti-shopping-bag',
-      title: 'Products',
-      desc: 'See which products are selling and generating revenue.',
+      titleEn: 'Products', titleAr: 'المنتجات',
+      descEn: 'See which products are selling and generating revenue.', descAr: 'اطّلع على المنتجات الأكثر مبيعًا وإيرادًا.',
     },
     {
       key: 'staff',
       icon: 'ti-users',
-      title: 'Staff & Shifts',
-      desc: 'Who handled the sales and shifts.',
+      titleEn: 'Staff & Shifts', titleAr: 'الموظفون والورديات',
+      descEn: 'Who handled the sales and shifts.', descAr: 'من تولّى المبيعات والورديات.',
     },
   ];
 
@@ -170,40 +189,45 @@
 
   const EMPTY = {
     sales: {
-      title: 'No sales for this period',
-      body: 'No successful payments in this date range. Try another period or take a sale.',
+      titleEn: 'No sales for this period', titleAr: 'لا توجد مبيعات لهذه الفترة',
+      bodyEn: 'No successful payments in this date range. Try another period or take a sale.',
+      bodyAr: 'لا توجد مدفوعات ناجحة في هذا النطاق الزمني. جرّب فترة أخرى أو سجّل عملية بيع.',
       href: '/dashboard/pos/',
-      cta: 'Open Sale',
+      ctaEn: 'Open Sale', ctaAr: 'فتح نقطة البيع',
     },
     refunds: {
-      title: 'No refunds for this period',
-      body: 'No executed refunds in this date range. Try another period.',
+      titleEn: 'No refunds for this period', titleAr: 'لا توجد مرتجعات لهذه الفترة',
+      bodyEn: 'No executed refunds in this date range. Try another period.',
+      bodyAr: 'لا توجد مرتجعات منفّذة في هذا النطاق الزمني. جرّب فترة أخرى.',
       href: '',
-      cta: '',
+      ctaEn: '', ctaAr: '',
     },
     memberships: {
-      title: 'No membership activity',
-      body: 'No memberships started in this period. Try another period or open a member.',
+      titleEn: 'No membership activity', titleAr: 'لا يوجد نشاط عضويات',
+      bodyEn: 'No memberships started in this period. Try another period or open a member.',
+      bodyAr: 'لم تبدأ أي عضوية في هذه الفترة. جرّب فترة أخرى أو افتح ملف عضو.',
       href: '/dashboard/members/',
-      cta: 'Open Members',
+      ctaEn: 'Open Members', ctaAr: 'فتح الأعضاء',
     },
     products: {
-      title: 'No product sales',
-      body: 'No retail products sold in this period. Try another period or take a sale.',
+      titleEn: 'No product sales', titleAr: 'لا توجد مبيعات منتجات',
+      bodyEn: 'No retail products sold in this period. Try another period or take a sale.',
+      bodyAr: 'لم تُباع منتجات تجزئة في هذه الفترة. جرّب فترة أخرى أو سجّل عملية بيع.',
       href: '/dashboard/pos/',
-      cta: 'Open Sale',
+      ctaEn: 'Open Sale', ctaAr: 'فتح نقطة البيع',
     },
     staff: {
-      title: 'No staff activity',
-      body: 'No payments, refunds, or shifts opened in this period. Open Current Shift to start a drawer.',
+      titleEn: 'No staff activity', titleAr: 'لا يوجد نشاط للموظفين',
+      bodyEn: 'No payments, refunds, or shifts opened in this period. Open Current Shift to start a drawer.',
+      bodyAr: 'لا توجد مدفوعات أو مرتجعات أو ورديات مفتوحة في هذه الفترة. افتح الوردية الحالية لبدء الدرج.',
       href: '/dashboard/shifts/',
-      cta: 'Current Shift',
+      ctaEn: 'Current Shift', ctaAr: 'الوردية الحالية',
     },
     expenses: {
-      title: 'No expenses for this period',
-      body: 'No recorded operating expenses in this period.',
+      titleEn: 'No expenses for this period', titleAr: 'لا توجد مصروفات لهذه الفترة',
+      bodyEn: 'No recorded operating expenses in this period.', bodyAr: 'لا توجد مصروفات تشغيلية مسجّلة في هذه الفترة.',
       href: '',
-      cta: '',
+      ctaEn: '', ctaAr: '',
     },
   };
 
@@ -263,8 +287,14 @@
     });
     return (neg ? '- ' : '') + 'EGP ' + body;
   }
-  function typeLabel(t) {
-    return { membership: 'Membership', product: 'Product', mixed: 'Mixed', other: 'Other', unknown: '—' }[t] || t || '—';
+  function typeLabel(type) {
+    return {
+      membership: t('Membership', 'عضوية'),
+      product: t('Product', 'منتج'),
+      mixed: t('Mixed', 'مختلط'),
+      other: t('Other', 'أخرى'),
+      unknown: '—',
+    }[type] || type || '—';
   }
   function dt(iso) {
     if (!iso) return '—';
@@ -288,8 +318,8 @@
   }
 
   function financialAmount(amount, available) {
-    if (available === false) return 'Unavailable';
-    if (amount == null) return 'Unavailable';
+    if (available === false) return t('Unavailable', 'غير متاح');
+    if (amount == null) return t('Unavailable', 'غير متاح');
     return money(amount);
   }
 
@@ -306,13 +336,14 @@
   }
 
   function expenseApiMessage(result) {
-    if (!result) return 'Unable to record running cost';
+    const fallback = t('Unable to record running cost', 'تعذّر تسجيل التكلفة التشغيلية');
+    if (!result) return fallback;
     var msg = '';
     if (result.error && result.error.message) msg = String(result.error.message);
     else if (result.data && result.data.error) msg = String(result.data.error);
     else if (result.data && result.data.message) msg = String(result.data.message);
-    else return 'Unable to record running cost';
-    if (/^\s*</.test(msg) || /Exception|stack trace| at /i.test(msg)) return 'Unable to record running cost';
+    else return fallback;
+    if (/^\s*</.test(msg) || /Exception|stack trace| at /i.test(msg)) return fallback;
     if (msg.length > 180) msg = msg.slice(0, 177) + '…';
     return msg;
   }
@@ -353,11 +384,11 @@
     }
     async function refreshShiftOptions() {
       if (!shiftSelect) return;
-      shiftSelect.innerHTML = '<option value="">Auto (open shift)</option>';
+      shiftSelect.innerHTML = '<option value="">' + esc(t('Auto (open shift)', 'تلقائي (الوردية المفتوحة)')) + '</option>';
       const shift = await apiGet('/shifts/current');
       if (shift && shift.id && String(shift.status || '').toLowerCase() === 'open') {
         shiftSelect.innerHTML +=
-          '<option value="' + esc(shift.id) + '">Open shift</option>';
+          '<option value="' + esc(shift.id) + '">' + esc(t('Open shift', 'الوردية المفتوحة')) + '</option>';
       }
     }
     function toggleShiftField() {
@@ -393,7 +424,7 @@
         const manualShift = shiftSelect && shiftSelect.value;
         const shiftId = manualShift || await resolveOpenShiftId();
         if (!shiftId) {
-          toast('Open a shift before recording a cash running cost', 'err');
+          toast(t('Open a shift before recording a cash running cost', 'افتح وردية قبل تسجيل تكلفة تشغيلية نقدية'), 'err');
           return;
         }
         payload.shiftId = shiftId;
@@ -403,7 +434,7 @@
         form.reset();
         if (catalog) populateExpenseTypeOptions(categorySelect, typeSelect);
         toggleShiftField();
-        toast('Running cost recorded');
+        toast(t('Running cost recorded', 'تم تسجيل التكلفة التشغيلية'));
         loadExpenses();
       } else {
         toast(expenseApiMessage(result), 'err');
@@ -471,9 +502,9 @@
   function setRangeLabel() {
     const { from, to } = dateRange();
     let text = fmtShort(from) + ' – ' + fmtShort(to);
-    if (rangePreset === 'last7') text = 'Last 7 days';
-    else if (rangePreset === 'last30') text = 'Last 30 days';
-    else if (rangePreset === 'thisMonth') text = 'This month';
+    if (rangePreset === 'last7') text = t('Last 7 days', 'آخر 7 أيام');
+    else if (rangePreset === 'last30') text = t('Last 30 days', 'آخر 30 يومًا');
+    else if (rangePreset === 'thisMonth') text = t('This month', 'هذا الشهر');
     document.getElementById('rangeLabel').textContent = text;
     document.querySelectorAll('#rangePop .range-opt').forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-preset') === rangePreset);
@@ -546,17 +577,17 @@
     const sub = document.getElementById('pageSub');
     const title = document.querySelector('.page-title');
     if (!activeTab) {
-      crumb.innerHTML = '<span>Money</span><span class="sep">/</span><span class="current">Reports</span>';
-      title.textContent = 'Reports';
-      sub.textContent = 'Understand sales, members, products and staff activity.';
+      crumb.innerHTML = '<span>' + esc(t('Money', 'الأموال')) + '</span><span class="sep">/</span><span class="current">' + esc(t('Reports', 'التقارير')) + '</span>';
+      title.textContent = t('Reports', 'التقارير');
+      sub.textContent = t('Understand sales, members, products and staff activity.', 'افهم المبيعات والأعضاء والمنتجات ونشاط الموظفين.');
       return;
     }
     crumb.innerHTML =
-      '<span>Money</span><span class="sep">/</span><a href="/dashboard/reports/">Reports</a><span class="sep">/</span><span class="current">' +
-      esc(TABS[activeTab].title) +
+      '<span>' + esc(t('Money', 'الأموال')) + '</span><span class="sep">/</span><a href="/dashboard/reports/">' + esc(t('Reports', 'التقارير')) + '</a><span class="sep">/</span><span class="current">' +
+      esc(tabTitle(activeTab)) +
       '</span>';
-    title.textContent = TABS[activeTab].pageTitle || TABS[activeTab].title;
-    sub.textContent = TABS[activeTab].hint;
+    title.textContent = tabPageTitle(activeTab);
+    sub.textContent = tabHint(activeTab);
   }
 
   function closePops() {
@@ -627,13 +658,13 @@
     document.getElementById('tablePager').hidden = true;
     if (!show) return;
     const meta = EMPTY[activeTab] || EMPTY.sales;
-    document.getElementById('emptyTitle').textContent = meta.title;
-    document.getElementById('emptyBody').textContent = meta.body;
+    document.getElementById('emptyTitle').textContent = t(meta.titleEn, meta.titleAr);
+    document.getElementById('emptyBody').textContent = t(meta.bodyEn, meta.bodyAr);
     const cta = document.getElementById('emptyCta');
     if (meta.href) {
       cta.hidden = false;
       cta.href = meta.href;
-      cta.textContent = meta.cta;
+      cta.textContent = t(meta.ctaEn, meta.ctaAr);
     } else {
       cta.hidden = true;
     }
@@ -707,15 +738,15 @@
       from +
       '–' +
       to +
-      ' of ' +
+      ' ' + esc(t('of', 'من')) + ' ' +
       total +
       '</span>' +
       '<button type="button" class="btn secondary" id="pgPrev"' +
       (tablePage <= 1 ? ' disabled' : '') +
-      '>Prev</button>' +
+      '>' + esc(t('Prev', 'السابق')) + '</button>' +
       '<button type="button" class="btn secondary" id="pgNext"' +
       (tablePage >= pages ? ' disabled' : '') +
-      '>Next</button>';
+      '>' + esc(t('Next', 'التالي')) + '</button>';
     document.getElementById('pgPrev').onclick = () => {
       tablePage -= 1;
       paintTablePage();
@@ -771,20 +802,21 @@
 
   function paintMoreLabel() {
     const n = moreFilterCount();
+    const label = t('More Filters', 'المزيد من الفلاتر');
     document.getElementById('btnMore').innerHTML =
-      (n ? 'More Filters · ' + n : 'More Filters') + ' <i class="ti ti-chevron-down"></i>';
+      (n ? label + ' · ' + n : label) + ' <i class="ti ti-chevron-down"></i>';
   }
 
   function methodLabel(m) {
     const map = {
-      cash: 'Cash',
-      card_paymob: 'Paymob',
-      fawry: 'Fawry',
-      vodafone: 'Vodafone',
-      instapay: 'Instapay',
-      account_credit: 'Credit',
-      credit: 'Credit',
-      gateway: 'Gateway',
+      cash: t('Cash', 'كاش'),
+      card_paymob: t('Card (Paymob)', 'بطاقة (بايموب)'),
+      fawry: t('Fawry', 'فوري'),
+      vodafone: t('Vodafone', 'فودافون كاش'),
+      instapay: t('Instapay', 'إنستا باي'),
+      account_credit: t('Credit', 'رصيد الحساب'),
+      credit: t('Credit', 'رصيد الحساب'),
+      gateway: t('Gateway', 'بوابة الدفع'),
     };
     return map[m] || m || '—';
   }
@@ -829,7 +861,7 @@
       btn.hidden = !canSee(key);
       btn.classList.toggle('active', key === activeTab);
     });
-    if (!useFilters) document.getElementById('tabHint').textContent = (TABS[activeTab] && TABS[activeTab].hint) || '';
+    if (!useFilters) document.getElementById('tabHint').textContent = tabHint(activeTab) || '';
     paintMorePop();
     syncUrl();
     setCrumb();
@@ -837,7 +869,10 @@
 
   function paintStaffPop(staff) {
     const pop = document.getElementById('staffPop');
-    const items = [{ userId: '', name: 'All staff' }].concat(
+    const allStaffLabel = t('All staff', 'كل الموظفين');
+    const unassignedLabel = t('Unassigned', 'غير معيّن');
+    const staffFallback = t('Staff', 'الموظف');
+    const items = [{ userId: '', name: allStaffLabel }].concat(
       (staff || []).filter((s) => s.userId),
     );
     pop.innerHTML = items
@@ -850,7 +885,7 @@
           '" data-staff="' +
           esc(id) +
           '">' +
-          esc(s.name || 'Unassigned') +
+          esc(s.name || unassignedLabel) +
           '</button>'
         );
       })
@@ -863,13 +898,14 @@
       };
     });
     const cur = items.find((s) => (s.userId || '') === staffFilter);
-    document.getElementById('staffLabel').textContent = staffFilter ? cur && cur.name ? cur.name : 'Staff' : 'Staff';
+    document.getElementById('staffLabel').textContent = staffFilter ? cur && cur.name ? cur.name : staffFallback : staffFallback;
   }
 
   function paintPlanPop(plans) {
     lastPlanOpts = plans || [];
     const pop = document.getElementById('planPop');
-    const items = [{ planId: '', name: 'All plans' }].concat(plans || []);
+    const planFallback = t('Plan', 'الخطة');
+    const items = [{ planId: '', name: t('All plans', 'كل الخطط') }].concat(plans || []);
     pop.innerHTML = items
       .map((p) => {
         const id = p.planId || '';
@@ -880,7 +916,7 @@
           '" data-plan="' +
           esc(id) +
           '">' +
-          esc(p.name || 'Plan') +
+          esc(p.name || planFallback) +
           '</button>'
         );
       })
@@ -896,14 +932,15 @@
     document.getElementById('planLabel').textContent = planFilter
       ? cur && cur.name
         ? cur.name
-        : 'Plan'
-      : 'Plan';
+        : planFallback
+      : planFallback;
   }
 
   function paintProductPop(products) {
     lastProductOpts = products || [];
     const pop = document.getElementById('productPop');
-    const items = [{ productId: '', name: 'All products' }].concat(products || []);
+    const productFallback = t('Product', 'المنتج');
+    const items = [{ productId: '', name: t('All products', 'كل المنتجات') }].concat(products || []);
     pop.innerHTML = items
       .map((p) => {
         const id = p.productId || '';
@@ -914,7 +951,7 @@
           '" data-product="' +
           esc(id) +
           '">' +
-          esc(p.name || 'Product') +
+          esc(p.name || productFallback) +
           '</button>'
         );
       })
@@ -930,14 +967,15 @@
     document.getElementById('productLabel').textContent = productFilter
       ? cur && cur.name
         ? cur.name
-        : 'Product'
-      : 'Product';
+        : productFallback
+      : productFallback;
   }
 
   function paintShiftPop(shifts) {
     lastShiftOpts = shifts || [];
     const pop = document.getElementById('shiftFilterPop');
-    const items = [{ shiftId: '', name: 'All shifts' }].concat(shifts || []);
+    const shiftFallback = t('Shift', 'الوردية');
+    const items = [{ shiftId: '', name: t('All shifts', 'كل الورديات') }].concat(shifts || []);
     pop.innerHTML = items
       .map((s) => {
         const id = s.shiftId || '';
@@ -948,7 +986,7 @@
           '" data-shift="' +
           esc(id) +
           '">' +
-          esc(s.name || 'Shift') +
+          esc(s.name || shiftFallback) +
           '</button>'
         );
       })
@@ -964,8 +1002,8 @@
     document.getElementById('shiftLabel').textContent = shiftFilter
       ? cur && cur.name
         ? cur.name
-        : 'Shift'
-      : 'Shift';
+        : shiftFallback
+      : shiftFallback;
   }
 
   function paintMethodPop(methods, methodOptions) {
@@ -976,6 +1014,7 @@
     ).filter(Boolean);
     if (methodFilter && used.indexOf(methodFilter) < 0) used.unshift(methodFilter);
     const keys = [''].concat(used);
+    const allMethodsLabel = t('All methods', 'كل طرق الدفع');
     pop.innerHTML = keys
       .map((m) => {
         const act = m === methodFilter ? ' active' : '';
@@ -985,7 +1024,7 @@
           '" data-m="' +
           esc(m) +
           '">' +
-          esc(m ? methodLabel(m) : 'All methods') +
+          esc(m ? methodLabel(m) : allMethodsLabel) +
           '</button>'
         );
       })
@@ -999,20 +1038,20 @@
     });
     document.getElementById('methodLabel').textContent = methodFilter
       ? methodLabel(methodFilter)
-      : 'Payment';
+      : t('Payment', 'الدفع');
   }
 
   function paintMorePop() {
     const pop = document.getElementById('morePop');
     if (activeTab === 'sales') {
       const opts = [
-        ['', 'All types'],
-        ['membership', 'Membership'],
-        ['product', 'Product'],
-        ['mixed', 'Mixed'],
+        ['', t('All types', 'كل الأنواع')],
+        ['membership', t('Membership', 'عضوية')],
+        ['product', t('Product', 'منتج')],
+        ['mixed', t('Mixed', 'مختلط')],
       ];
       pop.innerHTML =
-        '<p class="range-pop-label">Type</p>' +
+        '<p class="range-pop-label">' + esc(t('Type', 'النوع')) + '</p>' +
         opts
           .map(
             ([v, label]) =>
@@ -1021,7 +1060,7 @@
               '" data-type="' +
               v +
               '">' +
-              label +
+              esc(label) +
               '</button>',
           )
           .join('');
@@ -1037,12 +1076,12 @@
     }
     if (activeTab === 'refunds') {
       const opts = [
-        ['', 'Everyone'],
-        ['member', 'Members'],
-        ['walkin', 'Walk-in'],
+        ['', t('Everyone', 'الجميع')],
+        ['member', t('Members', 'الأعضاء')],
+        ['walkin', t('Walk-in', 'زائر')],
       ];
       pop.innerHTML =
-        '<p class="range-pop-label">Who</p>' +
+        '<p class="range-pop-label">' + esc(t('Who', 'من')) + '</p>' +
         opts
           .map(
             ([v, label]) =>
@@ -1051,7 +1090,7 @@
               '" data-buyer="' +
               v +
               '">' +
-              label +
+              esc(label) +
               '</button>',
           )
           .join('');
@@ -1067,13 +1106,14 @@
     }
     if (activeTab === 'memberships') {
       const opts = [
-        ['', 'All types'],
-        ['new', 'New'],
-        ['renewal', 'Renewals'],
+        ['', t('All types', 'كل الأنواع')],
+        ['new', t('New', 'جديدة')],
+        ['renewal', t('Renewals', 'تجديدات')],
       ];
-      const plans = [{ planId: '', name: 'All plans' }].concat(lastPlanOpts);
+      const planFallback = t('Plan', 'الخطة');
+      const plans = [{ planId: '', name: t('All plans', 'كل الخطط') }].concat(lastPlanOpts);
       pop.innerHTML =
-        '<p class="range-pop-label">Type</p>' +
+        '<p class="range-pop-label">' + esc(t('Type', 'النوع')) + '</p>' +
         opts
           .map(
             ([v, label]) =>
@@ -1082,11 +1122,11 @@
               '" data-type="' +
               v +
               '">' +
-              label +
+              esc(label) +
               '</button>',
           )
           .join('') +
-        '<p class="range-pop-label">Plan</p>' +
+        '<p class="range-pop-label">' + esc(t('Plan', 'الخطة')) + '</p>' +
         plans
           .map((p) => {
             const id = p.planId || '';
@@ -1096,7 +1136,7 @@
               '" data-plan="' +
               esc(id) +
               '">' +
-              esc(p.name || 'Plan') +
+              esc(p.name || planFallback) +
               '</button>'
             );
           })
@@ -1119,9 +1159,10 @@
       return;
     }
     if (activeTab === 'products') {
-      const items = [{ productId: '', name: 'All products' }].concat(lastProductOpts);
+      const productFallback = t('Product', 'المنتج');
+      const items = [{ productId: '', name: t('All products', 'كل المنتجات') }].concat(lastProductOpts);
       pop.innerHTML =
-        '<p class="range-pop-label">Product</p>' +
+        '<p class="range-pop-label">' + esc(t('Product', 'المنتج')) + '</p>' +
         items
           .map((p) => {
             const id = p.productId || '';
@@ -1131,7 +1172,7 @@
               '" data-product="' +
               esc(id) +
               '">' +
-              esc(p.name || 'Product') +
+              esc(p.name || productFallback) +
               '</button>'
             );
           })
@@ -1147,9 +1188,10 @@
       return;
     }
     if (activeTab === 'staff') {
-      const items = [{ shiftId: '', name: 'All shifts' }].concat(lastShiftOpts);
+      const shiftFallback = t('Shift', 'الوردية');
+      const items = [{ shiftId: '', name: t('All shifts', 'كل الورديات') }].concat(lastShiftOpts);
       pop.innerHTML =
-        '<p class="range-pop-label">Shift</p>' +
+        '<p class="range-pop-label">' + esc(t('Shift', 'الوردية')) + '</p>' +
         items
           .map((s) => {
             const id = s.shiftId || '';
@@ -1159,7 +1201,7 @@
               '" data-shift="' +
               esc(id) +
               '">' +
-              esc(s.name || 'Shift') +
+              esc(s.name || shiftFallback) +
               '</button>'
             );
           })
@@ -1188,21 +1230,21 @@
     if (!data) return;
 
     const kpis = [
-      ['Collections', financialAmount(data.collections, true)],
-      ['Settled cash inflow', financialAmount(data.settledCashInflow, data.settledCashAvailable)],
-      ['Revenue', financialAmount(data.revenue, true)],
-      ['Revenue adjustments', financialAmount(data.revenueAdjustments, true)],
-      ['Refunds', financialAmount(data.refunds, true)],
-      ['COGS', financialAmount(data.cogs, data.cogsAvailable)],
-      ['Operating expenses', financialAmount(data.operatingExpenses, true)],
-      ['Payroll expense', financialAmount(data.payrollExpense, data.payrollAvailable)],
-      ['Gross profit', financialAmount(data.grossProfit, data.cogsAvailable)],
-      ['Net profit', financialAmount(data.netProfit, data.netProfitAvailable)],
-      ['Profit margin', data.netProfitAvailable && data.profitMargin != null
+      [t('Collections', 'المقبوضات'), financialAmount(data.collections, true)],
+      [t('Settled cash inflow', 'الوارد النقدي المسوّى'), financialAmount(data.settledCashInflow, data.settledCashAvailable)],
+      [t('Revenue', 'الإيرادات'), financialAmount(data.revenue, true)],
+      [t('Revenue adjustments', 'تسويات الإيرادات'), financialAmount(data.revenueAdjustments, true)],
+      [t('Refunds', 'المرتجعات'), financialAmount(data.refunds, true)],
+      [t('COGS', 'تكلفة البضاعة المباعة'), financialAmount(data.cogs, data.cogsAvailable)],
+      [t('Operating expenses', 'المصروفات التشغيلية'), financialAmount(data.operatingExpenses, true)],
+      [t('Payroll expense', 'مصروف الرواتب'), financialAmount(data.payrollExpense, data.payrollAvailable)],
+      [t('Gross profit', 'إجمالي الربح'), financialAmount(data.grossProfit, data.cogsAvailable)],
+      [t('Net profit', 'صافي الربح'), financialAmount(data.netProfit, data.netProfitAvailable)],
+      [t('Profit margin', 'هامش الربح'), data.netProfitAvailable && data.profitMargin != null
         ? Number(data.profitMargin).toFixed(2) + '%'
-        : 'Unavailable'],
-      ['Net cash flow', financialAmount(data.netCashFlow, data.cashFlowAvailable)],
-      ['Receivables / Payables',
+        : t('Unavailable', 'غير متاح')],
+      [t('Net cash flow', 'صافي التدفق النقدي'), financialAmount(data.netCashFlow, data.cashFlowAvailable)],
+      [t('Receivables / Payables', 'المستحقات / المطلوبات'),
         financialAmount(data.accountsReceivable, true) + ' / ' + financialAmount(data.accountsPayable, true)],
     ];
     document.getElementById('profitabilityKpis').innerHTML = kpis
@@ -1210,9 +1252,9 @@
       .join('');
     const issues = Array.isArray(data.dataIssues) ? data.dataIssues : [];
     document.getElementById('profitabilityIssues').innerHTML = issues.length
-      ? '<div class="rpt-empty-inline"><strong>Review required</strong><p>' +
+      ? '<div class="rpt-empty-inline"><strong>' + esc(t('Review required', 'مطلوب مراجعة')) + '</strong><p>' +
         esc(issues.join(', ')) + '</p></div>'
-      : '<p class="muted">All configured financial sources are available for this period.</p>';
+      : '<p class="muted">' + esc(t('All configured financial sources are available for this period.', 'كل المصادر المالية المُعدّة متاحة لهذه الفترة.')) + '</p>';
     lastKpiRows = kpis;
     lastRows = [];
     document.getElementById('kpiRow').innerHTML = '';
@@ -1231,14 +1273,14 @@
     const cashFlowAvailable = data.cashFlowAvailable === true;
     const settledCashAvailable = data.settledCashAvailable === true;
     const kpis = [
-      ['Collections', financialAmount(data.collections, true)],
-      ['Settled cash inflow', financialAmount(data.settledCashInflow, settledCashAvailable)],
-      ['Cash refunds', financialAmount(data.cashRefunds, cashFlowAvailable)],
-      ['Operating expenses', financialAmount(data.operatingExpenseCashOutflows, cashFlowAvailable)],
-      ['Payroll paid', financialAmount(data.payrollCashDisbursements, cashFlowAvailable)],
-      ['Supplier payments', financialAmount(data.supplierCashPayments, cashFlowAvailable)],
-      ['Cash outflows', financialAmount(data.cashOutflows, cashFlowAvailable)],
-      ['Net cash flow', financialAmount(data.netCashFlow, cashFlowAvailable)],
+      [t('Collections', 'المقبوضات'), financialAmount(data.collections, true)],
+      [t('Settled cash inflow', 'الوارد النقدي المسوّى'), financialAmount(data.settledCashInflow, settledCashAvailable)],
+      [t('Cash refunds', 'المرتجعات النقدية'), financialAmount(data.cashRefunds, cashFlowAvailable)],
+      [t('Operating expenses', 'المصروفات التشغيلية'), financialAmount(data.operatingExpenseCashOutflows, cashFlowAvailable)],
+      [t('Payroll paid', 'الرواتب المدفوعة'), financialAmount(data.payrollCashDisbursements, cashFlowAvailable)],
+      [t('Supplier payments', 'مدفوعات الموردين'), financialAmount(data.supplierCashPayments, cashFlowAvailable)],
+      [t('Cash outflows', 'المصروفات النقدية'), financialAmount(data.cashOutflows, cashFlowAvailable)],
+      [t('Net cash flow', 'صافي التدفق النقدي'), financialAmount(data.netCashFlow, cashFlowAvailable)],
     ];
     document.getElementById('cashflowKpis').innerHTML = kpis
       .map(([label, amount]) => '<div class="kpi"><span>' + esc(label) + '</span><strong>' + esc(amount) + '</strong></div>')
@@ -1246,13 +1288,13 @@
     const issues = Array.isArray(data.dataIssues) ? data.dataIssues : [];
     document.getElementById('cashflowIssues').innerHTML = issues.length || !cashFlowAvailable
       ? '<div class="rpt-empty-inline"><strong>' +
-        esc(cashFlowAvailable ? 'Review required' : 'Cash flow unavailable') +
+        esc(cashFlowAvailable ? t('Review required', 'مطلوب مراجعة') : t('Cash flow unavailable', 'التدفق النقدي غير متاح')) +
         '</strong><p>' +
         esc(cashFlowAvailable
           ? issues.join(', ')
-          : 'Settlement or supplier cash evidence is incomplete for this period.') +
+          : t('Settlement or supplier cash evidence is incomplete for this period.', 'أدلة التسوية أو نقدية الموردين غير مكتملة لهذه الفترة.')) +
         '</p></div>'
-      : '<p class="muted">Cash sources are available for this period.</p>';
+      : '<p class="muted">' + esc(t('Cash sources are available for this period.', 'المصادر النقدية متاحة لهذه الفترة.')) + '</p>';
     lastKpiRows = kpis;
     lastRows = [];
     document.getElementById('kpiRow').innerHTML = '';
@@ -1272,13 +1314,24 @@
     const posted = rows.filter((row) => String(row.status || '').toLowerCase() === 'posted');
     const total = posted.reduce((sum, row) => sum + Number(row.amount || 0), 0);
     const kpis = [
-      ['Posted running costs', money(total)],
-      ['Entries', String(posted.length)],
-      ['Voided entries', String(rows.length - posted.length)],
+      [t('Posted running costs', 'التكاليف التشغيلية المرحّلة'), money(total)],
+      [t('Entries', 'القيود'), String(posted.length)],
+      [t('Voided entries', 'القيود الملغاة'), String(rows.length - posted.length)],
     ];
     document.getElementById('expensesKpis').innerHTML = kpis
       .map(([label, amount]) => '<div class="kpi"><span>' + esc(label) + '</span><strong>' + esc(amount) + '</strong></div>')
       .join('');
+    const expenseMethodMap = {
+      cash: t('Cash', 'نقدًا'),
+      card: t('Card', 'بطاقة'),
+      bank_transfer: t('Bank transfer', 'تحويل بنكي'),
+      wallet: t('Wallet', 'محفظة'),
+      other: t('Other', 'أخرى'),
+    };
+    const expenseStatusMap = {
+      posted: t('Posted', 'مرحّل'),
+      void: t('Void', 'ملغى'),
+    };
     const body = document.getElementById('expensesBody');
     body.innerHTML = rows.length
       ? rows.map((row) => {
@@ -1287,24 +1340,24 @@
             '<td>' + esc(row.expenseDate || '—') + '</td>' +
             '<td>' + esc(row.category || '—') + '</td>' +
             '<td>' + esc(row.description || row.payee || row.note || '—') + '</td>' +
-            '<td>' + esc(row.paymentMethod || '—') + '</td>' +
+            '<td>' + esc(expenseMethodMap[row.paymentMethod] || row.paymentMethod || '—') + '</td>' +
             '<td class="amt">' + esc(money(row.amount)) + '</td>' +
-            '<td><span class="status ' + (status === 'posted' ? 'success' : 'muted') + '">' + esc(status || 'unknown') + '</span></td>' +
+            '<td><span class="status ' + (status === 'posted' ? 'success' : 'muted') + '">' + esc(expenseStatusMap[status] || t('Unknown', 'غير معروف')) + '</span></td>' +
             '<td>' + (status === 'posted' && canManageExpenses
-              ? '<button class="btn secondary btn-void-expense" data-expense-id="' + esc(row.id) + '">Void</button>'
+              ? '<button class="btn secondary btn-void-expense" data-expense-id="' + esc(row.id) + '">' + esc(t('Void', 'إلغاء')) + '</button>'
               : '—') + '</td>' +
           '</tr>';
         }).join('')
-      : '<tr><td colspan="7" class="muted">No expenses recorded for this period.</td></tr>';
+      : '<tr><td colspan="7" class="muted">' + esc(t('No expenses recorded for this period.', 'لا توجد مصروفات مسجّلة لهذه الفترة.')) + '</td></tr>';
     body.querySelectorAll('.btn-void-expense').forEach((button) => {
       button.onclick = async () => {
-        if (!window.confirm('Void this expense? This preserves the entry and removes it from posted totals.')) return;
+        if (!window.confirm(t('Void this expense? This preserves the entry and removes it from posted totals.', 'إلغاء هذا المصروف؟ سيبقى القيد لكنه سيُستبعد من الإجماليات المرحّلة.'))) return;
         const result = await apiWrite('/expenses/' + encodeURIComponent(button.dataset.expenseId), 'PATCH', { status: 'void' });
         if (result && result.ok) {
-          toast('Expense voided');
+          toast(t('Expense voided', 'تم إلغاء المصروف'));
           loadExpenses();
         } else {
-          toast('Unable to void expense', 'err');
+          toast(t('Unable to void expense', 'تعذّر إلغاء المصروف'), 'err');
         }
       };
     });
@@ -1334,25 +1387,29 @@
 
     document.getElementById('rptToolbar').innerHTML = '';
     document.getElementById('kpiRow').innerHTML = '';
+    const netSalesLabel = t('Net sales', 'صافي المبيعات');
+    const transactionsLabel = t('Transactions', 'المعاملات');
+    const membershipSalesLabel = t('Membership sales', 'مبيعات العضويات');
+    const productSalesLabel = t('Product sales', 'مبيعات المنتجات');
     lastKpiRows = [
-      ['Net sales', money(data.netCashIn)],
-      ['Transactions', String(data.transactionCount || 0)],
-      ['Membership sales', money(data.membershipCashIn)],
-      ['Product sales', money(data.productCashIn)],
-      ['Gross sales', money(data.cashInTotal)],
-      ['Refunds', money(data.cashRefundsTotal)],
+      [netSalesLabel, money(data.netCashIn)],
+      [transactionsLabel, String(data.transactionCount || 0)],
+      [membershipSalesLabel, money(data.membershipCashIn)],
+      [productSalesLabel, money(data.productCashIn)],
+      [t('Gross sales', 'إجمالي المبيعات'), money(data.cashInTotal)],
+      [t('Refunds', 'المرتجعات'), money(data.cashRefundsTotal)],
     ];
     document.getElementById('salesKpis').innerHTML =
-      '<div class="sales-kpi"><div class="l">Net sales</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(netSalesLabel) + '</div><div class="v">' +
       money(data.netCashIn) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Transactions</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(transactionsLabel) + '</div><div class="v">' +
       String(data.transactionCount || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Membership sales</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(membershipSalesLabel) + '</div><div class="v">' +
       money(data.membershipCashIn) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Product sales</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(productSalesLabel) + '</div><div class="v">' +
       money(data.productCashIn) +
       '</div></div>';
 
@@ -1376,7 +1433,7 @@
             );
           })
           .join('')
-      : '<p class="muted">No days in this range</p>';
+      : '<p class="muted">' + esc(t('No days in this range', 'لا توجد أيام في هذا النطاق')) + '</p>';
 
     const methodsHtml = (data.methods || [])
       .map(
@@ -1389,28 +1446,29 @@
       )
       .join('');
     document.getElementById('salesBreak').innerHTML =
-      '<div class="break-row"><span>Gross sales</span><span>' +
+      '<div class="break-row"><span>' + esc(t('Gross sales', 'إجمالي المبيعات')) + '</span><span>' +
       money(data.cashInTotal) +
       '</span></div>' +
-      '<div class="break-row break-neg"><span>Refunds</span><span>' +
+      '<div class="break-row break-neg"><span>' + esc(t('Refunds', 'المرتجعات')) + '</span><span>' +
       money(-(Number(data.cashRefundsTotal) || 0)) +
       '</span></div>' +
-      '<div class="break-row"><span>Discounts</span><span>' +
+      '<div class="break-row"><span>' + esc(t('Discounts', 'الخصومات')) + '</span><span>' +
       money(data.discountTotal) +
       '</span></div>' +
-      '<div class="break-row"><span>Net sales</span><span>' +
+      '<div class="break-row"><span>' + esc(netSalesLabel) + '</span><span>' +
       money(data.netCashIn) +
       '</span></div>' +
-      '<p class="break-note">Net = taken in − executed cash refunds. Discounts are already in the amount taken in.</p>' +
+      '<p class="break-note">' + esc(t('Net = taken in − executed cash refunds. Discounts are already in the amount taken in.', 'الصافي = المحصّل − المرتجعات النقدية المنفّذة. الخصومات مُدرجة بالفعل في المبلغ المحصّل.')) + '</p>' +
       (methodsHtml ? '<div class="break-methods">' + methodsHtml + '</div>' : '');
 
     paintStaffPop(data.staff);
     paintMethodPop(data.methods, data.methodOptions);
     paintMoreActive();
 
+    const headers = [t('Invoice', 'الفاتورة'), t('Member', 'العضو'), t('Type', 'النوع'), t('Staff', 'الموظف'), t('Payment', 'الدفع'), t('Date', 'التاريخ'), t('Amount', 'المبلغ')];
     const pays = data.payments || [];
     lastRows = pays.length
-      ? [['Invoice', 'Member', 'Type', 'Staff', 'Payment', 'Date', 'Amount']].concat(
+      ? [headers].concat(
           pays.map((p) => [
             p.invoiceNumber || '',
             p.memberName,
@@ -1422,13 +1480,14 @@
           ]),
         )
       : [];
+    const invoiceFallback = t('Invoice', 'الفاتورة');
     const rows = (data.payments || []).map((p) => {
       const href = p.invoiceId ? '/dashboard/invoices/?invoiceId=' + encodeURIComponent(p.invoiceId) : '';
       return (
         '<tr' +
         (href ? ' data-href="' + href + '"' : '') +
         '><td>' +
-        esc(p.invoiceNumber || (href ? 'Invoice' : '—')) +
+        esc(p.invoiceNumber || (href ? invoiceFallback : '—')) +
         '</td><td>' +
         esc(p.memberName) +
         '</td><td>' +
@@ -1445,13 +1504,13 @@
       );
     });
     renderTable(
-      ['Invoice', 'Member', 'Type', 'Staff', 'Payment', 'Date', 'Amount'],
+      headers,
       rows,
       !(data.payments || []).length,
     );
     document.getElementById('truncNote').hidden = !data.paymentsTruncated;
     document.getElementById('truncNote').textContent = data.paymentsTruncated
-      ? 'Showing the latest 500 payments. Totals include the full filtered set. Narrow the dates.'
+      ? t('Showing the latest 500 payments. Totals include the full filtered set. Narrow the dates.', 'يعرض أحدث 500 عملية دفع. الإجماليات تشمل المجموعة الكاملة المفلترة. ضيّق نطاق التواريخ.')
       : '';
   }
 
@@ -1466,23 +1525,27 @@
 
     document.getElementById('rptToolbar').innerHTML = '';
     document.getElementById('kpiRow').innerHTML = '';
+    const totalRefundsLabel = t('Total refunds', 'إجمالي المرتجعات');
+    const refundAmountLabel = t('Refund amount', 'قيمة المرتجعات');
+    const refundedTxLabel = t('Refunded transactions', 'المعاملات المسترجعة');
+    const avgRefundLabel = t('Average refund', 'متوسط المرتجع');
     lastKpiRows = [
-      ['Total refunds', String(data.count || 0)],
-      ['Refund amount', money(data.total)],
-      ['Refunded transactions', String(data.saleCount || 0)],
-      ['Average refund', money(data.average)],
+      [totalRefundsLabel, String(data.count || 0)],
+      [refundAmountLabel, money(data.total)],
+      [refundedTxLabel, String(data.saleCount || 0)],
+      [avgRefundLabel, money(data.average)],
     ];
     document.getElementById('refundsKpis').innerHTML =
-      '<div class="sales-kpi"><div class="l">Total refunds</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(totalRefundsLabel) + '</div><div class="v">' +
       String(data.count || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Refund amount</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(refundAmountLabel) + '</div><div class="v">' +
       money(data.total) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Refunded transactions</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(refundedTxLabel) + '</div><div class="v">' +
       String(data.saleCount || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Average refund</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(avgRefundLabel) + '</div><div class="v">' +
       money(data.average) +
       '</div></div>';
 
@@ -1490,9 +1553,10 @@
     paintMethodPop(null, data.methodOptions);
     paintMorePop();
 
+    const headers = [t('Refund', 'المرتجع'), t('Original Invoice', 'الفاتورة الأصلية'), t('Member', 'العضو'), t('Reason', 'السبب'), t('Staff', 'الموظف'), t('Payment', 'الدفع'), t('Date', 'التاريخ'), t('Amount', 'المبلغ')];
     const items = data.items || [];
     lastRows = items.length
-      ? [['Refund', 'Original Invoice', 'Member', 'Reason', 'Staff', 'Payment', 'Date', 'Amount']].concat(
+      ? [headers].concat(
           items.map((r) => [
             r.creditNoteNumber || r.id,
             r.originalInvoiceNumber || '',
@@ -1505,6 +1569,7 @@
           ]),
         )
       : [];
+    const refundInvoiceFallback = t('Invoice', 'الفاتورة');
     const rows = items.map((r) => {
       const origHref = r.originalInvoiceId
         ? '/dashboard/invoices/?invoiceId=' + encodeURIComponent(r.originalInvoiceId)
@@ -1514,7 +1579,7 @@
         : origHref;
       const memHref = r.memberId ? '/dashboard/members/' + r.memberId + '/' : '';
       const refundLabel = r.creditNoteNumber || String(r.id || '').slice(0, 8);
-      const invLabel = r.originalInvoiceNumber || (origHref ? 'Invoice' : '—');
+      const invLabel = r.originalInvoiceNumber || (origHref ? refundInvoiceFallback : '—');
       return (
         '<tr' +
         (origHref
@@ -1544,28 +1609,28 @@
       );
     });
     renderTable(
-      ['Refund', 'Original Invoice', 'Member', 'Reason', 'Staff', 'Payment', 'Date', 'Amount'],
+      headers,
       rows,
       !items.length,
     );
     document.getElementById('truncNote').hidden = !data.truncated;
     document.getElementById('truncNote').textContent = data.truncated
-      ? 'Showing the latest 500 refunds. Totals include the full filtered set. Narrow the dates.'
+      ? t('Showing the latest 500 refunds. Totals include the full filtered set. Narrow the dates.', 'يعرض أحدث 500 مرتجع. الإجماليات تشمل المجموعة الكاملة المفلترة. ضيّق نطاق التواريخ.')
       : '';
   }
 
-  function membershipTypeLabel(t) {
-    return t === 'renewal' ? 'Renewal' : t === 'new' ? 'New' : t || '—';
+  function membershipTypeLabel(type) {
+    return type === 'renewal' ? t('Renewal', 'تجديد') : type === 'new' ? t('New', 'جديدة') : type || '—';
   }
   function membershipStatusLabel(s) {
     const map = {
-      active: 'Active',
-      pending: 'Pending',
-      cancelled: 'Cancelled',
-      expired: 'Expired',
-      frozen: 'Frozen',
-      scheduled: 'Scheduled',
-      refunded: 'Refunded',
+      active: t('Active', 'نشطة'),
+      pending: t('Pending', 'قيد الانتظار'),
+      cancelled: t('Cancelled', 'ملغاة'),
+      expired: t('Expired', 'منتهية'),
+      frozen: t('Frozen', 'مجمّدة'),
+      scheduled: t('Scheduled', 'مجدولة'),
+      refunded: t('Refunded', 'مسترجعة'),
     };
     return map[s] || s || '—';
   }
@@ -1582,36 +1647,42 @@
     document.getElementById('rptToolbar').innerHTML = '';
     document.getElementById('kpiRow').innerHTML = '';
     const rev = canFinance ? money(data.revenue) : '—';
+    const newMembershipsLabel = t('New Memberships', 'العضويات الجديدة');
+    const renewalsLabel = t('Renewals', 'التجديدات');
+    const membershipRevenueLabel = t('Membership Revenue', 'إيرادات العضويات');
+    const refundedMembershipsLabel = t('Refunded Memberships', 'العضويات المسترجعة');
     lastKpiRows = [
-      ['New Memberships', String(data.newCount || 0)],
-      ['Renewals', String(data.renewalCount || 0)],
-      ['Membership Revenue', rev],
-      ['Refunded Memberships', String(data.refundedCount || 0)],
+      [newMembershipsLabel, String(data.newCount || 0)],
+      [renewalsLabel, String(data.renewalCount || 0)],
+      [membershipRevenueLabel, rev],
+      [refundedMembershipsLabel, String(data.refundedCount || 0)],
     ];
     document.getElementById('membershipsKpis').innerHTML =
-      '<div class="sales-kpi"><div class="l">New Memberships</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(newMembershipsLabel) + '</div><div class="v">' +
       String(data.newCount || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Renewals</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(renewalsLabel) + '</div><div class="v">' +
       String(data.renewalCount || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Membership Revenue</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(membershipRevenueLabel) + '</div><div class="v">' +
       rev +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Refunded Memberships</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(refundedMembershipsLabel) + '</div><div class="v">' +
       String(data.refundedCount || 0) +
       '</div></div>';
 
     document.getElementById('membershipsBreak').innerHTML =
-      '<div class="break-row"><span>New</span><span>' +
+      '<div class="break-row"><span>' + esc(t('New', 'جديدة')) + '</span><span>' +
       String(data.newCount || 0) +
       '</span></div>' +
-      '<div class="break-row"><span>Renewals</span><span>' +
+      '<div class="break-row"><span>' + esc(renewalsLabel) + '</span><span>' +
       String(data.renewalCount || 0) +
       '</span></div>';
 
     const byPlan = data.byPlan || [];
     document.getElementById('membershipsPlanPanel').hidden = !byPlan.length;
+    const newWordLabel = t('new', 'جديدة');
+    const renewalsWordLabel = t('renewals', 'تجديد');
     document.getElementById('membershipsByPlan').innerHTML = byPlan
       .map((p) => {
         const n = Number(p.newCount || 0);
@@ -1622,9 +1693,9 @@
           esc(p.planName) +
           '</span><span>' +
           n +
-          ' new · ' +
+          ' ' + newWordLabel + ' · ' +
           r +
-          ' renewals' +
+          ' ' + renewalsWordLabel +
           extra +
           '</span></div>'
         );
@@ -1637,8 +1708,8 @@
 
     const items = data.startedRows || [];
     const headers = canFinance
-      ? ['Date', 'Member', 'Plan', 'Type', 'Staff', 'Invoice', 'Amount', 'Status']
-      : ['Date', 'Member', 'Plan', 'Type', 'Staff', 'Status'];
+      ? [t('Date', 'التاريخ'), t('Member', 'العضو'), t('Plan', 'الخطة'), t('Type', 'النوع'), t('Staff', 'الموظف'), t('Invoice', 'الفاتورة'), t('Amount', 'المبلغ'), t('Status', 'الحالة')]
+      : [t('Date', 'التاريخ'), t('Member', 'العضو'), t('Plan', 'الخطة'), t('Type', 'النوع'), t('Staff', 'الموظف'), t('Status', 'الحالة')];
     lastRows = items.length
       ? [headers].concat(
           items.map((r) =>
@@ -1670,7 +1741,7 @@
         ? '/dashboard/invoices/?invoiceId=' + encodeURIComponent(r.invoiceId)
         : '';
       const href = invHref || memHref;
-      const invLabel = r.invoiceNumber || (invHref ? 'Invoice' : '—');
+      const invLabel = r.invoiceNumber || (invHref ? t('Invoice', 'الفاتورة') : '—');
       const moneyCell = canFinance
         ? '<td>' +
           (invHref ? '<a href="' + invHref + '">' + esc(invLabel) + '</a>' : esc(invLabel)) +
@@ -1701,7 +1772,7 @@
     renderTable(headers, rows, !items.length);
     document.getElementById('truncNote').hidden = !data.truncated;
     document.getElementById('truncNote').textContent = data.truncated
-      ? 'Showing the latest 500 memberships. Totals include the full filtered set. Narrow the dates.'
+      ? t('Showing the latest 500 memberships. Totals include the full filtered set. Narrow the dates.', 'يعرض أحدث 500 عضوية. الإجماليات تشمل المجموعة الكاملة المفلترة. ضيّق نطاق التواريخ.')
       : '';
   }
 
@@ -1717,23 +1788,27 @@
     document.getElementById('rptToolbar').innerHTML = '';
     document.getElementById('kpiRow').innerHTML = '';
     catalogMethods = data.methodOptions || [];
+    const productRevenueLabel = t('Product Revenue', 'إيرادات المنتجات');
+    const unitsSoldLabel = t('Units Sold', 'الوحدات المباعة');
+    const productsTxLabel = t('Transactions', 'المعاملات');
+    const topProductLabel = t('Top Product', 'أفضل منتج');
     lastKpiRows = [
-      ['Product Revenue', money(data.revenue)],
-      ['Units Sold', String(data.unitsSold || 0)],
-      ['Transactions', String(data.transactionCount || 0)],
-      ['Top Product', data.topProductName || '—'],
+      [productRevenueLabel, money(data.revenue)],
+      [unitsSoldLabel, String(data.unitsSold || 0)],
+      [productsTxLabel, String(data.transactionCount || 0)],
+      [topProductLabel, data.topProductName || '—'],
     ];
     document.getElementById('productsKpis').innerHTML =
-      '<div class="sales-kpi"><div class="l">Product Revenue</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(productRevenueLabel) + '</div><div class="v">' +
       money(data.revenue) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Units Sold</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(unitsSoldLabel) + '</div><div class="v">' +
       String(data.unitsSold || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Transactions</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(productsTxLabel) + '</div><div class="v">' +
       String(data.transactionCount || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Top Product</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(topProductLabel) + '</div><div class="v">' +
       esc(data.topProductName || '—') +
       '</div></div>';
 
@@ -1759,7 +1834,7 @@
     paintMoreActive();
 
     const items = data.lines || [];
-    const headers = ['Date', 'Invoice', 'Product', 'Quantity', 'Staff', 'Payment', 'Revenue'];
+    const headers = [t('Date', 'التاريخ'), t('Invoice', 'الفاتورة'), t('Product', 'المنتج'), t('Quantity', 'الكمية'), t('Staff', 'الموظف'), t('Payment', 'الدفع'), t('Revenue', 'الإيرادات')];
     lastRows = items.length
       ? [headers].concat(
           items.map((r) => [
@@ -1773,11 +1848,12 @@
           ]),
         )
       : [];
+    const productInvoiceFallback = t('Invoice', 'الفاتورة');
     const rows = items.map((r) => {
       const href = r.invoiceId
         ? '/dashboard/invoices/?invoiceId=' + encodeURIComponent(r.invoiceId)
         : '';
-      const invLabel = r.invoiceNumber || (href ? 'Invoice' : '—');
+      const invLabel = r.invoiceNumber || (href ? productInvoiceFallback : '—');
       return (
         '<tr' +
         (href ? ' data-href="' + href + '"' : '') +
@@ -1801,7 +1877,7 @@
     renderTable(headers, rows, !items.length);
     document.getElementById('truncNote').hidden = !data.truncated;
     document.getElementById('truncNote').textContent = data.truncated
-      ? 'Showing the latest 500 product lines. Totals include the full filtered set. Narrow the dates.'
+      ? t('Showing the latest 500 product lines. Totals include the full filtered set. Narrow the dates.', 'يعرض أحدث 500 سطر منتج. الإجماليات تشمل المجموعة الكاملة المفلترة. ضيّق نطاق التواريخ.')
       : '';
   }
 
@@ -1815,23 +1891,27 @@
 
     document.getElementById('rptToolbar').innerHTML = '';
     document.getElementById('kpiRow').innerHTML = '';
+    const totalSalesLabel = t('Total Sales', 'إجمالي المبيعات');
+    const staffTxLabel = t('Transactions', 'المعاملات');
+    const staffRefundsLabel = t('Refunds', 'المرتجعات');
+    const shiftsLabel = t('Shifts', 'الورديات');
     lastKpiRows = [
-      ['Total Sales', money(data.sales)],
-      ['Transactions', String(data.transactionCount || 0)],
-      ['Refunds', money(data.refunds)],
-      ['Shifts', String(data.shiftCount || 0)],
+      [totalSalesLabel, money(data.sales)],
+      [staffTxLabel, String(data.transactionCount || 0)],
+      [staffRefundsLabel, money(data.refunds)],
+      [shiftsLabel, String(data.shiftCount || 0)],
     ];
     document.getElementById('staffKpis').innerHTML =
-      '<div class="sales-kpi"><div class="l">Total Sales</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(totalSalesLabel) + '</div><div class="v">' +
       money(data.sales) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Transactions</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(staffTxLabel) + '</div><div class="v">' +
       String(data.transactionCount || 0) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Refunds</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(staffRefundsLabel) + '</div><div class="v">' +
       money(data.refunds) +
       '</div></div>' +
-      '<div class="sales-kpi"><div class="l">Shifts</div><div class="v">' +
+      '<div class="sales-kpi"><div class="l">' + esc(shiftsLabel) + '</div><div class="v">' +
       String(data.shiftCount || 0) +
       '</div></div>';
 
@@ -1843,11 +1923,12 @@
     const shifts = data.shifts || [];
     const txs = data.transactions || [];
     const shiftOpts = data.shiftOptions || [];
+    const openLabel = t('Open', 'مفتوحة');
     function shiftName(s) {
       const opt = shiftOpts.find((o) => (o.shiftId || '') === (s.shiftId || ''));
       return (opt && opt.name) || dt(s.openedAt);
     }
-    const headers = ['Staff', 'Sales', 'Transactions', 'Refunds', 'Shifts'];
+    const headers = [t('Staff', 'الموظف'), t('Sales', 'المبيعات'), staffTxLabel, staffRefundsLabel, shiftsLabel];
     lastRows = [headers].concat(
       staff.map((r) => [
         r.staffName,
@@ -1859,13 +1940,13 @@
     );
     if (shifts.length) {
       lastRows.push([]);
-      lastRows.push(['Shift', 'Staff', 'Opened', 'Closed', 'Sales', 'Refunds', 'Status']);
+      lastRows.push([t('Shift', 'الوردية'), t('Staff', 'الموظف'), t('Opened', 'الافتتاح'), t('Closed', 'الإغلاق'), t('Sales', 'المبيعات'), staffRefundsLabel, t('Status', 'الحالة')]);
       shifts.forEach((s) => {
         lastRows.push([
           shiftName(s),
           s.staffName,
           dt(s.openedAt),
-          s.closedAt ? dt(s.closedAt) : 'Open',
+          s.closedAt ? dt(s.closedAt) : openLabel,
           (Number(s.sales) || 0).toFixed(2),
           (Number(s.refunds) || 0).toFixed(2),
           s.status,
@@ -1898,7 +1979,7 @@
     if (!wrap.hidden) {
       document.getElementById('shiftBody').innerHTML = shifts
         .map((s) => {
-          const st = s.status === 'open' ? 'Open' : s.status === 'approved' ? 'Approved' : 'Closed';
+          const st = s.status === 'open' ? openLabel : s.status === 'approved' ? t('Approved', 'معتمدة') : t('Closed', 'مغلقة');
           return (
             '<tr data-shift="' +
             esc(s.shiftId) +
@@ -1909,7 +1990,7 @@
             '</td><td>' +
             dt(s.openedAt) +
             '</td><td>' +
-            (s.closedAt ? dt(s.closedAt) : 'Open') +
+            (s.closedAt ? dt(s.closedAt) : openLabel) +
             '</td><td class="amt">' +
             money(s.sales) +
             '</td><td class="amt">' +
@@ -1935,28 +2016,29 @@
     const showTx = !empty && (staffFilter || shiftFilter) && txs.length;
     txWrap.hidden = !showTx;
     if (showTx) {
+      const txInvoiceFallback = t('Invoice', 'الفاتورة');
       document.getElementById('txBody').innerHTML = txs
-        .map((t) => {
-          const href = t.invoiceId
-            ? '/dashboard/invoices/?invoiceId=' + encodeURIComponent(t.invoiceId)
+        .map((tx) => {
+          const href = tx.invoiceId
+            ? '/dashboard/invoices/?invoiceId=' + encodeURIComponent(tx.invoiceId)
             : '';
-          const invLabel = t.invoiceNumber || (href ? 'Invoice' : '—');
-          const kind = t.type === 'refund' ? 'Refund' : 'Sale';
+          const invLabel = tx.invoiceNumber || (href ? txInvoiceFallback : '—');
+          const kind = tx.type === 'refund' ? t('Refund', 'مرتجع') : t('Sale', 'بيع');
           return (
             '<tr' +
             (href ? ' data-href="' + href + '"' : '') +
             '><td>' +
-            dt(t.atUtc) +
+            dt(tx.atUtc) +
             '</td><td>' +
             esc(kind) +
             '</td><td>' +
             (href ? '<a href="' + href + '">' + esc(invLabel) + '</a>' : esc(invLabel)) +
             '</td><td>' +
-            esc(t.staffName) +
+            esc(tx.staffName) +
             '</td><td><span class="st">' +
-            esc(methodLabel(t.method)) +
+            esc(methodLabel(tx.method)) +
             '</span></td><td class="amt">' +
-            money(t.amount) +
+            money(tx.amount) +
             '</td></tr>'
           );
         })
@@ -1973,7 +2055,7 @@
     }
     document.getElementById('truncNote').hidden = !data.truncated;
     document.getElementById('truncNote').textContent = data.truncated
-      ? 'Showing the latest 500 transactions. Totals include the full filtered set.'
+      ? t('Showing the latest 500 transactions. Totals include the full filtered set.', 'يعرض أحدث 500 معاملة. الإجماليات تشمل المجموعة الكاملة المفلترة.')
       : '';
   }
 
@@ -1982,7 +2064,7 @@
     if (global.GfpI18n && typeof global.GfpI18n.t === 'function') {
       return global.GfpI18n.t('reports.loadError');
     }
-    return "We couldn't load this report.";
+    return t("We couldn't load this report.", 'تعذّر تحميل هذا التقرير.');
   }
 
   function cardHtml(def, state) {
@@ -1999,7 +2081,7 @@
       def.icon +
       '"></i></div>' +
       '<h2>' +
-      esc(def.title) +
+      esc(t(def.titleEn, def.titleAr)) +
       '</h2>' +
       '<dl><div><dt>' +
       esc(state.la) +
@@ -2011,9 +2093,9 @@
       b +
       '</dd></div></dl>' +
       '<p class="rpt-card-desc">' +
-      esc(state.desc || def.desc) +
+      esc(state.desc || t(def.descEn, def.descAr)) +
       '</p>' +
-      '<span class="rpt-card-go">View Report →</span>' +
+      '<span class="rpt-card-go">' + esc(t('View Report', 'عرض التقرير')) + ' →</span>' +
       '</button>'
     );
   }
@@ -2033,32 +2115,33 @@
   }
 
   function summarizeCard(key, data) {
+    const unavailable = t('Unavailable', 'غير متاح');
     if (key === 'profitability') {
       const netProfitAvailable = data.netProfitAvailable === true;
       const cashFlowAvailable = data.cashFlowAvailable === true;
       return {
-        la: 'Net profit',
-        a: netProfitAvailable && data.netProfit != null ? esc(money(data.netProfit)) : 'Unavailable',
-        lb: 'Net cash flow',
-        b: cashFlowAvailable && data.netCashFlow != null ? esc(money(data.netCashFlow)) : 'Unavailable',
+        la: t('Net profit', 'صافي الربح'),
+        a: netProfitAvailable && data.netProfit != null ? esc(money(data.netProfit)) : unavailable,
+        lb: t('Net cash flow', 'صافي التدفق النقدي'),
+        b: cashFlowAvailable && data.netCashFlow != null ? esc(money(data.netCashFlow)) : unavailable,
         activity: data.netCashFlow !== 0 || data.revenue !== 0,
-        export: ['Profitability',
-          netProfitAvailable && data.netProfit != null ? money(data.netProfit) : 'Unavailable',
-          cashFlowAvailable && data.netCashFlow != null ? money(data.netCashFlow) : 'Unavailable'],
+        export: [t('Profitability', 'الربحية'),
+          netProfitAvailable && data.netProfit != null ? money(data.netProfit) : unavailable,
+          cashFlowAvailable && data.netCashFlow != null ? money(data.netCashFlow) : unavailable],
       };
     }
     if (key === 'cashflow') {
       const cashFlowAvailable = data.cashFlowAvailable === true;
       return {
-        la: 'Net cash flow',
-        a: cashFlowAvailable && data.netCashFlow != null ? esc(money(data.netCashFlow)) : 'Unavailable',
-        lb: 'Cash outflows',
-        b: cashFlowAvailable && data.cashOutflows != null ? esc(money(data.cashOutflows)) : 'Unavailable',
+        la: t('Net cash flow', 'صافي التدفق النقدي'),
+        a: cashFlowAvailable && data.netCashFlow != null ? esc(money(data.netCashFlow)) : unavailable,
+        lb: t('Cash outflows', 'المصروفات النقدية'),
+        b: cashFlowAvailable && data.cashOutflows != null ? esc(money(data.cashOutflows)) : unavailable,
         activity: cashFlowAvailable
           && (Number(data.netCashFlow) !== 0 || Number(data.cashOutflows) !== 0),
-        export: ['Cash Flow',
-          cashFlowAvailable && data.netCashFlow != null ? money(data.netCashFlow) : 'Unavailable',
-          cashFlowAvailable && data.cashOutflows != null ? money(data.cashOutflows) : 'Unavailable'],
+        export: [t('Cash Flow', 'التدفق النقدي'),
+          cashFlowAvailable && data.netCashFlow != null ? money(data.netCashFlow) : unavailable,
+          cashFlowAvailable && data.cashOutflows != null ? money(data.cashOutflows) : unavailable],
       };
     }
     if (key === 'expenses') {
@@ -2066,67 +2149,67 @@
       const posted = rows.filter((row) => String(row.status || '').toLowerCase() === 'posted');
       const total = posted.reduce((sum, row) => sum + Number(row.amount || 0), 0);
       return {
-        la: 'Posted expenses',
+        la: t('Posted expenses', 'المصروفات المرحّلة'),
         a: esc(money(total)),
-        lb: 'Entries',
+        lb: t('Entries', 'القيود'),
         b: String(posted.length),
         activity: posted.length > 0 || total !== 0,
-        export: ['Expenses', money(total), String(posted.length)],
+        export: [t('Expenses', 'المصروفات'), money(total), String(posted.length)],
       };
     }
     if (key === 'sales') {
       const n = data.transactionCount != null ? data.transactionCount : paymentCount(data);
       return {
-        la: 'Net sales',
+        la: t('Net sales', 'صافي المبيعات'),
         a: esc(money(data.netCashIn)),
-        lb: 'Transactions',
+        lb: t('Transactions', 'المعاملات'),
         b: String(n),
         activity: n > 0 || Number(data.netCashIn) !== 0 || Number(data.bookedTotal) !== 0,
-        export: ['Sales', money(data.netCashIn), String(n)],
+        export: [t('Sales', 'المبيعات'), money(data.netCashIn), String(n)],
       };
     }
     if (key === 'refunds') {
       const n = data.count != null ? data.count : (data.items || []).length;
       return {
-        la: 'Refund amount',
+        la: t('Refund amount', 'قيمة المرتجعات'),
         a: esc(money(data.total)),
-        lb: 'Refunds',
+        lb: t('Refunds', 'المرتجعات'),
         b: data.truncated ? String(n) + '+' : String(n),
         activity: n > 0 || Number(data.total) !== 0,
-        export: ['Refunds', money(data.total), String(n)],
+        export: [t('Refunds', 'المرتجعات'), money(data.total), String(n)],
       };
     }
     if (key === 'memberships') {
       return {
-        la: 'New',
+        la: t('New', 'جديدة'),
         a: String(data.newCount != null ? data.newCount : data.started || 0),
-        lb: 'Renewals',
+        lb: t('Renewals', 'التجديدات'),
         b: String(data.renewalCount || 0),
         activity: Number(data.newCount || data.started) > 0 || Number(data.renewalCount) > 0,
-        export: ['Memberships', String(data.newCount || 0), String(data.renewalCount || 0)],
+        export: [t('Memberships', 'العضويات'), String(data.newCount || 0), String(data.renewalCount || 0)],
       };
     }
     if (key === 'products') {
       const qty = data.unitsSold != null ? Number(data.unitsSold) : 0;
       const rev = Number(data.revenue) || 0;
       return {
-        la: 'Product revenue',
+        la: t('Product revenue', 'إيرادات المنتجات'),
         a: esc(money(rev)),
-        lb: 'Units sold',
+        lb: t('Units sold', 'الوحدات المباعة'),
         b: String(qty),
         activity: qty > 0 || rev !== 0,
-        export: ['Products', money(rev), String(qty)],
+        export: [t('Products', 'المنتجات'), money(rev), String(qty)],
       };
     }
     const take = data.sales != null ? Number(data.sales) : (data.staffCashIn || []).reduce((s, r) => s + Number(r.cashIn || 0), 0);
     const shifts = data.shiftCount != null ? data.shiftCount : (data.shifts || []).length;
     return {
-      la: 'Total sales',
+      la: t('Total sales', 'إجمالي المبيعات'),
       a: esc(money(take)),
-      lb: 'Shifts',
+      lb: t('Shifts', 'الورديات'),
       b: String(shifts),
       activity: take !== 0 || Number(data.refunds) > 0 || shifts > 0 || (data.staffCashIn || []).length > 0,
-      export: ['Staff & Shifts', money(take), String(shifts)],
+      export: [t('Staff & Shifts', 'الموظفون والورديات'), money(take), String(shifts)],
     };
   }
 
@@ -2154,8 +2237,8 @@
     const loading = {};
     visible.forEach((c) => {
       loading[c.key] = {
-        la: c.key === 'sales' ? 'Net sales' : c.key === 'refunds' ? 'Refund amount' : c.key === 'memberships' ? 'New' : c.key === 'products' ? 'Product revenue' : c.key === 'profitability' ? 'Net profit' : c.key === 'cashflow' ? 'Net cash flow' : c.key === 'expenses' ? 'Posted expenses' : 'Total sales',
-        lb: c.key === 'sales' ? 'Transactions' : c.key === 'refunds' ? 'Refunds' : c.key === 'memberships' ? 'Renewals' : c.key === 'products' ? 'Units sold' : c.key === 'profitability' ? 'Net cash flow' : c.key === 'cashflow' ? 'Cash outflows' : c.key === 'expenses' ? 'Entries' : 'Shifts',
+        la: c.key === 'sales' ? t('Net sales', 'صافي المبيعات') : c.key === 'refunds' ? t('Refund amount', 'قيمة المرتجعات') : c.key === 'memberships' ? t('New', 'جديدة') : c.key === 'products' ? t('Product revenue', 'إيرادات المنتجات') : c.key === 'profitability' ? t('Net profit', 'صافي الربح') : c.key === 'cashflow' ? t('Net cash flow', 'صافي التدفق النقدي') : c.key === 'expenses' ? t('Posted expenses', 'المصروفات المرحّلة') : t('Total sales', 'إجمالي المبيعات'),
+        lb: c.key === 'sales' ? t('Transactions', 'المعاملات') : c.key === 'refunds' ? t('Refunds', 'المرتجعات') : c.key === 'memberships' ? t('Renewals', 'التجديدات') : c.key === 'products' ? t('Units sold', 'الوحدات المباعة') : c.key === 'profitability' ? t('Net cash flow', 'صافي التدفق النقدي') : c.key === 'cashflow' ? t('Cash outflows', 'المصروفات النقدية') : c.key === 'expenses' ? t('Entries', 'القيود') : t('Shifts', 'الورديات'),
         a: '…',
         b: '…',
         cls: 'is-load',
@@ -2228,9 +2311,9 @@
     else if (activeTab === 'memberships') fillKpiSkeleton('membershipsKpis');
     else if (activeTab === 'products') fillKpiSkeleton('productsKpis');
     else if (activeTab === 'profitability' || activeTab === 'cashflow') {
-      document.getElementById(activeTab === 'cashflow' ? 'cashflowKpis' : 'profitabilityKpis').innerHTML = '<div class="kpi">Loading…</div>';
+      document.getElementById(activeTab === 'cashflow' ? 'cashflowKpis' : 'profitabilityKpis').innerHTML = '<div class="kpi">' + esc(t('Loading…', 'جارٍ التحميل…')) + '</div>';
     }
-    else if (activeTab === 'expenses') document.getElementById('expensesKpis').innerHTML = '<div class="kpi">Loading…</div>';
+    else if (activeTab === 'expenses') document.getElementById('expensesKpis').innerHTML = '<div class="kpi">' + esc(t('Loading…', 'جارٍ التحميل…')) + '</div>';
     else fillKpiSkeleton('staffKpis');
     try {
       if (activeTab === 'sales') await loadSales();
@@ -2331,28 +2414,28 @@
 
   function exportMeta() {
     const { from, to } = dateRange();
-    const tab = activeTab ? TABS[activeTab] : null;
+    const reportLabel = t('Report', 'التقرير');
     const rows = [
-      ['Report', tab ? tab.pageTitle || tab.title : 'Reports summary'],
-      ['From', from],
-      ['To', to],
+      [reportLabel, activeTab ? tabPageTitle(activeTab) : t('Reports summary', 'ملخص التقارير')],
+      [t('From', 'من'), from],
+      [t('To', 'إلى'), to],
     ];
     if (!activeTab) return rows;
-    rows.push(['Staff', staffFilter ? document.getElementById('staffLabel').textContent : 'All staff']);
+    rows.push([t('Staff', 'الموظف'), staffFilter ? document.getElementById('staffLabel').textContent : t('All staff', 'كل الموظفين')]);
     if (activeTab === 'sales' || activeTab === 'refunds' || activeTab === 'products') {
-      rows.push(['Payment', methodFilter ? methodLabel(methodFilter) : 'All methods']);
+      rows.push([t('Payment', 'الدفع'), methodFilter ? methodLabel(methodFilter) : t('All methods', 'كل طرق الدفع')]);
     }
-    if (activeTab === 'sales' && typeFilter) rows.push(['Type', typeLabel(typeFilter)]);
+    if (activeTab === 'sales' && typeFilter) rows.push([t('Type', 'النوع'), typeLabel(typeFilter)]);
     if (activeTab === 'refunds' && buyerFilter)
-      rows.push(['Buyer', buyerFilter === 'walkin' ? 'Walk-in' : 'Members']);
+      rows.push([t('Buyer', 'المشتري'), buyerFilter === 'walkin' ? t('Walk-in', 'زائر') : t('Members', 'الأعضاء')]);
     if (activeTab === 'memberships') {
-      if (typeFilter) rows.push(['Type', typeFilter === 'renewal' ? 'Renewals' : 'New']);
-      if (planFilter) rows.push(['Plan', document.getElementById('planLabel').textContent]);
+      if (typeFilter) rows.push([t('Type', 'النوع'), typeFilter === 'renewal' ? t('Renewals', 'التجديدات') : t('New', 'جديدة')]);
+      if (planFilter) rows.push([t('Plan', 'الخطة'), document.getElementById('planLabel').textContent]);
     }
     if (activeTab === 'products' && productFilter)
-      rows.push(['Product', document.getElementById('productLabel').textContent]);
+      rows.push([t('Product', 'المنتج'), document.getElementById('productLabel').textContent]);
     if (activeTab === 'staff' && shiftFilter)
-      rows.push(['Shift', document.getElementById('shiftLabel').textContent]);
+      rows.push([t('Shift', 'الوردية'), document.getElementById('shiftLabel').textContent]);
     return rows;
   }
 
@@ -2365,10 +2448,10 @@
         .concat(lastRows);
     } else {
       const { from, to } = dateRange();
-      rows = [['Report', 'Reports summary'], ['From', from], ['To', to], []].concat(hubSummary);
+      rows = [[t('Report', 'التقرير'), t('Reports summary', 'ملخص التقارير')], [t('From', 'من'), from], [t('To', 'إلى'), to], []].concat(hubSummary);
     }
     if (!rows.length || (activeTab && !lastKpiRows.length && !lastRows.length && !hubSummary.length)) {
-      toast('Nothing to export', 'err');
+      toast(t('Nothing to export', 'لا يوجد ما يمكن تصديره'), 'err');
       return;
     }
     const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
@@ -2377,8 +2460,14 @@
     a.href = URL.createObjectURL(blob);
     a.download = activeTab ? 'report-' + activeTab + '.csv' : 'reports-summary.csv';
     a.click();
-    toast('CSV exported');
+    toast(t('CSV exported', 'تم تصدير ملف CSV'));
   };
+
+  window.addEventListener('gfp:locale', function () {
+    setRangeLabel();
+    if (activeTab) loadDetail();
+    else loadHub();
+  });
 
   setRangeLabel();
   if (activeTab) loadDetail();

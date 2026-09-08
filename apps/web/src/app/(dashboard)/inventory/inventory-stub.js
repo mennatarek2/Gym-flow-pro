@@ -48,21 +48,23 @@
   }
 
   var host = document.getElementById('stubBody');
-  if (host) {
+  function paintStub() {
+    if (!host) return;
+    var shown = window.GfpI18n && window.GfpI18n.tLabel ? window.GfpI18n.tLabel(title, titleAr) : title;
     host.innerHTML =
       '<div class="inv-stub-card">' +
       '<div class="inv-stub-icon"><i class="ti ' +
       icon +
       '"></i></div>' +
       '<h1 class="inv-stub-title">' +
-      title +
-      ' <span class="title-ar">/ ' +
-      titleAr +
-      '</span></h1>' +
+      shown +
+      '</h1>' +
       '<p class="inv-stub-msg">Coming in <strong>' +
       prompt +
       '</strong> — real APIs only, no mock data.</p>' +
       '<p class="inv-stub-hint">Feature flag <code>inventory</code> · claim-gated via nav</p>' +
       '</div>';
   }
+  paintStub();
+  window.addEventListener('gfp:locale', paintStub);
 })();

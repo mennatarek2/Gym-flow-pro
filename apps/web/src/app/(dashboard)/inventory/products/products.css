@@ -283,3 +283,32 @@ table.inv tr.clickable:hover td{background:#fafafa}
   .form-grid,.cat-form{grid-template-columns:1fr}
   .main{margin-left:0}
 }
+
+/* Dark mode: tint backgrounds (var(--wrn100)/--suc100/--dng100/--inf100) already darken via
+   theme.css, but many text colors here are hardcoded for light-mode contrast — including a few
+   (price-sell, barcode-cell, detail-kv .v.profit) that sit directly on the page background with
+   no tint at all, so they'd be nearly invisible dark-on-dark without this. Swap to the shared
+   --gfp-* text-on-tint tokens; table.inv's hover tint gets the normal themed row-hover color. */
+html[data-theme="dark"] table.inv tr.clickable:hover td{background:var(--ls2)}
+html[data-theme="dark"] .buy-remain,
+html[data-theme="dark"] .buy-result.has-due,
+html[data-theme="dark"] .buy-result.has-due .buy-result-title,
+html[data-theme="dark"] .stat-pill.warn,
+html[data-theme="dark"] .alert-banner,
+html[data-theme="dark"] .stock-low,
+html[data-theme="dark"] .badge-low,
+html[data-theme="dark"] .barcode-cell{color:var(--gfp-wrn)}
+html[data-theme="dark"] .buy-result.has-credit,
+html[data-theme="dark"] .buy-result.has-credit .buy-result-title,
+html[data-theme="dark"] .buy-result.has-credit a{color:var(--gfp-inf)}
+html[data-theme="dark"] .buy-result .buy-result-title,
+html[data-theme="dark"] .buy-result a,
+html[data-theme="dark"] .stock-ok,
+html[data-theme="dark"] .badge-ok,
+html[data-theme="dark"] .detail-kv .v.profit,
+html[data-theme="dark"] .ef-profit-box,
+html[data-theme="dark"] .price-sell{color:var(--gfp-suc)}
+html[data-theme="dark"] .stat-pill.danger,
+html[data-theme="dark"] .stock-out,
+html[data-theme="dark"] .badge-out,
+html[data-theme="dark"] .ef-profit-box.neg{color:var(--gfp-dng)}

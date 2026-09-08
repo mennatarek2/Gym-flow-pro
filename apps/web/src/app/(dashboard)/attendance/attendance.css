@@ -113,6 +113,7 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .method-badge.qr i{color:var(--suc500)}
 .method-badge.manual{background:var(--orange100);color:var(--orange)}
 .method-badge.barcode{background:var(--inf100,#DBEAFE);color:var(--inf600,#1D4ED8)}
+html[data-theme="dark"] .method-badge.barcode{color:var(--gfp-inf)}
 
 /* Access card scan (additive) */
 .scan-box{margin-bottom:14px;padding:12px;border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls2)}
@@ -244,6 +245,7 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 
 /* legacy scan-box (unused after desk refactor — keep method badges) */
 .method-badge.barcode{background:var(--inf100,#DBEAFE);color:var(--inf600,#1D4ED8)}
+html[data-theme="dark"] .method-badge.barcode{color:var(--gfp-inf)}
 
 /* Success Card (guest redeem) */
 .success-card{padding:20px;background:var(--suc100);border:1px solid rgba(34,197,94,.25);border-radius:var(--rmd);text-align:center;animation:fadeIn .3s ease}

@@ -18,26 +18,26 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span>Catalog</span><span class="sep">/</span><span class="current">Activities</span></div></div>
-  <div class="tb-right"><div class="gym-name" id="gymName">Gym</div><div class="gym-name-ar" id="gymNameAr"></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Catalog" data-ar="الكتالوج">Catalog</span><span class="sep">/</span><span class="current" data-en="Activities" data-ar="الأنشطة">Activities</span></div></div>
+  <div class="tb-right"><div class="gym-name" id="gymName">Gym</div><div class="gym-name-ar" id="gymNameAr" hidden></div></div>
 </header>
 <div class="content">
   <div class="page-header">
     <div class="ph-left">
-      <h1 class="page-title">Activities <span class="title-ar">/ الأنشطة</span></h1>
-      <p class="page-subtitle">Classes and facilities offered by your gym</p>
+      <h1 class="page-title" data-en="Activities" data-ar="الأنشطة">Activities</h1>
+      <p class="page-subtitle" data-en="Classes and facilities offered by your gym" data-ar="الحصص والمرافق اللي النادي بيقدمها">Classes and facilities offered by your gym</p>
     </div>
-    <div class="ph-right"><button class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> New Activity</button></div>
+    <div class="ph-right"><button class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New Activity" data-ar="نشاط جديد">New Activity</span></button></div>
   </div>
   <div class="kind-tabs" id="kindTabs">
-    <button type="button" class="kind-tab act" data-kind="all"><i class="ti ti-layout-grid"></i> All</button>
-    <button type="button" class="kind-tab" data-kind="class"><i class="ti ti-run"></i> Classes</button>
-    <button type="button" class="kind-tab" data-kind="facility"><i class="ti ti-pool"></i> Facilities</button>
+    <button type="button" class="kind-tab act" data-kind="all"><i class="ti ti-layout-grid"></i> <span data-en="All" data-ar="الكل">All</span></button>
+    <button type="button" class="kind-tab" data-kind="class"><i class="ti ti-run"></i> <span data-en="Classes" data-ar="الحصص">Classes</span></button>
+    <button type="button" class="kind-tab" data-kind="facility"><i class="ti ti-pool"></i> <span data-en="Facilities" data-ar="المرافق">Facilities</span></button>
   </div>
   <div class="stats-bar">
-    <div class="stat-pill"><i class="ti ti-list"></i><span id="statTotal">0</span> Total</div>
-    <div class="stat-pill active"><i class="ti ti-check"></i><span id="statActive">0</span> Active</div>
-    <div class="stat-pill inactive"><i class="ti ti-x"></i><span id="statInactive">0</span> Inactive</div>
+    <div class="stat-pill"><i class="ti ti-list"></i><span id="statTotal">0</span> <span data-en="Total" data-ar="الإجمالي">Total</span></div>
+    <div class="stat-pill active"><i class="ti ti-check"></i><span id="statActive">0</span> <span data-en="Active" data-ar="نشط">Active</span></div>
+    <div class="stat-pill inactive"><i class="ti ti-x"></i><span id="statInactive">0</span> <span data-en="Inactive" data-ar="غير نشط">Inactive</span></div>
   </div>
   <div class="act-grid" id="actGrid"></div>
 </div>
@@ -47,6 +47,6 @@
 <div class="modal-overlay" id="deleteOverlay"><div class="delete-dialog" id="deleteDialog"></div></div>
 <div class="modal-overlay" id="scheduleOverlay"><div class="modal modal-wide" id="scheduleContent"></div></div>
 <div class="toast" id="toast"></div>
-<script src="activities-app.js"></script>
+<script src="activities-app.js?v=locale1"></script>
 </body>
 </html>

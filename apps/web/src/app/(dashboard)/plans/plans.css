@@ -86,8 +86,8 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .type-time_limited{background:var(--purple100);color:var(--purple)}
 .type-pt_credits{background:var(--t100);color:var(--t500)}
 .type-family{background:var(--coral100);color:var(--coral)}
-.type-trial{background:var(--inf100);color:#0891B2}
-.type-day_pass{background:var(--wrn100);color:#CA8A04}
+.type-trial{background:var(--inf100);color:var(--inf500)}
+.type-day_pass{background:var(--wrn100);color:var(--wrn500)}
 
 /* Plan Info */
 .plan-name{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--ltp);margin-bottom:2px;line-height:1.3}

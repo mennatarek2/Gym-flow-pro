@@ -93,6 +93,7 @@
 .member-app-copy:hover{border-color:var(--l500);color:var(--l600)}
 .member-app-expiry{font-size:11px;color:var(--ltt);margin-top:8px;text-align:center}
 .member-app-warn{font-size:11px;color:#92400E;background:var(--wrn100,#FEF3C7);border-radius:var(--rsm);padding:8px 10px;margin-top:8px;text-align:center;line-height:1.35}
+html[data-theme="dark"] .member-app-warn{color:var(--gfp-wrn)}
 
 /* Quick actions */
 .quick-actions{display:flex;gap:8px;margin-top:16px}
@@ -132,10 +133,14 @@
 .ms-st-badge.active{background:var(--suc100);color:var(--suctxt,#166534)}
 .ms-st-badge.frozen{background:var(--frz100);color:#155E75}
 .ms-st-badge.expired,.ms-st-badge.cancelled{background:var(--dng100);color:#991B1B}
+html[data-theme="dark"] .ms-st-badge.frozen{color:var(--frztxt)}
+html[data-theme="dark"] .ms-st-badge.expired,
+html[data-theme="dark"] .ms-st-badge.cancelled{color:var(--gfp-dng)}
 .ms-warn{background:rgba(217,119,6,.12);color:var(--wrn700,#92400E);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}
 .ms-warn strong{display:block;font-family:var(--fd);margin-bottom:2px;color:var(--wrn700,#92400E)}
 .ms-note{border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.45;margin-bottom:12px}
-.ms-note.danger{background:#FEE2E2;color:#991B1B}
+.ms-note.danger{background:var(--dng100);color:#991B1B}
+html[data-theme="dark"] .ms-note.danger{color:var(--gfp-dng)}
 .ms-note.warn{background:var(--wrn100,#FEF3C7);color:var(--wrn700,#92400E)}
 .ms-reserved{font-size:13px;color:var(--ltt);margin-bottom:4px}
 .ms-hero-num{font-family:var(--fd);font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--ltp)}
@@ -170,6 +175,8 @@
 .activity-access-badge.unlimited{background:var(--inf100);color:#1D4ED8}
 .activity-access-badge.limited{background:var(--wrn100);color:#92400E}
 .activity-access-badge.not_entitled{background:var(--ls3);color:var(--ltt)}
+html[data-theme="dark"] .activity-access-badge.unlimited{color:var(--gfp-inf)}
+html[data-theme="dark"] .activity-access-badge.limited{color:var(--gfp-wrn)}
 .activity-access-remaining{text-align:right;flex-shrink:0}
 .activity-access-remaining strong{display:block;font-family:var(--fd);font-size:22px;line-height:1;color:var(--l600)}
 .activity-access-remaining span{font-size:10px;color:var(--ltt)}
@@ -191,6 +198,8 @@
 .btn-ms.freeze:hover{background:var(--frz500);color:#fff}
 .btn-ms.danger{background:var(--dng100);color:#991B1B;border:1px solid var(--dng500)}
 .btn-ms.danger:hover{background:var(--dng500);color:#fff}
+html[data-theme="dark"] .btn-ms.freeze{color:var(--frztxt)}
+html[data-theme="dark"] .btn-ms.danger{color:var(--gfp-dng)}
 
 /* ── Attendance Table ── */
 .att-tbl{width:100%;border-collapse:collapse}
@@ -201,6 +210,7 @@
 .method-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--rpl);font-size:11px;font-weight:700}
 .method-badge.qr{background:var(--l100);color:var(--l600)}
 .method-badge.manual{background:var(--inf100);color:#1E40AF}
+html[data-theme="dark"] .method-badge.manual{color:var(--gfp-inf)}
 
 /* ── Calendar Heatmap ── */
 .heatmap-wrap{margin-bottom:20px}
@@ -235,6 +245,8 @@
 .tl-badge.expired{background:var(--dng100);color:#991B1B}
 .tl-badge.frozen{background:var(--frz100);color:#155E75}
 .tl-badge.cancelled{background:var(--ls3);color:var(--c400)}
+html[data-theme="dark"] .tl-badge.expired{color:var(--gfp-dng)}
+html[data-theme="dark"] .tl-badge.frozen{color:var(--frztxt)}
 .tl-amount{font-family:var(--fd);font-size:12px;color:var(--lts)}
 
 /* ── Modals ── */

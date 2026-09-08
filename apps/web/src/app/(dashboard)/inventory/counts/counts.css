@@ -6,9 +6,10 @@
 .layout-split{display:grid;grid-template-columns:1fr 1.25fr;gap:16px}
 @media(max-width:960px){.layout-split{grid-template-columns:1fr}}
 .badge-draft{background:var(--ls2);color:var(--lts)}
-.badge-submitted{background:var(--wrn100);color:var(--wrn500)}
-.badge-approved{background:var(--suc100);color:var(--suc500)}
-.badge-cancelled{background:#FEE2E2;color:#991B1B}
+.badge-submitted{background:var(--wrn100,#FEF3C7);color:var(--wrn500,#F59E0B)}
+.badge-approved{background:var(--suc100,#DCFCE7);color:var(--suc500,#22C55E)}
+.badge-cancelled{background:var(--dng100,#FEE2E2);color:#991B1B}
+html[data-theme="dark"] .badge-cancelled{color:var(--gfp-dng)}
 tr.clickable{cursor:pointer}
 tr.clickable:hover td{background:var(--ls2)}
 .muted{font-size:12px;color:var(--ltt)}

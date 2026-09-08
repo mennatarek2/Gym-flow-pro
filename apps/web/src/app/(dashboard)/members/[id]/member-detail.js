@@ -295,7 +295,7 @@
     if(!m.isActive){
       accountBanner.style.display='block';
       accountBanner.className='info-banner';
-      accountBanner.style.cssText='margin:0 0 12px;padding:12px;border-radius:8px;background:#FEE2E2;color:var(--dng500);font-size:12px';
+      accountBanner.style.cssText='margin:0 0 12px;padding:12px;border-radius:8px;background:var(--dng100);color:var(--dng500);font-size:12px';
       accountBanner.innerHTML=hasUsablePlan
         ?'<i class="ti ti-alert-circle"></i> <strong>Account archived</strong> — person account is inactive. Reactivate the account to restore desk use. Membership plans are unchanged by archive.'
         :'<i class="ti ti-alert-circle"></i> <strong>Account archived</strong> — person account is inactive. Reactivate the account when this person should be active again.';
@@ -859,18 +859,6 @@
       return;
     }
     if(!Gfp||!memberId){ toast(t('API client missing','عميل الـ API غير موجود'),'error'); return; }
-
-    const app=memberData.memberApp||{};
-    const st=String(app.status||'not_activated').toLowerCase();
-    if(st==='pending_code'||st==='activated'){
-      const ok=confirm(
-        t(
-          'Previous unused code will stop working. Continue?',
-          'الكود السابق غير المستخدم سيتوقف عن العمل. متابعة؟'
-        )
-      );
-      if(!ok) return;
-    }
 
     setGenAppCodeLoading(true);
     try{

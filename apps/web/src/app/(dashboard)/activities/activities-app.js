@@ -35,14 +35,32 @@
     if (Gfp) Gfp.logout(); else window.location.href = '/auth/login/';
   });
 
+  var gymNameEn = '';
+  var gymNameAr = '';
+
+  function t(en, ar) {
+    var I18n = window.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return (I18n && I18n.getLocale && I18n.getLocale() === 'ar') ? (ar || en) : (en || ar);
+  }
+
+  function paintGymHeader() {
+    var gn = document.getElementById('gymName');
+    var ga = document.getElementById('gymNameAr');
+    if (gn) gn.textContent = t(gymNameEn, gymNameAr) || gymNameEn || gymNameAr || '';
+    if (ga) {
+      ga.hidden = true;
+      ga.textContent = '';
+    }
+  }
+
   (async function loadGymHeader() {
     if (!Gfp) return;
     var r = await Gfp.get('/settings');
     if (r.ok && r.data) {
-      var gn = document.getElementById('gymName');
-      var ga = document.getElementById('gymNameAr');
-      if (gn) gn.textContent = r.data.gymName || '';
-      if (ga) ga.textContent = r.data.gymNameAr || '';
+      gymNameEn = r.data.gymName || '';
+      gymNameAr = r.data.gymNameAr || '';
+      paintGymHeader();
     }
   })();
 
@@ -126,7 +144,7 @@
     var list = getFiltered();
     updateStats();
     if (!list.length) {
-      grid.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="ti ti-run"></i></div><div class="empty-title">No Activities Yet</div><div class="empty-desc">Create your first activity or facility to get started.</div><button class="btn-create" id="emptyCreate"><i class="ti ti-plus"></i> New Activity</button></div>';
+      grid.innerHTML = '<div class="empty-state"><div class="empty-icon"><i class="ti ti-run"></i></div><div class="empty-title">' + esc(t('No Activities Yet', 'مفيش أنشطة لسه')) + '</div><div class="empty-desc">' + esc(t('Create your first activity or facility to get started.', 'أنشئ أول نشاط أو مرفق عشان تبدأ.')) + '</div><button class="btn-create" id="emptyCreate"><i class="ti ti-plus"></i> ' + esc(t('New Activity', 'نشاط جديد')) + '</button></div>';
       var ec = document.getElementById('emptyCreate');
       if (ec) ec.addEventListener('click', function () { showActivityModal(); });
       return;
@@ -147,7 +165,7 @@
     var isClass = a.kind === 'class';
     var isFacility = a.kind === 'facility';
     var kindClass = a.isSystem ? 'kind-system' : (isClass ? 'kind-class' : 'kind-facility');
-    var kindLabel = a.isSystem ? 'System' : (isClass ? 'Class' : 'Facility');
+    var kindLabel = a.isSystem ? t('System', 'نظام') : (isClass ? t('Class', 'حصة') : t('Facility', 'مرفق'));
     var kindIcon = a.isSystem ? 'ti-lock' : (isClass ? 'ti-run' : 'ti-pool');
     var accent = a.isSystem ? '#8C8C8C' : (isClass ? '#3B82F6' : '#8B5CF6');
     var features = buildFeatures(a);
@@ -156,10 +174,10 @@
     var actions = '';
     if (!a.isSystem) {
       actions =
-        '<button class="card-btn" data-action="edit" data-id="' + a.id + '"><i class="ti ti-edit"></i> Edit</button>';
+        '<button class="card-btn" data-action="edit" data-id="' + a.id + '"><i class="ti ti-edit"></i> ' + esc(t('Edit', 'تعديل')) + '</button>';
     }
     if (isClass) {
-      actions += '<button class="card-btn sched" data-action="schedule" data-id="' + a.id + '"><i class="ti ti-calendar-event"></i> Schedule</button>';
+      actions += '<button class="card-btn sched" data-action="schedule" data-id="' + a.id + '"><i class="ti ti-calendar-event"></i> ' + esc(t('Schedule', 'الجدول')) + '</button>';
     }
     if (!a.isSystem) {
       actions += '<button class="card-btn del" data-action="delete" data-id="' + a.id + '"><i class="ti ti-trash"></i></button>';
@@ -169,8 +187,7 @@
       '<div class="card-accent" style="background:' + accent + '"></div>' +
       '<div class="card-body">' +
       '<span class="kind-badge ' + kindClass + '"><i class="ti ' + kindIcon + '"></i>' + kindLabel + '</span>' +
-      '<div class="act-name">' + esc(a.name) + '</div>' +
-      '<div class="act-name-ar">' + esc(a.nameAr || '') + '</div>' +
+      '<div class="act-name">' + esc(t(a.name, a.nameAr) || a.name) + '</div>' +
       features +
       schedHtml +
       '<div class="card-actions">' + actions + '</div>' +
@@ -179,12 +196,12 @@
 
   function buildFeatures(a) {
     var items = [];
-    if (a.defaultCapacity) items.push('<div class="act-feat"><i class="ti ti-users"></i>Capacity: ' + a.defaultCapacity + '</div>');
-    if (a.defaultDurationMinutes) items.push('<div class="act-feat"><i class="ti ti-clock"></i>' + a.defaultDurationMinutes + ' min</div>');
-    if (a.bookingRequired) items.push('<div class="act-feat"><i class="ti ti-calendar-check"></i>Booking required</div>');
-    else items.push('<div class="act-feat"><i class="ti ti-door-enter"></i>No booking needed</div>');
-    if (a.dropInPrice > 0) items.push('<div class="act-feat"><i class="ti ti-coin"></i>Drop-in: ' + a.dropInPrice + ' EGP</div>');
-    if (a.visibleToMembers === false) items.push('<div class="act-feat"><i class="ti ti-eye-off"></i>Hidden from members</div>');
+    if (a.defaultCapacity) items.push('<div class="act-feat"><i class="ti ti-users"></i>' + esc(t('Capacity', 'السعة')) + ': ' + a.defaultCapacity + '</div>');
+    if (a.defaultDurationMinutes) items.push('<div class="act-feat"><i class="ti ti-clock"></i>' + a.defaultDurationMinutes + ' ' + esc(t('min', 'د')) + '</div>');
+    if (a.bookingRequired) items.push('<div class="act-feat"><i class="ti ti-calendar-check"></i>' + esc(t('Booking required', 'يتطلب حجز')) + '</div>');
+    else items.push('<div class="act-feat"><i class="ti ti-door-enter"></i>' + esc(t('No booking needed', 'مفيش حجز مطلوب')) + '</div>');
+    if (a.dropInPrice > 0) items.push('<div class="act-feat"><i class="ti ti-coin"></i>' + esc(t('Drop-in', 'زيارة')) + ': ' + a.dropInPrice + ' EGP</div>');
+    if (a.visibleToMembers === false) items.push('<div class="act-feat"><i class="ti ti-eye-off"></i>' + esc(t('Hidden from members', 'مخفي عن الأعضاء')) + '</div>');
     return items.length ? '<div class="act-features">' + items.join('') + '</div>' : '';
   }
 
@@ -197,7 +214,7 @@
       var time = fmtTime(s.startTime) + ' – ' + fmtTime(s.endTime);
       return '<div class="sched-pill"><i class="ti ti-clock"></i>' + dayStr + ' ' + time + '</div>';
     }).join('');
-    return '<div class="sched-section"><div class="sched-section-title"><i class="ti ti-calendar-event"></i> Schedule</div><div class="sched-pills">' + pills + '</div></div>';
+    return '<div class="sched-section"><div class="sched-section-title"><i class="ti ti-calendar-event"></i> ' + esc(t('Schedule', 'الجدول')) + '</div><div class="sched-pills">' + pills + '</div></div>';
   }
 
   function parseDays(val) {
@@ -563,5 +580,9 @@
 
   // ── Init ──
   document.getElementById('btnCreate').addEventListener('click', function () { showActivityModal(); });
+  window.addEventListener('gfp:locale', function () {
+    paintGymHeader();
+    renderActivities();
+  });
   loadActivities();
 })();

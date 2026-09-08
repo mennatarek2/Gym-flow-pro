@@ -222,18 +222,18 @@
   <div class="tab-panel" id="tab-qr">
     <div class="qr-layout">
       <div class="card qr-card">
-        <div class="card-header"><h2><i class="ti ti-qrcode"></i> QR Check-in Poster</h2></div>
+        <div class="card-header"><h2><i class="ti ti-qrcode"></i> Live Check-in QR</h2></div>
         <div class="card-body" style="text-align:center;padding:32px">
           <div class="qr-poster-frame" id="qrFrame">
-            <div class="qr-loading"><div class="loader"></div>Loading QR poster...</div>
+            <div class="qr-loading"><div class="loader"></div>Loading QR...</div>
           </div>
           <div class="qr-code-display">
             <span class="qr-code-label">Gym Code:</span>
             <span class="qr-code-value" id="qrGymCode">—</span>
           </div>
+          <div class="qr-live-status" id="qrLiveStatus" style="margin-top:8px;font-size:12px;color:var(--ltt)"></div>
           <div class="qr-actions">
-            <button class="btn-qr" id="btnDownloadQR"><i class="ti ti-download"></i> Download Poster</button>
-            <button class="btn-qr outline" id="btnPrintQR"><i class="ti ti-printer"></i> Print</button>
+            <button class="btn-qr outline" id="btnFullscreenQR"><i class="ti ti-maximize"></i> Open full-screen display</button>
           </div>
         </div>
       </div>
@@ -241,9 +241,9 @@
         <div class="card-header"><h2><i class="ti ti-info-circle"></i> Instructions</h2></div>
         <div class="card-body">
           <div class="instruction-list">
-            <div class="instr-item"><div class="instr-num">1</div><div><strong>Print the QR poster</strong><p>Download and print the poster in A4 or A3 size for best visibility.</p></div></div>
-            <div class="instr-item"><div class="instr-num">2</div><div><strong>Display at entrance</strong><p>Place the printed poster at your gym entrance where members can easily scan.</p></div></div>
-            <div class="instr-item"><div class="instr-num">3</div><div><strong>Members scan to check in</strong><p>Members open the HyMotion app, scan this QR (it encodes your gym code), and attendance is registered.</p></div></div>
+            <div class="instr-item"><div class="instr-num">1</div><div><strong>Display this screen at the entrance</strong><p>Open full-screen on a reception tablet/monitor — this QR refreshes automatically every ~45 seconds and cannot be printed or screenshotted for later use.</p></div></div>
+            <div class="instr-item"><div class="instr-num">2</div><div><strong>Members scan to check in</strong><p>Members open the HyMotion app and scan the current code — attendance is registered immediately.</p></div></div>
+            <div class="instr-item"><div class="instr-num">3</div><div><strong>Employees scan the same code</strong><p>Staff use the same live QR from the Employee app's Attendance screen, then confirm their check-in.</p></div></div>
           </div>
         </div>
       </div>
@@ -428,6 +428,6 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<script src="/dashboard/settings/settings-app.js?v=theme1"></script>
+<script src="/dashboard/settings/settings-app.js?v=liveqr1"></script>
 </body>
 </html>

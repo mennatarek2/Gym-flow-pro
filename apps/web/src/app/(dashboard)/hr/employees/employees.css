@@ -474,6 +474,7 @@
   text-align: center;
   line-height: 1.35;
 }
+html[data-theme="dark"] .emp-app-warn { color: var(--gfp-wrn); }
 .emp-app-muted {
   font-size: 12px;
   color: var(--ltt);

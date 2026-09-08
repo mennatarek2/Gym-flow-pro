@@ -1781,13 +1781,17 @@ export const QUICK_ACTION_KEYS = [
   "checkin",
   "new_sale",
   "collect_payment",
-  "new_trial",
   "send_debtor_reminder", // backend whitelist only; not a desk destination after Debtors nav removal
   "open_shift",
   "close_shift",
   "new_refund", // backend whitelist only; refund is a Sale action, not a Quick Action destination
-  "add_promo_code",
+  "add_promo_code", // gated on 'offers' feature flag — paused with Offers & Promotions nav (2026-09-06)
   "freeze_membership",
+  "book_class",
+  "view_classes",
+  "checkin_member",
+  // "new_trial" removed 2026-09-07 — target page (/dashboard/trials/) redirects to dashboard;
+  // Trials was dropped from the product IA and never had a live desk destination.
 ] as const;
 
 export const QUICK_ACTION_DEFAULT_KEYS: readonly string[] = [

@@ -130,6 +130,7 @@ function loadShared() {
   sandbox.GfpFeatures.isModuleAvailable = function (key, registry) {
     if (!key) return true;
     if (key === 'stock_management' && sandbox.GfpFeatures.PHASE_HIDE_STOCK_MANAGEMENT) return false;
+    if (key === 'offers') return !sandbox.GfpFeatures.PHASE_HIDE_OFFERS;
     if (registry == null) return false;
     return !!registry[key];
   };
@@ -211,7 +212,7 @@ assertShape('Owner', runFixture('Owner', ALL_ON), {
   members: ['members', 'invitations', 'attendance'],
   'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts', 'z-report'],
-  money: ['offers', 'invoices', 'reports'],
+  money: ['invoices', 'reports'],
   catalog: CATALOG_OWNER_KEYS.slice(),
   administration: ['imports', 'audit', 'notifications', 'staff', 'roles', 'settings']
 });
@@ -221,7 +222,7 @@ assertShape('Manager', runFixture('Manager', ALL_ON), {
   members: ['members', 'invitations', 'attendance'],
   'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts', 'z-report'],
-  money: ['offers', 'invoices', 'reports'],
+  money: ['invoices', 'reports'],
   catalog: CATALOG_MANAGER_KEYS.slice(),
   administration: ['notifications']
 });
@@ -237,7 +238,7 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   members: ['members', 'invitations', 'attendance'],
   'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts'],
-  money: ['offers', 'reports'],
+  money: ['reports'],
   administration: ['notifications']
 });
 
@@ -263,7 +264,15 @@ assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   assert(!actual.money.includes('refunds'), 'Refunds is not a primary nav module');
   assert(!actual['stock-management'], 'sales flag does not restore Stock Management in shop UX');
   assert(actual['front-desk'].includes('call-sheet'), 'Call sheet never flag-gated');
-  assert(!actual.money.includes('offers'), 'offers uses sales flag');
+}
+
+// Offers & Promotions paused for pilot phase — hidden even with every flag ON,
+// and unaffected by the sales flag going off (independent phase-hide, not sales-gated).
+{
+  const onFixture = runFixture('Owner', ALL_ON);
+  assert(!onFixture.money.includes('offers'), 'Offers hidden in pilot phase with all flags on');
+  const salesOffFixture = runFixture('Receptionist', function (k) { return k !== 'sales'; });
+  assert(!salesOffFixture.money.includes('offers'), 'Offers stays hidden regardless of sales flag');
 }
 
 // FEATURE_DISABLED inventory — category gone

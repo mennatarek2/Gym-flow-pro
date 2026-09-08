@@ -7,8 +7,8 @@
 <meta name="description" content="Daily member follow-up and action queue.">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="../pos/pos.css?v=theme1">
-<link rel="stylesheet" href="call-sheet.css?v=theme1">
+<link rel="stylesheet" href="../pos/pos.css?v=theme2">
+<link rel="stylesheet" href="call-sheet.css?v=locale2">
 </head>
 <body>
 <div class="app">
@@ -39,58 +39,58 @@
 
   <div class="cs-toolbar">
     <div class="cs-chips" id="dateChips">
-      <button type="button" class="chip act" data-date="today">Today</button>
-      <button type="button" class="chip" data-date="tomorrow">Tomorrow</button>
-      <button type="button" class="chip" data-date="upcoming">Upcoming</button>
-      <button type="button" class="chip warn" data-date="overdue">Overdue</button>
-      <button type="button" class="chip" data-date="all">All</button>
+      <button type="button" class="chip act" data-date="today" data-en="Today" data-ar="اليوم">Today</button>
+      <button type="button" class="chip" data-date="tomorrow" data-en="Tomorrow" data-ar="بكرة">Tomorrow</button>
+      <button type="button" class="chip" data-date="upcoming" data-en="Upcoming" data-ar="القادمة">Upcoming</button>
+      <button type="button" class="chip warn" data-date="overdue" data-en="Overdue" data-ar="متأخرة">Overdue</button>
+      <button type="button" class="chip" data-date="all" data-en="All" data-ar="الكل">All</button>
     </div>
-    <div class="cs-search"><i class="ti ti-search"></i><input id="searchQ" type="search" placeholder="Name, phone, or member number" autocomplete="off"></div>
+    <div class="cs-search"><i class="ti ti-search"></i><input id="searchQ" type="search" placeholder="Name, phone, or member number" data-en-placeholder="Name, phone, or member number" data-ar-placeholder="الاسم أو الهاتف أو رقم العضوية" autocomplete="off"></div>
     <div class="cs-filter-wrap">
-      <button type="button" class="btn" id="btnFilters"><i class="ti ti-filter"></i> Filters <span class="n" id="filterCount" hidden>0</span></button>
+      <button type="button" class="btn" id="btnFilters"><i class="ti ti-filter"></i> <span data-en="Filters" data-ar="الفلاتر">Filters</span> <span class="n" id="filterCount" hidden>0</span></button>
       <div class="cs-pop" id="filterPop" hidden>
-        <h3>Filters</h3>
-        <label>Status
+        <h3 data-en="Filters" data-ar="الفلاتر">Filters</h3>
+        <label><span data-en="Status" data-ar="الحالة">Status</span>
           <select id="fltStatus">
-            <option value="">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="in_progress">In progress</option>
-            <option value="contacted">Contacted</option>
-            <option value="no_answer">No answer</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="" data-en="All statuses" data-ar="كل الحالات">All statuses</option>
+            <option value="pending" data-en="Pending" data-ar="قيد الانتظار">Pending</option>
+            <option value="in_progress" data-en="In progress" data-ar="جارٍ التنفيذ">In progress</option>
+            <option value="contacted" data-en="Contacted" data-ar="تم التواصل">Contacted</option>
+            <option value="no_answer" data-en="No answer" data-ar="لا يوجد رد">No answer</option>
+            <option value="completed" data-en="Completed" data-ar="مكتمل">Completed</option>
+            <option value="cancelled" data-en="Cancelled" data-ar="ملغى">Cancelled</option>
           </select>
         </label>
-        <label>Reason
+        <label><span data-en="Reason" data-ar="السبب">Reason</span>
           <select id="fltReason">
-            <option value="">All reasons</option>
-            <option value="renewal">Renewal</option>
-            <option value="trial">Trial</option>
-            <option value="payment">Payment</option>
-            <option value="welcome">Welcome</option>
-            <option value="inactive">Inactive</option>
-            <option value="offer">Offer</option>
-            <option value="custom">Custom</option>
+            <option value="" data-en="All reasons" data-ar="كل الأسباب">All reasons</option>
+            <option value="renewal" data-en="Renewal" data-ar="تجديد">Renewal</option>
+            <option value="trial" data-en="Trial" data-ar="تجربة">Trial</option>
+            <option value="payment" data-en="Payment" data-ar="دفع">Payment</option>
+            <option value="welcome" data-en="Welcome" data-ar="ترحيب">Welcome</option>
+            <option value="inactive" data-en="Inactive" data-ar="غير نشط">Inactive</option>
+            <option value="offer" data-en="Offer" data-ar="عرض">Offer</option>
+            <option value="custom" data-en="Custom" data-ar="مخصص">Custom</option>
           </select>
         </label>
-        <label>Priority
+        <label><span data-en="Priority" data-ar="الأولوية">Priority</span>
           <select id="fltPriority">
-            <option value="">All</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="" data-en="All" data-ar="الكل">All</option>
+            <option value="high" data-en="High" data-ar="عالية">High</option>
+            <option value="medium" data-en="Medium" data-ar="متوسطة">Medium</option>
+            <option value="low" data-en="Low" data-ar="منخفضة">Low</option>
           </select>
         </label>
-        <label>Assignee
+        <label><span data-en="Assignee" data-ar="الموظف المسؤول">Assignee</span>
           <select id="fltAssignee">
-            <option value="">All staff</option>
-            <option value="me">My follow-ups</option>
-            <option value="unassigned">Unassigned</option>
+            <option value="" data-en="All staff" data-ar="كل الموظفين">All staff</option>
+            <option value="me" data-en="My follow-ups" data-ar="متابعاتي">My follow-ups</option>
+            <option value="unassigned" data-en="Unassigned" data-ar="غير مسندة">Unassigned</option>
           </select>
         </label>
         <div class="cs-pop-ft">
-          <button type="button" class="btn ghost" id="btnFilterClear">Clear</button>
-          <button type="button" class="btn primary" id="btnFilterApply">Apply</button>
+          <button type="button" class="btn ghost" id="btnFilterClear" data-en="Clear" data-ar="مسح">Clear</button>
+          <button type="button" class="btn primary" id="btnFilterApply" data-en="Apply" data-ar="تطبيق">Apply</button>
         </div>
       </div>
     </div>
@@ -118,37 +118,37 @@
 
 <div class="modal-ov" id="addOv" hidden>
   <div class="modal" role="dialog">
-    <h3>Add follow-up</h3>
-    <p class="hint">Search a member. Reason and due can stay as they are.</p>
-    <label>Member</label>
+    <h3 data-en="Add follow-up" data-ar="إضافة متابعة">Add follow-up</h3>
+    <p class="hint" data-en="Search a member. Reason and due can stay as they are." data-ar="دور على العضو. السبب والموعد ممكن يفضلوا زي ما هم.">Search a member. Reason and due can stay as they are.</p>
+    <label data-en="Member" data-ar="العضو">Member</label>
     <div class="pick">
-      <input id="addMemberQ" type="search" placeholder="Name, phone, or member number" autocomplete="off">
+      <input id="addMemberQ" type="search" placeholder="Name, phone, or member number" data-en-placeholder="Name, phone, or member number" data-ar-placeholder="الاسم أو الهاتف أو رقم العضوية" autocomplete="off">
       <div id="addMemberResults" class="pick-results" hidden></div>
       <div id="addMemberSelected" class="pick-sel" hidden></div>
     </div>
-    <label>Reason</label>
+    <label data-en="Reason" data-ar="السبب">Reason</label>
     <select id="addReason">
-      <option value="custom">Custom</option>
-      <option value="renewal">Renewal</option>
-      <option value="trial">Trial</option>
-      <option value="payment">Payment</option>
-      <option value="welcome">Welcome</option>
-      <option value="inactive">Inactive</option>
-      <option value="offer">Offer</option>
+      <option value="custom" data-en="Custom" data-ar="مخصص">Custom</option>
+      <option value="renewal" data-en="Renewal" data-ar="تجديد">Renewal</option>
+      <option value="trial" data-en="Trial" data-ar="تجربة">Trial</option>
+      <option value="payment" data-en="Payment" data-ar="دفع">Payment</option>
+      <option value="welcome" data-en="Welcome" data-ar="ترحيب">Welcome</option>
+      <option value="inactive" data-en="Inactive" data-ar="غير نشط">Inactive</option>
+      <option value="offer" data-en="Offer" data-ar="عرض">Offer</option>
     </select>
-    <label>Priority</label>
+    <label data-en="Priority" data-ar="الأولوية">Priority</label>
     <select id="addPriority">
-      <option value="medium">Medium</option>
-      <option value="high">High</option>
-      <option value="low">Low</option>
+      <option value="medium" data-en="Medium" data-ar="متوسطة">Medium</option>
+      <option value="high" data-en="High" data-ar="عالية">High</option>
+      <option value="low" data-en="Low" data-ar="منخفضة">Low</option>
     </select>
-    <label>Due</label>
+    <label data-en="Due" data-ar="الموعد">Due</label>
     <input id="addDue" type="datetime-local">
-    <label>Note (optional)</label>
+    <label data-en="Note (optional)" data-ar="ملاحظة (اختياري)">Note (optional)</label>
     <textarea id="addNote" rows="2" maxlength="500"></textarea>
     <div class="modal-ft">
-      <button type="button" class="btn ghost" id="btnAddCancel">Cancel</button>
-      <button type="button" class="btn primary" id="btnAddSave">Save</button>
+      <button type="button" class="btn ghost" id="btnAddCancel" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+      <button type="button" class="btn primary" id="btnAddSave" data-en="Save" data-ar="حفظ">Save</button>
     </div>
   </div>
 </div>
@@ -157,23 +157,23 @@
   <div class="modal" role="dialog">
     <h3 id="outTitle">Log call</h3>
     <p class="hint" id="outHint"></p>
-    <label>Call outcome</label>
+    <label data-en="Call outcome" data-ar="نتيجة المكالمة">Call outcome</label>
     <div class="choice" id="outChoices"></div>
-    <p class="hint">Outcome is history. Follow-up status stays a separate lifecycle.</p>
-    <label>Note (optional)</label>
+    <p class="hint" data-en="Outcome is history. Follow-up status stays a separate lifecycle." data-ar="النتيجة بتتسجل كسجل. حالة المتابعة بتفضل منفصلة.">Outcome is history. Follow-up status stays a separate lifecycle.</p>
+    <label data-en="Note (optional)" data-ar="ملاحظة (اختياري)">Note (optional)</label>
     <textarea id="outNote" rows="2" maxlength="300"></textarea>
-    <label>Next action</label>
+    <label data-en="Next action" data-ar="الإجراء التالي">Next action</label>
     <div class="choice" id="nextChoices"></div>
-    <label>Follow-up at (if needed)</label>
+    <label data-en="Follow-up at (if needed)" data-ar="موعد المتابعة (لو محتاج)">Follow-up at (if needed)</label>
     <input id="outNextAt" type="datetime-local">
     <div class="modal-ft">
-      <button type="button" class="btn ghost" id="btnOutCancel">Cancel</button>
-      <button type="button" class="btn primary" id="btnOutSave">Save</button>
+      <button type="button" class="btn ghost" id="btnOutCancel" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+      <button type="button" class="btn primary" id="btnOutSave" data-en="Save" data-ar="حفظ">Save</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="call-sheet-app.js?v=fu1"></script>
+<script src="call-sheet-app.js?v=locale2"></script>
 </body>
 </html>

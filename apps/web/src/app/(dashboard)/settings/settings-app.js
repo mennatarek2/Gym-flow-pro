@@ -680,12 +680,12 @@
     });
   }
 
-  // ── QR poster (any authenticated) ──
-  // API returns /qr-posters/{gymCode}.pdf but those files were never generated (404).
-  // Always render a live poster from the gym code (what members scan → qr-checkin).
-  let posterUrl = '';
-  let posterDataUrl = '';
-  let posterGymCode = '';
+  // ── Live QR (any authenticated) ──
+  // The QR now encodes a short-lived signed token (GET /attendance/qr/token), not the permanent
+  // gym code — a printed/screenshotted QR would just go stale within ~45s, so this renders a
+  // live, auto-refreshing display instead of a static downloadable poster.
+  const QR_REFRESH_MARGIN_SECONDS = 8;
+  let qrRefreshTimer = null;
 
   function currentGymCode() {
     const qr = document.getElementById('qrGymCode');
@@ -708,21 +708,30 @@
     return 'HyMotion';
   }
 
-  async function renderLiveQrPoster(gymCode) {
+  function setLiveStatus(text) {
+    const el = document.getElementById('qrLiveStatus');
+    if (el) el.textContent = text;
+  }
+
+  async function fetchQrToken() {
+    if (!window.apiGet) return null;
+    return apiGet('/attendance/qr/token');
+  }
+
+  async function renderQrToken(token, gymName) {
     const frame = document.getElementById('qrFrame');
-    if (!frame || !gymCode) return false;
-    posterGymCode = gymCode;
-    const gymName = currentGymName();
-    frame.innerHTML =
-      '<div class="qr-poster-live" id="qrPosterLive">' +
-      '<div class="poster-brand"></div>' +
-      '<div class="poster-sub">Scan to check in</div>' +
-      '<canvas id="qrPosterCanvas" width="220" height="220"></canvas>' +
-      '<div class="poster-code"></div>' +
-      '<div class="poster-hint">Open HyMotion → scan this code<br>Encodes gym code for attendance</div>' +
-      '</div>';
-    frame.querySelector('.poster-brand').textContent = gymName;
-    frame.querySelector('.poster-code').textContent = gymCode;
+    if (!frame || !token) return false;
+    if (!document.getElementById('qrPosterLive')) {
+      frame.innerHTML =
+        '<div class="qr-poster-live" id="qrPosterLive">' +
+        '<div class="poster-brand"></div>' +
+        '<div class="poster-sub">Scan to check in</div>' +
+        '<canvas id="qrPosterCanvas" width="220" height="220"></canvas>' +
+        '<div class="poster-hint">Members: open HyMotion → scan<br>Staff: Attendance → Scan QR</div>' +
+        '</div>';
+    }
+    const brandEl = frame.querySelector('.poster-brand');
+    if (brandEl) brandEl.textContent = gymName;
 
     const canvas = document.getElementById('qrPosterCanvas');
     if (!canvas) return false;
@@ -731,7 +740,7 @@
       await new Promise(function (resolve, reject) {
         window.QRCode.toCanvas(
           canvas,
-          gymCode,
+          token,
           { width: 220, margin: 2, color: { dark: '#0D0D0D', light: '#FFFFFF' } },
           function (err) {
             if (err) reject(err);
@@ -741,106 +750,71 @@
       });
     } else {
       // CDN fallback image if QRCode lib blocked
-      const img = document.createElement('img');
+      const existingImg = frame.querySelector('img.qr-img');
+      const img = existingImg || document.createElement('img');
       img.className = 'qr-img';
-      img.alt = 'QR ' + gymCode;
+      img.alt = 'QR check-in code';
       img.src =
         'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' +
-        encodeURIComponent(gymCode);
-      canvas.replaceWith(img);
+        encodeURIComponent(token);
+      if (!existingImg) canvas.replaceWith(img);
       await new Promise(function (resolve) {
         img.onload = resolve;
         img.onerror = resolve;
       });
     }
-
-    try {
-      const live = document.getElementById('qrPosterLive');
-      if (canvas && canvas.toDataURL) {
-        posterDataUrl = canvas.toDataURL('image/png');
-      }
-      posterUrl = posterDataUrl || '';
-      if (!posterUrl && live) {
-        // keep empty; print uses live DOM
-        posterUrl = 'about:blank';
-      }
-    } catch (e) {
-      posterDataUrl = '';
-    }
     return true;
+  }
+
+  function scheduleQrRefresh(expiresInSeconds) {
+    if (qrRefreshTimer) clearTimeout(qrRefreshTimer);
+    const delayMs = Math.max(3, (expiresInSeconds || 45) - QR_REFRESH_MARGIN_SECONDS) * 1000;
+    qrRefreshTimer = setTimeout(loadQRPoster, delayMs);
+  }
+
+  function tickCountdown(expiresAtUtc) {
+    const expiresAt = new Date(expiresAtUtc).getTime();
+    const remaining = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+    setLiveStatus('● Live — refreshes in ' + remaining + 's');
+    if (remaining > 0) setTimeout(function () { tickCountdown(expiresAtUtc); }, 1000);
   }
 
   async function loadQRPoster() {
     const frame = document.getElementById('qrFrame');
     if (!frame) return;
-    const gymCode = currentGymCode();
-    if (!gymCode) {
-      frame.innerHTML =
-        '<div class="qr-loading"><i class="ti ti-qrcode" style="font-size:64px;color:var(--ls4);display:block;margin-bottom:12px"></i>' +
-        '<div style="color:var(--ltt);font-size:12px">Gym code unavailable — cannot build QR poster</div></div>';
-      return;
-    }
     try {
-      await renderLiveQrPoster(gymCode);
-    } catch (e) {
-      frame.innerHTML =
-        '<div class="qr-loading"><i class="ti ti-qrcode" style="font-size:64px;color:var(--ls4);display:block;margin-bottom:12px"></i>' +
-        '<div style="color:var(--ltt);font-size:12px">Could not build QR poster</div></div>';
-    }
-  }
-
-  const btnDownload = document.getElementById('btnDownloadQR');
-  if (btnDownload) {
-    btnDownload.addEventListener('click', function () {
-      const code = posterGymCode || currentGymCode();
-      if (!code) { toast('No gym code for poster', 'error'); return; }
-      if (posterDataUrl) {
-        const a = document.createElement('a');
-        a.href = posterDataUrl;
-        a.download = 'HyMotion-qr-' + code + '.png';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        toast('QR image downloaded');
+      const data = await fetchQrToken();
+      if (!data || !data.token) {
+        setLiveStatus('');
+        frame.innerHTML =
+          '<div class="qr-loading"><i class="ti ti-qrcode" style="font-size:64px;color:var(--ls4);display:block;margin-bottom:12px"></i>' +
+          '<div style="color:var(--ltt);font-size:12px">Could not load a check-in QR — retrying…</div></div>';
+        qrRefreshTimer = setTimeout(loadQRPoster, 5000);
         return;
       }
-      // Printable HTML fallback
-      const w = window.open('', '_blank');
-      if (!w) { toast('Popup blocked — allow popups to download/print', 'error'); return; }
-      const live = document.getElementById('qrPosterLive');
-      w.document.write(
-        '<!DOCTYPE html><html><head><title>QR Poster ' + code + '</title>' +
-        '<style>body{font-family:system-ui,sans-serif;display:flex;justify-content:center;padding:40px;background:#f3f4f3}' +
-        '.card{background:#fff;padding:32px;border-radius:16px;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.08)}' +
-        'h1{margin:0 0 8px;font-size:22px} .code{margin-top:16px;font-family:monospace;font-size:18px;font-weight:700;' +
-        'background:#0D0D0D;color:#7ACC00;display:inline-block;padding:8px 14px;border-radius:8px} canvas,img{margin:12px auto}</style></head><body>' +
-        '<div class="card">' + (live ? live.innerHTML : '') + '</div></body></html>'
-      );
-      w.document.close();
-      toast('Poster opened — use Save / Print from the browser');
-    });
+      await renderQrToken(data.token, currentGymName());
+      tickCountdown(data.expiresAtUtc);
+      scheduleQrRefresh(data.expiresInSeconds);
+    } catch (e) {
+      setLiveStatus('');
+      frame.innerHTML =
+        '<div class="qr-loading"><i class="ti ti-qrcode" style="font-size:64px;color:var(--ls4);display:block;margin-bottom:12px"></i>' +
+        '<div style="color:var(--ltt);font-size:12px">Could not load a check-in QR — retrying…</div></div>';
+      qrRefreshTimer = setTimeout(loadQRPoster, 5000);
+    }
   }
 
-  const btnPrint = document.getElementById('btnPrintQR');
-  if (btnPrint) {
-    btnPrint.addEventListener('click', function () {
-      const live = document.getElementById('qrPosterLive');
-      const code = posterGymCode || currentGymCode();
-      if (!live || !code) { toast('No QR poster to print', 'error'); return; }
-      const w = window.open('', '_blank');
-      if (!w) { toast('Popup blocked — allow popups to print', 'error'); return; }
-      w.document.write(
-        '<!DOCTYPE html><html><head><title>Print QR ' + code + '</title>' +
-        '<style>@page{margin:16mm} body{font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:90vh}' +
-        '.card{text-align:center} h1{font-size:28px;margin:0 0 8px} .sub{color:#666;margin-bottom:20px}' +
-        '.code{margin-top:18px;font-family:monospace;font-size:20px;font-weight:700;letter-spacing:.08em;' +
-        'background:#0D0D0D;color:#7ACC00;display:inline-block;padding:10px 16px;border-radius:8px}' +
-        '.hint{margin-top:14px;color:#666;font-size:13px} canvas,img{width:280px;height:280px}</style></head><body>' +
-        '<div class="card">' + live.innerHTML + '</div>' +
-        '<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script>' +
-        '</body></html>'
-      );
-      w.document.close();
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && document.getElementById('qrFrame')) {
+      loadQRPoster();
+    }
+  });
+
+  const btnFullscreen = document.getElementById('btnFullscreenQR');
+  if (btnFullscreen) {
+    btnFullscreen.addEventListener('click', function () {
+      const el = document.querySelector('.qr-card');
+      if (el && el.requestFullscreen) el.requestFullscreen().catch(function () {});
     });
   }
 

@@ -6,7 +6,16 @@
   const Gfp = window.GfpApi;
   const Authz = window.GfpAuthz;
   const SESSION_PACK_COUNTS = [10, 20, 50];
+  const PT_SESSION_DURATIONS = [30, 45, 60, 90];
   let activityCatalog = null;
+  let gymNameEn = '';
+  let gymNameAr = '';
+
+  function t(en, ar) {
+    const I18n = window.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return I18n && I18n.getLocale && I18n.getLocale() === 'ar' ? ar || en : en || ar;
+  }
 
   function getUser() {
     if (Gfp && Gfp.tokens) return Gfp.tokens.getUser();
@@ -61,14 +70,23 @@
     });
   }
 
+  function paintGymHeader() {
+    const gn = document.getElementById('gymName');
+    const ga = document.getElementById('gymNameAr');
+    if (gn) gn.textContent = t(gymNameEn, gymNameAr) || gymNameEn || gymNameAr || '';
+    if (ga) {
+      ga.hidden = true;
+      ga.textContent = '';
+    }
+  }
+
   (async function loadGymHeader() {
     if (!Gfp) return;
     const r = await Gfp.get('/settings');
     if (r.ok && r.data) {
-      const gn = document.getElementById('gymName');
-      const ga = document.getElementById('gymNameAr');
-      if (gn) gn.textContent = r.data.gymName || '';
-      if (ga) ga.textContent = r.data.gymNameAr || '';
+      gymNameEn = r.data.gymName || '';
+      gymNameAr = r.data.gymNameAr || '';
+      paintGymHeader();
     }
   })();
 
@@ -103,13 +121,13 @@
       short: 'Time'
     },
     pt_credits: {
-      label: 'PT Credits',
-      labelAr: 'رصيد تدريب',
+      label: 'Private Training',
+      labelAr: 'برايفت',
       icon: 'ti-barbell',
       color: 'var(--t500)',
       accent: '#148F8F',
       bg: 'var(--t100)',
-      short: 'PT'
+      short: 'Private'
     },
     family: {
       label: 'Family',
@@ -292,13 +310,10 @@
       '"><i class="ti ' +
       pt.icon +
       '"></i>' +
-      pt.label +
+      t(pt.label, pt.labelAr) +
       '</span>' +
       '<div class="plan-name">' +
-      esc(p.name) +
-      '</div>' +
-      '<div class="plan-name-ar">' +
-      esc(p.nameAr || '') +
+      esc(t(p.name, p.nameAr) || p.name) +
       '</div>' +
       '<div class="plan-price">' +
       '<span class="price-currency">' +
@@ -336,6 +351,15 @@
     if (p.planType === 'session_pack' && p.sessionCount) {
       items.push(
         '<div class="plan-feature"><i class="ti ti-bolt"></i>' + p.sessionCount + ' sessions included</div>'
+      );
+    }
+    if (p.planType === 'pt_credits' && p.sessionCount) {
+      items.push(
+        '<div class="plan-feature"><i class="ti ti-barbell"></i>' +
+          p.sessionCount +
+          ' PT sessions' +
+          (p.ptSessionDurationMinutes ? ' · ' + p.ptSessionDurationMinutes + ' min' : '') +
+          '</div>'
       );
     }
     if (p.planType === 'time_limited' && p.timeRestrictionStart) {
@@ -577,7 +601,20 @@
       body.timeRestrictionEnd = toTimeOnly(end);
     }
 
-    body.referralInviteQuota = parseInt(fd.get('referralInviteQuota'), 10) || 0;
+    if (body.planType === 'pt_credits') {
+      const psc = parseInt(fd.get('ptSessionCount'), 10);
+      if (!psc || psc < 1) {
+        return { error: 'Included sessions must be a positive number / عدد الجلسات المضمنة يجب أن يكون رقمًا موجبًا' };
+      }
+      body.sessionCount = psc;
+      const psd = parseInt(fd.get('ptSessionDuration'), 10);
+      body.ptSessionDurationMinutes = PT_SESSION_DURATIONS.indexOf(psd) !== -1 ? psd : 60;
+    }
+
+    // PRIVATE plans never expose Invitations — force 0 regardless of the hidden field's value.
+    body.referralInviteQuota = body.planType === 'pt_credits'
+      ? 0
+      : parseInt(fd.get('referralInviteQuota'), 10) || 0;
 
     const rType = (fd.get('referralRewardType') || '').toString().trim();
     if (rType === 'credit' || rType === 'free_days') {
@@ -633,8 +670,14 @@
 
   function updateConditionalFields(type) {
     document.querySelectorAll('.cond-section').forEach(function (s) {
-      if (s.id === 'cond-invite-quota' || s.id === 'cond-entitlements') {
+      if (s.id === 'cond-entitlements') {
         s.classList.add('visible');
+        return;
+      }
+      // PRIVATE plans don't expose Invitations — that's a FAMILY/general-plan concept, not part
+      // of a Personal Training package (per product rule; avoids inheriting FAMILY behavior).
+      if (s.id === 'cond-invite-quota') {
+        s.classList.toggle('visible', type !== 'pt_credits');
         return;
       }
       s.classList.remove('visible');
@@ -664,6 +707,16 @@
         sc +
         ' sessions</div>';
     }
+    if (type === 'pt_credits') {
+      const psc = fd.get('ptSessionCount') || '12';
+      const psd = fd.get('ptSessionDuration') || '60';
+      feats =
+        '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-barbell" style="color:var(--l600)"></i>' +
+        psc +
+        ' PT sessions · ' +
+        psd +
+        ' min</div>';
+    }
     if (type === 'time_limited') {
       const ts = fd.get('timeStart') || '08:00';
       const te = fd.get('timeEnd') || '17:00';
@@ -677,7 +730,7 @@
     if (type === 'family') {
       feats = '';
     }
-    const iqPreview = parseInt(fd.get('referralInviteQuota'), 10) || 0;
+    const iqPreview = type === 'pt_credits' ? 0 : parseInt(fd.get('referralInviteQuota'), 10) || 0;
     if (iqPreview > 0) {
       feats +=
         '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-user-plus" style="color:var(--l600)"></i>' +
@@ -721,7 +774,7 @@
       '" style="font-size:9px;padding:3px 8px"><i class="ti ' +
       pt.icon +
       '"></i>' +
-      pt.label +
+      t(pt.label, pt.labelAr) +
       '</span>' +
       '<div style="font-family:var(--fd);font-size:16px;font-weight:700;margin-top:8px">' +
       esc(name) +
@@ -822,6 +875,10 @@
     const selType = v.planType || 'monthly_unlimited';
     let sessCount = v.sessionCount || 20;
     if (SESSION_PACK_COUNTS.indexOf(sessCount) === -1) sessCount = 20;
+    const ptSessionCount = v.sessionCount != null ? v.sessionCount : 12;
+    const ptSessionDuration = PT_SESSION_DURATIONS.indexOf(v.ptSessionDurationMinutes) !== -1
+      ? v.ptSessionDurationMinutes
+      : 60;
 
     return (
       '<div class="modal-header">' +
@@ -851,8 +908,9 @@
       '<div class="type-selector">' +
       Object.keys(PT)
         .filter(function (key) {
-          // Trials / PT Credits removed from product — hide except when editing legacy plans
-          if (key === 'trial' || key === 'pt_credits') {
+          // Trials removed from product — hide except when editing legacy plans.
+          // pt_credits is the PRIVATE / Personal Training plan type (product-approved, see PRD).
+          if (key === 'trial') {
             return isEdit && key === selType;
           }
           return true;
@@ -929,6 +987,20 @@
       toTimeInputValue(v.timeRestrictionEnd || '17:00') +
       '"></div>' +
       '</div></div>' +
+      '<div class="cond-section" id="cond-pt_credits">' +
+      '<div class="cond-title"><i class="ti ti-barbell"></i> Private Training Options / خيارات البرايفت</div>' +
+      '<div class="form-row">' +
+      '<div class="fg"><label>Included Sessions <span class="req">*</span></label><input type="number" name="ptSessionCount" min="1" value="' +
+      ptSessionCount +
+      '" placeholder="e.g. 12"><div class="modal-header-sub">Personal training sessions included in this package / عدد جلسات التدريب الشخصي المضمنة في الباقة</div></div>' +
+      '<div class="fg"><label>Session Duration</label><select name="ptSessionDuration">' +
+      PT_SESSION_DURATIONS.map(function (m) {
+        return '<option value="' + m + '"' + (ptSessionDuration === m ? ' selected' : '') + '>' + m + ' minutes</option>';
+      }).join('') +
+      '</select><div class="modal-header-sub">Length of one PT session / مدة الجلسة الواحدة</div></div>' +
+      '</div>' +
+      '<div class="modal-header-sub">Trainer is assigned per session when the PT session is booked/scheduled, not on the plan itself. Gym floor access and other activities are controlled below under Activity access.</div>' +
+      '</div>' +
       '<div class="cond-section" id="cond-family">' +
       '<div class="cond-title"><i class="ti ti-users-group"></i> Family Plan Options</div>' +
       '<div class="modal-header-sub">Invitations for this plan are configured below.</div></div>' +
@@ -975,6 +1047,11 @@
     if (e.target && (e.target.id === 'modalCancel' || e.target.closest('#modalCancel'))) {
       closeModal();
     }
+  });
+
+  window.addEventListener('gfp:locale', function () {
+    paintGymHeader();
+    if (allPlans && allPlans.length) renderPlans(allPlans);
   });
 
   loadPlans();

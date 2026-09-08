@@ -78,6 +78,8 @@ html,body{height:100%}body{font-family:var(--fb);background:var(--lbg);color:var
 .role-wire-hint{font-size:11px;color:var(--ltt);margin:0 0 10px}
 .role-wire-hint code{font-size:10px;background:var(--ls2);padding:1px 5px;border-radius:4px}
 .role-badge.receptionist{background:rgba(139,92,246,.12);color:#7C3AED;border:1px solid rgba(139,92,246,.25)}
+html[data-theme="dark"] .role-stat.receptionist i,
+html[data-theme="dark"] .role-badge.receptionist{color:#C4B5FD}
 .role-selector{flex-wrap:wrap}
 .rs-val{font-family:var(--fd);font-size:24px;font-weight:700;line-height:1}
 .rs-lbl{font-size:12px;color:var(--ltt);display:block;margin-top:2px}

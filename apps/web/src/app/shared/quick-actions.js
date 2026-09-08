@@ -69,16 +69,6 @@
       featureFlag: 'sales'
     },
     {
-      key: 'new_trial',
-      en: 'New Trial',
-      ar: 'تجربة جديدة',
-      icon: 'ti-flask',
-      accent: 'qa-trial',
-      href: '/dashboard/trials/',
-      access: { kind: 'permission', value: 'sales.sell' },
-      featureFlag: 'trials'
-    },
-    {
       key: 'open_shift',
       en: 'Open Shift',
       ar: 'فتح وردية',
@@ -106,7 +96,8 @@
       accent: 'qa-offer',
       href: '/dashboard/offers/',
       access: { kind: 'permission', value: ['sales.sell', 'plans.manage'] },
-      featureFlag: 'sales'
+      // Paused alongside the Offers & Promotions nav entry (PHASE_HIDE_OFFERS) — same page.
+      featureFlag: 'offers'
     },
     {
       key: 'freeze_membership',

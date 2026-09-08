@@ -2,6 +2,12 @@
   'use strict';
   const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
 
+  function t(en, ar) {
+    var I18n = window.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return en;
+  }
+
   function getToken() {
     return localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
   }
@@ -116,25 +122,25 @@
     if (!a) return '—';
     const date = a.day + ' ' + a.month + ' ' + a.year;
     const start = a.hour + ':' + a.minute + ' ' + a.dayPeriod;
-    if (!closed) return date + ' · ' + start + ' – Open';
+    if (!closed) return date + ' · ' + start + ' – ' + t('Open', 'مفتوح');
     const b = cairoParts(closed);
     if (!b) return date + ' · ' + start;
     return date + ' · ' + start + ' – ' + b.hour + ':' + b.minute + ' ' + b.dayPeriod;
   }
   function statusLabel(s) {
-    if (s === 'open') return 'Open';
-    if (s === 'approved') return 'Approved';
-    if (s === 'closed') return 'Closed';
+    if (s === 'open') return t('Open', 'مفتوح');
+    if (s === 'approved') return t('Approved', 'معتمد');
+    if (s === 'closed') return t('Closed', 'مغلق');
     return s || '—';
   }
   function methodLabel(m) {
     const map = {
-      cash: 'Cash',
-      card_paymob: 'Card (Paymob)',
-      fawry: 'Fawry',
-      vodafone: 'Vodafone',
-      instapay: 'Instapay',
-      account_credit: 'Credit',
+      cash: t('Cash', 'كاش'),
+      card_paymob: t('Card (Paymob)', 'بطاقة (بايموب)'),
+      fawry: t('Fawry', 'فوري'),
+      vodafone: t('Vodafone', 'فودافون كاش'),
+      instapay: t('Instapay', 'إنستا باي'),
+      account_credit: t('Credit', 'رصيد الحساب'),
     };
     return map[m] || m || '—';
   }
@@ -142,8 +148,8 @@
     return globalThis.toastShared(msg, type);
   }
   function safeError(status) {
-    if (!canView || status === 403) return "You don't have permission to view this report.";
-    return "We couldn't load this report.";
+    if (!canView || status === 403) return t("You don't have permission to view this report.", 'ليس لديك صلاحية لعرض هذا التقرير.');
+    return t("We couldn't load this report.", 'تعذّر تحميل هذا التقرير.');
   }
   function parseYmd(s) {
     const p = String(s || '').split('-').map(Number);
@@ -159,9 +165,9 @@
     const from = document.getElementById('dateFrom').value;
     const to = document.getElementById('dateTo').value;
     let text = fmtShort(from) + ' – ' + fmtShort(to);
-    if (rangePreset === 'last7') text = 'Last 7 days';
-    else if (rangePreset === 'last30') text = 'Last 30 days';
-    else if (rangePreset === 'thisMonth') text = 'This month';
+    if (rangePreset === 'last7') text = t('Last 7 days', 'آخر 7 أيام');
+    else if (rangePreset === 'last30') text = t('Last 30 days', 'آخر 30 يومًا');
+    else if (rangePreset === 'thisMonth') text = t('This month', 'هذا الشهر');
     document.getElementById('rangeLabel').textContent = text;
     document.querySelectorAll('#rangePop .range-opt').forEach((btn) => {
       btn.classList.toggle('active', btn.getAttribute('data-preset') === rangePreset);
@@ -228,14 +234,14 @@
 
   function showListChrome() {
     document.getElementById('crumb').innerHTML =
-      '<span>Shifts</span><span class="sep">/</span><span class="current">Z-Reports</span>';
-    document.getElementById('pageTitle').textContent = 'Z-Reports';
+      '<span>' + esc(t('Shifts', 'الورديات')) + '</span><span class="sep">/</span><span class="current">' + esc(t('Z-Reports', 'تقارير Z')) + '</span>';
+    document.getElementById('pageTitle').textContent = t('Z-Reports', 'تقارير Z');
     document.getElementById('pageSub').textContent =
-      'What happened during each shift, and can the cash be reconciled?';
+      t('What happened during each shift, and can the cash be reconciled?', 'إيه اللي حصل خلال كل وردية، وهل النقدية اتسوّت؟');
     document.getElementById('pageStaff').hidden = true;
     document.getElementById('pageWindow').hidden = true;
     document.getElementById('btnBack').href = '/dashboard/shifts/';
-    document.getElementById('btnBack').innerHTML = '<i class="ti ti-arrow-left"></i> Shifts';
+    document.getElementById('btnBack').innerHTML = '<i class="ti ti-arrow-left"></i> ' + esc(t('Shifts', 'الورديات'));
     document.getElementById('listFilters').hidden = false;
     document.getElementById('btnExport').hidden = false;
     document.getElementById('btnPrint').hidden = true;
@@ -248,15 +254,15 @@
 
   function showDetailChrome(r) {
     document.getElementById('crumb').innerHTML =
-      '<span>Shifts</span><span class="sep">/</span><a href="/dashboard/z-report/">Z-Reports</a><span class="sep">/</span><span class="current">Z-Report</span>';
-    document.getElementById('pageTitle').textContent = 'Z-Report';
-    document.getElementById('pageSub').textContent = 'Shift closing';
+      '<span>' + esc(t('Shifts', 'الورديات')) + '</span><span class="sep">/</span><a href="/dashboard/z-report/">' + esc(t('Z-Reports', 'تقارير Z')) + '</a><span class="sep">/</span><span class="current">' + esc(t('Z-Report', 'تقرير Z')) + '</span>';
+    document.getElementById('pageTitle').textContent = t('Z-Report', 'تقرير Z');
+    document.getElementById('pageSub').textContent = t('Shift closing', 'إغلاق الوردية');
     document.getElementById('pageStaff').hidden = false;
-    document.getElementById('pageStaff').textContent = r.staffName || 'Staff';
+    document.getElementById('pageStaff').textContent = r.staffName || t('Staff', 'الموظف');
     document.getElementById('pageWindow').hidden = false;
     document.getElementById('pageWindow').textContent = windowLabel(r.openedAt, r.closedAt);
     document.getElementById('btnBack').href = '/dashboard/z-report/';
-    document.getElementById('btnBack').innerHTML = '<i class="ti ti-arrow-left"></i> Z-Reports';
+    document.getElementById('btnBack').innerHTML = '<i class="ti ti-arrow-left"></i> ' + esc(t('Z-Reports', 'تقارير Z'));
     document.getElementById('listFilters').hidden = true;
     document.getElementById('btnExport').hidden = true;
     document.getElementById('btnPrint').hidden = false;
@@ -297,23 +303,23 @@
     closed.hidden = !r.isFinal;
     openNote.hidden = r.status !== 'open';
     document.getElementById('closedWhen').textContent = r.closedAt
-      ? 'Closed ' + dt(r.closedAt)
+      ? t('Closed', 'أُغلقت') + ' ' + dt(r.closedAt)
       : '';
 
     document.getElementById('shiftInfo').innerHTML = dl([
-      ['Shift', esc(r.staffName) + ' · ' + dt(r.openedAt)],
-      ['Staff', esc(r.staffName)],
-      ['Opened at', dt(r.openedAt)],
-      ['Closed at', r.closedAt ? dt(r.closedAt) : 'Open'],
-      ['Status', '<span class="st ' + esc(r.status) + '">' + esc(statusLabel(r.status)) + '</span>'],
+      [t('Shift', 'الوردية'), esc(r.staffName) + ' · ' + dt(r.openedAt)],
+      [t('Staff', 'الموظف'), esc(r.staffName)],
+      [t('Opened at', 'وقت الفتح'), dt(r.openedAt)],
+      [t('Closed at', 'وقت الإغلاق'), r.closedAt ? dt(r.closedAt) : t('Open', 'مفتوح')],
+      [t('Status', 'الحالة'), '<span class="st ' + esc(r.status) + '">' + esc(statusLabel(r.status)) + '</span>'],
     ]);
 
     document.getElementById('salesKpis').innerHTML =
-      kpi('Gross sales', esc(money(r.grossSales))) +
-      kpi('Discounts', esc(money(r.discounts))) +
-      kpi('Refunds', esc(money(r.refunds))) +
-      kpi('Net sales', esc(money(r.netSales)), ' is-net') +
-      kpi('Transactions', String(r.transactionCount || 0));
+      kpi(t('Gross sales', 'إجمالي المبيعات'), esc(money(r.grossSales))) +
+      kpi(t('Discounts', 'الخصومات'), esc(money(r.discounts))) +
+      kpi(t('Refunds', 'المرتجعات'), esc(money(r.refunds))) +
+      kpi(t('Net sales', 'صافي المبيعات'), esc(money(r.netSales)), ' is-net') +
+      kpi(t('Transactions', 'المعاملات'), String(r.transactionCount || 0));
 
     const methods = r.methods || [];
     document.getElementById('methodBody').innerHTML = methods.length
@@ -329,7 +335,7 @@
               '</td></tr>',
           )
           .join('')
-      : '<tr><td colspan="3" class="muted">No payments on this shift</td></tr>';
+      : '<tr><td colspan="3" class="muted">' + esc(t('No payments on this shift', 'لا توجد مدفوعات في هذه الوردية')) + '</td></tr>';
 
     const hero = document.getElementById('cashHero');
     if (r.revealCash) {
@@ -340,42 +346,42 @@
         else if (diff > 0) diffCls = ' is-pos';
       }
       hero.innerHTML =
-        '<div class="box"><div class="l">Expected cash</div><div class="v">' +
+        '<div class="box"><div class="l">' + esc(t('Expected cash', 'النقدية المتوقعة')) + '</div><div class="v">' +
         esc(money(r.expectedCash)) +
         '</div></div>' +
-        '<div class="box"><div class="l">Counted cash</div><div class="v">' +
+        '<div class="box"><div class="l">' + esc(t('Counted cash', 'النقدية المحسوبة')) + '</div><div class="v">' +
         esc(money(r.countedCash)) +
         '</div></div>' +
         '<div class="box is-diff' +
         diffCls +
-        '"><div class="l">Difference</div><div class="v">' +
+        '"><div class="l">' + esc(t('Difference', 'الفرق')) + '</div><div class="v">' +
         esc(money(r.difference)) +
         '</div></div>';
     } else {
       hero.innerHTML =
-        '<div class="box"><div class="l">Expected cash</div><div class="v">Hidden</div></div>' +
-        '<div class="box"><div class="l">Counted cash</div><div class="v">—</div></div>' +
-        '<div class="box"><div class="l">Difference</div><div class="v">—</div></div>';
+        '<div class="box"><div class="l">' + esc(t('Expected cash', 'النقدية المتوقعة')) + '</div><div class="v">' + esc(t('Hidden', 'مخفي')) + '</div></div>' +
+        '<div class="box"><div class="l">' + esc(t('Counted cash', 'النقدية المحسوبة')) + '</div><div class="v">—</div></div>' +
+        '<div class="box"><div class="l">' + esc(t('Difference', 'الفرق')) + '</div><div class="v">—</div></div>';
     }
 
     const cashRows = [
-      ['Opening cash', money(r.openingCash)],
-      ['Cash sales', money(r.cashSales)],
-      ['Cash refunds', money(r.cashRefunds)],
-      ['Cash expenses', money(r.cashExpenses)],
+      [t('Opening cash', 'رصيد الفتح'), money(r.openingCash)],
+      [t('Cash sales', 'مبيعات نقدية'), money(r.cashSales)],
+      [t('Cash refunds', 'مرتجعات نقدية'), money(r.cashRefunds)],
+      [t('Cash expenses', 'مصروفات نقدية'), money(r.cashExpenses)],
     ];
-    if (Number(r.cashPaidIn)) cashRows.push(['Paid in', money(r.cashPaidIn)]);
-    if (Number(r.floatAdjust)) cashRows.push(['Float adjust', money(r.floatAdjust)]);
-    cashRows.push(['Expected cash', r.revealCash ? money(r.expectedCash) : 'Hidden']);
-    cashRows.push(['Counted cash', r.revealCash ? money(r.countedCash) : '—']);
-    cashRows.push(['Cash difference', r.revealCash ? money(r.difference) : '—']);
+    if (Number(r.cashPaidIn)) cashRows.push([t('Paid in', 'وارد نقدي'), money(r.cashPaidIn)]);
+    if (Number(r.floatAdjust)) cashRows.push([t('Float adjust', 'تعديل العهدة'), money(r.floatAdjust)]);
+    cashRows.push([t('Expected cash', 'النقدية المتوقعة'), r.revealCash ? money(r.expectedCash) : t('Hidden', 'مخفي')]);
+    cashRows.push([t('Counted cash', 'النقدية المحسوبة'), r.revealCash ? money(r.countedCash) : '—']);
+    cashRows.push([t('Cash difference', 'فرق النقدية'), r.revealCash ? money(r.difference) : '—']);
     document.getElementById('cashLines').innerHTML = dl(cashRows.map(([k, v]) => [k, esc(v)]));
 
     const cats = [
-      ['Memberships', r.membershipCount, r.memberships],
-      ['Renewals', r.renewalCount, r.renewals],
-      ['Products', r.productCount, r.products],
-      ['Other', r.otherCount, r.other],
+      [t('Memberships', 'الاشتراكات'), r.membershipCount, r.memberships],
+      [t('Renewals', 'التجديدات'), r.renewalCount, r.renewals],
+      [t('Products', 'المنتجات'), r.productCount, r.products],
+      [t('Other', 'أخرى'), r.otherCount, r.other],
     ].filter((c) => Number(c[1]) > 0 || Number(c[2]) !== 0);
     document.getElementById('breakBody').innerHTML = cats.length
       ? cats
@@ -390,12 +396,12 @@
               '</td></tr>',
           )
           .join('')
-      : '<tr><td colspan="3" class="muted">No sale lines on this shift</td></tr>';
+      : '<tr><td colspan="3" class="muted">' + esc(t('No sale lines on this shift', 'لا توجد بنود بيع في هذه الوردية')) + '</td></tr>';
 
     document.getElementById('activityDl').innerHTML = dl([
-      ['Transactions', String(r.transactionCount || 0)],
-      ['Refunds', String(r.refundCount || 0)],
-      ['Discounts', String(r.discountCount || 0)],
+      [t('Transactions', 'المعاملات'), String(r.transactionCount || 0)],
+      [t('Refunds', 'المرتجعات'), String(r.refundCount || 0)],
+      [t('Discounts', 'الخصومات'), String(r.discountCount || 0)],
     ]);
     document.querySelectorAll('#viewDetail .rpt-table').forEach((table) => stampColLabelsTable(table));
   }
@@ -452,15 +458,15 @@
       from +
       '–' +
       to +
-      ' of ' +
+      ' ' + esc(t('of', 'من')) + ' ' +
       total +
       '</span>' +
       '<button type="button" class="btn secondary" id="zPgPrev"' +
       (listPage <= 1 ? ' disabled' : '') +
-      '>Prev</button>' +
+      '>' + esc(t('Prev', 'السابق')) + '</button>' +
       '<button type="button" class="btn secondary" id="zPgNext"' +
       (listPage >= pages ? ' disabled' : '') +
-      '>Next</button>';
+      '>' + esc(t('Next', 'التالي')) + '</button>';
     document.getElementById('zPgPrev').onclick = () => {
       listPage -= 1;
       paintListPage();
@@ -497,25 +503,25 @@
       document.getElementById('listPager').hidden = true;
       document.getElementById('listEmpty').hidden = false;
       lastListCsv = [
-        ['Report', 'Z-Reports'],
-        ['From', from],
-        ['To', to],
+        [t('Report', 'التقرير'), t('Z-Reports', 'تقارير Z')],
+        [t('From', 'من'), from],
+        [t('To', 'إلى'), to],
         [],
-        ['Staff', 'Opened', 'Closed', 'Sales', 'Refunds', 'Difference', 'Status'],
+        [t('Staff', 'الموظف'), t('Opened', 'الافتتاح'), t('Closed', 'الإغلاق'), t('Sales', 'المبيعات'), t('Refunds', 'المرتجعات'), t('Difference', 'الفرق'), t('Status', 'الحالة')],
       ];
       return;
     }
     lastListCsv = [
-      ['Report', 'Z-Reports'],
-      ['From', from],
-      ['To', to],
+      [t('Report', 'التقرير'), t('Z-Reports', 'تقارير Z')],
+      [t('From', 'من'), from],
+      [t('To', 'إلى'), to],
       [],
-      ['Staff', 'Opened', 'Closed', 'Sales', 'Refunds', 'Difference', 'Status'],
+      [t('Staff', 'الموظف'), t('Opened', 'الافتتاح'), t('Closed', 'الإغلاق'), t('Sales', 'المبيعات'), t('Refunds', 'المرتجعات'), t('Difference', 'الفرق'), t('Status', 'الحالة')],
     ].concat(
       items.map((s) => [
         s.staffName,
         dt(s.openedAt),
-        s.closedAt ? dt(s.closedAt) : 'Open',
+        s.closedAt ? dt(s.closedAt) : t('Open', 'مفتوح'),
         (Number(s.sales) || 0).toFixed(2),
         (Number(s.refunds) || 0).toFixed(2),
         s.status === 'open' || s.difference == null ? '' : Number(s.difference).toFixed(2),
@@ -538,7 +544,7 @@
         '</td><td>' +
         dt(s.openedAt) +
         '</td><td>' +
-        (s.closedAt ? dt(s.closedAt) : 'Open') +
+        (s.closedAt ? dt(s.closedAt) : esc(t('Open', 'مفتوح'))) +
         '</td><td class="amt">' +
         money(s.sales) +
         '</td><td class="amt">' +
@@ -579,9 +585,9 @@
     if (!res.ok) {
       document.getElementById('zDoc').hidden = true;
       document.getElementById('detailError').hidden = false;
-      document.getElementById('pageTitle').textContent = 'Z-Report';
+      document.getElementById('pageTitle').textContent = t('Z-Report', 'تقرير Z');
       document.getElementById('btnBack').href = '/dashboard/z-report/';
-      document.getElementById('btnBack').innerHTML = '<i class="ti ti-arrow-left"></i> Z-Reports';
+      document.getElementById('btnBack').innerHTML = '<i class="ti ti-arrow-left"></i> ' + esc(t('Z-Reports', 'تقارير Z'));
       document.getElementById('btnPrint').hidden = true;
       document.getElementById('btnPdf').hidden = true;
       return;
@@ -600,7 +606,7 @@
       return;
     }
     if (!res.ok) {
-      toast("We couldn't export this PDF. Try again.", 'err');
+      toast(t("We couldn't export this PDF. Try again.", 'تعذّر تصدير ملف PDF. حاول تاني.'), 'err');
       return;
     }
     const blob = await res.blob();
@@ -612,12 +618,12 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast('PDF downloaded.', 'ok');
+    toast(t('PDF downloaded.', 'تم تنزيل ملف PDF.'), 'ok');
   }
 
   function exportListCsv() {
     if (!lastListCsv.length) {
-      toast('Nothing to export', 'err');
+      toast(t('Nothing to export', 'لا يوجد ما يمكن تصديره'), 'err');
       return;
     }
     const csv = lastListCsv
@@ -628,7 +634,7 @@
     a.href = URL.createObjectURL(blob);
     a.download = 'z-reports.csv';
     a.click();
-    toast('CSV exported');
+    toast(t('CSV exported', 'تم تصدير ملف CSV'));
   }
 
   (function initDates() {
@@ -693,6 +699,11 @@
   });
   document.addEventListener('keydown', (ev) => {
     if (ev.key === 'Escape') closePops();
+  });
+
+  window.addEventListener('gfp:locale', function () {
+    if (shiftId) loadDetail();
+    else loadList();
   });
 
   (async () => {

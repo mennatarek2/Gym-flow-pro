@@ -145,6 +145,24 @@ td{padding:10px 12px;border-top:1px solid var(--ls3)}
 .mov-badge.paid_out,.mov-badge.float_adjust_neg{background:var(--dng100);color:#991b1b}
 .mov-badge.float_adjust{background:var(--suc100);color:#166534}
 
+/* ── Dark mode: tint backgrounds already darken via theme.css variables, but the text colors
+   above are hardcoded for light-mode contrast (e.g. #1e40af navy on what becomes a near-navy
+   dark background) — swap to the shared --gfp-* text-on-tint tokens theme.css defines for dark. */
+html[data-theme="dark"] .banner.warn,
+html[data-theme="dark"] .status-pill.closed{color:var(--gfp-wrn)}
+html[data-theme="dark"] .status-pill.approved,
+html[data-theme="dark"] .var-text.over,
+html[data-theme="dark"] .var-text.balanced,
+html[data-theme="dark"] .activity-amt.pos,
+html[data-theme="dark"] .mov-badge.paid_in,
+html[data-theme="dark"] .mov-badge.float_adjust_pos,
+html[data-theme="dark"] .mov-badge.float_adjust{color:var(--gfp-suc)}
+html[data-theme="dark"] .blind-note{color:var(--gfp-inf)}
+html[data-theme="dark"] .mov-badge.refund{color:var(--gfp-wrn)}
+html[data-theme="dark"] .mov-badge.paid_out,
+html[data-theme="dark"] .mov-badge.float_adjust_neg{color:var(--gfp-dng)}
+html[data-theme="dark"] .mov-badge.sale{background:var(--gfp-neu-bg);color:var(--gfp-neu)}
+
 /* ── Filters ── */
 .filters{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
 .hist-filters{padding:12px 14px;background:var(--ls2);border:1px solid var(--ls3);border-radius:var(--rmd)}

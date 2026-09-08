@@ -7,7 +7,7 @@
 <meta name="description" content="Front-desk class sessions and bookings.">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="classes.css?v=flow12">
+<link rel="stylesheet" href="classes.css?v=locale1">
 </head>
 <body>
 <div class="app">
@@ -18,27 +18,27 @@
 </aside>
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span>Front desk</span><span class="sep">/</span><span class="current">Classes</span></div></div>
-  <div class="tb-right"><div class="gym-name" id="gymName">Gym</div><div class="gym-name-ar" id="gymNameAr"></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Front desk" data-ar="الاستقبال">Front desk</span><span class="sep">/</span><span class="current" data-en="Classes" data-ar="الحصص">Classes</span></div></div>
+  <div class="tb-right"><div class="gym-name" id="gymName">Gym</div><div class="gym-name-ar" id="gymNameAr" hidden></div></div>
 </header>
 <div class="content">
   <div class="page-header">
     <div class="ph-left">
-      <h1 class="page-title">Classes <span class="title-ar">/ الحصص</span></h1>
-      <p class="page-subtitle">What classes are happening — activity, time, coach, and capacity</p>
+      <h1 class="page-title" data-en="Classes" data-ar="الحصص">Classes</h1>
+      <p class="page-subtitle" data-en="What classes are happening — activity, time, coach, and capacity" data-ar="الحصص النهاردة — النشاط والوقت والمدرب والسعة">What classes are happening — activity, time, coach, and capacity</p>
     </div>
     <div class="ph-right day-controls">
       <div class="day-chips" role="group" aria-label="Quick dates">
-        <button type="button" class="day-chip is-active" id="chipToday" data-range="today">Today</button>
-        <button type="button" class="day-chip" id="chipTomorrow" data-range="tomorrow">Tomorrow</button>
-        <button type="button" class="day-chip" id="chipWeek" data-range="week">This week</button>
+        <button type="button" class="day-chip is-active" id="chipToday" data-range="today" data-en="Today" data-ar="النهاردة">Today</button>
+        <button type="button" class="day-chip" id="chipTomorrow" data-range="tomorrow" data-en="Tomorrow" data-ar="بكرة">Tomorrow</button>
+        <button type="button" class="day-chip" id="chipWeek" data-range="week" data-en="This week" data-ar="الأسبوع ده">This week</button>
       </div>
       <div class="date-nav" role="group" aria-label="Date navigation">
         <button type="button" class="date-btn" id="btnPrev" aria-label="Previous day"><i class="ti ti-chevron-left"></i></button>
         <button type="button" class="date-display" id="dateDisplay" aria-live="polite"></button>
         <input type="date" id="datePick" class="date-pick" aria-label="Pick date">
         <button type="button" class="date-btn" id="btnNext" aria-label="Next day"><i class="ti ti-chevron-right"></i></button>
-        <button type="button" class="btn-today" id="btnToday">Today</button>
+        <button type="button" class="btn-today" id="btnToday" data-en="Today" data-ar="النهاردة">Today</button>
         <button type="button" class="btn-refresh" id="btnRefresh" aria-label="Refresh"><i class="ti ti-refresh"></i></button>
       </div>
     </div>
@@ -46,15 +46,15 @@
 
   <div class="toolbar">
     <label class="filter-field">
-      <span class="filter-label">Activity</span>
+      <span class="filter-label" data-en="Activity" data-ar="النشاط">Activity</span>
       <select id="activityFilter" class="filter-select" aria-label="Filter by activity">
-        <option value="">All Activities</option>
+        <option value="" data-en="All Activities" data-ar="كل الأنشطة">All Activities</option>
       </select>
     </label>
     <div class="stats-bar" aria-live="polite">
-      <div class="stat-pill"><i class="ti ti-calendar-event"></i><span id="statSessions">0</span> Sessions</div>
-      <div class="stat-pill"><i class="ti ti-users"></i><span id="statBooked">0</span> Booked</div>
-      <div class="stat-pill active"><i class="ti ti-check"></i><span id="statCheckedIn">0</span> Checked in</div>
+      <div class="stat-pill"><i class="ti ti-calendar-event"></i><span id="statSessions">0</span> <span data-en="Sessions" data-ar="حصص">Sessions</span></div>
+      <div class="stat-pill"><i class="ti ti-users"></i><span id="statBooked">0</span> <span data-en="Booked" data-ar="محجوز">Booked</span></div>
+      <div class="stat-pill active"><i class="ti ti-check"></i><span id="statCheckedIn">0</span> <span data-en="Checked in" data-ar="حضروا">Checked in</span></div>
     </div>
   </div>
 
@@ -73,12 +73,12 @@
     </div>
     <iframe id="classPrintFrame" title="Class booking invoice"></iframe>
     <div class="class-print-actions">
-      <button type="button" class="btn-book" id="classPrintDo"><i class="ti ti-printer"></i> Print</button>
-      <button type="button" class="btn-cancel" id="classPrintDismiss">Close</button>
+      <button type="button" class="btn-book" id="classPrintDo"><i class="ti ti-printer"></i> <span data-en="Print" data-ar="طباعة">Print</span></button>
+      <button type="button" class="btn-cancel" id="classPrintDismiss" data-en="Close" data-ar="إغلاق">Close</button>
     </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
-<script src="classes-app.js?v=flow12"></script>
+<script src="classes-app.js?v=locale1"></script>
 </body>
 </html>
