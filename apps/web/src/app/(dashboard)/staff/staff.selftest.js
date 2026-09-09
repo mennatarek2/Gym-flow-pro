@@ -48,7 +48,11 @@ assert(rec.indexOf('plans.manage') === -1, 'receptionist does not have plans.man
 assert(rec.indexOf('settings.manage') === -1, 'receptionist does not have settings.manage');
 
 var trainer = R.permissionsForRole('Trainer');
-assert(trainer.length === 1 && trainer[0] === 'checkin.manual', 'trainer is check-in only');
+assert(
+  trainer.length === 3 && trainer.indexOf('checkin.manual') !== -1 &&
+    trainer.indexOf('classes.view') !== -1 && trainer.indexOf('attendance.view') !== -1,
+  'trainer is check-in, classes and attendance view only'
+);
 
 var owner = R.permissionsForRole('Owner');
 assert(owner.indexOf('inventory.transfer') !== -1, 'owner has inventory.transfer once');
@@ -58,11 +62,11 @@ assert(R.STAFF_ROLES.join(',') === 'Owner,Manager,Receptionist,Trainer', 'staff 
 assert(R.STAFF_ROLES.indexOf('Member') === -1, 'Member is not a staff role on the viewer');
 assert(!R.isStaffRole('Member') && R.isStaffRole('Owner'), 'isStaffRole hides Member');
 
-assert(R.permissionUniverseCount() === 24, 'universe is Permissions.All (24)');
-assert(R.permissionCount('Owner') === 24, 'Owner count derived = 24');
-assert(R.permissionCount('Manager') === 22, 'Manager count derived = 22');
-assert(R.permissionCount('Receptionist') === 13, 'Receptionist count derived = 13');
-assert(R.permissionCount('Trainer') === 1, 'Trainer count derived = 1');
+assert(R.permissionUniverseCount() === 41, 'universe is Permissions.All (41)');
+assert(R.permissionCount('Owner') === 41, 'Owner count derived = 41');
+assert(R.permissionCount('Manager') === 39, 'Manager count derived = 39');
+assert(R.permissionCount('Receptionist') === 18, 'Receptionist count derived = 18');
+assert(R.permissionCount('Trainer') === 3, 'Trainer count derived = 3');
 assert(R.permissionCount('Member') === 0, 'Member is not in the provider map');
 
 var groupedKeys = [];
@@ -73,7 +77,7 @@ assert(groupedKeys.sort().join(',') === Object.keys(R.PERMISSION_LABELS).slice()
 
 var trainerGroups = R.groupsForRole('Trainer');
 assert(trainerGroups.length === 1 && trainerGroups[0].id === 'attendance', 'Trainer shows Attendance only');
-assert(trainerGroups[0].items.length === 1 && trainerGroups[0].items[0].key === 'checkin.manual', 'Trainer item is checkin.manual');
+assert(trainerGroups[0].items.length === 3 && trainerGroups[0].items[0].key === 'checkin.manual', 'Trainer items are checkin.manual, classes.view, attendance.view');
 
 var managerGroups = R.groupsForRole('Manager');
 var managerIds = managerGroups.map(function (g) { return g.id; });

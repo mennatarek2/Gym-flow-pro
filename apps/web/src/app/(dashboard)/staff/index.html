@@ -7,7 +7,7 @@
 <meta name="description" content="Manage gym staff members, assign roles, and control access for your gym team.">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="staff.css?v=7">
+<link rel="stylesheet" href="staff.css?v=8">
 </head>
 <body>
 <div class="app">
@@ -22,7 +22,7 @@
 
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current">Staff Management</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current" data-en="Staff Management" data-ar="إدارة الموظفين">Staff Management</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">Fitness Hub</div><div class="gym-name-ar" id="gymNameAr"></div></div>
 </header>
 
@@ -30,61 +30,61 @@
   <!-- Owner Guard Banner -->
   <div class="owner-guard" id="ownerGuard" hidden>
     <div class="guard-icon"><i class="ti ti-lock"></i></div>
-    <h2>Access Restricted</h2>
-    <p>Staff management is available to gym owners only.</p>
-    <a href="/dashboard/" class="guard-btn">Back to Dashboard</a>
+    <h2 data-en="Access Restricted" data-ar="الوصول مقيد">Access Restricted</h2>
+    <p data-en="Staff management is available to gym owners only." data-ar="إدارة الموظفين متاحة لأصحاب الصالة فقط.">Staff management is available to gym owners only.</p>
+    <a href="/dashboard/" class="guard-btn" data-en="Back to Dashboard" data-ar="العودة للوحة التحكم">Back to Dashboard</a>
   </div>
 
   <!-- Page Content (owner only) -->
   <div id="staffContent">
     <div class="page-header">
       <div class="ph-left">
-        <h1 class="page-title"><i class="ti ti-user-shield"></i> Staff</h1>
-        <p class="page-subtitle">People, their job on the floor, and what their system role can do. Change job tasks on Roles.</p>
+        <h1 class="page-title"><i class="ti ti-user-shield"></i> <span data-en="Staff" data-ar="الموظفون">Staff</span></h1>
+        <p class="page-subtitle" data-en="People, their job on the floor, and what their system role can do. Change job tasks on Roles." data-ar="فريق العمل، وظيفة كل شخص على الأرض، وما يستطيع دوره في النظام فعله. لتغيير مهام الوظيفة اذهب إلى الأدوار.">People, their job on the floor, and what their system role can do. Change job tasks on Roles.</p>
       </div>
       <div class="ph-right">
-        <button class="btn-add-staff" id="btnAddStaff"><i class="ti ti-user-plus"></i> Add staff</button>
+        <button class="btn-add-staff" id="btnAddStaff"><i class="ti ti-user-plus"></i> <span data-en="Add staff" data-ar="إضافة موظف">Add staff</span></button>
       </div>
     </div>
 
     <div class="staff-toolbar">
-      <div class="staff-search"><i class="ti ti-search"></i><input id="staffSearch" type="search" placeholder="Search name, number, phone, email" autocomplete="off"></div>
+      <div class="staff-search"><i class="ti ti-search"></i><input id="staffSearch" type="search" placeholder="Search name, number, phone, email" data-en-placeholder="Search name, number, phone, email" data-ar-placeholder="ابحث بالاسم أو الرقم أو الهاتف أو البريد الإلكتروني" autocomplete="off"></div>
       <select id="staffRoleFilter" aria-label="Role">
-        <option value="">All roles</option>
-        <option value="Owner">Owner</option>
-        <option value="Manager">Manager</option>
-        <option value="Trainer">Trainer</option>
-        <option value="Receptionist">Receptionist</option>
+        <option value="" data-en="All roles" data-ar="كل الأدوار">All roles</option>
+        <option value="Owner" data-en="Owner" data-ar="المالك">Owner</option>
+        <option value="Manager" data-en="Manager" data-ar="المدير">Manager</option>
+        <option value="Trainer" data-en="Trainer" data-ar="المدرب">Trainer</option>
+        <option value="Receptionist" data-en="Receptionist" data-ar="موظف الاستقبال">Receptionist</option>
       </select>
       <select id="staffDeptFilter" aria-label="Department">
-        <option value="">All departments</option>
-        <option value="Front Desk">Front Desk</option>
-        <option value="Sales">Sales</option>
-        <option value="Training">Training</option>
-        <option value="Management">Management</option>
-        <option value="Operations">Operations</option>
-        <option value="Other">Other</option>
+        <option value="" data-en="All departments" data-ar="كل الأقسام">All departments</option>
+        <option value="Front Desk" data-en="Front Desk" data-ar="مكتب الاستقبال">Front Desk</option>
+        <option value="Sales" data-en="Sales" data-ar="المبيعات">Sales</option>
+        <option value="Training" data-en="Training" data-ar="التدريب">Training</option>
+        <option value="Management" data-en="Management" data-ar="الإدارة">Management</option>
+        <option value="Operations" data-en="Operations" data-ar="العمليات">Operations</option>
+        <option value="Other" data-en="Other" data-ar="أخرى">Other</option>
       </select>
       <select id="staffStatusFilter" aria-label="Status">
-        <option value="">All statuses</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
+        <option value="" data-en="All statuses" data-ar="كل الحالات">All statuses</option>
+        <option value="active" data-en="Active" data-ar="نشط">Active</option>
+        <option value="inactive" data-en="Inactive" data-ar="غير نشط">Inactive</option>
       </select>
     </div>
 
     <div class="table-card">
       <table class="staff-table">
         <thead><tr>
-          <th>Staff</th>
-          <th>Number</th>
-          <th>Job title</th>
-          <th>Role</th>
-          <th>Department</th>
-          <th>Status</th>
-          <th>Last login</th>
-          <th>Actions</th>
+          <th data-en="Staff" data-ar="الموظف">Staff</th>
+          <th data-en="Number" data-ar="الرقم">Number</th>
+          <th data-en="Job title" data-ar="المسمى الوظيفي">Job title</th>
+          <th data-en="Role" data-ar="الدور">Role</th>
+          <th data-en="Department" data-ar="القسم">Department</th>
+          <th data-en="Status" data-ar="الحالة">Status</th>
+          <th data-en="Last login" data-ar="آخر تسجيل دخول">Last login</th>
+          <th data-en="Actions" data-ar="الإجراءات">Actions</th>
         </tr></thead>
-        <tbody id="staffBody"><tr><td colspan="8" class="loading-cell"><div class="loader"></div>Loading staff...</td></tr></tbody>
+        <tbody id="staffBody"><tr><td colspan="8" class="loading-cell"><div class="loader"></div><span data-en="Loading staff..." data-ar="جاري تحميل الموظفين...">Loading staff...</span></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -116,7 +116,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API_BASE=window.API_BASE||'https://reach-lullaby-tighten.ngrok-free.dev/api';
+const API_BASE=window.API_BASE||window.GFP_DEFAULT_API_BASE||'/api';
 function getH(){const t=localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');const h={'Content-Type':'application/json','ngrok-skip-browser-warning':'true'};if(t)h['Authorization']='Bearer '+t;return h;}
 async function apiGet(p){const r=await fetch(API_BASE+p,{headers:getH()});if(r.status===401){window.location.href='/auth/login/';return null;}if(!r.ok)return null;return r.json();}
 async function apiPost(p,b){const r=await fetch(API_BASE+p,{method:'POST',headers:getH(),body:JSON.stringify(b)});const d=await r.json().catch(()=>null);return{ok:r.ok,status:r.status,data:d};}
@@ -131,7 +131,7 @@ document.getElementById('userRole').textContent=user.role||'Staff';
 document.getElementById('btnLogout').addEventListener('click',function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});window.location.href='/auth/login/';});
 (async()=>{const s=await apiGet('/settings');if(s){document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
 </script>
-<script src="staff-rules.js?v=7"></script>
-<script src="staff-app.js?v=8"></script>
+<script src="staff-rules.js?v=8"></script>
+<script src="staff-app.js?v=10"></script>
 </body>
 </html>

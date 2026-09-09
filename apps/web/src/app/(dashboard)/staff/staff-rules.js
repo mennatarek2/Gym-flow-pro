@@ -31,6 +31,8 @@
     'members.create': 'Create members',
     'members.edit': 'Edit members',
     'checkin.manual': 'Manual check-in',
+    'classes.view': 'View classes',
+    'attendance.view': 'View attendance',
     'sales.sell': 'Sell',
     'sales.discount.apply': 'Apply sales discount',
     'sales.discount.override': 'Override sales discount',
@@ -43,6 +45,8 @@
     'memberships.freeze': 'Freeze memberships',
     'plans.manage': 'Manage plans',
     'reports.financial.view': 'View financial reports',
+    'reports.expenses.view': 'View expenses',
+    'reports.expenses.manage': 'Manage expenses',
     'settings.manage': 'Manage gym settings',
     'inventory.view': 'View inventory',
     'inventory.manage': 'Manage inventory',
@@ -50,7 +54,20 @@
     'inventory.purchase': 'Purchase stock',
     'inventory.transfer': 'Transfer stock',
     'member_orders.view': 'View member app orders',
-    'member_orders.manage': 'Manage member app orders'
+    'member_orders.manage': 'Manage member app orders',
+    'hr.view': 'View HR directory',
+    'hr.manage': 'Manage HR directory',
+    'hr.shifts.manage': 'Manage shift templates & schedules',
+    'hr.attendance.manage': 'Manage staff attendance',
+    'hr.attendance.view': 'View staff attendance',
+    'hr.leave.view': 'View staff leave',
+    'hr.leave.manage': 'Manage staff leave',
+    'hr.leave.approve': 'Approve staff leave',
+    'hr.payroll.view': 'View payroll',
+    'hr.payroll.manage': 'Manage payroll',
+    'hr.payroll.approve': 'Approve payroll',
+    'hr.documents.view': 'View staff documents',
+    'hr.documents.manage': 'Manage staff documents'
   };
 
   var ALL_PERMS = Object.keys(PERMISSION_LABELS);
@@ -71,16 +88,22 @@
    */
   var PERMISSION_GROUPS = [
     { id: 'members', label: 'Members', keys: ['members.view', 'members.create', 'members.edit'] },
-    { id: 'attendance', label: 'Attendance', keys: ['checkin.manual'] },
+    { id: 'attendance', label: 'Attendance', keys: ['checkin.manual', 'classes.view', 'attendance.view'] },
     { id: 'sales', label: 'Sales', keys: ['sales.sell', 'sales.discount.apply', 'sales.discount.override'] },
     { id: 'payments', label: 'Payments', keys: ['payments.cash.accept', 'payments.refund.request', 'payments.refund.approve'] },
     { id: 'shifts', label: 'Shifts', keys: ['shift.open', 'shift.close', 'shift.reconcile.approve'] },
     { id: 'memberships', label: 'Memberships', keys: ['memberships.freeze'] },
     { id: 'plans', label: 'Plans', keys: ['plans.manage'] },
-    { id: 'reports', label: 'Reports', keys: ['reports.financial.view'] },
+    { id: 'reports', label: 'Reports', keys: ['reports.financial.view', 'reports.expenses.view', 'reports.expenses.manage'] },
     { id: 'settings', label: 'Settings', keys: ['settings.manage'] },
     { id: 'inventory', label: 'Inventory', keys: ['inventory.view', 'inventory.manage', 'inventory.adjust', 'inventory.purchase', 'inventory.transfer'] },
-    { id: 'member-orders', label: 'Member Orders', keys: ['member_orders.view', 'member_orders.manage'] }
+    { id: 'member-orders', label: 'Member Orders', keys: ['member_orders.view', 'member_orders.manage'] },
+    { id: 'hr', label: 'HR', keys: [
+      'hr.view', 'hr.manage', 'hr.shifts.manage', 'hr.attendance.manage', 'hr.attendance.view',
+      'hr.leave.view', 'hr.leave.manage', 'hr.leave.approve',
+      'hr.payroll.view', 'hr.payroll.manage', 'hr.payroll.approve',
+      'hr.documents.view', 'hr.documents.manage'
+    ] }
   ];
 
   var ROLE_PERMISSIONS = {
@@ -90,14 +113,15 @@
     }),
     Receptionist: [
       'members.view', 'members.create', 'members.edit',
-      'checkin.manual',
+      'checkin.manual', 'classes.view', 'attendance.view',
       'sales.sell', 'sales.discount.apply',
       'payments.cash.accept', 'payments.refund.request',
       'shift.open', 'shift.close',
       'inventory.view',
-      'member_orders.view', 'member_orders.manage'
+      'member_orders.view', 'member_orders.manage',
+      'hr.view', 'hr.attendance.manage', 'hr.attendance.view'
     ],
-    Trainer: ['checkin.manual']
+    Trainer: ['checkin.manual', 'classes.view', 'attendance.view']
   };
 
   function canonicalRole(role) {

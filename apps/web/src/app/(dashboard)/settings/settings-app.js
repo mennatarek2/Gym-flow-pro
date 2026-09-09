@@ -14,18 +14,31 @@
   const apiDelete = window.apiDelete;
   const apiUpload = window.apiUpload;
 
+  function t(en, ar) {
+    var I18n = window.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return en;
+  }
+
+  function isAr() {
+    var I18n = window.GfpI18n;
+    return !!(I18n && I18n.getLocale && I18n.getLocale() === 'ar');
+  }
+
   function toast(msg, type) {
     return globalThis.toastShared(msg, type);
   }
 
   function fmtDate(d) {
     if (!d) return '';
+    var I18n = window.GfpI18n;
+    if (I18n && I18n.formatDate) return I18n.formatDate(d);
     return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   function apiOrigin() {
     try {
-      return new URL(window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
+      return new URL(window.API_BASE || window.GFP_DEFAULT_API_BASE || (window.location.origin + '/api')).origin;
     } catch (e) {
       return '';
     }
@@ -111,13 +124,15 @@
   }
 
   // ── Owner settings ──
+  var lastSettingsData = null;
   async function loadSettings() {
     if (!isOwner) return;
     const data = await apiGet('/settings');
     if (!data) {
-      toast('Could not load gym settings', 'error');
+      toast(t('Could not load gym settings', 'تعذّر تحميل إعدادات النادي'), 'error');
       return;
     }
+    lastSettingsData = data;
     populateForm(data);
     populateStatus(data);
   }
@@ -151,9 +166,6 @@
     var list = [];
     var origin = apiOrigin();
     if (origin) list.push(origin + path);
-    if (list.indexOf('https://reach-lullaby-tighten.ngrok-free.dev' + path) < 0) {
-      list.push('https://reach-lullaby-tighten.ngrok-free.dev' + path);
-    }
     return list;
   }
 
@@ -189,7 +201,7 @@
     var secondary = (document.getElementById('brandSecondary') || {}).value || '#148F8F';
     var accent = (document.getElementById('brandAccent') || {}).value || '#A0E040';
     var card = (document.getElementById('cardPrimary') || {}).value || primary;
-    var name = ((document.getElementById('gymName') || {}).value || '').trim() || 'Gym';
+    var name = ((document.getElementById('gymName') || {}).value || '').trim() || t('Gym', 'النادي');
     var nameAr = ((document.getElementById('gymNameAr') || {}).value || '').trim();
     var rawLogo = ((document.getElementById('gymLogoUrl') || {}).value || '').trim();
     var logoImg = document.querySelector('#logoPreview img');
@@ -313,10 +325,10 @@
     const metaCreated = document.getElementById('metaCreated');
     const metaUpdated = document.getElementById('metaUpdated');
     if (metaCreated) {
-      metaCreated.innerHTML = '<i class="ti ti-calendar"></i> Created: ' + fmtDate(s.createdAtUtc || s.CreatedAtUtc);
+      metaCreated.innerHTML = '<i class="ti ti-calendar"></i> ' + t('Created', 'أُنشئ') + ': ' + fmtDate(s.createdAtUtc || s.CreatedAtUtc);
     }
     if (metaUpdated) {
-      metaUpdated.innerHTML = '<i class="ti ti-refresh"></i> Updated: ' + fmtDate(s.updatedAtUtc || s.UpdatedAtUtc);
+      metaUpdated.innerHTML = '<i class="ti ti-refresh"></i> ' + t('Updated', 'آخر تحديث') + ': ' + fmtDate(s.updatedAtUtc || s.UpdatedAtUtc);
     }
   }
 
@@ -324,12 +336,10 @@
     const statusEl = document.getElementById('tenantStatus');
     const active = s.isActive !== false && s.IsActive !== false;
     if (statusEl && !active) {
-      statusEl.innerHTML = '<span class="st-dot" style="background:var(--dng500)"></span>Inactive';
+      statusEl.innerHTML = '<span class="st-dot" style="background:var(--dng500)"></span><span data-en="Inactive" data-ar="غير نشط" data-i18n-text>' + t('Inactive', 'غير نشط') + '</span>';
       statusEl.style.background = 'var(--dng100)';
       statusEl.style.color = 'var(--dng500)';
     }
-    const tid = document.getElementById('tenantId');
-    if (tid) tid.textContent = s.tenantId || s.TenantId || user.tenantId || '';
   }
 
   const BRAND_DEFAULTS = {
@@ -387,7 +397,7 @@
     var resetBtns = [document.getElementById('btnResetBrand'), document.getElementById('btnResetBrandFooter')];
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> Saving...';
+      btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> ' + t('Saving...', 'جارٍ الحفظ...');
     }
     resetBtns.forEach(function (b) {
       if (b) b.disabled = true;
@@ -395,10 +405,10 @@
 
     var body = readIdentityBody();
     if (!body.gymName || !body.gymNameAr) {
-      toast('Gym name (EN + AR) is required', 'error');
+      toast(t('Gym name (EN + AR) is required', 'اسم النادي مطلوب بالإنجليزي والعربي'), 'error');
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Changes';
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> ' + t('Save Changes', 'حفظ التغييرات');
       }
       resetBtns.forEach(function (b) {
         if (b) b.disabled = false;
@@ -406,10 +416,10 @@
       return false;
     }
     if (body.gymMaxCapacity != null && (body.gymMaxCapacity < 1 || body.gymMaxCapacity > 9999)) {
-      toast('Maximum inside must be between 1 and 9999', 'error');
+      toast(t('Maximum inside must be between 1 and 9999', 'أقصى عدد بالداخل يجب أن يكون بين 1 و9999'), 'error');
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Changes';
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> ' + t('Save Changes', 'حفظ التغييرات');
       }
       resetBtns.forEach(function (b) {
         if (b) b.disabled = false;
@@ -419,7 +429,8 @@
 
     var res = await apiPut('/settings', body);
     if (res && res.ok && res.data) {
-      toast(opts.successToast || 'Design saved for this gym');
+      toast(opts.successToast || t('Design saved for this gym', 'تم حفظ تصميم النادي'));
+      lastSettingsData = res.data;
       populateForm(res.data);
       populateStatus(res.data);
       if (window.GfpBranding && typeof window.GfpBranding.apply === 'function') {
@@ -431,7 +442,7 @@
       }
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Changes';
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> ' + t('Save Changes', 'حفظ التغييرات');
       }
       resetBtns.forEach(function (b) {
         if (b) b.disabled = false;
@@ -441,11 +452,11 @@
 
     var errMsg =
       (res && res.data && (res.data.message || res.data.error)) ||
-      (res && res.status ? 'Save failed (' + res.status + ')' : 'Save failed — check API connection');
+      (res && res.status ? t('Save failed', 'فشل الحفظ') + ' (' + res.status + ')' : t('Save failed — check API connection', 'فشل الحفظ — تحقق من الاتصال بالخادم'));
     toast(errMsg, 'error');
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Changes';
+      btn.innerHTML = '<i class="ti ti-device-floppy"></i> ' + t('Save Changes', 'حفظ التغييرات');
     }
     resetBtns.forEach(function (b) {
       if (b) b.disabled = false;
@@ -457,13 +468,16 @@
     if (!isOwner) return;
     if (
       !window.confirm(
-        'Reset brand colors to HyMotion defaults?\n\nThis restores Primary / Secondary / Accent / Card mark and keeps your gym name & logo. Changes will be saved.'
+        t(
+          'Reset brand colors to HyMotion defaults?\n\nThis restores Primary / Secondary / Accent / Card mark and keeps your gym name & logo. Changes will be saved.',
+          'استعادة ألوان العلامة إلى افتراضيات HyMotion؟\n\nهذا يعيد الأساسي / الثانوي / المميز / لون البطاقة، ويحافظ على اسم النادي والشعار. سيتم حفظ التغييرات.'
+        )
       )
     ) {
       return;
     }
     applyBrandDefaultsToForm();
-    await saveIdentity({ successToast: 'Defaults restored for this gym' });
+    await saveIdentity({ successToast: t('Defaults restored for this gym', 'تم استعادة الإعدادات الافتراضية لهذا النادي') });
   }
 
   const infoForm = document.getElementById('infoForm');
@@ -495,7 +509,7 @@
         navigator.clipboard.writeText(code).then(function () {
           btn.classList.add('copied');
           btn.innerHTML = '<i class="ti ti-check"></i>';
-          toast('Gym code copied!');
+          toast(t('Gym code copied!', 'تم نسخ كود النادي!'));
           setTimeout(function () {
             btn.classList.remove('copied');
             btn.innerHTML = '<i class="ti ti-copy"></i>';
@@ -541,33 +555,33 @@
       if (res && res.ok) {
         document.getElementById('gymLogoUrl').value = '';
         setLogoPreview('');
-        toast('Logo removed');
+        toast(t('Logo removed', 'تم إزالة الشعار'));
       } else {
-        toast((res && res.data && (res.data.message || res.data.error)) || 'Failed to remove logo', 'error');
+        toast((res && res.data && (res.data.message || res.data.error)) || t('Failed to remove logo', 'تعذّرت إزالة الشعار'), 'error');
       }
     });
   }
 
   async function handleLogoFile(file) {
     if (!file.type || !/^image\/(jpeg|jpg|png|webp|gif)$/i.test(file.type)) {
-      toast('Only JPEG/PNG/WebP/GIF', 'error');
+      toast(t('Only JPEG/PNG/WebP/GIF', 'فقط JPEG/PNG/WebP/GIF'), 'error');
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast('File too large. Max 2MB', 'error');
+      toast(t('File too large. Max 2MB', 'الملف كبير جداً. الحد الأقصى 2 ميجابايت'), 'error');
       return;
     }
-    toast('Uploading logo…');
+    toast(t('Uploading logo…', 'جارٍ رفع الشعار…'));
     const res = await apiUpload('/settings/logo', file);
     if (!res || !res.ok) {
-      toast((res && res.data && (res.data.message || res.data.error)) || 'Upload failed', 'error');
+      toast((res && res.data && (res.data.message || res.data.error)) || t('Upload failed', 'فشل الرفع'), 'error');
       return;
     }
     const url =
       (res.data && (res.data.relativeUrl || res.data.logoUrl || res.data.LogoUrl)) || '';
     document.getElementById('gymLogoUrl').value = url;
     setLogoPreview(url);
-    toast('Logo uploaded');
+    toast(t('Logo uploaded', 'تم رفع الشعار'));
   }
 
   ['brandPrimary', 'brandSecondary', 'brandAccent', 'cardPrimary', 'gymName', 'gymNameAr'].forEach(function (id) {
@@ -604,7 +618,7 @@
       const btn = document.getElementById('btnSaveTax');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> Saving...';
+        btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> ' + t('Saving...', 'جارٍ الحفظ...');
       }
 
       let pct = parseFloat((document.getElementById('vatRatePct') || {}).value);
@@ -621,14 +635,14 @@
 
       const res = await apiPut('/settings/tax', body);
       if (res && res.ok) {
-        toast('Tax settings saved (audited)');
+        toast(t('Tax settings saved (audited)', 'تم حفظ إعدادات الضريبة (مسجّلة في السجل)'));
         loadTax();
       } else {
-        toast((res && res.data && (res.data.message || res.data.error)) || 'Failed to save tax settings', 'error');
+        toast((res && res.data && (res.data.message || res.data.error)) || t('Failed to save tax settings', 'فشل حفظ إعدادات الضريبة'), 'error');
       }
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save Tax Settings';
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> ' + t('Save Tax Settings', 'حفظ إعدادات الضريبة');
       }
     });
   }
@@ -654,7 +668,7 @@
       const btn = document.getElementById('btnSaveInvAlerts');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> Saving...';
+        btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> ' + t('Saving...', 'جارٍ الحفظ...');
       }
       const rolesRaw = ((document.getElementById('invNotifyRoles') || {}).value || '').trim();
       const winRaw = ((document.getElementById('invExpiryWindows') || {}).value || '').trim();
@@ -668,14 +682,14 @@
       };
       const res = await apiPut('/settings/inventory-alerts', body);
       if (res && res.ok) {
-        toast('Inventory alert settings saved');
+        toast(t('Inventory alert settings saved', 'تم حفظ إعدادات تنبيهات المخزون'));
         loadInvAlerts();
       } else {
-        toast((res && res.data && (res.data.message || res.data.error)) || 'Failed to save alert settings', 'error');
+        toast((res && res.data && (res.data.message || res.data.error)) || t('Failed to save alert settings', 'فشل حفظ إعدادات التنبيه'), 'error');
       }
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save alert settings';
+        btn.innerHTML = '<i class="ti ti-device-floppy"></i> <span data-en="Save alert settings" data-ar="حفظ إعدادات التنبيه" data-i18n-text>' + t('Save alert settings', 'حفظ إعدادات التنبيه') + '</span>';
       }
     });
   }
@@ -725,10 +739,15 @@
       frame.innerHTML =
         '<div class="qr-poster-live" id="qrPosterLive">' +
         '<div class="poster-brand"></div>' +
-        '<div class="poster-sub">Scan to check in</div>' +
+        '<div class="poster-sub">' + t('Scan to check in', 'امسح لتسجيل الدخول') + '</div>' +
         '<canvas id="qrPosterCanvas" width="220" height="220"></canvas>' +
-        '<div class="poster-hint">Members: open HyMotion → scan<br>Staff: Attendance → Scan QR</div>' +
+        '<div class="poster-hint">' + t('Members: open HyMotion → scan<br>Staff: Attendance → Scan QR', 'الأعضاء: افتح HyMotion وامسح الرمز<br>الموظفون: من شاشة الحضور امسح رمز QR') + '</div>' +
         '</div>';
+    } else {
+      const subEl = frame.querySelector('.poster-sub');
+      if (subEl) subEl.textContent = t('Scan to check in', 'امسح لتسجيل الدخول');
+      const hintEl = frame.querySelector('.poster-hint');
+      if (hintEl) hintEl.innerHTML = t('Members: open HyMotion → scan<br>Staff: Attendance → Scan QR', 'الأعضاء: افتح HyMotion وامسح الرمز<br>الموظفون: من شاشة الحضور امسح رمز QR');
     }
     const brandEl = frame.querySelector('.poster-brand');
     if (brandEl) brandEl.textContent = gymName;
@@ -775,7 +794,7 @@
   function tickCountdown(expiresAtUtc) {
     const expiresAt = new Date(expiresAtUtc).getTime();
     const remaining = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
-    setLiveStatus('● Live — refreshes in ' + remaining + 's');
+    setLiveStatus(isAr() ? ('● مباشر — يتحدّث خلال ' + remaining + ' ث') : ('● Live — refreshes in ' + remaining + 's'));
     if (remaining > 0) setTimeout(function () { tickCountdown(expiresAtUtc); }, 1000);
   }
 
@@ -788,7 +807,7 @@
         setLiveStatus('');
         frame.innerHTML =
           '<div class="qr-loading"><i class="ti ti-qrcode" style="font-size:64px;color:var(--ls4);display:block;margin-bottom:12px"></i>' +
-          '<div style="color:var(--ltt);font-size:12px">Could not load a check-in QR — retrying…</div></div>';
+          '<div style="color:var(--ltt);font-size:12px">' + t('Could not load a check-in QR — retrying…', 'تعذّر تحميل رمز تسجيل الدخول — جارٍ المحاولة مرة أخرى…') + '</div></div>';
         qrRefreshTimer = setTimeout(loadQRPoster, 5000);
         return;
       }
@@ -799,7 +818,7 @@
       setLiveStatus('');
       frame.innerHTML =
         '<div class="qr-loading"><i class="ti ti-qrcode" style="font-size:64px;color:var(--ls4);display:block;margin-bottom:12px"></i>' +
-        '<div style="color:var(--ltt);font-size:12px">Could not load a check-in QR — retrying…</div></div>';
+        '<div style="color:var(--ltt);font-size:12px">' + t('Could not load a check-in QR — retrying…', 'تعذّر تحميل رمز تسجيل الدخول — جارٍ المحاولة مرة أخرى…') + '</div></div>';
       qrRefreshTimer = setTimeout(loadQRPoster, 5000);
     }
   }
@@ -841,12 +860,48 @@
     paint();
   })();
 
-  // ── Init (Owner settings first so gymCode is not wiped by a failed gym-code call) ──
-  if (user && user.tenantId) {
-    const tid = document.getElementById('tenantId');
-    if (tid) tid.textContent = user.tenantId;
-  }
+  // ── Live re-render on locale toggle (no page reload) ──
+  window.addEventListener('gfp:locale', function () {
+    if (lastSettingsData) {
+      // Refresh locale-dependent labels only — do not re-populate form inputs
+      // (that would clobber any unsaved edits the user is mid-typing).
+      const metaCreated = document.getElementById('metaCreated');
+      const metaUpdated = document.getElementById('metaUpdated');
+      if (metaCreated) {
+        metaCreated.innerHTML = '<i class="ti ti-calendar"></i> ' + t('Created', 'أُنشئ') + ': ' + fmtDate(lastSettingsData.createdAtUtc || lastSettingsData.CreatedAtUtc);
+      }
+      if (metaUpdated) {
+        metaUpdated.innerHTML = '<i class="ti ti-refresh"></i> ' + t('Updated', 'آخر تحديث') + ': ' + fmtDate(lastSettingsData.updatedAtUtc || lastSettingsData.UpdatedAtUtc);
+      }
+      populateStatus(lastSettingsData);
+    }
+    var btnSaveEl = document.getElementById('btnSave');
+    if (btnSaveEl && !btnSaveEl.disabled) {
+      btnSaveEl.innerHTML = '<i class="ti ti-device-floppy"></i> <span data-en="Save Changes" data-ar="حفظ التغييرات" data-i18n-text>' + t('Save Changes', 'حفظ التغييرات') + '</span>';
+    }
+    var btnSaveTaxEl = document.getElementById('btnSaveTax');
+    if (btnSaveTaxEl && !btnSaveTaxEl.disabled) {
+      btnSaveTaxEl.innerHTML = '<i class="ti ti-device-floppy"></i> <span data-en="Save Tax Settings" data-ar="حفظ إعدادات الضريبة" data-i18n-text>' + t('Save Tax Settings', 'حفظ إعدادات الضريبة') + '</span>';
+    }
+    var btnSaveInvEl = document.getElementById('btnSaveInvAlerts');
+    if (btnSaveInvEl && !btnSaveInvEl.disabled) {
+      btnSaveInvEl.innerHTML = '<i class="ti ti-device-floppy"></i> <span data-en="Save alert settings" data-ar="حفظ إعدادات التنبيه" data-i18n-text>' + t('Save alert settings', 'حفظ إعدادات التنبيه') + '</span>';
+    }
+    var qrFrameEl = document.getElementById('qrFrame');
+    if (qrFrameEl) {
+      var subEl = qrFrameEl.querySelector('.poster-sub');
+      if (subEl) subEl.textContent = t('Scan to check in', 'امسح لتسجيل الدخول');
+      var hintEl = qrFrameEl.querySelector('.poster-hint');
+      if (hintEl) hintEl.innerHTML = t('Members: open HyMotion → scan<br>Staff: Attendance → Scan QR', 'الأعضاء: افتح HyMotion وامسح الرمز<br>الموظفون: من شاشة الحضور امسح رمز QR');
+      var loadingTextEl = qrFrameEl.querySelector('.qr-loading > div[style]');
+      if (loadingTextEl && !document.getElementById('qrPosterLive')) {
+        loadingTextEl.textContent = t('Could not load a check-in QR — retrying…', 'تعذّر تحميل رمز تسجيل الدخول — جارٍ المحاولة مرة أخرى…');
+      }
+    }
+    applyBrandPreview();
+  });
 
+  // ── Init (Owner settings first so gymCode is not wiped by a failed gym-code call) ──
   (async function init() {
     if (isOwner) {
       await loadSettings();

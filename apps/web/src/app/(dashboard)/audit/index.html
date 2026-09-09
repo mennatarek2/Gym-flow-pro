@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Audit Log</title>
-<meta name="description" content="Filterable audit log with JSON before/after diff viewer.">
+<meta name="description" content="A record of important actions taken in your gym account — who did what, and when.">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <link rel="stylesheet" href="../pos/pos.css">
-<link rel="stylesheet" href="audit.css">
+<link rel="stylesheet" href="audit.css?v=i18n1">
 </head>
 <body>
 <div class="app">
@@ -39,44 +39,59 @@
 
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current">Audit</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current" data-en="Activity log" data-ar="سجل النشاط">Activity log</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">Gym</div></div>
 </header>
 
 <div class="content">
   <div class="page-header">
     <div>
-      <h1 class="page-title"><i class="ti ti-list-search"></i> Audit log</h1>
-      <p class="page-subtitle">Filterable events. Null <code>actorUserId</code> = system / Hangfire. Diff parses <code>beforeJson</code> / <code>afterJson</code> client-side.</p>
+      <h1 class="page-title"><i class="ti ti-list-search"></i> <span data-en="Activity log" data-ar="سجل النشاط">Activity log</span></h1>
+      <p class="page-subtitle" data-en="A record of what happened in your gym account — who did it, and when. Actions done automatically by the system appear as &quot;the system,&quot; not a staff name. Click a row to see what changed." data-ar="سجل بما حدث في حساب ناديك — مين عمل الإجراء ومتى. الإجراءات التلقائية تظهر باسم &quot;النظام&quot; مش باسم موظف. اضغط على أي صف عشان تشوف اللي اتغيّر.">A record of what happened in your gym account — who did it, and when. Actions done automatically by the system appear as "the system," not a staff name. Click a row to see what changed.</p>
     </div>
   </div>
 
   <section class="card">
     <div class="card-h">
-      <h2>Events</h2>
+      <h2 data-en="Events" data-ar="الأحداث">Events</h2>
       <div class="pager" id="pager"></div>
     </div>
     <div class="filters">
-      <input id="fEntityType" placeholder="entityType">
-      <input id="fEntityId" placeholder="entityId" dir="ltr">
-      <input id="fAction" placeholder="action">
-      <input type="date" id="fFrom">
-      <input type="date" id="fTo">
-      <button type="button" class="btn secondary" id="btnFilter">Apply</button>
+      <label class="flt">
+        <span data-en="Type of record" data-ar="نوع السجل">Type of record</span>
+        <input id="fEntityType" placeholder="e.g. Member, Membership, Product" data-en-placeholder="e.g. Member, Membership, Product" data-ar-placeholder="مثال: عضو، عضوية، منتج">
+      </label>
+      <label class="flt">
+        <span data-en="Record ID" data-ar="رقم السجل">Record ID</span>
+        <input id="fEntityId" placeholder="Optional" data-en-placeholder="Optional" data-ar-placeholder="اختياري" dir="ltr">
+      </label>
+      <label class="flt">
+        <span data-en="What happened" data-ar="ماذا حدث">What happened</span>
+        <input id="fAction" placeholder="e.g. renew, cancel, create" data-en-placeholder="e.g. renew, cancel, create" data-ar-placeholder="مثال: تجديد، إلغاء، إنشاء">
+      </label>
+      <label class="flt">
+        <span data-en="From date" data-ar="من تاريخ">From date</span>
+        <input type="date" id="fFrom">
+      </label>
+      <label class="flt">
+        <span data-en="To date" data-ar="إلى تاريخ">To date</span>
+        <input type="date" id="fTo">
+      </label>
+      <button type="button" class="btn secondary" id="btnFilter" data-en="Apply" data-ar="تطبيق">Apply</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>When</th>
-            <th>Actor</th>
-            <th>Action</th>
-            <th>Entity</th>
-            <th>IP</th>
+            <th data-en="When" data-ar="متى">When</th>
+            <th data-en="Who" data-ar="من قام بها">Who</th>
+            <th data-en="What happened" data-ar="ماذا حدث">What happened</th>
+            <th data-en="Record" data-ar="السجل">Record</th>
+            <th data-en="IP address" data-ar="عنوان IP">IP address</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="tbody"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+        <tbody id="tbody"><tr><td colspan="6" class="muted" data-en="Loading…" data-ar="جارِ التحميل…">Loading…</td></tr></tbody>
       </table>
     </div>
   </section>
@@ -87,21 +102,24 @@
 <div class="modal-overlay" id="diffModal">
   <div class="modal-box diff-box">
     <div class="diff-hdr">
-      <h3>JSON diff</h3>
+      <h3 data-en="What changed" data-ar="ما الذي تغيّر">What changed</h3>
       <button type="button" class="btn ghost" id="btnDiffClose"><i class="ti ti-x"></i></button>
     </div>
     <p class="hint" id="diffMeta"></p>
-    <div class="diff-panes">
-      <div>
-        <div class="pane-lbl">Before</div>
-        <pre id="diffBefore" class="json-pre"></pre>
-      </div>
-      <div>
-        <div class="pane-lbl">After</div>
-        <pre id="diffAfter" class="json-pre"></pre>
-      </div>
-    </div>
     <div class="diff-keys" id="diffKeys"></div>
+    <details class="diff-raw-details" id="diffRawDetails">
+      <summary data-en="Show technical details" data-ar="عرض التفاصيل التقنية">Show technical details</summary>
+      <div class="diff-panes">
+        <div>
+          <div class="pane-lbl" data-en="Before" data-ar="قبل">Before</div>
+          <pre id="diffBefore" class="json-pre"></pre>
+        </div>
+        <div>
+          <div class="pane-lbl" data-en="After" data-ar="بعد">After</div>
+          <pre id="diffAfter" class="json-pre"></pre>
+        </div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -121,6 +139,6 @@ if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.dis
 document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
 (async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';}})();
 </script>
-<script src="audit-app.js"></script>
+<script src="audit-app.js?v=i18n2"></script>
 </body>
 </html>

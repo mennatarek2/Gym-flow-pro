@@ -1,5 +1,6 @@
-.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-end}
 .filters input{height:36px;border:2px solid var(--ls3);border-radius:var(--rmd);padding:0 10px;font:inherit}
+.filters .flt{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--ltt)}
 .table-wrap{overflow:auto;border:1px solid var(--ls3);border-radius:var(--rmd)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;padding:10px 12px;background:var(--ls2);font-size:11px;text-transform:uppercase;color:var(--ltt)}
@@ -16,6 +17,9 @@ td{padding:10px 12px;border-top:1px solid var(--ls3);vertical-align:top}
 @media(max-width:800px){.diff-panes{grid-template-columns:1fr}}
 .pane-lbl{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ltt);margin-bottom:6px}
 .json-pre{background:var(--ls2);border:1px solid var(--ls3);border-radius:var(--rmd);padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;overflow:auto;max-height:360px;white-space:pre-wrap;word-break:break-word}
+.diff-raw-details{margin-top:14px}
+.diff-raw-details summary{cursor:pointer;font-size:11px;font-weight:700;color:var(--ltt);text-transform:uppercase}
+.diff-raw-details .diff-panes{margin-top:10px}
 .diff-keys{margin-top:14px;font-size:12px}
 .diff-keys h4{font-family:var(--fd);font-size:13px;margin-bottom:8px}
 .diff-row{display:grid;grid-template-columns:140px 1fr 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--ls2)}

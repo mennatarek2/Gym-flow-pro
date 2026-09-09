@@ -7,7 +7,7 @@
 <meta name="description" content="Manage gym settings, QR check-in, and subscription for your fitness business.">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="/dashboard/settings/settings.css?v=theme1">
+<link rel="stylesheet" href="/dashboard/settings/settings.css?v=theme2">
 </head>
 <body>
 <div class="app">
@@ -38,25 +38,24 @@
 
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current">Settings</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current" data-en="Settings" data-ar="الإعدادات">Settings</span></div></div>
   <div class="tb-right">
     <div class="status-pills">
-      <span class="st-pill" id="tenantStatus"><span class="st-dot active"></span>Active</span>
-      <span class="st-pill muted" id="tenantId"></span>
+      <span class="st-pill" id="tenantStatus"><span class="st-dot active"></span><span data-en="Active" data-ar="نشط" data-i18n-text>Active</span></span>
     </div>
   </div>
 </header>
 
 <div class="content">
   <div class="page-header">
-    <h1 class="page-title"><i class="ti ti-building-store"></i> Gym Identity &amp; Settings</h1>
-    <p class="page-subtitle">Appearance, gym name, logo, brand colors, tax/VAT, and front-desk QR check-in</p>
+    <h1 class="page-title"><i class="ti ti-building-store"></i> <span data-en="Gym Identity &amp; Settings" data-ar="هوية النادي والإعدادات" data-i18n-text>Gym Identity &amp; Settings</span></h1>
+    <p class="page-subtitle" data-en="Appearance, gym name, logo, brand colors, tax/VAT, and front-desk QR check-in" data-ar="المظهر، واسم النادي، والشعار، وألوان العلامة، والضريبة، ورمز تسجيل الدخول بالاستقبال">Appearance, gym name, logo, brand colors, tax/VAT, and front-desk QR check-in</p>
   </div>
 
   <div class="card" id="appearanceCard">
     <div class="card-header"><h2><i class="ti ti-moon-stars"></i> <span data-en="Appearance" data-ar="المظهر" data-i18n-text>Appearance</span></h2></div>
     <div class="card-body">
-      <p class="muted-hint" style="margin:0 0 14px;font-size:13px;color:var(--ltt)">Choose how HyMotion looks on this device. This does not change your gym logo or brand colors.</p>
+      <p class="muted-hint" style="margin:0 0 14px;font-size:13px;color:var(--ltt)" data-en="Choose how HyMotion looks on this device. This does not change your gym logo or brand colors." data-ar="اختر شكل HyMotion على هذا الجهاز. هذا لا يغيّر شعار النادي أو ألوان العلامة التجارية.">Choose how HyMotion looks on this device. This does not change your gym logo or brand colors.</p>
       <div class="gfp-appear" id="appearanceOpts">
         <button type="button" class="gfp-appear-opt" data-appearance="light">
           <div class="gfp-appear-mini" style="background:#F3F5F2">
@@ -67,7 +66,7 @@
               <div class="ln" style="background:#E4E8E2;width:55%"></div>
             </div>
           </div>
-          <div class="gfp-appear-lab">Light<span>Current HyMotion look.</span></div>
+          <div class="gfp-appear-lab"><span data-en="Light" data-ar="فاتح" style="display:inline;font-weight:700;font-size:13px;color:inherit;margin-top:0">Light</span><span data-en="Current HyMotion look." data-ar="المظهر الحالي في HyMotion.">Current HyMotion look.</span></div>
         </button>
         <button type="button" class="gfp-appear-opt" data-appearance="dark">
           <div class="gfp-appear-mini" style="background:#151716">
@@ -78,7 +77,7 @@
               <div class="ln" style="background:#2E342F;width:55%"></div>
             </div>
           </div>
-          <div class="gfp-appear-lab">Dark<span>Neutral surfaces. Lime CTAs.</span></div>
+          <div class="gfp-appear-lab"><span data-en="Dark" data-ar="داكن" style="display:inline;font-weight:700;font-size:13px;color:inherit;margin-top:0">Dark</span><span data-en="Neutral surfaces. Lime CTAs." data-ar="أسطح محايدة وأزرار بلون الليمون.">Neutral surfaces. Lime CTAs.</span></div>
         </button>
         <button type="button" class="gfp-appear-opt" data-appearance="system">
           <div class="gfp-appear-mini" style="background:linear-gradient(90deg,#F3F5F2 50%,#151716 50%)">
@@ -88,7 +87,7 @@
               <div class="ln" style="background:#8C8C8C;opacity:.35"></div>
             </div>
           </div>
-          <div class="gfp-appear-lab">System<span>Follows this device. Updates if the OS theme changes.</span></div>
+          <div class="gfp-appear-lab"><span data-en="System" data-ar="النظام" style="display:inline;font-weight:700;font-size:13px;color:inherit;margin-top:0">System</span><span data-en="Follows this device. Updates if the OS theme changes." data-ar="يتبع إعداد جهازك، ويتحدّث تلقائياً عند تغييره.">Follows this device. Updates if the OS theme changes.</span></div>
         </button>
       </div>
     </div>
@@ -96,9 +95,9 @@
 
   <!-- Tab Navigation -->
   <div class="tab-nav">
-    <button class="tab-btn active" data-tab="info" id="tabBtnInfo"><i class="ti ti-palette"></i> Gym Identity</button>
-    <button class="tab-btn" data-tab="qr"><i class="ti ti-qrcode"></i> QR Code & Check-in</button>
-    <button class="tab-btn" data-tab="tax" id="tabBtnTax"><i class="ti ti-receipt-tax"></i> Tax &amp; VAT</button>
+    <button class="tab-btn active" data-tab="info" id="tabBtnInfo"><i class="ti ti-palette"></i> <span data-en="Gym Identity" data-ar="هوية النادي" data-i18n-text>Gym Identity</span></button>
+    <button class="tab-btn" data-tab="qr"><i class="ti ti-qrcode"></i> <span data-en="QR Code & Check-in" data-ar="رمز QR وتسجيل الدخول" data-i18n-text>QR Code & Check-in</span></button>
+    <button class="tab-btn" data-tab="tax" id="tabBtnTax"><i class="ti ti-receipt-tax"></i> <span data-en="Tax &amp; VAT" data-ar="الضريبة والقيمة المضافة" data-i18n-text>Tax &amp; VAT</span></button>
     <button class="tab-btn" data-tab="invAlerts" id="tabBtnInvAlerts" style="display:none"><i class="ti ti-bell-ringing"></i> <span data-en="Inventory alerts" data-ar="تنبيهات المخزون" data-i18n-text>Inventory alerts</span></button>
   </div>
 
@@ -107,81 +106,81 @@
     <div class="settings-layout">
       <div class="settings-main">
         <div class="card">
-          <div class="card-header"><h2><i class="ti ti-info-circle"></i> Gym Identity</h2></div>
+          <div class="card-header"><h2><i class="ti ti-info-circle"></i> <span data-en="Gym Identity" data-ar="هوية النادي" data-i18n-text>Gym Identity</span></h2></div>
           <div class="owner-gate" id="infoOwnerGate" style="display:none">
             <i class="ti ti-lock"></i>
             <div>
-              <strong>Owner only</strong>
-              <p>Gym identity editing requires Owner. Use <em>QR Code &amp; Check-in</em> for the front-desk gym code and poster.</p>
+              <strong data-en="Owner only" data-ar="للمالك فقط">Owner only</strong>
+              <p data-en="Gym identity editing requires Owner. Use QR Code &amp; Check-in for the front-desk gym code and poster." data-ar="تعديل هوية النادي يتطلب صلاحية المالك. استخدم رمز QR وتسجيل الدخول لعرض كود النادي والملصق في الاستقبال.">Gym identity editing requires Owner. Use QR Code &amp; Check-in for the front-desk gym code and poster.</p>
             </div>
           </div>
           <form id="infoForm">
           <div class="card-body">
             <div class="form-row">
-              <div class="fg"><label>Gym Name (English) <span class="req">*</span></label><input name="gymName" id="gymName" required placeholder="Fitness Hub"></div>
-              <div class="fg"><label>Gym Name (Arabic) <span class="req">*</span></label><input name="gymNameAr" id="gymNameAr" required placeholder="فتنس هب" dir="rtl" style="font-family:var(--fa)"></div>
+              <div class="fg"><label><span data-en="Gym Name (English)" data-ar="اسم النادي (إنجليزي)">Gym Name (English)</span> <span class="req">*</span></label><input name="gymName" id="gymName" required placeholder="Fitness Hub"></div>
+              <div class="fg"><label><span data-en="Gym Name (Arabic)" data-ar="اسم النادي (عربي)">Gym Name (Arabic)</span> <span class="req">*</span></label><input name="gymNameAr" id="gymNameAr" required placeholder="فتنس هب" dir="rtl" style="font-family:var(--fa)"></div>
             </div>
             <div class="form-row">
-              <div class="fg"><label>Short Name <span class="opt">(optional)</span></label><input name="shortName" id="gymShortName" placeholder="FH" maxlength="40"></div>
-              <div class="fg"><label>Gym Code</label>
+              <div class="fg"><label><span data-en="Short Name" data-ar="الاسم المختصر">Short Name</span> <span class="opt" data-en="(optional)" data-ar="(اختياري)">(optional)</span></label><input name="shortName" id="gymShortName" placeholder="FH" maxlength="40"></div>
+              <div class="fg"><label data-en="Gym Code" data-ar="كود النادي">Gym Code</label>
                 <div class="code-chip-wrap">
                   <div class="code-chip" id="gymCodeChip">—</div>
-                  <button type="button" class="copy-btn" id="copyCode" title="Copy"><i class="ti ti-copy"></i></button>
+                  <button type="button" class="copy-btn" id="copyCode" data-en-title="Copy" data-ar-title="نسخ" title="Copy"><i class="ti ti-copy"></i></button>
                 </div>
-                <div class="hint">System-generated, read-only — not sent on save</div>
+                <div class="hint" data-en="System-generated, read-only — not sent on save" data-ar="يُنشأ تلقائياً، للقراءة فقط — لا يُرسل عند الحفظ">System-generated, read-only — not sent on save</div>
               </div>
             </div>
             <div class="form-row">
-              <div class="fg"><label>Phone Number</label><input name="phone" id="gymPhone" placeholder="+20 123 456 7890"><div class="hint">Format: +20 xxx xxx xxxx</div></div>
-              <div class="fg"><label>Email</label><input name="email" id="gymEmail" type="email" placeholder="hello@gym.eg"></div>
+              <div class="fg"><label data-en="Phone Number" data-ar="رقم الهاتف">Phone Number</label><input name="phone" id="gymPhone" placeholder="+20 123 456 7890"><div class="hint" data-en="Format: +20 xxx xxx xxxx" data-ar="الصيغة: ‎+20 xxx xxx xxxx">Format: +20 xxx xxx xxxx</div></div>
+              <div class="fg"><label data-en="Email" data-ar="البريد الإلكتروني">Email</label><input name="email" id="gymEmail" type="email" placeholder="hello@gym.eg"></div>
             </div>
-            <div class="fg"><label>Website <span class="opt">(optional)</span></label><input name="website" id="gymWebsite" type="text" inputmode="url" placeholder="https://…" autocomplete="url"></div>
-            <div class="fg"><label>Address</label><textarea name="address" id="gymAddress" placeholder="123 Main Street, Cairo, Egypt" rows="2"></textarea></div>
+            <div class="fg"><label><span data-en="Website" data-ar="الموقع الإلكتروني">Website</span> <span class="opt" data-en="(optional)" data-ar="(اختياري)">(optional)</span></label><input name="website" id="gymWebsite" type="text" inputmode="url" placeholder="https://…" autocomplete="url"></div>
+            <div class="fg"><label data-en="Address" data-ar="العنوان">Address</label><textarea name="address" id="gymAddress" placeholder="123 Main Street, Cairo, Egypt" data-en-placeholder="123 Main Street, Cairo, Egypt" data-ar-placeholder="١٢٣ الشارع الرئيسي، القاهرة، مصر" rows="2"></textarea></div>
             <div class="fg">
-              <label>Maximum inside at once <span class="opt">(optional)</span></label>
+              <label><span data-en="Maximum inside at once" data-ar="أقصى عدد بالداخل في نفس الوقت">Maximum inside at once</span> <span class="opt" data-en="(optional)" data-ar="(اختياري)">(optional)</span></label>
               <input name="gymMaxCapacity" id="gymMaxCapacity" type="number" min="1" max="9999" inputmode="numeric" placeholder="300">
-              <div class="hint">Maximum members allowed inside this gym at one time. Occupancy on the dashboard and Member App uses Attendance (checked in today, not checked out).</div>
+              <div class="hint" data-en="Maximum members allowed inside this gym at one time. Occupancy on the dashboard and Member App uses Attendance (checked in today, not checked out)." data-ar="أقصى عدد من الأعضاء يُسمح لهم بالتواجد داخل النادي في نفس الوقت. تعتمد نسبة الإشغال في لوحة التحكم وتطبيق العضو على الحضور (تسجيل دخول اليوم دون تسجيل خروج).">Maximum members allowed inside this gym at one time. Occupancy on the dashboard and Member App uses Attendance (checked in today, not checked out).</div>
             </div>
-            <div class="fg"><label>Logo</label>
+            <div class="fg"><label data-en="Logo" data-ar="الشعار">Logo</label>
               <input name="logoUrl" id="gymLogoUrl" type="hidden">
               <div class="logo-upload" id="logoUpload">
                 <div class="logo-preview" id="logoPreview"><i class="ti ti-photo"></i></div>
                 <div class="logo-info">
-                  <div class="logo-title">Upload gym logo</div>
-                  <div class="logo-hint">JPEG/PNG/WebP/GIF · max 2MB · stored for this gym only</div>
+                  <div class="logo-title" data-en="Upload gym logo" data-ar="رفع شعار النادي">Upload gym logo</div>
+                  <div class="logo-hint" data-en="JPEG/PNG/WebP/GIF · max 2MB · stored for this gym only" data-ar="JPEG/PNG/WebP/GIF · بحد أقصى 2 ميجابايت · يُخزَّن لهذا النادي فقط">JPEG/PNG/WebP/GIF · max 2MB · stored for this gym only</div>
                   <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
                   <div class="logo-actions">
-                    <button type="button" class="logo-btn" id="logoBrowse"><i class="ti ti-upload"></i> Choose file</button>
-                    <button type="button" class="logo-btn outline" id="logoClear" style="display:none"><i class="ti ti-trash"></i> Remove</button>
+                    <button type="button" class="logo-btn" id="logoBrowse"><i class="ti ti-upload"></i> <span data-en="Choose file" data-ar="اختيار ملف" data-i18n-text>Choose file</span></button>
+                    <button type="button" class="logo-btn outline" id="logoClear" style="display:none"><i class="ti ti-trash"></i> <span data-en="Remove" data-ar="إزالة" data-i18n-text>Remove</span></button>
                   </div>
                 </div>
               </div>
             </div>
 
             <div class="brand-block">
-              <h3 class="brand-block-title"><i class="ti ti-palette"></i> Brand colors</h3>
+              <h3 class="brand-block-title"><i class="ti ti-palette"></i> <span data-en="Brand colors" data-ar="ألوان العلامة" data-i18n-text>Brand colors</span></h3>
               <div class="color-row">
-                <div class="fg color-fg"><label>Primary</label><input type="color" id="brandPrimary" value="#7ACC00"></div>
-                <div class="fg color-fg"><label>Secondary</label><input type="color" id="brandSecondary" value="#148F8F"></div>
-                <div class="fg color-fg"><label>Accent</label><input type="color" id="brandAccent" value="#A0E040"></div>
-                <div class="fg color-fg"><label>Card mark</label><input type="color" id="cardPrimary" value="#7ACC00"></div>
+                <div class="fg color-fg"><label data-en="Primary" data-ar="أساسي">Primary</label><input type="color" id="brandPrimary" value="#7ACC00"></div>
+                <div class="fg color-fg"><label data-en="Secondary" data-ar="ثانوي">Secondary</label><input type="color" id="brandSecondary" value="#148F8F"></div>
+                <div class="fg color-fg"><label data-en="Accent" data-ar="مميز">Accent</label><input type="color" id="brandAccent" value="#A0E040"></div>
+                <div class="fg color-fg"><label data-en="Card mark" data-ar="لون البطاقة">Card mark</label><input type="color" id="cardPrimary" value="#7ACC00"></div>
               </div>
-              <label class="check-row"><input type="checkbox" id="showGymLogoOnCard" checked> Show logo on membership access card</label>
+              <label class="check-row"><input type="checkbox" id="showGymLogoOnCard" checked> <span data-en="Show logo on membership access card" data-ar="إظهار الشعار على بطاقة العضوية" data-i18n-text>Show logo on membership access card</span></label>
               <div class="brand-reset-row">
-                <button type="button" class="btn-reset-brand" id="btnResetBrand" title="Restore HyMotion default colors">
-                  <i class="ti ti-restore"></i> Reset to defaults
+                <button type="button" class="btn-reset-brand" id="btnResetBrand" data-en-title="Restore HyMotion default colors" data-ar-title="استعادة ألوان HyMotion الافتراضية" title="Restore HyMotion default colors">
+                  <i class="ti ti-restore"></i> <span data-en="Reset to defaults" data-ar="استعادة الافتراضي" data-i18n-text>Reset to defaults</span>
                 </button>
-                <span class="hint">Restores primary / secondary / accent / card colors to HyMotion lime. Does not change gym name or logo.</span>
+                <span class="hint" data-en="Restores primary / secondary / accent / card colors to HyMotion lime. Does not change gym name or logo." data-ar="يعيد الألوان (الأساسي/الثانوي/المميز/لون البطاقة) إلى لون HyMotion الليموني الافتراضي، دون تغيير اسم النادي أو الشعار.">Restores primary / secondary / accent / card colors to HyMotion lime. Does not change gym name or logo.</span>
               </div>
               <div class="brand-live" id="brandLive">
                 <div class="brand-live-bar"><span class="brand-live-mark" id="brandLiveMark"></span><strong id="brandLiveName">Fitness Hub</strong></div>
                 <div class="brand-live-actions">
-                  <span class="brand-live-cta" id="brandLiveCta">Primary</span>
-                  <span class="brand-live-sec" id="brandLiveSec">Secondary</span>
-                  <span class="brand-live-acc" id="brandLiveAcc">Accent</span>
+                  <span class="brand-live-cta" id="brandLiveCta" data-en="Primary" data-ar="أساسي">Primary</span>
+                  <span class="brand-live-sec" id="brandLiveSec" data-en="Secondary" data-ar="ثانوي">Secondary</span>
+                  <span class="brand-live-acc" id="brandLiveAcc" data-en="Accent" data-ar="مميز">Accent</span>
                 </div>
               </div>
-              <div class="card-preview-label">Membership card preview (CR80)</div>
+              <div class="card-preview-label" data-en="Membership card preview (CR80)" data-ar="معاينة بطاقة العضوية (CR80)">Membership card preview (CR80)</div>
               <div class="cr80" id="cr80Preview">
                 <div class="cr80-hdr">
                   <img class="cr80-logo" id="cr80Logo" alt="" hidden>
@@ -193,7 +192,7 @@
                   </div>
                 </div>
                 <div class="cr80-id">
-                  <div class="cr80-name">Sample Member</div>
+                  <div class="cr80-name" data-en="Sample Member" data-ar="عضو تجريبي">Sample Member</div>
                   <div class="cr80-num">GYM-018</div>
                 </div>
                 <div class="cr80-bars" aria-hidden="true"></div>
@@ -207,9 +206,9 @@
             </div>
             <div class="footer-actions">
               <button type="button" class="btn-reset-brand" id="btnResetBrandFooter">
-                <i class="ti ti-restore"></i> Reset defaults
+                <i class="ti ti-restore"></i> <span data-en="Reset defaults" data-ar="استعادة الافتراضي" data-i18n-text>Reset defaults</span>
               </button>
-              <button type="submit" class="btn-save" id="btnSave"><i class="ti ti-device-floppy"></i> Save Changes</button>
+              <button type="submit" class="btn-save" id="btnSave"><i class="ti ti-device-floppy"></i> <span data-en="Save Changes" data-ar="حفظ التغييرات" data-i18n-text>Save Changes</span></button>
             </div>
           </div>
           </form>
@@ -222,28 +221,28 @@
   <div class="tab-panel" id="tab-qr">
     <div class="qr-layout">
       <div class="card qr-card">
-        <div class="card-header"><h2><i class="ti ti-qrcode"></i> Live Check-in QR</h2></div>
+        <div class="card-header"><h2><i class="ti ti-qrcode"></i> <span data-en="Live Check-in QR" data-ar="رمز تسجيل الدخول المباشر" data-i18n-text>Live Check-in QR</span></h2></div>
         <div class="card-body" style="text-align:center;padding:32px">
           <div class="qr-poster-frame" id="qrFrame">
-            <div class="qr-loading"><div class="loader"></div>Loading QR...</div>
+            <div class="qr-loading"><div class="loader"></div><span data-en="Loading QR..." data-ar="جارٍ تحميل رمز QR...">Loading QR...</span></div>
           </div>
           <div class="qr-code-display">
-            <span class="qr-code-label">Gym Code:</span>
+            <span class="qr-code-label" data-en="Gym Code:" data-ar="كود النادي:">Gym Code:</span>
             <span class="qr-code-value" id="qrGymCode">—</span>
           </div>
           <div class="qr-live-status" id="qrLiveStatus" style="margin-top:8px;font-size:12px;color:var(--ltt)"></div>
           <div class="qr-actions">
-            <button class="btn-qr outline" id="btnFullscreenQR"><i class="ti ti-maximize"></i> Open full-screen display</button>
+            <button class="btn-qr outline" id="btnFullscreenQR"><i class="ti ti-maximize"></i> <span data-en="Open full-screen display" data-ar="فتح شاشة كاملة" data-i18n-text>Open full-screen display</span></button>
           </div>
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><h2><i class="ti ti-info-circle"></i> Instructions</h2></div>
+        <div class="card-header"><h2><i class="ti ti-info-circle"></i> <span data-en="Instructions" data-ar="التعليمات" data-i18n-text>Instructions</span></h2></div>
         <div class="card-body">
           <div class="instruction-list">
-            <div class="instr-item"><div class="instr-num">1</div><div><strong>Display this screen at the entrance</strong><p>Open full-screen on a reception tablet/monitor — this QR refreshes automatically every ~45 seconds and cannot be printed or screenshotted for later use.</p></div></div>
-            <div class="instr-item"><div class="instr-num">2</div><div><strong>Members scan to check in</strong><p>Members open the HyMotion app and scan the current code — attendance is registered immediately.</p></div></div>
-            <div class="instr-item"><div class="instr-num">3</div><div><strong>Employees scan the same code</strong><p>Staff use the same live QR from the Employee app's Attendance screen, then confirm their check-in.</p></div></div>
+            <div class="instr-item"><div class="instr-num">1</div><div><strong data-en="Display this screen at the entrance" data-ar="اعرض هذه الشاشة عند المدخل">Display this screen at the entrance</strong><p data-en="Open full-screen on a reception tablet/monitor — this QR refreshes automatically every ~45 seconds and cannot be printed or screenshotted for later use." data-ar="افتحها بملء الشاشة على تابلت أو شاشة الاستقبال — يتجدد رمز QR تلقائياً كل ٤٥ ثانية تقريباً، ولا يمكن طباعته أو تصويره لاستخدامه لاحقاً.">Open full-screen on a reception tablet/monitor — this QR refreshes automatically every ~45 seconds and cannot be printed or screenshotted for later use.</p></div></div>
+            <div class="instr-item"><div class="instr-num">2</div><div><strong data-en="Members scan to check in" data-ar="الأعضاء يمسحون الرمز لتسجيل الدخول">Members scan to check in</strong><p data-en="Members open the HyMotion app and scan the current code — attendance is registered immediately." data-ar="يفتح الأعضاء تطبيق HyMotion ويمسحون الرمز الحالي — يُسجَّل الحضور فوراً.">Members open the HyMotion app and scan the current code — attendance is registered immediately.</p></div></div>
+            <div class="instr-item"><div class="instr-num">3</div><div><strong data-en="Employees scan the same code" data-ar="الموظفون يمسحون نفس الرمز">Employees scan the same code</strong><p data-en="Staff use the same live QR from the Employee app's Attendance screen, then confirm their check-in." data-ar="يستخدم الموظفون نفس رمز QR المباشر من شاشة الحضور في تطبيق الموظفين، ثم يؤكدون تسجيل الدخول.">Staff use the same live QR from the Employee app's Attendance screen, then confirm their check-in.</p></div></div>
           </div>
         </div>
       </div>
@@ -254,15 +253,15 @@
   <div class="tab-panel" id="tab-tax">
     <div class="card">
       <div class="card-header">
-        <h2><i class="ti ti-receipt-tax"></i> Tax &amp; VAT</h2>
-        <span class="audit-badge"><i class="ti ti-shield-check"></i> Changes audited</span>
+        <h2><i class="ti ti-receipt-tax"></i> <span data-en="Tax &amp; VAT" data-ar="الضريبة والقيمة المضافة" data-i18n-text>Tax &amp; VAT</span></h2>
+        <span class="audit-badge"><i class="ti ti-shield-check"></i> <span data-en="Changes audited" data-ar="التغييرات مسجّلة في السجل" data-i18n-text>Changes audited</span></span>
       </div>
       <form id="taxForm">
         <div class="card-body">
           <div class="toggle-row">
             <div>
-              <div class="toggle-label">Enable VAT on invoices</div>
-              <div class="toggle-sub">When on, POS and invoices apply the VAT rate below</div>
+              <div class="toggle-label" data-en="Enable VAT on invoices" data-ar="تفعيل الضريبة على الفواتير">Enable VAT on invoices</div>
+              <div class="toggle-sub" data-en="When on, POS and invoices apply the VAT rate below" data-ar="عند التفعيل، تُطبَّق نسبة الضريبة أدناه على نقطة البيع والفواتير">When on, POS and invoices apply the VAT rate below</div>
             </div>
             <label class="toggle">
               <input type="checkbox" id="vatEnabled">
@@ -271,24 +270,24 @@
             </label>
           </div>
           <div class="form-row">
-            <div class="fg"><label>VAT rate (%)</label>
+            <div class="fg"><label data-en="VAT rate (%)" data-ar="نسبة الضريبة (%)">VAT rate (%)</label>
               <input type="number" id="vatRatePct" min="0" max="100" step="0.01" placeholder="14">
-              <div class="hint">Stored as a fraction (e.g. 14% → 0.14). Default 14%.</div>
+              <div class="hint" data-en="Stored as a fraction (e.g. 14% → 0.14). Default 14%." data-ar="تُخزَّن كنسبة عشرية (مثال: ١٤٪ → ٠.١٤). الافتراضي ١٤٪.">Stored as a fraction (e.g. 14% → 0.14). Default 14%.</div>
             </div>
-            <div class="fg"><label>Tax registration number</label>
-              <input id="taxRegNo" placeholder="VAT / tax ID" autocomplete="off">
+            <div class="fg"><label data-en="Tax registration number" data-ar="الرقم الضريبي">Tax registration number</label>
+              <input id="taxRegNo" placeholder="VAT / tax ID" data-en-placeholder="VAT / tax ID" data-ar-placeholder="الرقم الضريبي" autocomplete="off">
             </div>
           </div>
-          <div class="fg"><label>Invoice footer (English)</label>
+          <div class="fg"><label data-en="Invoice footer (English)" data-ar="تذييل الفاتورة (إنجليزي)">Invoice footer (English)</label>
             <textarea id="invoiceFooter" rows="2" placeholder="Thank you for your business"></textarea>
           </div>
-          <div class="fg"><label>Invoice footer (Arabic)</label>
+          <div class="fg"><label data-en="Invoice footer (Arabic)" data-ar="تذييل الفاتورة (عربي)">Invoice footer (Arabic)</label>
             <textarea id="invoiceFooterAr" rows="2" placeholder="شكراً لتعاملكم معنا" dir="rtl" style="font-family:var(--fa)"></textarea>
           </div>
         </div>
         <div class="card-footer">
-          <div class="meta-info"><span class="hint" style="margin:0">Before/after values are written to the audit log</span></div>
-          <button type="submit" class="btn-save" id="btnSaveTax"><i class="ti ti-device-floppy"></i> Save Tax Settings</button>
+          <div class="meta-info"><span class="hint" style="margin:0" data-en="Before/after values are written to the audit log" data-ar="تُسجَّل القيم قبل وبعد التعديل في سجل المراجعة">Before/after values are written to the audit log</span></div>
+          <button type="submit" class="btn-save" id="btnSaveTax"><i class="ti ti-device-floppy"></i> <span data-en="Save Tax Settings" data-ar="حفظ إعدادات الضريبة" data-i18n-text>Save Tax Settings</span></button>
         </div>
       </form>
     </div>
@@ -328,7 +327,7 @@
 <script>
 (function () {
   // Prefer shared api-config (ngrok/local); keep trailing /api
-  var API_BASE = (window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').replace(/\/?$/, '');
+  var API_BASE = (window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api').replace(/\/?$/, '');
   window.API_BASE = API_BASE;
 
   function getH(json) {
@@ -428,6 +427,6 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<script src="/dashboard/settings/settings-app.js?v=liveqr1"></script>
+<script src="/dashboard/settings/settings-app.js?v=liveqr2"></script>
 </body>
 </html>

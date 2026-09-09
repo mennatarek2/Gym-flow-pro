@@ -125,6 +125,9 @@ html[data-theme="dark"] .member-app-warn{color:var(--gfp-wrn)}
 .ms-hero.active{border-left-color:#5EAF00}
 .ms-hero.frozen{border-left-color:#0E7490}
 .ms-hero.expired,.ms-hero.cancelled{border-left-color:#EF4444}
+html[data-theme="dark"] .ms-hero{background:var(--ls2);box-shadow:none}
+html[data-theme="dark"] .ms-facts{border-top-color:var(--ls3)}
+html[data-theme="dark"] .progress-bar{background:var(--ls3)}
 .ms-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
 .ms-plan{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--ltp);margin-bottom:0}
 .ms-type{font-size:12px;color:var(--ltt);margin-top:3px;text-transform:capitalize}

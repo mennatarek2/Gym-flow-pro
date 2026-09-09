@@ -41,7 +41,7 @@ assert(app.indexOf('PermissionsOverride') === -1, 'does not enable PermissionsOv
 assert(html.indexOf('roles.manage') === -1 && html.indexOf('roles.view') === -1, 'no new roles.* permission');
 assert(app.indexOf('isOwnerRole') !== -1 && html.indexOf('ownerGuard') !== -1, 'Owner-only guard matches Staff');
 assert(html.indexOf('href="/dashboard/staff/"') !== -1, 'Roles points people to Staff');
-assert(R.permissionCount('Trainer') === 1, 'defaults: Trainer is still checkin.manual');
+assert(R.permissionCount('Trainer') === 3, 'defaults: Trainer is checkin.manual, classes.view, attendance.view');
 assert(typeof R.groupsForKeys === 'function', 'groupsForKeys paints the full matrix for editing');
 assert(typeof R.permissionsFromCatalog === 'function', 'catalog overrides defaults when API returns overlay');
 

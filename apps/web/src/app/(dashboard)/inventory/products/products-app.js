@@ -530,16 +530,16 @@
     var html = '<div class="row-actions">';
     if (canBuy && !p.isArchived && p.isPurchasable !== false) {
       html +=
-        '<button type="button" class="primary" data-buy="' + esc(p.id) + '">Buy</button>';
+        '<button type="button" class="primary" data-buy="' + esc(p.id) + '">' + t('Buy', 'شراء') + '</button>';
     }
     if (canAdjust && productAllowsSimpleStock(p)) {
       html +=
         '<button type="button" data-stock-add="' +
         esc(p.id) +
-        '">Add stock</button>';
+        '">' + t('Add stock', 'إضافة مخزون') + '</button>';
     }
     if (canManage) {
-      html += '<button type="button" data-edit="' + esc(p.id) + '">Edit</button>';
+      html += '<button type="button" data-edit="' + esc(p.id) + '">' + t('Edit', 'تعديل') + '</button>';
     }
     html += '</div>';
     return html;
@@ -604,58 +604,58 @@
       '</div><div class="v">' +
       esc(p.defaultSupplierName || t('Not set', 'غير محدد')) +
       '</div></div>' +
-      '<div class="kv"><div class="k">الوحدة</div><div class="v">' +
+      '<div class="kv"><div class="k">' + esc(t('Unit', 'الوحدة')) + '</div><div class="v">' +
       esc(p.unitOfMeasure || 'pcs') +
       '</div></div>' +
       (canSeeCost
-        ? '<div class="kv"><div class="k">سعر الشراء</div><div class="v">' +
+        ? '<div class="kv"><div class="k">' + esc(t('Cost price', 'سعر الشراء')) + '</div><div class="v">' +
           money(p.costPrice) +
           '</div></div>'
         : '') +
-      '<div class="kv"><div class="k">سعر البيع</div><div class="v">' +
+      '<div class="kv"><div class="k">' + esc(t('Sell price', 'سعر البيع')) + '</div><div class="v">' +
       money(p.sellPrice) +
       '</div></div>' +
       (profit != null
-        ? '<div class="kv"><div class="k">الربح للقطعة</div><div class="v profit">' +
+        ? '<div class="kv"><div class="k">' + esc(t('Profit per unit', 'الربح للقطعة')) + '</div><div class="v profit">' +
           money(profit) +
           '</div></div>'
         : '') +
-      '<div class="kv"><div class="k">الحد الأدنى</div><div class="v">' +
+      '<div class="kv"><div class="k">' + esc(t('Reorder minimum', 'الحد الأدنى')) + '</div><div class="v">' +
       esc(String(p.reorderMinQty != null ? p.reorderMinQty : 0)) +
       '</div></div>' +
-      '<div class="kv"><div class="k">المخزون</div><div class="v">' +
+      '<div class="kv"><div class="k">' + esc(t('Stock', 'المخزون')) + '</div><div class="v">' +
       esc(qty) +
       '</div></div>' +
-      '<div class="kv"><div class="k">العملة</div><div class="v">' +
+      '<div class="kv"><div class="k">' + esc(t('Currency', 'العملة')) + '</div><div class="v">' +
       esc(p.currency || 'EGP') +
       '</div></div>' +
-      '<div class="kv"><div class="k">POS</div><div class="v">' +
-      esc(p.isSellable !== false ? 'Sellable' : 'Off') +
+      '<div class="kv"><div class="k">' + esc(t('POS', 'نقطة البيع')) + '</div><div class="v">' +
+      esc(p.isSellable !== false ? t('Sellable', 'قابل للبيع') : t('Off', 'متوقف')) +
       '</div></div>' +
-      '<div class="kv"><div class="k">Member App</div><div class="v">' +
-      esc(memberAppVisible(p) ? 'Visible' : 'Hidden') +
+      '<div class="kv"><div class="k">' + esc(t('Member App', 'تطبيق العضو')) + '</div><div class="v">' +
+      esc(memberAppVisible(p) ? t('Visible', 'ظاهر') : t('Hidden', 'مخفي')) +
       '</div></div>' +
       '</div>' +
       '<div class="detail-actions">' +
       (canAdjust && productAllowsSimpleStock(p)
         ? '<button type="button" class="btn-create" data-stock-add="' +
           esc(p.id) +
-          '"><i class="ti ti-package-import"></i> Add stock</button>' +
+          '"><i class="ti ti-package-import"></i> ' + t('Add stock', 'إضافة مخزون') + '</button>' +
           '<button type="button" class="btn-secondary" data-stock-fix="' +
           esc(p.id) +
-          '"><i class="ti ti-adjustments"></i> Fix qty</button>'
+          '"><i class="ti ti-adjustments"></i> ' + t('Fix qty', 'تصحيح الكمية') + '</button>'
         : '') +
       (canBuy && !p.isArchived && p.isPurchasable !== false
         ? '<button type="button" class="btn-secondary" data-buy="' +
           esc(p.id) +
-          '"><i class="ti ti-truck"></i> Buy</button>'
+          '"><i class="ti ti-truck"></i> ' + t('Buy', 'شراء') + '</button>'
         : '') +
       (canManage
         ? '<button type="button" class="btn-create" data-edit="' +
           esc(p.id) +
-          '"><i class="ti ti-pencil"></i> Edit</button>'
+          '"><i class="ti ti-pencil"></i> ' + t('Edit', 'تعديل') + '</button>'
         : '') +
-      '<a class="btn-secondary" href="/dashboard/pos/" style="text-decoration:none"><i class="ti ti-shopping-cart"></i> Sell</a>' +
+      '<a class="btn-secondary" href="/dashboard/pos/" style="text-decoration:none"><i class="ti ti-shopping-cart"></i> ' + t('Sell', 'بيع') + '</a>' +
       '</div>';
     document.getElementById('detailDrawer').hidden = false;
     var editBtn = document.querySelector('#detailBody [data-edit]');
@@ -1414,12 +1414,12 @@
 
     host.innerHTML = simple
       ? '<div class="table-wrap"><table class="inv"><thead><tr>' +
-        '<th>Product</th><th>Sell price</th><th>Qty left</th><th>Member App</th><th>Actions</th>' +
+        '<th>' + t('Product', 'المنتج') + '</th><th>' + t('Sell price', 'سعر البيع') + '</th><th>' + t('Qty left', 'المخزون') + '</th><th>' + t('Member App', 'تطبيق العضو') + '</th><th>' + t('Actions', 'إجراءات') + '</th>' +
         '</tr></thead><tbody>' +
         rows +
         '</tbody></table></div>'
       : '<div class="table-wrap"><table class="inv"><thead><tr>' +
-        '<th>صورة</th><th>الباركود</th><th>المنتج</th><th>التصنيف</th><th>سعر الشراء</th><th>سعر البيع</th><th>المخزون</th><th>الحالة</th><th>إجراءات</th>' +
+        '<th>' + t('Photo', 'صورة') + '</th><th>' + t('Barcode', 'الباركود') + '</th><th>' + t('Product', 'المنتج') + '</th><th>' + t('Category', 'التصنيف') + '</th><th>' + t('Cost price', 'سعر الشراء') + '</th><th>' + t('Sell price', 'سعر البيع') + '</th><th>' + t('Stock', 'المخزون') + '</th><th>' + t('Status', 'الحالة') + '</th><th>' + t('Actions', 'إجراءات') + '</th>' +
         '</tr></thead><tbody>' +
         rows +
         '</tbody></table></div>';

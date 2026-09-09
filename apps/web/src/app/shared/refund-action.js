@@ -59,7 +59,6 @@
   function mapCode(title) {
     var map = {
       GATEWAY_REFUND_UNSUPPORTED: t('Gateway refunds are not supported. Use cash or account credit.', 'الاسترداد عبر البوابة غير مدعوم. استخدم كاش أو رصيد الحساب.'),
-      SELF_APPROVAL_FORBIDDEN: t('You cannot approve your own refund request.', 'لا يمكنك اعتماد طلب استرداد قدّمته بنفسك.'),
       OPEN_SHIFT_REQUIRED: t('Open a cash-drawer shift before cash refunds.', 'افتح وردية الصندوق قبل استرداد كاش.'),
       NOT_AWAITING_APPROVAL: t('This refund is not awaiting approval.', 'طلب الاسترداد هذا ليس بانتظار الموافقة.'),
       SALE_FULLY_REFUNDED: t('This sale is already fully refunded.', 'تم استرداد قيمة هذا البيع بالكامل.'),

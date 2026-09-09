@@ -1,7 +1,69 @@
 (function () {
   'use strict';
-  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
   const MAX_BYTES = 5 * 1024 * 1024;
+
+  function t(en, ar) {
+    var I18n = window.GfpI18n;
+    if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
+    return en;
+  }
+
+  const FIELD_LABELS = {
+    '': { en: '(ignore)', ar: 'تجاهل' },
+    fullName: { en: 'Full name', ar: 'الاسم الكامل' },
+    phoneNumber: { en: 'Phone number', ar: 'رقم الهاتف' },
+    planName: { en: 'Plan name', ar: 'اسم الباقة' },
+    startDate: { en: 'Start date', ar: 'تاريخ البدء' },
+    endDate: { en: 'End date', ar: 'تاريخ الانتهاء' },
+    sessionsRemaining: { en: 'Sessions remaining', ar: 'الحصص المتبقية' },
+    dateOfBirth: { en: 'Date of birth', ar: 'تاريخ الميلاد' },
+  };
+  function fieldLabel(key) {
+    const f = FIELD_LABELS[key] || { en: key, ar: key };
+    return t(f.en, f.ar);
+  }
+
+  const PLAN_TYPE_LABELS = {
+    monthly_unlimited: { en: 'Monthly Unlimited', ar: 'شهري غير محدود' },
+    session_pack: { en: 'Session Pack', ar: 'باقة جلسات' },
+    time_limited: { en: 'Time Limited', ar: 'محدود بالوقت' },
+    pt_credits: { en: 'Private Training', ar: 'برايفت' },
+    family: { en: 'Family', ar: 'عائلية' },
+    trial: { en: 'Trial', ar: 'تجريبي' },
+    day_pass: { en: 'Day Pass', ar: 'يوم واحد' },
+  };
+  function planTypeLabel(key) {
+    const p = PLAN_TYPE_LABELS[key] || { en: key, ar: key };
+    return t(p.en, p.ar);
+  }
+
+  const STATUS_LABELS = {
+    none: { en: 'Upload', ar: 'رفع الملف' },
+    validating: { en: 'Validating', ar: 'جارٍ التحقق' },
+    dry_run_ready: { en: 'Preview', ar: 'المراجعة' },
+    importing: { en: 'Importing', ar: 'جارٍ الاستيراد' },
+    completed: { en: 'Completed', ar: 'مكتمل' },
+    failed: { en: 'Failed', ar: 'فشل' },
+    rolled_back: { en: 'Rolled back', ar: 'تم التراجع' },
+  };
+  function statusLabel(status) {
+    const s = STATUS_LABELS[status];
+    return s ? t(s.en, s.ar) : status;
+  }
+
+  function fmtDateTime(iso) {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return String(iso);
+      const I18n = window.GfpI18n;
+      const loc = I18n && I18n.getLocale && I18n.getLocale() === 'ar' ? 'ar-EG' : 'en-GB';
+      return d.toLocaleString(loc, { dateStyle: 'medium', timeStyle: 'short' });
+    } catch (_) {
+      return String(iso);
+    }
+  }
   const TARGET_FIELDS = [
     '',
     'fullName',
@@ -87,20 +149,33 @@
     return globalThis.toastShared(msg, type);
   }
   function problemMessage(data, status) {
-    if (!data) return 'Request failed (' + status + ')';
+    const fallback = t('Something went wrong. Please try again.', 'حدث خطأ ما. حاول مرة أخرى.');
+    if (!data) return fallback;
     const title = data.title || '';
     const detail = data.detail || data.message || '';
     const map = {
-      BATCH_NOT_FOUND: 'Import batch not found.',
-      INVALID_STATUS: 'Invalid batch status for this action.',
-      FILE_TOO_LARGE: 'File too large (max 5 MB).',
-      TOO_MANY_ROWS: 'Too many rows (max 10,000).',
-      UNSUPPORTED_FILE_TYPE: 'Unsupported file type — use .xlsx or .csv.',
-      ROLLBACK_WINDOW_EXPIRED: '7-day rollback window has expired.',
-      FEATURE_DISABLED: 'Imports feature is disabled for this tenant.',
+      BATCH_NOT_FOUND: t('We could not find this import.', 'تعذر العثور على هذا الاستيراد.'),
+      INVALID_STATUS: t(
+        'This action is not available right now.',
+        'هذا الإجراء غير متاح في الوقت الحالي.',
+      ),
+      FILE_TOO_LARGE: t('File too large (max 5 MB).', 'الملف كبير جدًا (الحد الأقصى 5 ميجابايت).'),
+      TOO_MANY_ROWS: t('Too many rows (max 10,000).', 'عدد الصفوف كبير جدًا (الحد الأقصى 10,000).'),
+      UNSUPPORTED_FILE_TYPE: t(
+        'That file type is not supported — use an Excel (.xlsx) or CSV file.',
+        'نوع الملف غير مدعوم — استخدم ملف إكسل (.xlsx) أو CSV.',
+      ),
+      ROLLBACK_WINDOW_EXPIRED: t(
+        'You can no longer undo this import — the 7-day window has passed.',
+        'لم يعد بإمكانك التراجع عن هذا الاستيراد — انتهت مهلة الـ 7 أيام.',
+      ),
+      FEATURE_DISABLED: t(
+        "Bulk import isn't turned on for your gym.",
+        'الاستيراد الجماعي غير مفعّل لناديك.',
+      ),
     };
     if (map[title]) return map[title];
-    return detail || title || 'Request failed (' + status + ')';
+    return detail || title || fallback;
   }
 
   async function api(method, path, body, opts) {
@@ -164,15 +239,6 @@
 
   function renderStepTrack() {
     const status = batch ? batch.status : 'none';
-    const labels = {
-      none: 'Upload',
-      validating: 'Validating',
-      dry_run_ready: 'Dry-run',
-      importing: 'Importing',
-      completed: 'Completed',
-      failed: 'Failed',
-      rolled_back: 'Rolled back',
-    };
     const el = document.getElementById('stepTrack');
     el.innerHTML = STEP_ORDER.map((s) => {
       let cls = 'step-pill';
@@ -183,25 +249,33 @@
         status !== 'rolled_back'
       )
         cls += ' done';
-      return '<span class="' + cls + '">' + esc(labels[s] || s) + '</span>';
+      return '<span class="' + cls + '">' + esc(statusLabel(s)) + '</span>';
     }).join('');
   }
 
   function kpisHtml(b) {
     return (
-      '<div class="kpi"><span class="lbl">Total</span><strong>' +
+      '<div class="kpi"><span class="lbl">' +
+      esc(t('Total', 'الإجمالي')) +
+      '</span><strong>' +
       esc(String(b.totalRows || 0)) +
       '</strong></div>' +
-      '<div class="kpi"><span class="lbl">OK</span><strong>' +
+      '<div class="kpi"><span class="lbl">' +
+      esc(t('OK', 'سليم')) +
+      '</span><strong>' +
       esc(String(b.okRows || 0)) +
       '</strong></div>' +
-      '<div class="kpi"><span class="lbl">Errors</span><strong>' +
+      '<div class="kpi"><span class="lbl">' +
+      esc(t('Problems', 'مشاكل')) +
+      '</span><strong>' +
       esc(String(b.errorRows || 0)) +
       '</strong></div>' +
-      '<div class="kpi"><span class="lbl">Status</span><strong><span class="st-chip ' +
+      '<div class="kpi"><span class="lbl">' +
+      esc(t('Status', 'الحالة')) +
+      '</span><strong><span class="st-chip ' +
       esc(b.status) +
       '">' +
-      esc(b.status) +
+      esc(statusLabel(b.status)) +
       '</span></strong></div>'
     );
   }
@@ -214,13 +288,14 @@
     if (batch) {
       meta.style.display = 'flex';
       document.getElementById('metaTitle').textContent =
-        (batch.fileName || 'Batch') + ' · ' + batch.status;
+        (batch.fileName || t('Import', 'استيراد')) + ' · ' + statusLabel(batch.status);
       document.getElementById('metaLine').innerHTML =
-        'id <code>' +
-        esc(batch.id) +
-        '</code> · created ' +
-        esc(batch.createdAtUtc || '—') +
-        (batch.completedAt ? ' · completed ' + esc(batch.completedAt) : '');
+        esc(t('Started', 'بدأ في')) +
+        ' ' +
+        esc(fmtDateTime(batch.createdAtUtc) || '—') +
+        (batch.completedAt
+          ? ' · ' + esc(t('Finished', 'انتهى في')) + ' ' + esc(fmtDateTime(batch.completedAt))
+          : '');
     } else {
       meta.style.display = 'none';
     }
@@ -262,29 +337,36 @@
     const mapping = (batch && batch.mapping) || {};
     const headers = Object.keys(mapping);
     if (!headers.length) {
-      wrap.innerHTML = '<p class="muted">No mapping on server yet.</p>';
+      wrap.innerHTML =
+        '<p class="muted">' +
+        esc(t("Columns haven't been set yet.", 'لم يتم ضبط الأعمدة بعد.')) +
+        '</p>';
       return;
     }
-    // Always render server's current mapping — never a local cache copy
+    // Always render the server's current column matching — never a local cache copy
     wrap.innerHTML = headers
       .map((src) => {
         const cur = mapping[src] || '';
         const opts = TARGET_FIELDS.map(
-          (t) =>
+          (fieldKey) =>
             '<option value="' +
-            esc(t) +
+            esc(fieldKey) +
             '"' +
-            (t === cur ? ' selected' : '') +
+            (fieldKey === cur ? ' selected' : '') +
             '>' +
-            (t || '(ignore)') +
+            esc(fieldLabel(fieldKey)) +
             '</option>',
         ).join('');
         return (
           '<div class="map-row">' +
-          '<label>Source header<input class="map-src" readonly dir="ltr" value="' +
+          '<label>' +
+          esc(t('Column in your file', 'العمود في ملفك')) +
+          '<input class="map-src" readonly dir="ltr" value="' +
           esc(src) +
           '"></label>' +
-          '<label>Target field<select class="map-tgt">' +
+          '<label>' +
+          esc(t('Matches to', 'يطابق')) +
+          '<select class="map-tgt">' +
           opts +
           '</select></label>' +
           '</div>'
@@ -309,7 +391,10 @@
     const note = document.getElementById('rollbackNote');
     if (!canRollback) {
       btn.style.display = 'none';
-      note.textContent = 'Rollback requires Manager+.';
+      note.textContent = t(
+        'Only a Manager or Owner can undo an import.',
+        'التراجع عن الاستيراد متاح للمدير أو المالك فقط.',
+      );
       return;
     }
     if (!batch || !batch.completedAt) {
@@ -321,12 +406,18 @@
     const msLeft = completed.getTime() + 7 * 24 * 60 * 60 * 1000 - Date.now();
     if (msLeft <= 0) {
       btn.style.display = 'none';
-      note.textContent = 'Rollback window expired (7 days).';
+      note.textContent = t(
+        "It's too late to undo this import (7-day limit passed).",
+        'انتهت مهلة التراجع عن هذا الاستيراد (الحد 7 أيام).',
+      );
       return;
     }
     btn.style.display = 'inline-flex';
     const days = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
-    note.textContent = '~' + days + ' day(s) left in rollback window.';
+    note.textContent = t(
+      '~' + days + ' day(s) left to undo this import.',
+      'يتبقى ~' + days + ' يوم للتراجع عن هذا الاستيراد.',
+    );
   }
 
   async function refreshBatch(showErr) {
@@ -369,7 +460,13 @@
 
   async function downloadTemplate() {
     if (!canImport) {
-      toast('Need settings.manage', 'err');
+      toast(
+        t(
+          "You don't have permission to do this. Ask your Manager or Owner.",
+          'ليس لديك صلاحية لهذا الإجراء. اطلب من المدير أو المالك.',
+        ),
+        'err',
+      );
       return;
     }
     const res = await api('GET', '/imports/template.xlsx', undefined, {
@@ -395,17 +492,26 @@
 
   async function uploadFile() {
     if (!canImport) {
-      toast('Need settings.manage', 'err');
+      toast(
+        t(
+          "You don't have permission to do this. Ask your Manager or Owner.",
+          'ليس لديك صلاحية لهذا الإجراء. اطلب من المدير أو المالك.',
+        ),
+        'err',
+      );
       return;
     }
     const input = document.getElementById('fileInput');
     const file = input.files && input.files[0];
     if (!file) {
-      toast('Choose a file', 'err');
+      toast(t('Choose a file first.', 'اختر ملفًا أولًا.'), 'err');
       return;
     }
     if (file.size > MAX_BYTES) {
-      toast('File too large (max 5 MB).', 'err');
+      toast(
+        t('File too large (max 5 MB).', 'الملف كبير جدًا (الحد الأقصى 5 ميجابايت).'),
+        'err',
+      );
       return;
     }
     const fd = new FormData();
@@ -420,7 +526,7 @@
     }
     batch = res.data;
     setBatchIdInUrl(batch.id);
-    toast('Uploaded — validating…', 'ok');
+    toast(t('Uploaded — checking your file…', 'تم الرفع — جارٍ التحقق من ملفك…'), 'ok');
     applyStatusUi();
   }
 
@@ -433,7 +539,7 @@
       return;
     }
     batch = res.data;
-    toast('Mapping saved — re-validating…', 'ok');
+    toast(t('Saved — checking your file again…', 'تم الحفظ — إعادة التحقق من ملفك…'), 'ok');
     applyStatusUi();
   }
 
@@ -466,20 +572,33 @@
       await refreshBatch(false);
       return;
     }
-    toast(res.data && res.data.message ? res.data.message : 'Import execution started.', 'ok');
+    toast(
+      res.data && res.data.message
+        ? res.data.message
+        : t('Import started — this may take a moment.', 'بدأ الاستيراد — قد يستغرق بعض الوقت.'),
+      'ok',
+    );
     await refreshBatch(false);
   }
 
   async function rollback() {
     if (!batch || !canRollback) return;
-    if (!confirm('Rollback this completed import? Members without activity will be removed.')) return;
+    if (
+      !confirm(
+        t(
+          'Undo this import? Members who have no other activity will be removed.',
+          'هل تريد التراجع عن هذا الاستيراد؟ سيتم حذف الأعضاء الذين ليس لديهم أي نشاط آخر.',
+        ),
+      )
+    )
+      return;
     const res = await api('POST', '/imports/' + batch.id + '/rollback');
     if (!res.ok) {
       toast(problemMessage(res.data, res.status), 'err');
       return;
     }
     batch = res.data;
-    toast('Rollback completed.', 'ok');
+    toast(t('Import undone.', 'تم التراجع عن الاستيراد.'), 'ok');
     applyStatusUi();
   }
 
@@ -508,7 +627,13 @@
   async function scanUnmatchedPlans() {
     if (!batch) return;
     if (!canPlans) {
-      toast('Need plans.manage to create missing plans.', 'err');
+      toast(
+        t(
+          "You don't have permission to create plans. Ask your Manager or Owner.",
+          'ليس لديك صلاحية لإنشاء الباقات. اطلب من المدير أو المالك.',
+        ),
+        'err',
+      );
       return;
     }
     const res = await api('GET', '/imports/' + batch.id + '/errors.csv', undefined, {
@@ -522,7 +647,7 @@
     const text = await res.blob.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
     if (lines.length < 2) {
-      toast('No error rows in CSV.', 'err');
+      toast(t('No row problems found.', 'لم يتم العثور على مشاكل في الصفوف.'), 'err');
       return;
     }
     const header = parseCsvLine(lines[0]);
@@ -539,9 +664,15 @@
     unmatchedPlans = Array.from(names);
     renderPlanSpecs();
     if (!unmatchedPlans.length) {
-      toast('No PLAN_UNMATCHED plan names found.', 'err');
+      toast(t('No missing plan names found.', 'لم يتم العثور على أسماء باقات مفقودة.'), 'err');
     } else {
-      toast('Found ' + unmatchedPlans.length + ' unmatched plan name(s).', 'ok');
+      toast(
+        t(
+          'Found ' + unmatchedPlans.length + ' missing plan name(s).',
+          'تم العثور على ' + unmatchedPlans.length + ' اسم باقة مفقود.',
+        ),
+        'ok',
+      );
     }
   }
 
@@ -557,27 +688,35 @@
     wrap.innerHTML = unmatchedPlans
       .map((name, i) => {
         const typeOpts = PLAN_TYPES.map(
-          (t) =>
+          (planTypeKey) =>
             '<option value="' +
-            t +
+            planTypeKey +
             '"' +
-            (t === 'monthly_unlimited' ? ' selected' : '') +
+            (planTypeKey === 'monthly_unlimited' ? ' selected' : '') +
             '>' +
-            t +
+            esc(planTypeLabel(planTypeKey)) +
             '</option>',
         ).join('');
         return (
           '<div class="plan-spec" data-i="' +
           i +
           '">' +
-          '<label>Name<input class="ps-name" value="' +
+          '<label>' +
+          esc(t('Name', 'الاسم')) +
+          '<input class="ps-name" value="' +
           esc(name) +
           '"></label>' +
-          '<label>Type<select class="ps-type">' +
+          '<label>' +
+          esc(t('Type', 'النوع')) +
+          '<select class="ps-type">' +
           typeOpts +
           '</select></label>' +
-          '<label>Days<input type="number" class="ps-days" value="30" min="1"></label>' +
-          '<label>Price<input type="number" class="ps-price" value="0" min="0" step="0.01"></label>' +
+          '<label>' +
+          esc(t('Days', 'الأيام')) +
+          '<input type="number" class="ps-days" value="30" min="1"></label>' +
+          '<label>' +
+          esc(t('Price', 'السعر')) +
+          '<input type="number" class="ps-price" value="0" min="0" step="0.01"></label>' +
           '</div>'
         );
       })
@@ -596,7 +735,7 @@
       });
     });
     if (!specs.length) {
-      toast('No plans to create', 'err');
+      toast(t('No plans to create.', 'لا توجد باقات لإنشائها.'), 'err');
       return;
     }
     const res = await api('POST', '/imports/' + batch.id + '/create-plans', { plans: specs });
@@ -607,7 +746,10 @@
     batch = res.data;
     unmatchedPlans = [];
     renderPlanSpecs();
-    toast('Plans created — re-validating…', 'ok');
+    toast(
+      t('Plans created — checking your file again…', 'تم إنشاء الباقات — إعادة التحقق من ملفك…'),
+      'ok',
+    );
     applyStatusUi();
   }
 
@@ -634,7 +776,7 @@
   document.getElementById('btnCreatePlans').onclick = createPlans;
   document.getElementById('btnNewBatch').onclick = newBatch;
 
-  document.getElementById('fileInput').addEventListener('change', () => {
+  function updateUploadHint() {
     const f = document.getElementById('fileInput').files[0];
     const hint = document.getElementById('uploadHint');
     if (!f) {
@@ -643,12 +785,31 @@
     }
     const mb = (f.size / (1024 * 1024)).toFixed(2);
     hint.textContent =
-      f.name + ' · ' + mb + ' MB' + (f.size > MAX_BYTES ? ' — TOO LARGE (max 5 MB)' : '');
-  });
+      f.name +
+      ' · ' +
+      mb +
+      ' MB' +
+      (f.size > MAX_BYTES
+        ? ' — ' + t('too large (max 5 MB)', 'كبير جدًا (الحد الأقصى 5 ميجابايت)')
+        : '');
+  }
+  document.getElementById('fileInput').addEventListener('change', updateUploadHint);
 
   if (!canImport) {
-    toast('Need settings.manage to use imports.', 'err');
+    toast(
+      t(
+        "You don't have permission to use bulk import. Ask your Manager or Owner.",
+        'ليس لديك صلاحية لاستخدام الاستيراد الجماعي. اطلب من المدير أو المالك.',
+      ),
+      'err',
+    );
   }
+
+  window.addEventListener('gfp:locale', () => {
+    applyStatusUi();
+    renderPlanSpecs();
+    updateUploadHint();
+  });
 
   const existing = readBatchIdFromUrl();
   if (existing) loadBatch(existing);
