@@ -150,6 +150,9 @@
     if (!iso) return '';
     var s = String(iso);
     if (s.indexOf('T') >= 0) {
+      // API often serializes UTC DateTime without a Z/offset; without it, JS treats the
+      // clock as local and Classes shows e.g. 06:00 instead of Cairo 09:00.
+      if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(s)) s += 'Z';
       var dt = new Date(s);
       if (isNaN(dt.getTime())) return '';
       return dt.toLocaleTimeString(dateLocale(), {
@@ -274,7 +277,8 @@
     var list = Array.isArray(r.data) ? r.data : [];
     classActivities = list.filter(function (a) {
       var kind = String(a.kind || 'class').toLowerCase();
-      return (kind === 'class' || kind === '') && a.isActive !== false && !a.isDeleted;
+      var bookableFacility = kind === 'facility' && a.bookingRequired;
+      return (kind === 'class' || kind === '' || bookableFacility) && a.isActive !== false && !a.isDeleted;
     });
     if (!classActivities.length) {
       activityFilter.innerHTML = '<option value="">' + esc(t('No activities available', 'مفيش أنشطة')) + '</option>';
@@ -294,10 +298,10 @@
     var r = await Gfp.get('/activity-sessions?date=' + encodeURIComponent(dateStr));
     if (!r.ok) return { ok: false, error: r, items: [] };
     var items = Array.isArray(r.data) ? r.data : (r.data && r.data.items ? r.data.items : []);
-    // Classes board = class sessions only (facilities stay in the strip below).
+    // Classes board = class sessions + booking-required facility sessions (quota-consuming).
     items = items.filter(function (s) {
       var kind = (s.activityKind || (s.activity && s.activity.kind) || 'class').toLowerCase();
-      return kind === 'class' || kind === '';
+      return kind === 'class' || kind === '' || kind === 'facility';
     });
     return { ok: true, items: items };
   }
@@ -415,7 +419,11 @@
       var filtered = !!activityFilterId;
       var emptyHint;
       if (filtered) {
-        emptyHint = t('No sessions for this activity on the selected date.', 'مفيش حصص للنشاط ده في التاريخ ده.');
+        var facAct = classActivities.find(function (a) { return a.id === activityFilterId; });
+        var isFac = facAct && String(facAct.kind || '').toLowerCase() === 'facility';
+        emptyHint = isFac
+          ? t('No facility slots on this date. Open Activities → Schedule on this facility (booking required) so sessions are generated — then book members here to consume plan quota.', 'مفيش مواعيد للمرفق في التاريخ ده. من الأنشطة ← جدول على المرفق (يتطلب حجز) عشان تتولد الجلسات — وبعدين احجز الأعضاء هنا عشان تُستهلك حصة الخطة.')
+          : t('No sessions for this activity on the selected date.', 'مفيش حصص للنشاط ده في التاريخ ده.');
       } else if (!hasAnyActivities) {
         emptyHint = t('Create an activity and schedule first, then sessions will appear here.', 'أنشئ نشاط وجدول أولاً، وبعدين الحصص هتظهر هنا.');
       } else if (dateMode === 'today') {
@@ -504,6 +512,11 @@
     if (status === 'full') cardClass += ' full';
     if (status === 'completed') cardClass += ' completed';
 
+    var kind = String(s.activityKind || (s.activity && s.activity.kind) || 'class').toLowerCase();
+    var kindBadge = kind === 'facility'
+      ? '<span class="sess-kind facility">' + esc(t('Facility', 'مرفق')) + '</span>'
+      : '';
+
     return '<article class="' + cardClass + '" data-session-id="' + esc(s.id) + '" tabindex="0">' +
       '<div class="sess-time">' +
         '<div class="sess-time-start">' + esc(startTime) + '</div>' +
@@ -511,18 +524,18 @@
       '</div>' +
       '<div class="sess-div" aria-hidden="true"></div>' +
       '<div class="sess-info">' +
-        '<div class="sess-name">' + esc(actName) + '</div>' +
+        '<div class="sess-name">' + esc(actName) + ' ' + kindBadge + '</div>' +
         '<div class="sess-when">' + esc(dayLabel) + ' · ' + esc(startTime) + (endTime ? ' – ' + esc(endTime) : '') + '</div>' +
         '<div class="sess-meta">' +
-          (coach ? '<span class="sess-meta-item"><i class="ti ti-user"></i>' + esc(coach) + '</span>' : '<span class="sess-meta-item muted">' + esc(t('No coach assigned', 'مفيش مدرب معيّن')) + '</span>') +
+          (coach ? '<span class="sess-meta-item"><i class="ti ti-user"></i>' + esc(coach) + '</span>' : '<span class="sess-meta-item muted">' + esc(t(kind === 'facility' ? 'No attendant assigned' : 'No coach assigned', kind === 'facility' ? 'مفيش مشرف معيّن' : 'مفيش مدرب معيّن')) + '</span>') +
         '</div>' +
       '</div>' +
       '<div class="sess-capacity">' +
         (cap > 0
           ? '<div class="cap-bar"><div class="cap-fill" style="width:' + pct + '%"></div></div>' +
-            '<div class="cap-text ' + (status === 'full' ? 'full-text' : '') + '">' + booked + ' / ' + cap + '</div>' +
+            '<div class="cap-text ' + (status === 'full' ? 'full-text' : '') + '" dir="ltr">' + booked + ' / ' + cap + '</div>' +
             (spotsText ? '<div class="cap-spots' + (remaining <= 3 ? ' low' : '') + '">' + esc(spotsText) + '</div>' : (status === 'full' ? '<div class="cap-spots low">' + esc(t('Full', 'مكتمل')) + '</div>' : ''))
-          : '<div class="cap-text">' + booked + ' ' + esc(t('booked', 'محجوز')) + '</div>') +
+          : '<div class="cap-text" dir="ltr">' + booked + ' ' + esc(t('booked', 'محجوز')) + '</div>') +
       '</div>' +
       '<div class="sess-actions">' +
         statusBadge +
@@ -546,20 +559,55 @@
       '<div class="fac-grid">' +
       facs.map(function (f) {
         var icon = f.systemKey === 'gym_floor' ? 'ti-dumbbell' : 'ti-pool';
-        if (/sauna/i.test(f.name || '')) icon = 'ti-flame';
+        if (/sauna/i.test(f.name || '') || /ساونا/.test(f.nameAr || '')) icon = 'ti-flame';
         if (/jacuzzi|spa/i.test(f.name || '')) icon = 'ti-bath';
         var tag, cls;
         if (!f.bookingRequired) { tag = f.isSystem ? t('Open access', 'دخول مفتوح') : t('Walk-in', 'بدون حجز'); cls = f.isSystem ? 'open' : 'walkin'; }
         else { tag = t('Reservation required', 'يتطلب حجز'); cls = 'reserve'; }
         var capTxt = f.defaultCapacity ? ' · ' + t('Capacity', 'السعة') + ' ' + f.defaultCapacity : '';
-        return '<div class="fac-card">' +
+        var bookBtn = f.bookingRequired
+          ? '<button type="button" class="fac-book-btn" data-fac-id="' + esc(f.id) + '"><i class="ti ti-calendar-plus"></i> ' + esc(t('Book / view slots', 'حجز / عرض المواعيد')) + '</button>'
+          : '';
+        var hint = f.bookingRequired
+          ? '<div class="fac-quota-hint">' + esc(t('Plan quota applies per membership when you book a slot.', 'حصة الخطة تُطبَّق لكل عضوية عند حجز موعد.')) + '</div>'
+          : '';
+        return '<div class="fac-card' + (f.bookingRequired ? ' fac-bookable' : '') + '">' +
           '<div class="fac-icon"><i class="ti ' + icon + '"></i></div>' +
           '<div class="fac-info"><div class="fac-name">' + esc(t(f.name, f.nameAr) || f.name) + '</div>' +
           '<div class="fac-behavior"><i class="ti ' + (f.bookingRequired ? 'ti-calendar-check' : 'ti-walk') + '"></i>' +
           (f.bookingRequired ? esc(t('Booking required', 'يتطلب حجز')) + esc(capTxt) : esc(t('No booking needed', 'مفيش حجز مطلوب'))) + '</div>' +
-          '<span class="fac-tag ' + cls + '">' + esc(tag) + '</span></div></div>';
+          '<span class="fac-tag ' + cls + '">' + esc(tag) + '</span>' +
+          hint +
+          bookBtn +
+          '</div></div>';
       }).join('') +
       '</div></div>';
+
+    host.querySelectorAll('[data-fac-id]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = this.getAttribute('data-fac-id');
+        if (!id) return;
+        activityFilterId = id;
+        if (activityFilter) {
+          // Ensure option exists (bookable facilities are in classActivities)
+          var has = Array.prototype.some.call(activityFilter.options, function (o) { return o.value === id; });
+          if (!has) {
+            var fac = facs.find(function (x) { return x.id === id; });
+            if (fac) {
+              var opt = document.createElement('option');
+              opt.value = id;
+              opt.textContent = t(fac.name, fac.nameAr) || fac.name;
+              activityFilter.appendChild(opt);
+            }
+          }
+          activityFilter.value = id;
+        }
+        loadSessions();
+        var list = document.getElementById('sessionsList');
+        if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast(t('Showing today’s slots for this facility. Book a member to use their plan quota.', 'عرض مواعيد النهاردة لهذا المرفق. احجز عضوًا عشان تُستهلك حصة خطته.'));
+      });
+    });
   }
 
   // ── Session drawer ──
@@ -598,7 +646,7 @@
       '<div class="sess-summary">' +
       '<div class="sess-summary-row"><i class="ti ti-clock"></i><strong>' + esc(startTime) + ' – ' + esc(endTime) + '</strong></div>' +
       (coach ? '<div class="sess-summary-row"><i class="ti ti-user"></i>' + esc(coach) + '</div>' : '') +
-      '<div class="sess-summary-row"><i class="ti ti-users"></i><strong>' + booked + ' / ' + (cap || '—') + '</strong> ' + esc(t('booked', 'محجوز')) +
+      '<div class="sess-summary-row"><i class="ti ti-users"></i><strong dir="ltr">' + booked + ' / ' + (cap || '—') + '</strong> ' + esc(t('booked', 'محجوز')) +
       (cap > 0 ? ' · <span class="' + (isFull ? 'cap-full-inline' : 'cap-spots-inline') + '">' +
         (isFull ? esc(t('Full', 'مكتمل')) : ((remaining != null ? remaining : Math.max(0, cap - booked)) + ' ' + esc(t('spots left', 'أماكن متبقية')))) + '</span>' : '') + '</div>' +
       '</div>' +
@@ -782,7 +830,7 @@
       '<div class="book-summary">' +
         '<div class="book-summary-row"><span class="lbl">' + esc(t('Activity', 'النشاط')) + '</span><strong>' + esc(actName) + '</strong></div>' +
         '<div class="book-summary-row"><span class="lbl">' + esc(t('Session', 'الحصة')) + '</span><strong>' + esc(fmtDateShort(boardDate)) + ' — ' + esc(startTime) + (endTime ? ' – ' + esc(endTime) : '') + '</strong></div>' +
-        '<div class="book-summary-row"><span class="lbl">' + esc(t('Capacity', 'السعة')) + '</span><strong>' + booked + ' / ' + (cap || '—') +
+        '<div class="book-summary-row"><span class="lbl">' + esc(t('Capacity', 'السعة')) + '</span><strong dir="ltr">' + booked + ' / ' + (cap || '—') +
           (remaining != null && cap > 0 ? ' · ' + (isFull ? esc(t('Full', 'مكتمل')) : remaining + ' ' + esc(t('spots left', 'أماكن متبقية'))) : '') + '</strong></div>' +
       '</div>' +
       '<div id="bookStep">' +
@@ -800,18 +848,18 @@
   async function searchMembers(query, sessionId) {
     var container = document.getElementById('searchResults');
     if (!container) return;
-    container.innerHTML = '<div class="search-empty">Searching…</div>';
+    container.innerHTML = '<div class="search-empty">' + esc(t('Searching…', 'جاري البحث…')) + '</div>';
 
     var r = await Gfp.get('/members?search=' + encodeURIComponent(query) + '&pageSize=10');
     if (!r.ok) {
-      container.innerHTML = '<div class="search-empty">Search failed. Try again.</div>';
+      container.innerHTML = '<div class="search-empty">' + esc(t('Search failed. Try again.', 'البحث فشل. حاول تاني.')) + '</div>';
       return;
     }
 
     var paged = Gfp.asPaged(r.data);
     var members = paged.items;
     if (!members.length) {
-      container.innerHTML = '<div class="search-empty">No members found</div>';
+      container.innerHTML = '<div class="search-empty">' + esc(t('No members found', 'مفيش أعضاء مطابقين')) + '</div>';
       return;
     }
 
@@ -850,16 +898,16 @@
           '<div class="book-member-name">' + esc(memberName || 'Member') + '</div>' +
           (memberPhone ? '<div class="book-member-phone">' + esc(memberPhone) + '</div>' : '') +
         '</div>' +
-        '<button type="button" class="btn-text" id="eligChange">Change</button>' +
+        '<button type="button" class="btn-text" id="eligChange">' + esc(t('Change', 'تغيير')) + '</button>' +
       '</div>' +
-      '<div class="book-note">Use a plan credit when the membership includes this class \u2014 that does not create an invoice or cash movement. Collect a drop-in payment to issue an invoice and record cash in the open shift.</div>' +
+      '<div class="book-note">' + esc(t('Use a plan credit when the membership includes this class — that does not create an invoice or cash movement. Collect a drop-in payment to issue an invoice and record cash in the open shift.', 'استخدم رصيد الاشتراك لو الحصة دي مشمولة — ده مش بيصدر فاتورة ولا حركة كاش. حصّل دفعة زيارة عشان تصدر فاتورة وتتسجل في الوردية المفتوحة.')) + '</div>' +
       '<div class="elig-status" id="eligStatus" role="status"></div>' +
       '<div class="book-footer">' +
-        '<button type="button" class="btn-cancel" id="eligBack">Back</button>' +
+        '<button type="button" class="btn-cancel" id="eligBack">' + esc(t('Back', 'رجوع')) + '</button>' +
         (canSell
-          ? '<button type="button" class="btn-pay" id="eligPay"><i class="ti ti-cash"></i> Collect payment</button>'
+          ? '<button type="button" class="btn-pay" id="eligPay"><i class="ti ti-cash"></i> ' + esc(t('Collect payment', 'تحصيل الدفعة')) + '</button>'
           : '') +
-        '<button type="button" class="btn-book" id="eligConfirm"><i class="ti ti-ticket"></i> Use credit</button>' +
+        '<button type="button" class="btn-book" id="eligConfirm"><i class="ti ti-ticket"></i> ' + esc(t('Use credit', 'استخدم الرصيد')) + '</button>' +
       '</div>';
 
     document.getElementById('eligChange').addEventListener('click', function () { resetSearchStep(sessionId); });
@@ -871,7 +919,7 @@
         payNow.disabled = true;
         var price = await resolveDropInPrice();
         bookCtx.dropInPrice = price;
-        showDropInPayStep(sessionId, price, 'Collect a drop-in payment to issue an invoice and record it in Cash Drawer.');
+        showDropInPayStep(sessionId, price, t('Collect a drop-in payment to issue an invoice and record it in Cash Drawer.', 'حصّل دفعة زيارة عشان تصدر فاتورة وتتسجل في درج الكاش.'));
       });
     }
   }
@@ -882,13 +930,13 @@
     if (!step) return;
     step.innerHTML =
       '<div class="book-entry-choice">' +
-        '<button type="button" class="book-choice active" id="memberPath"><i class="ti ti-user"></i> Registered member</button>' +
-        '<button type="button" class="book-choice" id="guestPath"><i class="ti ti-walk"></i> Walk-in guest</button>' +
+        '<button type="button" class="book-choice active" id="memberPath"><i class="ti ti-user"></i> ' + esc(t('Registered member', 'عضو مسجّل')) + '</button>' +
+        '<button type="button" class="book-choice" id="guestPath"><i class="ti ti-walk"></i> ' + esc(t('Walk-in guest', 'زائر بدون اشتراك')) + '</button>' +
       '</div>' +
       '<div id="memberSearchPane">' +
-      '<label class="book-field-label" for="memberSearch">Search member</label>' +
+      '<label class="book-field-label" for="memberSearch">' + esc(t('Search member', 'بحث عن عضو')) + '</label>' +
       '<div class="search-wrap"><i class="ti ti-search search-icon"></i>' +
-      '<input class="search-input" id="memberSearch" placeholder="Name or phone…" autocomplete="off" autofocus></div>' +
+      '<input class="search-input" id="memberSearch" placeholder="' + esc(t('Name or phone…', 'الاسم أو الموبايل…')) + '" autocomplete="off" autofocus></div>' +
       '<div id="searchResults"></div></div>';
     var searchInput = document.getElementById('memberSearch');
     searchInput.addEventListener('input', function () {
@@ -908,19 +956,29 @@
   }
 
   var paymentMethods = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'card_paymob', label: 'Card' },
-    { value: 'fawry', label: 'Fawry' },
-    { value: 'vodafone', label: 'Vodafone Wallet' },
-    { value: 'instapay', label: 'InstaPay' },
-    { value: 'account_credit', label: 'Account credit' }
+    { value: 'cash', label: 'Cash', labelAr: 'كاش' },
+    { value: 'card_paymob', label: 'Card', labelAr: 'بطاقة' },
+    { value: 'fawry', label: 'Fawry', labelAr: 'فوري' },
+    { value: 'vodafone', label: 'Vodafone Wallet', labelAr: 'فودافون كاش' },
+    { value: 'instapay', label: 'InstaPay', labelAr: 'إنستاباي' },
+    { value: 'account_credit', label: 'Account credit', labelAr: 'رصيد الحساب' }
   ];
+  // Local Edition has no online payment gateways — drop them from the booking payment select.
+  if (window.GfpDeployment) {
+    window.GfpDeployment.getEdition().then(function (edition) {
+      if (edition === 'Local') {
+        paymentMethods = paymentMethods.filter(function (p) {
+          return p.value === 'account_credit' || !window.GfpDeployment.isOnlineGatewayMethod(p.value);
+        });
+      }
+    });
+  }
 
   function paymentMethodSelect(id, includeCredit) {
-    return '<label class="book-field-label" for="' + id + '">Payment method</label>' +
+    return '<label class="book-field-label" for="' + id + '">' + esc(t('Payment method', 'طريقة الدفع')) + '</label>' +
       '<select class="payment-select" id="' + id + '">' +
       paymentMethods.filter(function (p) { return includeCredit || p.value !== 'account_credit'; }).map(function (p) {
-        return '<option value="' + p.value + '">' + p.label + '</option>';
+        return '<option value="' + p.value + '">' + esc(t(p.label, p.labelAr || p.label)) + '</option>';
       }).join('') + '</select>';
   }
 
@@ -932,26 +990,26 @@
     bookCtx.memberId = null;
     bookCtx.memberName = '';
     bookCtx.memberPhone = '';
-    step.innerHTML = '<div class="search-empty">Loading drop-in price…</div>';
+    step.innerHTML = '<div class="search-empty">' + esc(t('Loading drop-in price…', 'جاري تحميل سعر الزيارة…')) + '</div>';
     var price = await resolveDropInPrice();
     if (flowToken !== bookingFlowToken) return;
     bookCtx.dropInPrice = price;
     step.innerHTML =
-      '<div class="book-guest-heading"><i class="ti ti-walk"></i><strong>Walk-in guest</strong>' +
-        '<span>Guest details are saved on the booking and invoice.</span></div>' +
-      '<label class="book-field-label" for="guestName">Guest name</label>' +
-      '<input class="text-input" id="guestName" placeholder="Full name" maxlength="200" autocomplete="name">' +
-      '<label class="book-field-label" for="guestPhone">Guest phone</label>' +
-      '<input class="text-input" id="guestPhone" placeholder="Phone number" maxlength="30" autocomplete="tel">' +
+      '<div class="book-guest-heading"><i class="ti ti-walk"></i><strong>' + esc(t('Walk-in guest', 'زائر بدون اشتراك')) + '</strong>' +
+        '<span>' + esc(t('Guest details are saved on the booking and invoice.', 'بيانات الزائر بتتحفظ على الحجز والفاتورة.')) + '</span></div>' +
+      '<label class="book-field-label" for="guestName">' + esc(t('Guest name', 'اسم الزائر')) + '</label>' +
+      '<input class="text-input" id="guestName" placeholder="' + esc(t('Full name', 'الاسم بالكامل')) + '" maxlength="200" autocomplete="name">' +
+      '<label class="book-field-label" for="guestPhone">' + esc(t('Guest phone', 'موبايل الزائر')) + '</label>' +
+      '<input class="text-input" id="guestPhone" placeholder="' + esc(t('Phone number', 'رقم الموبايل')) + '" maxlength="30" autocomplete="tel">' +
       '<div class="dropin-card guest-price-card">' +
-        '<div class="dropin-card-row price"><span>Amount to collect</span><strong class="dropin-price">' +
-          (moneyEGP(price) || 'Drop-in price not configured') + '</strong></div>' +
+        '<div class="dropin-card-row price"><span>' + esc(t('Amount to collect', 'المبلغ المطلوب')) + '</span><strong class="dropin-price">' +
+          (moneyEGP(price) || t('Drop-in price not configured', 'سعر الزيارة مش متظبط')) + '</strong></div>' +
       '</div>' +
       paymentMethodSelect('guestPaymentMethod', false) +
       '<div class="elig-status" id="guestStatus" role="status"></div>' +
       '<div class="book-footer">' +
-        '<button type="button" class="btn-cancel" id="guestBack">Back</button>' +
-        '<button type="button" class="btn-pay" id="guestPay"' + (!price ? ' disabled' : '') + '><i class="ti ti-file-invoice"></i> Pay &amp; book</button>' +
+        '<button type="button" class="btn-cancel" id="guestBack">' + esc(t('Back', 'رجوع')) + '</button>' +
+        '<button type="button" class="btn-pay" id="guestPay"' + (!price ? ' disabled' : '') + '><i class="ti ti-file-invoice"></i> ' + esc(t('Pay & book', 'ادفع واحجز')) + '</button>' +
       '</div>';
 
     document.getElementById('guestBack').addEventListener('click', function () {
@@ -964,7 +1022,7 @@
         var phone = document.getElementById('guestPhone').value.trim();
         var statusEl = document.getElementById('guestStatus');
         if (!name || !phone) {
-          statusEl.textContent = 'Guest name and phone are required.';
+          statusEl.textContent = t('Guest name and phone are required.', 'اسم الزائر والموبايل مطلوبين.');
           statusEl.className = 'elig-status is-error';
           return;
         }
@@ -990,7 +1048,7 @@
     if (!btn || !bookCtx || !bookCtx.memberId) return;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Checking…';
+    btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> ' + esc(t('Checking…', 'جاري التحقق…'));
     if (statusEl) {
       statusEl.textContent = '';
       statusEl.className = 'elig-status';
@@ -1003,7 +1061,7 @@
     if (flowToken !== bookingFlowToken) return;
 
     if (res && res.ok) {
-      toast('Member booked using membership credit — no invoice and no cash movement (no payment was taken).');
+      toast(t('Member booked using membership credit — no invoice and no cash movement (no payment was taken).', 'العضو اتحجز برصيد الاشتراك — مفيش فاتورة ولا حركة كاش.'));
       closeOverlay('bookOverlay');
       await openSessionDrawer(currentSession.id);
       loadSessions();
@@ -1024,7 +1082,7 @@
     }
     toast(friendly, 'error');
     btn.disabled = false;
-    btn.innerHTML = '<i class="ti ti-ticket"></i> Use credit';
+    btn.innerHTML = '<i class="ti ti-ticket"></i> ' + esc(t('Use credit', 'استخدم الرصيد'));
   }
 
   function showDropInPayStep(sessionId, price, reasonMsg) {
@@ -1037,32 +1095,35 @@
       '<div class="book-member-card">' +
         '<div class="booking-avatar lg">' + esc(initials) + '</div>' +
         '<div class="book-member-meta">' +
-          '<div class="book-member-name">' + esc(bookCtx.memberName || 'Member') + '</div>' +
+          '<div class="book-member-name">' + esc(bookCtx.memberName || t('Member', 'عضو')) + '</div>' +
           (bookCtx.memberPhone ? '<div class="book-member-phone">' + esc(bookCtx.memberPhone) + '</div>' : '') +
         '</div>' +
       '</div>' +
       '<div class="book-warn" role="alert">' +
-        '<div class="book-warn-title"><i class="ti ti-alert-circle"></i> No class credits remaining</div>' +
+        '<div class="book-warn-title"><i class="ti ti-alert-circle"></i> ' + esc(t('No class credits remaining', 'مفيش رصيد حصص متبقي')) + '</div>' +
         '<div class="book-warn-body">' +
           esc(reasonMsg && !/stack|exception/i.test(reasonMsg)
             ? reasonMsg
-            : (bookCtx.memberName || 'This member') + ' cannot use a membership credit for ' + (bookCtx.actName || 'this class') + '.') +
+            : t(
+                (bookCtx.memberName || 'This member') + ' cannot use a membership credit for ' + (bookCtx.actName || 'this class') + '.',
+                (bookCtx.memberName || 'العضو ده') + ' مش يقدر يستخدم رصيد اشتراك لـ ' + (bookCtx.actName || 'الحصة دي') + '.'
+              )) +
         '</div>' +
       '</div>' +
       '<div class="dropin-card">' +
-        '<div class="dropin-card-title">Drop-in for this session</div>' +
-        '<div class="dropin-card-row"><span>Activity</span><strong>' + esc(bookCtx.actName || 'Class') + '</strong></div>' +
-        '<div class="dropin-card-row"><span>Session</span><strong>' + esc(fmtDateShort(bookCtx.boardDate)) + ' — ' + esc(bookCtx.startTime) + '</strong></div>' +
-        '<div class="dropin-card-row price"><span>Amount to collect</span><strong class="dropin-price">' +
-          (priceLabel || 'Set on activity') + '</strong></div>' +
-        '<div class="dropin-pay-method"><i class="ti ti-file-invoice"></i> A legal invoice will be issued for this payment.</div>' +
+        '<div class="dropin-card-title">' + esc(t('Drop-in for this session', 'زيارة للحصة دي')) + '</div>' +
+        '<div class="dropin-card-row"><span>' + esc(t('Activity', 'النشاط')) + '</span><strong>' + esc(bookCtx.actName || t('Class', 'حصة')) + '</strong></div>' +
+        '<div class="dropin-card-row"><span>' + esc(t('Session', 'الحصة')) + '</span><strong>' + esc(fmtDateShort(bookCtx.boardDate)) + ' — ' + esc(bookCtx.startTime) + '</strong></div>' +
+        '<div class="dropin-card-row price"><span>' + esc(t('Amount to collect', 'المبلغ المطلوب')) + '</span><strong class="dropin-price">' +
+          (priceLabel || t('Set on activity', 'اتظبط على النشاط')) + '</strong></div>' +
+        '<div class="dropin-pay-method"><i class="ti ti-file-invoice"></i> ' + esc(t('A legal invoice will be issued for this payment.', 'هتتسجل فاتورة قانونية للدفع ده.')) + '</div>' +
       '</div>' +
       paymentMethodSelect('dropinPaymentMethod', true) +
       '<div class="elig-status" id="eligStatus" role="status"></div>' +
       '<div class="book-footer">' +
-        '<button type="button" class="btn-cancel" id="dropinBack">Back</button>' +
-        '<button type="button" class="btn-pay" id="dropinPay"' + (!priceLabel ? ' disabled title="Drop-in price not configured"' : '') + '>' +
-          '<i class="ti ti-cash"></i> ' + (priceLabel ? 'Collect ' + priceLabel + ' &amp; book' : 'Drop-in price missing') +
+        '<button type="button" class="btn-cancel" id="dropinBack">' + esc(t('Back', 'رجوع')) + '</button>' +
+        '<button type="button" class="btn-pay" id="dropinPay"' + (!priceLabel ? ' disabled title="' + esc(t('Drop-in price not configured', 'سعر الزيارة مش متظبط')) + '"' : '') + '>' +
+          '<i class="ti ti-cash"></i> ' + (priceLabel ? esc(t('Collect', 'حصّل')) + ' ' + priceLabel + ' ' + esc(t('& book', 'واحجز')) : esc(t('Drop-in price missing', 'سعر الزيارة ناقص'))) +
         '</button>' +
       '</div>';
 
@@ -1097,7 +1158,7 @@
     if (!btn || !bookCtx || (!bookCtx.memberId && !bookCtx.guestName)) return;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> Taking payment…';
+    btn.innerHTML = '<i class="ti ti-loader-2 spin"></i> ' + esc(t('Taking payment…', 'جاري التحصيل…'));
     if (statusEl) {
       statusEl.textContent = '';
       statusEl.className = 'elig-status';
@@ -1134,16 +1195,26 @@
       }
       if (invoiceId) {
         toast(
-          (paid ? paid + ' collected — ' : '') +
-          (bookCtx.memberName || bookCtx.guestName || 'Guest') +
-          ' booked. Invoice ' + (invoiceNumber || '') +
-          ' is in Invoices → Classes & drop-ins and in Cash Drawer.'
+          t(
+            (paid ? paid + ' collected — ' : '') +
+            (bookCtx.memberName || bookCtx.guestName || 'Guest') +
+            ' booked. Invoice ' + (invoiceNumber || '') +
+            ' is in Invoices → Classes & drop-ins and in Cash Drawer.',
+            (paid ? 'اتحصّل ' + paid + ' — ' : '') +
+            (bookCtx.memberName || bookCtx.guestName || 'زائر') +
+            ' اتحجز. الفاتورة ' + (invoiceNumber || '') +
+            ' في الفواتير → الحصص والزيارات وفي درج الكاش.'
+          )
         );
         openBookingInvoice(invoiceId, invoiceNumber);
       } else {
         toast(
-          (paid ? paid + ' collected — ' : 'Drop-in paid — ') +
-          'booking created. Invoice issuing — check Invoices → Classes & drop-ins.'
+          t(
+            (paid ? paid + ' collected — ' : 'Drop-in paid — ') +
+            'booking created. Invoice issuing — check Invoices → Classes & drop-ins.',
+            (paid ? 'اتحصّل ' + paid + ' — ' : 'الزيارة اتدفعت — ') +
+            'الحجز اتعمل. الفاتورة بتتصدر — شوف الفواتير → الحصص والزيارات.'
+          )
         );
       }
       closeOverlay('bookOverlay');
@@ -1154,7 +1225,10 @@
 
     var friendly = errMsg(res);
     if (/permission|forbidden|403/i.test(friendly) || (res && res.status === 403)) {
-      friendly = 'You need sales permission to take a drop-in payment. Ask a manager, or sell from Sale / POS.';
+      friendly = t(
+        'You need sales permission to take a drop-in payment. Ask a manager, or sell from Sale / POS.',
+        'محتاج صلاحية البيع عشان تحصّل دفعة زيارة. اطلب من المدير، أو بيع من شاشة البيع.'
+      );
     }
     if (statusEl) {
       statusEl.textContent = friendly;
@@ -1163,8 +1237,8 @@
     toast(friendly, 'error');
     btn.disabled = false;
     btn.innerHTML = isGuest
-      ? '<i class="ti ti-file-invoice"></i> Pay &amp; book'
-      : '<i class="ti ti-cash"></i> Collect ' + (moneyEGP(bookCtx.dropInPrice) || 'payment') + ' & book';
+      ? '<i class="ti ti-file-invoice"></i> ' + esc(t('Pay & book', 'ادفع واحجز'))
+      : '<i class="ti ti-cash"></i> ' + esc(t('Collect', 'حصّل')) + ' ' + (moneyEGP(bookCtx.dropInPrice) || t('payment', 'الدفعة')) + ' ' + esc(t('& book', 'واحجز'));
   }
 
   document.getElementById('drawerOverlay').addEventListener('click', function (e) {
@@ -1194,6 +1268,33 @@
     loadFacilities();
     var drawer = document.getElementById('drawerOverlay');
     if (drawer && drawer.classList.contains('show') && currentSession) renderDrawer();
+    var book = document.getElementById('bookOverlay');
+    if (book && book.classList.contains('show') && bookCtx && bookCtx.sessionId) {
+      var sid = bookCtx.sessionId;
+      var h2 = book.querySelector('.modal-header h2');
+      var sub = book.querySelector('.modal-header-sub');
+      if (h2) h2.textContent = t('Book member or walk-in', 'حجز عضو أو زائر');
+      if (sub) sub.textContent = t('Use a plan credit when available, or collect a drop-in payment and issue an invoice.', 'استخدم رصيد الاشتراك لو متاح، أو حصّل دفعة زيارة وأصدر فاتورة.');
+      if (document.getElementById('guestName')) {
+        var gn = document.getElementById('guestName').value;
+        var gp = document.getElementById('guestPhone').value;
+        var gpm = document.getElementById('guestPaymentMethod') && document.getElementById('guestPaymentMethod').value;
+        showGuestStep(sid).then(function () {
+          var nameEl = document.getElementById('guestName');
+          var phoneEl = document.getElementById('guestPhone');
+          var methodEl = document.getElementById('guestPaymentMethod');
+          if (nameEl) nameEl.value = gn;
+          if (phoneEl) phoneEl.value = gp;
+          if (methodEl && gpm) methodEl.value = gpm;
+        });
+      } else if (document.getElementById('dropinPay')) {
+        showDropInPayStep(sid, bookCtx.dropInPrice, '');
+      } else if (document.getElementById('eligConfirm')) {
+        showConfirmStep(bookCtx.memberId, bookCtx.memberName, bookCtx.memberPhone || '', sid);
+      } else if (document.getElementById('memberSearch') || document.getElementById('guestPath')) {
+        resetSearchStep(sid);
+      }
+    }
   });
 
   loadSessions().then(function () {

@@ -2,7 +2,13 @@
   'use strict';
 
   const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || ''; // REM-F3: no hardcoded remote URL
-  const METHODS = ['cash', 'card_paymob', 'fawry', 'vodafone', 'instapay'];
+  let METHODS = ['cash', 'card_paymob', 'fawry', 'vodafone', 'instapay'];
+  // Local Edition has no online payment gateways — drop them from the split-payment method list.
+  if (window.GfpDeployment) {
+    window.GfpDeployment.getEdition().then(function (edition) {
+      if (edition === 'Local') METHODS = window.GfpDeployment.filterOnlineGatewayCodes(METHODS);
+    });
+  }
   function methodLabel(code) {
     const map = {
       cash: t('Cash', 'كاش'),
@@ -211,9 +217,9 @@
   }
   function apiOrigin() {
     try {
-      return new URL(window.API_BASE || API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
+      return new URL(window.API_BASE || API_BASE || window.GFP_DEFAULT_API_BASE || '/api', window.location.origin).origin;
     } catch (e) {
-      return 'https://reach-lullaby-tighten.ngrok-free.dev';
+      return window.location.origin;
     }
   }
   function uploadsPath(url) {
@@ -241,7 +247,6 @@
     }
     const path = uploadsPath(u);
     if (path) {
-      add('https://reach-lullaby-tighten.ngrok-free.dev' + path);
       add(apiOrigin() + path);
     }
     if (/^https?:\/\//i.test(u)) add(u);

@@ -17,6 +17,8 @@ import {
   formatEgp,
   formatPercent,
 } from '@/lib/format'
+import { PageHeader } from '@/components/PageHeader'
+import { useUiStore } from '@/stores/ui-store'
 
 function Section({
   title,
@@ -52,12 +54,14 @@ function QueryState({
   isError,
   error,
   onRetry,
+  retryLabel,
   children,
 }: {
   isLoading: boolean
   isError: boolean
   error: unknown
   onRetry: () => void
+  retryLabel: string
   children: ReactNode
 }) {
   if (isLoading) {
@@ -75,12 +79,12 @@ function QueryState({
         ? error.message
         : error instanceof Error
           ? error.message
-          : 'Failed to load'
+          : retryLabel
     return (
       <p role="alert" className="text-sm text-red-600">
         {msg}{' '}
         <button type="button" className="underline" onClick={onRetry}>
-          Retry
+          {retryLabel}
         </button>
       </p>
     )
@@ -93,6 +97,8 @@ function isYmd(value: string): boolean {
 }
 
 export function MetricsPage() {
+  const t = useUiStore((s) => s.t)
+  const retry = t('common.retry')
   const [params, setParams] = useSearchParams()
   const defaults = useMemo(
     () => ({
@@ -131,11 +137,11 @@ export function MetricsPage() {
   const rangeValid = isYmd(from) && isYmd(to) && from <= to
   const rangeError =
     !from || !to
-      ? 'from and to are required for movement, churn, and conversion.'
+      ? t('metrics.rangeRequired')
       : !isYmd(from) || !isYmd(to)
-        ? 'Use yyyy-MM-dd for from and to.'
+        ? t('metrics.rangeFormat')
         : from > to
-          ? 'from must be on or before to.'
+          ? t('metrics.rangeOrder')
           : null
 
   function patchDates(patch: Record<string, string>) {
@@ -179,16 +185,11 @@ export function MetricsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header>
-        <h1 className="text-2xl font-semibold text-gray-900">Metrics</h1>
-        <p className="text-sm text-gray-500">
-          SaaS billing health — MRR uses PriceEgp/12 for annual plans (already server-side).
-        </p>
-      </header>
+      <PageHeader title={t('metrics.title')} subtitle={t('metrics.subtitle')} />
 
       <div className="flex flex-wrap gap-4 border-b border-gray-200 pb-4">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-gray-500">As of (Cairo)</span>
+          <span className="text-gray-500">{t('metrics.asOf')}</span>
           <input
             type="date"
             value={asOf || defaults.asOf}
@@ -197,7 +198,7 @@ export function MetricsPage() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-gray-500">Range from</span>
+          <span className="text-gray-500">{t('metrics.rangeFrom')}</span>
           <input
             type="date"
             value={from || defaults.from}
@@ -206,7 +207,7 @@ export function MetricsPage() {
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-gray-500">Range to</span>
+          <span className="text-gray-500">{t('metrics.rangeTo')}</span>
           <input
             type="date"
             value={to || defaults.to}
@@ -217,28 +218,29 @@ export function MetricsPage() {
       </div>
 
       <Section
-        title="MRR / ARR"
-        subtitle={`Snapshot as of ${formatCairoDate(effectiveAsOf)}`}
+        title={t('metrics.mrrArr')}
+        subtitle={t('metrics.snapshotAsOf', { date: formatCairoDate(effectiveAsOf) })}
       >
         <QueryState
           isLoading={mrrQuery.isLoading}
           isError={mrrQuery.isError}
           error={mrrQuery.error}
           onRetry={() => mrrQuery.refetch()}
+          retryLabel={retry}
         >
           {mrrQuery.data ? (
             mrrQuery.data.payingTenantCount === 0 ? (
-              <p className="text-sm text-gray-500">No paying tenants as of this date.</p>
+              <p className="text-sm text-gray-500">{t('metrics.noPaying')}</p>
             ) : (
               <div className="grid gap-6 sm:grid-cols-3">
                 <MetricStat label="MRR" value={formatEgp(mrrQuery.data.mrrEgp)} />
                 <MetricStat label="ARR" value={formatEgp(mrrQuery.data.arrEgp)} />
                 <MetricStat
-                  label="Paying tenants"
+                  label={t('metrics.payingTenants')}
                   value={String(mrrQuery.data.payingTenantCount)}
                 />
                 <p className="sm:col-span-3 text-xs text-gray-500">
-                  Computed {formatCairoDateTime(mrrQuery.data.computedAtUtc)}
+                  {t('metrics.computed', { date: formatCairoDateTime(mrrQuery.data.computedAtUtc) })}
                 </p>
               </div>
             )
@@ -247,11 +249,11 @@ export function MetricsPage() {
       </Section>
 
       <Section
-        title="MRR movement"
+        title={t('metrics.movement')}
         subtitle={
           rangeValid
             ? `${formatCairoDate(from)} → ${formatCairoDate(to)}`
-            : 'Set a valid date range'
+            : t('metrics.validRange')
         }
       >
         {rangeError ? (
@@ -264,23 +266,24 @@ export function MetricsPage() {
             isError={movementQuery.isError}
             error={movementQuery.error}
             onRetry={() => movementQuery.refetch()}
+            retryLabel={retry}
           >
             {movementQuery.data ? (
               <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-5">
-                <MetricStat label="New" value={formatEgp(movementQuery.data.newMrrEgp)} />
-                <MetricStat label="Expansion" value={formatEgp(movementQuery.data.expansionMrrEgp)} />
+                <MetricStat label={t('metrics.new')} value={formatEgp(movementQuery.data.newMrrEgp)} />
+                <MetricStat label={t('metrics.expansion')} value={formatEgp(movementQuery.data.expansionMrrEgp)} />
                 <MetricStat
-                  label="Contraction"
+                  label={t('metrics.contraction')}
                   value={formatEgp(movementQuery.data.contractionMrrEgp)}
                 />
-                <MetricStat label="Churned" value={formatEgp(movementQuery.data.churnedMrrEgp)} />
-                <MetricStat label="Ending" value={formatEgp(movementQuery.data.endingMrrEgp)} />
+                <MetricStat label={t('metrics.churned')} value={formatEgp(movementQuery.data.churnedMrrEgp)} />
+                <MetricStat label={t('metrics.ending')} value={formatEgp(movementQuery.data.endingMrrEgp)} />
                 <p className="sm:col-span-3 lg:col-span-5 text-xs text-gray-500">
-                  Starting {formatEgp(movementQuery.data.startingMrrEgp)}
+                  {t('metrics.starting', { value: formatEgp(movementQuery.data.startingMrrEgp) })}
                   {' · '}
-                  Direct end {formatEgp(movementQuery.data.endingMrrDirectEgp)}
+                  {t('metrics.directEnd', { value: formatEgp(movementQuery.data.endingMrrDirectEgp) })}
                   {' · '}
-                  {movementQuery.data.reconciles ? 'Reconciles' : 'Does not reconcile'}
+                  {movementQuery.data.reconciles ? t('metrics.reconciles') : t('metrics.doesNotReconcile')}
                 </p>
               </div>
             ) : null}
@@ -288,7 +291,7 @@ export function MetricsPage() {
         )}
       </Section>
 
-      <Section title="Churn" subtitle={rangeValid ? undefined : 'Set a valid date range'}>
+      <Section title={t('metrics.churn')} subtitle={rangeValid ? undefined : t('metrics.validRange')}>
         {rangeError ? (
           <p role="alert" className="text-sm text-amber-800">
             {rangeError}
@@ -299,36 +302,40 @@ export function MetricsPage() {
             isError={churnQuery.isError}
             error={churnQuery.error}
             onRetry={() => churnQuery.refetch()}
+            retryLabel={retry}
           >
             {churnQuery.data ? (
               <div className="flex flex-col gap-4">
                 <div className="grid gap-6 sm:grid-cols-3">
                   <MetricStat
-                    label="Gross churn rate"
+                    label={t('metrics.grossChurn')}
                     value={formatPercent(churnQuery.data.grossChurnRate)}
                   />
                   <MetricStat
-                    label="Churned MRR"
+                    label={t('metrics.churnedMrr')}
                     value={formatEgp(churnQuery.data.churnedMrrEgp)}
                   />
                   <MetricStat
-                    label="Churned tenants"
-                    value={`${churnQuery.data.churnedTenants} / ${churnQuery.data.startingPayingTenants} start`}
+                    label={t('metrics.payingTenants')}
+                    value={t('metrics.churnedTenants', {
+                      churned: churnQuery.data.churnedTenants,
+                      start: churnQuery.data.startingPayingTenants,
+                    })}
                   />
                 </div>
                 {churnQuery.data.cohorts.length > 0 ? (
                   <div>
                     <h3 className="mb-2 text-sm font-medium text-gray-700">
-                      Signup cohorts (as of period end)
+                      {t('metrics.cohorts')}
                     </h3>
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-left text-sm">
                         <thead className="text-gray-500">
                           <tr>
-                            <th className="py-1 pr-4 font-medium">Cohort</th>
-                            <th className="py-1 pr-4 font-medium">Signed up</th>
-                            <th className="py-1 pr-4 font-medium">Still paying</th>
-                            <th className="py-1 font-medium">Retention</th>
+                            <th className="py-1 pr-4 font-medium">{t('metrics.cohort')}</th>
+                            <th className="py-1 pr-4 font-medium">{t('metrics.signedUp')}</th>
+                            <th className="py-1 pr-4 font-medium">{t('metrics.stillPaying')}</th>
+                            <th className="py-1 font-medium">{t('metrics.retention')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -349,7 +356,7 @@ export function MetricsPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No cohort rows for this range.</p>
+                  <p className="text-sm text-gray-500">{t('metrics.noCohorts')}</p>
                 )}
               </div>
             ) : null}
@@ -358,8 +365,8 @@ export function MetricsPage() {
       </Section>
 
       <Section
-        title="Trial → paid conversion"
-        subtitle={rangeValid ? undefined : 'Set a valid date range'}
+        title={t('metrics.conversion')}
+        subtitle={rangeValid ? undefined : t('metrics.validRange')}
       >
         {rangeError ? (
           <p role="alert" className="text-sm text-amber-800">
@@ -371,22 +378,23 @@ export function MetricsPage() {
             isError={conversionQuery.isError}
             error={conversionQuery.error}
             onRetry={() => conversionQuery.refetch()}
+            retryLabel={retry}
           >
             {conversionQuery.data ? (
               conversionQuery.data.trialsStarted === 0 ? (
-                <p className="text-sm text-gray-500">No trials started in this range.</p>
+                <p className="text-sm text-gray-500">{t('metrics.noTrials')}</p>
               ) : (
                 <div className="grid gap-6 sm:grid-cols-3">
                   <MetricStat
-                    label="Trials started"
+                    label={t('metrics.trialsStarted')}
                     value={String(conversionQuery.data.trialsStarted)}
                   />
                   <MetricStat
-                    label="Converted to paid"
+                    label={t('metrics.converted')}
                     value={String(conversionQuery.data.convertedToPaid)}
                   />
                   <MetricStat
-                    label="Conversion rate"
+                    label={t('metrics.conversionRate')}
                     value={formatPercent(conversionQuery.data.conversionRate)}
                   />
                 </div>
@@ -397,24 +405,25 @@ export function MetricsPage() {
       </Section>
 
       <Section
-        title="Tier distribution"
-        subtitle={`Paying mix as of ${formatCairoDate(effectiveAsOf)}`}
+        title={t('metrics.tierDist')}
+        subtitle={t('metrics.payingMix', { date: formatCairoDate(effectiveAsOf) })}
       >
         <QueryState
           isLoading={tierQuery.isLoading}
           isError={tierQuery.isError}
           error={tierQuery.error}
           onRetry={() => tierQuery.refetch()}
+          retryLabel={retry}
         >
           {tierQuery.data ? (
             tierQuery.data.totalPayingTenants === 0 ? (
-              <p className="text-sm text-gray-500">No paying tenants as of this date.</p>
+              <p className="text-sm text-gray-500">{t('metrics.noPaying')}</p>
             ) : (
               <div className="flex flex-col gap-4">
                 <div className="grid gap-6 sm:grid-cols-2">
-                  <MetricStat label="Total MRR" value={formatEgp(tierQuery.data.totalMrrEgp)} />
+                  <MetricStat label={t('metrics.totalMrr')} value={formatEgp(tierQuery.data.totalMrrEgp)} />
                   <MetricStat
-                    label="Paying tenants"
+                    label={t('metrics.payingTenants')}
                     value={String(tierQuery.data.totalPayingTenants)}
                   />
                 </div>

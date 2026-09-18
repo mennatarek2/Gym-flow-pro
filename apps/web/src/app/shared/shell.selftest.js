@@ -249,7 +249,7 @@ assert(String(Shell.TABLE_WRAP_SEL).indexOf('.gfp-table-scroll') !== -1, 'TABLE_
 
 var serverSrc = fs.readFileSync(path.join(sharedDir, '..', '..', '..', 'server.js'), 'utf8');
 assert(serverSrc.indexOf('/shared/table-layout.css') !== -1, 'server injects table-layout.css');
-assert(serverSrc.indexOf('shell.js?v=qa1') !== -1, 'shell cache-bust includes sweep layout');
+assert(serverSrc.indexOf('shell.js?v=footer2') !== -1, 'shell cache-bust includes sweep layout');
 
 // ── Form / filter layout (Task 6) ──
 var formCss = fs.readFileSync(path.join(sharedDir, 'form-layout.css'), 'utf8');

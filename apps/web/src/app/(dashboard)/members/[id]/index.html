@@ -5,10 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HyMotion — Member Detail</title>
 <meta name="description" content="View and manage individual gym member details, membership, attendance and history.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -86,7 +84,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .btn-action.outline:hover{border-color:var(--l500);color:var(--l600)}
 .btn-action i{font-size:16px}
 </style>
-<link rel="stylesheet" href="member-detail.css?v=actquota3">
+<link rel="stylesheet" href="member-detail.css?v=assign-card1">
 <link rel="stylesheet" href="../member-modals.css?v=assign-pay2">
 <link rel="stylesheet" href="/shared/refund-action.css?v=3">
 </head>
@@ -158,7 +156,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
           <a class="back-btn" href="/dashboard/members/"><i class="ti ti-arrow-left"></i> <span data-en="Back to Members" data-ar="العودة للأعضاء">Back to Members</span></a>
         </div>
         <div class="action-bar-right">
-          <button class="btn-action outline" id="btnReprintCard" type="button"><i class="ti ti-printer"></i> <span data-en="Reprint card" data-ar="إعادة طباعة الكارنيه">Reprint card</span></button>
+          <button class="btn-action outline" id="btnReprintCard" type="button" hidden><i class="ti ti-printer"></i> <span data-en="Reprint card" data-ar="إعادة طباعة الكارنيه">Reprint card</span></button>
           <button class="btn-action outline" id="btnNotify"><i class="ti ti-bell"></i> <span data-en="Send Notification" data-ar="إرسال إشعار">Send Notification</span></button>
           <button class="btn-action primary" id="btnEdit"><i class="ti ti-edit"></i> <span data-en="Edit Member" data-ar="تعديل العضو">Edit Member</span></button>
         </div>
@@ -206,23 +204,51 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 
               <div class="p-divider"></div>
 
-              <!-- Access barcode (MemberNumber — desk barcode check-in) -->
+              <!-- Physical access card (Assigned AccessCard.Code, else MemberNumber legacy) -->
               <div class="access-card-block" id="accessCardBlock">
                 <div class="access-card-hdr">
-                  <i class="ti ti-barcode"></i>
+                  <i class="ti ti-id"></i>
                   <div>
-                    <div class="access-card-title" data-en="Access barcode" data-ar="باركود الدخول">Access barcode</div>
-                    <div class="access-card-sub" data-en="Same code as the printed card — desk scan check-in" data-ar="نفس كود الكارنيه — للمسح عند الاستقبال">Same code as the printed card — desk scan check-in</div>
+                    <div class="access-card-title" data-en="Access card" data-ar="كارنيه الدخول">Access card</div>
+                    <div class="access-card-sub" id="accessCardSub" data-en="Assign a blank PVC card from stock" data-ar="عيّن كارنيه PVC من المخزون">Assign a blank PVC card from stock</div>
                   </div>
                 </div>
-                <div class="access-barcode-wrap">
-                  <svg id="accessBarcodeSvg" aria-label="Member barcode"></svg>
+                <div class="access-card-status" id="accessCardStatusRow" hidden>
+                  <span class="access-card-status-pill" id="accessCardStatusPill">—</span>
+                </div>
+                <div class="access-barcode-wrap" id="accessBarcodeWrap" hidden>
+                  <svg id="accessBarcodeSvg" aria-label="Access card barcode"></svg>
                   <div class="access-barcode-num" id="accessBarcodeNum">—</div>
                 </div>
-                <div class="access-card-actions">
-                  <button type="button" class="btn-ms primary" id="btnReprintCard2">
+                <div class="access-card-empty" id="accessCardEmpty" hidden style="padding:12px 0 4px;font-size:13px;color:var(--lts);line-height:1.45">
+                  <span data-en="No PVC card assigned yet." data-ar="لا يوجد كارنيه معيَّن بعد.">No PVC card assigned yet.</span>
+                </div>
+                <div class="access-card-actions" id="accessCardActions">
+                  <button type="button" class="btn-ms primary" id="btnAssignCard" hidden>
+                    <i class="ti ti-link"></i>
+                    <span data-en="Assign card" data-ar="تعيين كارنيه">Assign card</span>
+                  </button>
+                  <button type="button" class="btn-ms outline" id="btnReplaceCard" hidden>
+                    <i class="ti ti-replace"></i>
+                    <span data-en="Replace card" data-ar="استبدال الكارنيه">Replace card</span>
+                  </button>
+                  <button type="button" class="btn-ms outline danger" id="btnMarkCardLost" hidden>
+                    <i class="ti ti-alert-triangle"></i>
+                    <span data-en="Mark lost" data-ar="تبليغ مفقود">Mark lost</span>
+                  </button>
+                  <button type="button" class="btn-ms outline" id="btnReprintCard2" hidden>
                     <i class="ti ti-printer"></i>
                     <span data-en="Reprint barcode card" data-ar="إعادة طباعة كارنيه الباركود">Reprint barcode card</span>
+                  </button>
+                </div>
+                <div class="access-card-scan-row" id="accessCardScanRow" hidden>
+                  <input type="text" id="accessCardScanInput" class="access-card-scan-input" autocomplete="off"
+                    placeholder="Scan Available card…" data-en-placeholder="Scan Available card…" data-ar-placeholder="امسح كارنيه متاح…">
+                  <button type="button" class="btn-ms primary" id="btnConfirmCardScan">
+                    <span data-en="Confirm" data-ar="تأكيد">Confirm</span>
+                  </button>
+                  <button type="button" class="btn-ms outline" id="btnCancelCardScan">
+                    <span data-en="Cancel" data-ar="إلغاء">Cancel</span>
                   </button>
                 </div>
               </div>
@@ -489,17 +515,21 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
   </div>
 </div>
 
-<!-- Deactivate Modal -->
+<!-- Deactivate Modal — type Delete to confirm -->
 <div class="modal-overlay" id="modalDeactivate">
   <div class="modal">
     <div class="modal-hdr">
       <div class="modal-title" id="deactivateModalTitle" data-en="Deactivate Member?" data-ar="إلغاء تفعيل العضو؟">Deactivate Member?</div>
       <button class="modal-close"><i class="ti ti-x"></i></button>
     </div>
-    <p style="font-size:13px;color:var(--lts);margin-bottom:20px" data-en="This sets the account to inactive (cannot check in). Existing membership plans are not cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only." data-ar="هذا يوقف الحساب (لا يمكن تسجيل الدخول). خطط العضوية الحالية لا تُلغى ولا تنتهي. يمكن تفعيل الحساب لاحقاً دون تعيين خطة جديدة. للمالك فقط.">This sets the <strong>account</strong> to inactive (cannot check in). Existing membership plans are <strong>not</strong> cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only.</p>
+    <p style="font-size:13px;color:var(--lts);margin-bottom:16px" data-en="This sets the account to inactive (cannot check in). Existing membership plans are not cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only." data-ar="هذا يوقف الحساب (لا يمكن تسجيل الدخول). خطط العضوية الحالية لا تُلغى ولا تنتهي. يمكن تفعيل الحساب لاحقاً دون تعيين خطة جديدة. للمالك فقط.">This sets the <strong>account</strong> to inactive (cannot check in). Existing membership plans are <strong>not</strong> cancelled or expired. You can Activate the account again later without assigning a new plan. Owner only.</p>
+    <div class="confirm-type-box">
+      <label class="form-label" for="deactivateConfirmInput" data-en="Type Delete to confirm" data-ar="اكتب Delete للتأكيد">Type <strong>Delete</strong> to confirm</label>
+      <input type="text" class="form-input" id="deactivateConfirmInput" autocomplete="off" spellcheck="false" dir="ltr" placeholder="Delete" data-en-placeholder="Delete" data-ar-placeholder="Delete">
+    </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('modalDeactivate')"><span data-en="Cancel" data-ar="إلغاء">Cancel</span></button>
-      <button class="btn-confirm danger" id="btnConfirmDeactivate"><i class="ti ti-trash"></i> <span data-en="Deactivate" data-ar="إلغاء التفعيل">Deactivate</span></button>
+      <button class="btn-confirm danger" id="btnConfirmDeactivate" disabled><i class="ti ti-trash"></i> <span data-en="Deactivate" data-ar="إلغاء التفعيل">Deactivate</span></button>
     </div>
   </div>
 </div>
@@ -529,53 +559,53 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 <div class="modal-overlay" id="modalRenew">
   <div class="modal">
     <div class="modal-hdr">
-      <div class="modal-title"><i class="ti ti-refresh" style="color:var(--l500)"></i> Renew Membership</div>
+      <div class="modal-title"><i class="ti ti-refresh" style="color:var(--l500)"></i> <span data-en="Renew Membership" data-ar="تجديد العضوية">Renew Membership</span></div>
       <button class="modal-close"><i class="ti ti-x"></i></button>
     </div>
     <div id="renewModeBanner" style="font-size:12px;color:var(--ltt);margin-bottom:8px"></div>
     <div id="renewPreview" style="font-size:12px;color:var(--l600);margin-bottom:12px"></div>
     <div class="form-group" id="renewTransitionWrap" style="display:none">
-      <label class="form-label">When current plan still covers today</label>
+      <label class="form-label" data-en="When current plan still covers today" data-ar="لما الخطة الحالية لسه سارية النهاردة">When current plan still covers today</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-        <button type="button" class="btn-ms primary" id="renewTransCancel" data-mode="cancel_and_switch">Cancel &amp; switch (starts today)</button>
-        <button type="button" class="btn-ms" id="renewTransQueue" data-mode="queue_next">Queue next plan</button>
+        <button type="button" class="btn-ms primary" id="renewTransCancel" data-mode="cancel_and_switch"><span data-en="Cancel &amp; switch (starts today)" data-ar="إلغاء والتبديل (تبدأ النهاردة)">Cancel &amp; switch (starts today)</span></button>
+        <button type="button" class="btn-ms" id="renewTransQueue" data-mode="queue_next"><span data-en="Queue next plan" data-ar="حجز الخطة الجاية">Queue next plan</span></button>
       </div>
       <details>
-        <summary style="cursor:pointer;font-size:12px;color:var(--ltt)">Advanced</summary>
+        <summary style="cursor:pointer;font-size:12px;color:var(--ltt)" data-en="Advanced" data-ar="متقدم">Advanced</summary>
         <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-top:8px">
           <input type="checkbox" id="renewRollover">
-          <span>Add remaining days onto new plan (manual rollover)</span>
+          <span data-en="Add remaining days onto new plan (manual rollover)" data-ar="أضف الأيام المتبقية على الخطة الجديدة (ترحيل يدوي)">Add remaining days onto new plan (manual rollover)</span>
         </label>
       </details>
     </div>
     <div class="form-group">
-      <label class="form-label">Plan</label>
+      <label class="form-label" data-en="Plan" data-ar="الخطة">Plan</label>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button type="button" class="btn-ms primary" id="renewModeSame">Same plan</button>
-        <button type="button" class="btn-ms" id="renewModeDiff">Different plan</button>
+        <button type="button" class="btn-ms primary" id="renewModeSame"><span data-en="Same plan" data-ar="نفس الخطة">Same plan</span></button>
+        <button type="button" class="btn-ms" id="renewModeDiff"><span data-en="Different plan" data-ar="خطة مختلفة">Different plan</span></button>
       </div>
       <select class="form-input" id="renewPlanSelect" style="display:none">
-        <option value="">— Select a plan —</option>
+        <option value="" data-en="— Select a plan —" data-ar="— اختر خطة —">— Select a plan —</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Payment Method *</label>
+      <label class="form-label" data-en="Payment Method *" data-ar="طريقة الدفع *">Payment Method *</label>
       <select class="form-input" id="renewPayment">
-        <option value="cash">Cash</option>
+        <option value="cash" data-en="Cash" data-ar="نقدًا">Cash</option>
         <option value="paymob">Paymob</option>
         <option value="fawry">Fawry</option>
-        <option value="vodafone_cash">Vodafone Cash</option>
+        <option value="vodafone_cash" data-en="Vodafone Cash" data-ar="فودافون كاش">Vodafone Cash</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Amount Paid (EGP) *</label>
+      <label class="form-label" data-en="Amount Paid (EGP) *" data-ar="المبلغ المدفوع (جنيه) *">Amount Paid (EGP) *</label>
       <input type="number" class="form-input" id="renewAmount" placeholder="500" min="0" step="0.01">
     </div>
     <div id="renewPayHint" style="font-size:12px;color:var(--ltt);margin-bottom:12px"></div>
     <div class="mdl-error-banner" id="renewErrorBanner" style="display:none"><i class="ti ti-alert-circle"></i><span class="error-text"></span></div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal('modalRenew')">Cancel</button>
-      <button class="btn-confirm primary" id="btnDoRenew"><i class="ti ti-refresh"></i> Renew</button>
+      <button class="btn-cancel" onclick="closeModal('modalRenew')"><span data-en="Cancel" data-ar="إلغاء">Cancel</span></button>
+      <button class="btn-confirm primary" id="btnDoRenew"><i class="ti ti-refresh"></i> <span data-en="Renew" data-ar="تجديد">Renew</span></button>
     </div>
   </div>
 </div>
@@ -881,9 +911,10 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<script src="/shared/gfp-deployment.js"></script>
 <script src="/shared/refund-action.js?v=2"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-<script src="member-detail.js?v=orders-member2"></script>
-<script src="../member-modals.js?v=assign-pay1"></script>
+<script src="/shared/vendor/jsbarcode/JsBarcode.all.min.js"></script>
+<script src="member-detail.js?v=assign-card1"></script>
+<script src="../member-modals.js?v=assign-card1"></script>
 </body>
 </html>

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Invoices</title>
 <meta name="description" content="Invoices, credit notes, void, resend, and 80mm receipt print.">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
 <link rel="stylesheet" href="../pos/pos.css?v=theme2">
 <link rel="stylesheet" href="invoices.css?v=theme2">
 <link rel="stylesheet" href="/shared/refund-action.css?v=3">
@@ -40,7 +40,7 @@
 
 <div class="main">
 <header class="topbar">
-  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current">Invoices</span></div></div>
+  <div class="tb-left"><div class="tb-breadcrumb"><span data-en="Dashboard" data-ar="لوحة التحكم">Dashboard</span><span class="sep">/</span><span class="current" data-en="Invoices" data-ar="الفواتير">Invoices</span></div></div>
   <div class="tb-right"><div class="gym-name" id="gymName">Gym</div></div>
 </header>
 
@@ -63,56 +63,56 @@
   <div class="inv-layout">
     <section class="card">
       <div class="card-h">
-        <h2 id="listTitle">Invoice list</h2>
+        <h2 id="listTitle" data-en="Invoice list" data-ar="قائمة الفواتير">Invoice list</h2>
         <div class="pager" id="pagerTop"></div>
       </div>
       <div class="filters" id="sellFilters">
-        <label class="flt"><span>From</span><input type="date" id="fFrom"></label>
-        <label class="flt"><span>To</span><input type="date" id="fTo"></label>
-        <input id="fMemberId" placeholder="Member (optional)" dir="ltr">
+        <label class="flt"><span data-en="From" data-ar="من">From</span><input type="date" id="fFrom"></label>
+        <label class="flt"><span data-en="To" data-ar="إلى">To</span><input type="date" id="fTo"></label>
+        <input id="fMemberId" placeholder="Member (optional)" data-en-placeholder="Member (optional)" data-ar-placeholder="العضو (اختياري)" dir="ltr">
         <select id="fStatus">
-          <option value="">All statuses</option>
-          <option value="issued">Issued</option>
-          <option value="voided">Voided</option>
+          <option value="" data-en="All statuses" data-ar="كل الحالات">All statuses</option>
+          <option value="issued" data-en="Issued" data-ar="صادرة">Issued</option>
+          <option value="voided" data-en="Voided" data-ar="ملغاة">Voided</option>
         </select>
         <select id="fType">
-          <option value="">All types</option>
-          <option value="invoice">Invoice</option>
-          <option value="credit_note">Credit note</option>
+          <option value="" data-en="All types" data-ar="كل الأنواع">All types</option>
+          <option value="invoice" data-en="Invoice" data-ar="فاتورة">Invoice</option>
+          <option value="credit_note" data-en="Credit note" data-ar="إشعار دائن">Credit note</option>
         </select>
-        <button type="button" class="btn secondary" id="btnFilter">Apply</button>
+        <button type="button" class="btn secondary" id="btnFilter" data-en="Apply" data-ar="تطبيق">Apply</button>
       </div>
       <div class="filters" id="buyFilters" style="display:none">
-        <label class="flt"><span>From</span><input type="date" id="fBuyFrom"></label>
-        <label class="flt"><span>To</span><input type="date" id="fBuyTo"></label>
+        <label class="flt"><span data-en="From" data-ar="من">From</span><input type="date" id="fBuyFrom"></label>
+        <label class="flt"><span data-en="To" data-ar="إلى">To</span><input type="date" id="fBuyTo"></label>
         <select id="fSupplierId" aria-label="Supplier">
-          <option value="">All suppliers</option>
+          <option value="" data-en="All suppliers" data-ar="كل الموردين">All suppliers</option>
         </select>
-        <button type="button" class="btn secondary" id="btnBuyFilter">Apply</button>
-        <a class="btn secondary" href="/dashboard/inventory/suppliers/">Suppliers</a>
+        <button type="button" class="btn secondary" id="btnBuyFilter" data-en="Apply" data-ar="تطبيق">Apply</button>
+        <a class="btn secondary" href="/dashboard/inventory/suppliers/" data-en="Suppliers" data-ar="الموردين">Suppliers</a>
       </div>
       <div class="table-wrap">
         <table>
           <thead id="theadSell">
             <tr>
-              <th>Number</th>
-              <th>Type</th>
-              <th>Member</th>
-              <th>Issued</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>PDF</th>
+              <th data-en="Number" data-ar="الرقم">Number</th>
+              <th data-en="Type" data-ar="النوع">Type</th>
+              <th data-en="Member" data-ar="العضو">Member</th>
+              <th data-en="Issued" data-ar="تاريخ الإصدار">Issued</th>
+              <th data-en="Total" data-ar="الإجمالي">Total</th>
+              <th data-en="Status" data-ar="الحالة">Status</th>
+              <th data-en="PDF" data-ar="PDF">PDF</th>
             </tr>
           </thead>
           <thead id="theadBuy" style="display:none">
             <tr>
-              <th>Date</th>
-              <th>Supplier</th>
-              <th>Total</th>
-              <th>Status</th>
+              <th data-en="Date" data-ar="التاريخ">Date</th>
+              <th data-en="Supplier" data-ar="المورد">Supplier</th>
+              <th data-en="Total" data-ar="الإجمالي">Total</th>
+              <th data-en="Status" data-ar="الحالة">Status</th>
             </tr>
           </thead>
-          <tbody id="tbody"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
+          <tbody id="tbody"><tr><td colspan="7" class="muted" data-en="Loading…" data-ar="جاري التحميل…">Loading…</td></tr></tbody>
         </table>
       </div>
       <div class="pager" id="pagerBottom" style="margin-top:12px"></div>
@@ -125,7 +125,7 @@
 <div class="drawer-overlay" id="detailDrawer" hidden>
   <aside class="drawer" role="dialog" aria-labelledby="detailTitle">
     <div class="drawer-hdr">
-      <h2 id="detailTitle">Details</h2>
+      <h2 id="detailTitle" data-en="Details" data-ar="التفاصيل">Details</h2>
       <button type="button" class="modal-close" id="btnCloseDetail" aria-label="Close"><i class="ti ti-x"></i></button>
     </div>
     <div class="drawer-body" id="detailBody"></div>
@@ -134,27 +134,27 @@
 
 <div class="modal-overlay" id="voidModal">
   <div class="modal-box">
-    <h3>Void invoice</h3>
-    <p class="hint">Requires <code>payments.refund.approve</code>. This cannot be undone from the UI.</p>
-    <label>Reason<input id="voidReason" required></label>
+    <h3 data-en="Void invoice" data-ar="إلغاء الفاتورة">Void invoice</h3>
+    <p class="hint"><span data-en="Requires" data-ar="يتطلب صلاحية">Requires</span> <code>payments.refund.approve</code><span data-en=". This cannot be undone from the UI." data-ar=". لا يمكن التراجع عن هذا الإجراء من الواجهة.">. This cannot be undone from the UI.</span></p>
+    <label data-en="Reason" data-ar="السبب">Reason<input id="voidReason" required></label>
     <div style="display:flex;gap:8px;margin-top:12px">
-      <button type="button" class="btn danger" id="btnVoidConfirm">Void</button>
-      <button type="button" class="btn secondary" id="btnVoidCancel">Cancel</button>
+      <button type="button" class="btn danger" id="btnVoidConfirm" data-en="Void" data-ar="إلغاء">Void</button>
+      <button type="button" class="btn secondary" id="btnVoidCancel" data-en="Cancel" data-ar="إلغاء">Cancel</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="printModal">
   <div class="modal-box print-box" id="printBox">
-    <h3 id="printModalTitle">Print invoice</h3>
-    <p class="hint" id="printModalHint">Branded invoice using this gym’s name and logo.</p>
-    <label class="print-pay" hidden>Payment id (optional, debt payments)<input id="receiptPaymentId" dir="ltr" placeholder="leave blank"></label>
+    <h3 id="printModalTitle" data-en="Print invoice" data-ar="طباعة الفاتورة">Print invoice</h3>
+    <p class="hint" id="printModalHint" data-en="Branded invoice using this gym’s name and logo." data-ar="فاتورة بشعار النادي واسمه.">Branded invoice using this gym’s name and logo.</p>
+    <label class="print-pay" hidden data-en="Payment id (optional, debt payments)" data-ar="رقم الدفعة (اختياري، لمدفوعات المديونية)">Payment id (optional, debt payments)<input id="receiptPaymentId" dir="ltr" placeholder="leave blank" data-en-placeholder="leave blank" data-ar-placeholder="اتركه فارغًا"></label>
     <div class="receipt-frame-wrap" id="receiptFrameWrap">
       <iframe id="receiptFrame" title="Invoice print"></iframe>
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button type="button" class="btn primary" id="btnPrintReceipt"><i class="ti ti-printer"></i> Print</button>
-      <button type="button" class="btn ghost" id="btnPrintCancel">Close</button>
+      <button type="button" class="btn primary" id="btnPrintReceipt"><i class="ti ti-printer"></i> <span data-en="Print" data-ar="طباعة">Print</span></button>
+      <button type="button" class="btn ghost" id="btnPrintCancel" data-en="Close" data-ar="إغلاق">Close</button>
     </div>
   </div>
 </div>
@@ -176,6 +176,6 @@ document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp
 (async()=>{try{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';}}catch(e){}})();
 </script>
 <script src="/shared/refund-action.js?v=2"></script>
-<script src="invoices-app.js?v=10"></script>
+<script src="invoices-app.js?v=11"></script>
 </body>
 </html>

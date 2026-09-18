@@ -40,6 +40,7 @@ describe('impersonation handoff URL', () => {
   it('puts token in query string for new-tab open', () => {
     const url = buildImpersonationAdminUrl('tok.en.value')
     expect(url).toContain('impersonation_token=tok.en.value')
+    expect(url).toContain('/app')
   })
 
   it('computes minutes remaining', () => {

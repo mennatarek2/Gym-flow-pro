@@ -21,6 +21,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
 export function RequireGuest({ children }: { children: ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  if (isAuthenticated) return <Navigate to="/tenants" replace />
+  if (isAuthenticated) return <Navigate to="/oc" replace />
   return children
 }

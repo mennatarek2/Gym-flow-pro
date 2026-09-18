@@ -7,11 +7,15 @@ import type { CommercialPlanListItemDto } from '@/lib/api/types'
 import { formatCairoDateTime, formatEgp } from '@/lib/format'
 import { isAdmin } from '@/lib/platform-roles'
 import { useAuthStore } from '@/stores/auth-store'
+import { useUiStore } from '@/stores/ui-store'
+import { PageHeader } from '@/components/PageHeader'
+import { StatusChip } from '@/components/Status'
 import { formatCap, PlanEditorPanel } from './PlanEditorPanel'
 
 type BillingPreview = 'monthly' | 'annual'
 
 export function PlansPage() {
+  const t = useUiStore((s) => s.t)
   const admin = isAdmin(useAuthStore((s) => s.user?.role))
   const [editTier, setEditTier] = useState<string | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -37,69 +41,66 @@ export function PlansPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-bold tracking-tight text-gray-900">Plans &amp; Pricing</h1>
-          <p className="mt-1 max-w-3xl text-[13.5px] text-gray-500">
-            Manage commercial plans, pricing, limits, and feature entitlements. List prices are server-authoritative;
-            existing subscriptions keep frozen <code className="font-[var(--mono)] text-xs">PriceEgp</code>.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="cp-btn cp-btn-primary" onClick={() => setPreviewOpen(true)}>
-            Preview pricing
-          </button>
-          <Link to="/audit?action=platform.plan" className="cp-btn cp-btn-secondary">
-            Audit
-          </Link>
-          <button type="button" className="cp-btn cp-btn-secondary" disabled={query.isFetching} onClick={() => query.refetch()}>
-            {query.isFetching ? 'Refreshing…' : 'Refresh'}
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title={t('plans.title')}
+        subtitle={t('plans.subtitle')}
+        actions={
+          <>
+            <button type="button" className="cp-btn cp-btn-primary" onClick={() => setPreviewOpen(true)}>
+              {t('plans.preview')}
+            </button>
+            <Link to="/settings/audit?action=platform.plan" className="cp-btn cp-btn-secondary">
+              {t('nav.auditLog')}
+            </Link>
+            <button type="button" className="cp-btn cp-btn-secondary" disabled={query.isFetching} onClick={() => query.refetch()}>
+              {query.isFetching ? t('plans.refreshing') : t('common.refresh')}
+            </button>
+          </>
+        }
+      />
 
       {!admin ? (
         <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-          Pricing mutations require Platform Admin. Your role can view live configuration only.
+          {t('plans.viewOnly')}
         </div>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="Active for sales" value={String(kpis.activeForSales)} hint={`of ${plans.length} tiers`} />
-        <Kpi label="List MRR opportunity" value={formatEgp(kpis.listMrrOpportunity)} hint="Sum of monthly list prices" />
-        <Kpi label="Live subscriptions" value={String(kpis.liveSubs)} hint="Trialing + active + past_due + suspended" />
-        <Kpi label="Default plan" value={plans.find((p) => p.isDefault)?.displayName ?? '—'} hint="New tenant provision" />
+        <Kpi label={t('plans.activeForSales')} value={String(kpis.activeForSales)} hint={t('plans.ofTiers', { count: plans.length })} />
+        <Kpi label={t('plans.listMrr')} value={formatEgp(kpis.listMrrOpportunity)} hint={t('plans.listMrrHint')} />
+        <Kpi label={t('plans.liveSubs')} value={String(kpis.liveSubs)} hint={t('plans.liveSubsHint')} />
+        <Kpi label={t('plans.defaultPlan')} value={plans.find((p) => p.isDefault)?.displayName ?? '—'} hint={t('plans.defaultHint')} />
       </div>
 
       {query.isLoading ? (
-        <div className="cp-card p-10 text-center text-sm text-gray-500">Loading plans…</div>
+        <div className="cp-card p-10 text-center text-sm text-gray-500">{t('plans.loading')}</div>
       ) : query.isError ? (
         <div className="cp-card border-red-200 bg-red-50 p-6 text-center text-sm text-red-800">
-          {query.error instanceof ApiClientError ? query.error.message : 'Failed to load plans.'}
+          {query.error instanceof ApiClientError ? query.error.message : t('plans.failed')}
           <button type="button" className="cp-btn cp-btn-secondary ml-3" onClick={() => query.refetch()}>
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       ) : plans.length === 0 ? (
-        <div className="cp-card p-10 text-center text-sm text-gray-500">No commercial plans configured.</div>
+        <div className="cp-card p-10 text-center text-sm text-gray-500">{t('plans.empty')}</div>
       ) : (
-        <div className="cp-card overflow-x-auto">
+        <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-white">
           <table className="cp-table">
             <thead>
               <tr>
-                <th>Plan</th>
-                <th>Monthly</th>
-                <th>Annual</th>
-                <th>Savings</th>
-                <th>Sales</th>
-                <th>Default</th>
-                <th>Live subs</th>
-                <th>Members</th>
-                <th>Staff</th>
-                <th>Branches</th>
-                <th>WhatsApp</th>
-                <th>Features</th>
-                <th>Updated</th>
+                <th>{t('gyms.plan')}</th>
+                <th>{t('plans.monthly')}</th>
+                <th>{t('plans.annual')}</th>
+                <th>{t('plans.savings')}</th>
+                <th>{t('plans.sales')}</th>
+                <th>{t('plans.default')}</th>
+                <th>{t('plans.liveSubs')}</th>
+                <th>{t('gyms.members')}</th>
+                <th>{t('plans.staff')}</th>
+                <th>{t('plans.branches')}</th>
+                <th>{t('plans.whatsapp')}</th>
+                <th>{t('plans.features')}</th>
+                <th>{t('plans.updated')}</th>
                 <th />
               </tr>
             </thead>
@@ -119,25 +120,25 @@ export function PlansPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-lg font-bold text-gray-900">Customer pricing preview</h2>
-              <div className="inline-flex rounded-full border border-gray-200 p-0.5 text-sm">
+              <h2 className="text-lg font-bold text-gray-900">{t('plans.previewTitle')}</h2>
+              <div className="inline-flex rounded-[var(--radius)] border border-gray-200 p-0.5 text-sm">
                 <button
                   type="button"
-                  className={`rounded-full px-3 py-1 font-semibold ${billingPreview === 'monthly' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                  className={`rounded-[var(--radius)] px-3 py-1 font-semibold ${billingPreview === 'monthly' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
                   onClick={() => setBillingPreview('monthly')}
                 >
-                  Monthly
+                  {t('plans.monthly')}
                 </button>
                 <button
                   type="button"
-                  className={`rounded-full px-3 py-1 font-semibold ${billingPreview === 'annual' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
+                  className={`rounded-[var(--radius)] px-3 py-1 font-semibold ${billingPreview === 'annual' ? 'bg-blue-600 text-white' : 'text-gray-600'}`}
                   onClick={() => setBillingPreview('annual')}
                 >
-                  Annual
+                  {t('plans.annual')}
                 </button>
               </div>
             </div>
-            <p className="mt-1 text-xs text-gray-500">Live configuration from GET /platform-api/plans — not a public marketing page.</p>
+            <p className="mt-1 text-xs text-gray-500">{t('plans.previewHint')}</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {plans.filter((p) => p.isActiveForSales).map((p) => (
                 <div
@@ -148,18 +149,18 @@ export function PlansPage() {
                   <div className="mt-2 font-[var(--mono)] text-xl font-bold tabular-nums">
                     {formatEgp(billingPreview === 'monthly' ? p.monthlyPriceEgp : p.annualPriceEgp)}
                     <span className="text-xs font-normal text-gray-400">
-                      {billingPreview === 'monthly' ? ' / mo' : ' / yr'}
+                      {billingPreview === 'monthly' ? t('plans.perMonth') : t('plans.perYear')}
                     </span>
                   </div>
                   {billingPreview === 'annual' ? (
-                    <div className="text-xs text-gray-500">≈ {formatEgp(p.monthlyPriceEgp)} / mo equivalent</div>
+                    <div className="text-xs text-gray-500">{t('plans.moEquiv', { price: formatEgp(p.monthlyPriceEgp) })}</div>
                   ) : null}
                 </div>
               ))}
             </div>
             <div className="mt-4 flex justify-end">
               <button type="button" className="cp-btn cp-btn-secondary" onClick={() => setPreviewOpen(false)}>
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -180,6 +181,7 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint: strin
 }
 
 function PlanRow({ plan, onEdit }: { plan: CommercialPlanListItemDto; onEdit: () => void }) {
+  const t = useUiStore((s) => s.t)
   return (
     <tr>
       <td>
@@ -190,13 +192,7 @@ function PlanRow({ plan, onEdit }: { plan: CommercialPlanListItemDto; onEdit: ()
       <td className="font-[var(--mono)] tabular-nums">{formatEgp(plan.annualPriceEgp)}</td>
       <td className="font-[var(--mono)] tabular-nums">~{plan.annualSavingsPercent}%</td>
       <td>
-        <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-            plan.isActiveForSales ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'
-          }`}
-        >
-          {plan.isActiveForSales ? 'Active' : 'Inactive'}
-        </span>
+        <StatusChip value={plan.isActiveForSales ? 'active' : 'inactive'} />
       </td>
       <td>{plan.isDefault ? '★' : '—'}</td>
       <td className="font-[var(--mono)] tabular-nums">{plan.liveSubscriptionCount}</td>
@@ -208,7 +204,7 @@ function PlanRow({ plan, onEdit }: { plan: CommercialPlanListItemDto; onEdit: ()
       <td className="text-xs text-gray-500">{formatCairoDateTime(plan.updatedAtUtc)}</td>
       <td>
         <button type="button" className="cp-btn cp-btn-ghost text-xs" onClick={onEdit}>
-          Edit
+          {t('common.edit')}
         </button>
       </td>
     </tr>

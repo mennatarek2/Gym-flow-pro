@@ -13,6 +13,22 @@ export function isSupport(role: string | null | undefined): boolean {
   return role === 'platform_support'
 }
 
+export function isSales(role: string | null | undefined): boolean {
+  return role === 'platform_sales'
+}
+
+export function isSalesOrAbove(role: string | null | undefined): boolean {
+  return role === 'platform_sales' || isOpsOrAbove(role)
+}
+
+export function isSupportOrAbove(role: string | null | undefined): boolean {
+  return role === 'platform_support' || isOpsOrAbove(role)
+}
+
+export function isCustomerAccess(role: string | null | undefined): boolean {
+  return isSalesOrAbove(role) || isSupport(role)
+}
+
 export function normalizeRole(role: string | null | undefined): PlatformRole | string | null {
   return role ?? null
 }

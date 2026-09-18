@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Promo Codes</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
 <link rel="stylesheet" href="../pos/pos.css">
 <link rel="stylesheet" href="promo-codes.css">
 </head>
@@ -100,7 +100,7 @@
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const API_BASE=window.API_BASE||'https://reach-lullaby-tighten.ngrok-free.dev/api';
+const API_BASE=window.API_BASE||window.GFP_DEFAULT_API_BASE||'/api';
 function getToken(){return localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');}
 function getH(){const t=getToken();const h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;return h;}
 function getUser(){try{return JSON.parse(localStorage.getItem('gfp_user')||sessionStorage.getItem('gfp_user'));}catch(e){return null;}}

@@ -120,6 +120,15 @@
     var base = global.API_BASE || '/api';
     var res = await fetch(base + path, opts);
     if (res.status === 401) {
+      // Clear the stale session before redirecting - login/index.html's "already logged in" check
+      // only looks at whether gfp_access_token/gfp_expires_at are still present, not whether the
+      // server still accepts them, so leaving them in place bounces straight back here and loops.
+      try {
+        ['gfp_access_token', 'gfp_refresh_token', 'gfp_user', 'gfp_expires_at'].forEach(function (k) {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
+      } catch (e) { /* ignore */ }
       location.href = '/auth/login/';
       return { ok: false, status: 401, data: null };
     }

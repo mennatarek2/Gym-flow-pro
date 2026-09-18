@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Products</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="products.css?v=theme2">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
+<link rel="stylesheet" href="products.css?v=catdel4">
 </head>
 <body>
 <div class="app">
@@ -209,8 +209,8 @@
   <div class="modal">
     <div class="modal-hdr">
       <div>
-        <h2 id="productModalTitle">New product</h2>
-        <p class="modal-sub" id="productModalSub">Name and sell price. You can add a photo.</p>
+        <h2 id="productModalTitle" data-en="New product" data-ar="منتج جديد">New product</h2>
+        <p class="modal-sub" id="productModalSub" data-en="Name and sell price. You can add a photo." data-ar="الاسم وسعر البيع. تقدر تضيف صورة">Name and sell price. You can add a photo.</p>
       </div>
       <button type="button" class="modal-close" data-close="productModal"><i class="ti ti-x"></i></button>
     </div>
@@ -219,7 +219,7 @@
       <div class="easy-form">
         <label class="ef-field ef-span-2">
           <span data-en="Name *" data-ar="الاسم *">Name *</span>
-          <input name="name" id="pName" required maxlength="150" placeholder="e.g. Protein shake" autocomplete="off">
+          <input name="name" id="pName" required maxlength="150" data-en-placeholder="e.g. Protein shake" data-ar-placeholder="مثال: بروتين شيك" placeholder="e.g. Protein shake" autocomplete="off">
         </label>
         <label class="ef-field">
           <span data-en="Sell price *" data-ar="سعر البيع *">Sell price *</span>
@@ -251,32 +251,34 @@
           <span data-en="Show in Member App" data-ar="إظهار في تطبيق الأعضاء">Show in Member App</span>
         </label>
         <div class="ef-field ef-span-2">
-          <span data-en="Photo" data-ar="صورة">Photo <span class="ef-optional">(optional)</span></span>
+          <span><span data-en="Photo" data-ar="صورة">Photo</span> <span class="ef-optional" data-en="(optional)" data-ar="(اختياري)">(optional)</span></span>
           <div class="ef-photo-row">
-            <input type="file" id="pImageFile" accept="image/*" class="ef-file">
+            <input type="file" id="pImageFile" accept="image/*" class="ef-file-native" tabindex="-1" aria-hidden="true">
+            <button type="button" class="btn-choose-photo" id="btnChoosePhoto"><i class="ti ti-photo-up"></i> <span id="btnChoosePhotoLabel" data-en="Choose photo" data-ar="اختار صورة">Choose photo</span></button>
+            <span class="ef-file-name" id="pImageFileName" data-en="No photo chosen" data-ar="مفيش صورة متختارة">No photo chosen</span>
           </div>
           <div class="image-preview-wrap">
-            <div class="image-preview" id="pImagePreview"><i class="ti ti-photo"></i><span>No photo</span></div>
+            <div class="image-preview" id="pImagePreview"><i class="ti ti-photo"></i><span data-en="No photo" data-ar="مفيش صورة">No photo</span></div>
           </div>
         </div>
       </div>
 
-      <button type="button" class="more-toggle" id="btnMoreProduct" aria-expanded="false">More options</button>
+      <button type="button" class="more-toggle" id="btnMoreProduct" aria-expanded="false" data-en="More options" data-ar="خيارات زيادة">More options</button>
       <div id="productMore" hidden>
         <div class="easy-form">
           <label class="ef-field ef-span-2">
-            <span>Barcode</span>
+            <span data-en="Barcode" data-ar="الباركود">Barcode</span>
             <div class="ef-barcode-row">
-              <input name="barcode" id="pBarcode" maxlength="64" autocomplete="off" placeholder="Scan or type">
-              <button type="button" class="btn-scan" id="btnScanBarcode" title="Scan with camera"><i class="ti ti-camera"></i></button>
+              <input name="barcode" id="pBarcode" maxlength="64" autocomplete="off" data-en-placeholder="Scan or type" data-ar-placeholder="امسح أو اكتب" placeholder="Scan or type">
+              <button type="button" class="btn-scan" id="btnScanBarcode" data-en-title="Scan with camera" data-ar-title="امسح بالكاميرا" title="Scan with camera"><i class="ti ti-camera"></i></button>
             </div>
           </label>
           <label class="ef-field">
-            <span>Unit</span>
+            <span data-en="Unit" data-ar="الوحدة">Unit</span>
             <select id="pUom">
-              <option value="pcs">Piece</option>
-              <option value="box">Box</option>
-              <option value="pack">Pack</option>
+              <option value="pcs" data-en="Piece" data-ar="قطعة">Piece</option>
+              <option value="box" data-en="Box" data-ar="علبة">Box</option>
+              <option value="pack" data-en="Pack" data-ar="باكت">Pack</option>
               <option value="kg">kg</option>
               <option value="g">g</option>
               <option value="L">L</option>
@@ -284,58 +286,58 @@
             </select>
           </label>
           <label class="ef-field">
-            <span>Low-stock alert</span>
+            <span data-en="Low-stock alert" data-ar="تنبيه نقص المخزون">Low-stock alert</span>
             <input type="number" id="pReorder" min="0" step="0.001" value="5">
           </label>
           <label class="ef-field">
-            <span>SKU <span class="ef-optional">(auto if empty)</span></span>
+            <span data-en="SKU (auto if empty)" data-ar="SKU (تلقائي لو فاضي)">SKU <span class="ef-optional">(auto if empty)</span></span>
             <input name="sku" id="pSku" maxlength="64" autocomplete="off">
           </label>
           <label class="ef-field">
-            <span>Name (AR)</span>
+            <span data-en="Name (AR)" data-ar="الاسم (عربي)">Name (AR)</span>
             <input name="nameAr" id="pNameAr" maxlength="150" dir="rtl">
           </label>
           <label class="ef-field">
-            <span>Brand</span>
+            <span data-en="Brand" data-ar="الماركة">Brand</span>
             <input id="pBrand" maxlength="100">
           </label>
           <label class="ef-field">
-            <span>Currency</span>
+            <span data-en="Currency" data-ar="العملة">Currency</span>
             <input id="pCurrency" maxlength="3" value="EGP">
           </label>
           <label class="ef-field">
-            <span>VAT %</span>
+            <span data-en="VAT %" data-ar="ضريبة %">VAT %</span>
             <input type="number" id="pVat" min="0" step="0.01">
           </label>
           <label class="ef-field ef-span-2">
-            <span>Photo URL</span>
+            <span data-en="Photo URL" data-ar="رابط الصورة">Photo URL</span>
             <input id="pImage" maxlength="500" placeholder="https://…">
           </label>
           <label class="ef-field ef-span-2">
-            <span>Description</span>
+            <span data-en="Description" data-ar="الوصف">Description</span>
             <textarea id="pDesc" rows="2" maxlength="500"></textarea>
           </label>
           <label class="ef-field ef-span-2">
-            <span>Description (AR)</span>
+            <span data-en="Description (AR)" data-ar="الوصف (عربي)">Description (AR)</span>
             <textarea id="pDescAr" rows="2" maxlength="500" dir="rtl"></textarea>
           </label>
         </div>
         <div class="flags">
-          <label class="chk"><input type="checkbox" id="pTaxable" checked> Taxable</label>
-          <label class="chk"><input type="checkbox" id="pTrackStock" checked> Track stock</label>
-          <label class="chk"><input type="checkbox" id="pTrackBatch"> Track batch</label>
-          <label class="chk"><input type="checkbox" id="pTrackExpiry"> Track expiry</label>
-          <label class="chk"><input type="checkbox" id="pFractional"> Fractional qty</label>
-          <label class="chk"><input type="checkbox" id="pSellable" checked> Sellable</label>
-          <label class="chk"><input type="checkbox" id="pPurchasable" checked> Purchasable</label>
-          <label class="chk"><input type="checkbox" id="pActive" checked> Active</label>
+          <label class="chk"><input type="checkbox" id="pTaxable" checked> <span data-en="Taxable" data-ar="خاضع للضريبة">Taxable</span></label>
+          <label class="chk"><input type="checkbox" id="pTrackStock" checked> <span data-en="Track stock" data-ar="تتبع المخزون">Track stock</span></label>
+          <label class="chk"><input type="checkbox" id="pTrackBatch"> <span data-en="Track batch" data-ar="تتبع التشغيلة">Track batch</span></label>
+          <label class="chk"><input type="checkbox" id="pTrackExpiry"> <span data-en="Track expiry" data-ar="تتبع الصلاحية">Track expiry</span></label>
+          <label class="chk"><input type="checkbox" id="pFractional"> <span data-en="Fractional qty" data-ar="كمية كسرية">Fractional qty</span></label>
+          <label class="chk"><input type="checkbox" id="pSellable" checked> <span data-en="Sellable" data-ar="قابل للبيع">Sellable</span></label>
+          <label class="chk"><input type="checkbox" id="pPurchasable" checked> <span data-en="Purchasable" data-ar="قابل للشراء">Purchasable</span></label>
+          <label class="chk"><input type="checkbox" id="pActive" checked> <span data-en="Active" data-ar="نشط">Active</span></label>
         </div>
       </div>
 
       <p class="form-hint" id="productFormHint"></p>
       <div class="modal-actions">
-        <button type="button" class="btn-secondary" data-close="productModal">Cancel</button>
-        <button type="submit" class="btn-create" id="btnSaveProduct"><i class="ti ti-device-floppy"></i> Save product</button>
+        <button type="button" class="btn-secondary" data-close="productModal" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        <button type="submit" class="btn-create" id="btnSaveProduct"><i class="ti ti-device-floppy"></i> <span data-en="Save product" data-ar="حفظ المنتج">Save product</span></button>
       </div>
     </form>
   </div>
@@ -345,19 +347,37 @@
 <div class="modal-overlay" id="categoryModal" hidden>
   <div class="modal">
     <div class="modal-hdr">
-      <h2>Categories / الفئات</h2>
+      <h2 data-en="Categories" data-ar="الفئات">Categories</h2>
       <button type="button" class="modal-close" data-close="categoryModal"><i class="ti ti-x"></i></button>
     </div>
     <div class="modal-body">
       <form id="categoryForm" class="cat-form">
         <input type="hidden" id="cId">
-        <label>Name *<input id="cName" required maxlength="150"></label>
-        <label>Name (AR)<input id="cNameAr" maxlength="150" dir="rtl"></label>
-        <label>Sort<input type="number" id="cSort" value="0"></label>
-        <label class="chk"><input type="checkbox" id="cActive" checked> Active</label>
-        <button type="submit" class="btn-create" id="btnSaveCategory">Add</button>
+        <label><span data-en="Name *" data-ar="الاسم *">Name *</span><input id="cName" required maxlength="150"></label>
+        <label><span data-en="Name (AR)" data-ar="الاسم (عربي)">Name (AR)</span><input id="cNameAr" maxlength="150" dir="rtl"></label>
+        <label><span data-en="Sort" data-ar="الترتيب">Sort</span><input type="number" id="cSort" value="0"></label>
+        <label class="chk"><input type="checkbox" id="cActive" checked> <span data-en="Active" data-ar="نشط">Active</span></label>
+        <button type="submit" class="btn-create" id="btnSaveCategory" data-en="Add" data-ar="إضافة">Add</button>
       </form>
       <div id="categoryList" class="cat-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- In-app category delete confirm (no browser alert) -->
+<div class="modal-overlay" id="categoryDeleteModal" hidden>
+  <div class="modal cat-del-modal">
+    <div class="modal-hdr">
+      <h2 data-en="Delete category" data-ar="حذف التصنيف">Delete category</h2>
+      <button type="button" class="modal-close" id="btnCatDelCancelX"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="catDelMessage" class="cat-del-msg"></p>
+      <p class="cat-del-hint" data-en="This permanently deletes the category. Products that used it will keep selling with no category." data-ar="هيتشال التصنيف نهائي. المنتجات اللي كانت عليه هتفضل تبيع من غير تصنيف.">This permanently deletes the category. Products that used it will keep selling with no category.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="btnCatDelCancel" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        <button type="button" class="btn-danger" id="btnCatDelConfirm" data-en="Delete" data-ar="حذف">Delete</button>
+      </div>
     </div>
   </div>
 </div>
@@ -382,6 +402,6 @@
   });
 })();
 </script>
-<script src="products-app.js?v=17"></script>
+<script src="products-app.js?v=catdel4"></script>
 </body>
 </html>

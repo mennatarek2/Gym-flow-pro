@@ -17,9 +17,42 @@
   var BANNER_ID = 'gfp-offline-banner';
   var restoreCallbacks = [];
   var wasOffline = false;
+  var editionChecked = false;
+  var isLocalEdition = false;
+  var editionPending = null;
 
   function isOnline() {
     return typeof navigator !== 'undefined' ? navigator.onLine : true;
+  }
+
+  // HyMotion Local Edition has no internet dependency at all (same-machine/LAN API, no online
+  // payment gateways) — navigator.onLine legitimately reads false there whenever the PC's network
+  // adapters are off, which is a completely normal setup for a Local install, so the "you're not
+  // connected to the internet" banner is just noise on every page nav. Ask the API (same call
+  // gfp-deployment.js makes) once and cache the answer; on real SaaS this always resolves 'SaaS'
+  // (or fails closed to it) so behavior there is unchanged.
+  function checkEdition() {
+    if (editionChecked) return Promise.resolve(isLocalEdition);
+    if (editionPending) return editionPending;
+    if (typeof global.fetch !== 'function') {
+      editionChecked = true;
+      return Promise.resolve(isLocalEdition);
+    }
+    var base = String(global.API_BASE || global.GFP_DEFAULT_API_BASE || '/api').replace(/\/$/, '');
+    editionPending = global
+      .fetch(base + '/deployment/info', { headers: { 'ngrok-skip-browser-warning': 'true' } })
+      .then(function (r) { return r.ok ? r.json() : { edition: 'SaaS' }; })
+      .then(function (data) {
+        editionChecked = true;
+        isLocalEdition = !!(data && data.edition === 'Local');
+        return isLocalEdition;
+      })
+      .catch(function () {
+        editionChecked = true;
+        isLocalEdition = false;
+        return isLocalEdition;
+      });
+    return editionPending;
   }
 
   function createBanner() {
@@ -66,7 +99,9 @@
 
   function handleOffline() {
     wasOffline = true;
-    showBanner();
+    checkEdition().then(function (isLocal) {
+      if (!isLocal) showBanner();
+    });
     try {
       global.dispatchEvent(new CustomEvent('gfp:offline'));
     } catch (e) { /* IE fallback not needed */ }

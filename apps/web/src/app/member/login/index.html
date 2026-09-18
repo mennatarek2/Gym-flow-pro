@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HyMotion — Member Sign In</title>
 <meta name="description" content="Sign in with your gym code and activation code to book classes.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
 <script>window.GFP_LOGIN_PATH = '/member/login/';</script>
 <style>
 /* Token set mirrors auth/login (design-tokens.json) so the member portal reads as one product. */
@@ -43,7 +41,7 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
   background:radial-gradient(circle,rgba(160,224,64,.08) 0%,transparent 70%);bottom:-100px;left:-100px;}
 .brand-content{position:relative;z-index:1;max-width:360px;width:100%}
 .logo-row{display:flex;align-items:center;gap:14px;margin-bottom:40px}
-.logo-row svg{width:44px;height:44px;flex-shrink:0;filter:drop-shadow(0 0 12px var(--lglow))}
+.logo-row img{width:44px;height:44px;flex-shrink:0;filter:drop-shadow(0 0 12px var(--lglow))}
 .logo-row span{font-family:var(--fd);font-size:26px;font-weight:700;letter-spacing:-.5px;color:var(--l400)}
 .tagline{font-family:var(--fd);font-size:26px;font-weight:700;line-height:1.3;color:var(--c50);margin-bottom:28px}
 .features{display:flex;flex-direction:column;gap:20px}
@@ -111,7 +109,7 @@ html[data-theme="dark"] .help-note{border-color:var(--ls3,#2E342F)}
   <div class="brand-panel">
     <div class="brand-content">
       <div class="logo-row">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#7ACC00"/><path d="M10 22L16 10L22 22" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18H20" stroke="#0D0D0D" stroke-width="2" stroke-linecap="round"/></svg>
+        <img src="/shared/hymotion-mark.png" alt="HyMotion" width="44" height="44">
         <span>HyMotion</span>
       </div>
       <div class="tagline">Your classes.<br>Booked in seconds.</div>

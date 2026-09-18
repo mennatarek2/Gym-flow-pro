@@ -1,4 +1,4 @@
-export type PlatformRole = 'platform_support' | 'platform_ops' | 'platform_admin'
+export type PlatformRole = 'platform_support' | 'platform_ops' | 'platform_admin' | 'platform_sales'
 
 export interface PlatformAdminDto {
   id: string
@@ -143,6 +143,11 @@ export interface PlatformTenantDetailDto {
   recentAudit?: PlatformAuditLogDto[]
   /** Staff (non-Member) login accounts for this tenant. */
   users?: PlatformTenantUserDto[]
+  /**
+   * Optional Local customer that already points at this tenant via customer.tenantId.
+   * Present only when exactly one customer has that link.
+   */
+  customerId?: string | null
 }
 
 export interface PlatformTenantUserDto {
@@ -194,12 +199,18 @@ export interface ChangeTenantStaffRoleRequest {
   reason: string
 }
 
+export interface ResetTenantStaffPasswordRequest {
+  newPassword: string
+  reason: string
+}
+
 export const TENANT_STAFF_ENDPOINTS = {
   list: (tenantId: string) => `/platform-api/tenants/${tenantId}/users`,
   create: (tenantId: string) => `/platform-api/tenants/${tenantId}/users`,
   disable: (tenantId: string, staffId: string) => `/platform-api/tenants/${tenantId}/users/${staffId}/disable`,
   reactivate: (tenantId: string, staffId: string) => `/platform-api/tenants/${tenantId}/users/${staffId}/reactivate`,
   changeRole: (tenantId: string, staffId: string) => `/platform-api/tenants/${tenantId}/users/${staffId}/role`,
+  resetPassword: (tenantId: string, staffId: string) => `/platform-api/tenants/${tenantId}/users/${staffId}/reset-password`,
 } as const
 
 export interface PlatformAuditLogDto {
@@ -662,8 +673,8 @@ export const AUDIT_ENDPOINTS = {
   list: '/platform-api/audit',
 } as const
 
-/** Same 3 roles as backend PlatformRoles — fixed set, not user-editable. */
-export const PLATFORM_USER_ROLES = ['platform_support', 'platform_ops', 'platform_admin'] as const
+/** Same roles as backend PlatformRoles — fixed set, not user-editable. */
+export const PLATFORM_USER_ROLES = ['platform_support', 'platform_ops', 'platform_admin', 'platform_sales'] as const
 export type PlatformUserRole = (typeof PLATFORM_USER_ROLES)[number]
 
 export interface PlatformUserDto {
@@ -783,6 +794,453 @@ export interface CommercialPlanMutationResult {
   errorCode?: string | null
   errorMessage?: string | null
   plan?: CommercialPlanDetailDto | null
+}
+
+/** Mirrors GMS.Platform.Constants.LocalLicensingConstants.LocalLicenseStatuses. */
+export const LOCAL_LICENSE_STATUSES = ['created', 'pending_activation', 'active', 'suspended', 'revoked'] as const
+export type LocalLicenseStatus = (typeof LOCAL_LICENSE_STATUSES)[number]
+
+export interface LocalLicenseListItemDto {
+  id: string
+  licenseKey: string
+  customerId?: string | null
+  contractId?: string | null
+  contractNumber?: string | null
+  customerName: string
+  edition: string
+  status: string
+  deviceLimit: number
+  activeInstallationCount: number
+  issuedAtUtc?: string | null
+  createdAtUtc: string
+  lastValidatedAtUtc?: string | null
+  installationStatus?: string | null
+  gymCode?: string | null
+  gymName?: string | null
+  appVersion?: string | null
+}
+
+export interface LocalInstallationDto {
+  id?: string
+  installationId: string
+  status: string
+  firstActivatedAtUtc: string
+  lastValidatedAtUtc?: string | null
+  deactivatedAtUtc?: string | null
+  deactivationReason?: string | null
+  gymCode?: string | null
+  gymName?: string | null
+  appVersion?: string | null
+}
+
+export interface LocalLifecycleEventDto {
+  operationId: string
+  eventType: string
+  installationId?: string | null
+  gymCode?: string | null
+  gymName?: string | null
+  message?: string | null
+  createdAtUtc: string
+}
+
+export interface LocalLicenseChangeDto {
+  changeType: string
+  fromStatus?: string | null
+  toStatus?: string | null
+  initiatedBy: string
+  reason?: string | null
+  createdAtUtc: string
+}
+
+export interface LocalLicenseDetailDto extends LocalLicenseListItemDto {
+  customerContact?: string | null
+  dealReference?: string | null
+  notes?: string | null
+  revokedReason?: string | null
+  revokedAtUtc?: string | null
+  installations: LocalInstallationDto[]
+  recentChanges: LocalLicenseChangeDto[]
+  recentOperations?: LocalLifecycleEventDto[]
+  transferCount: number
+  suspiciousEventCount: number
+}
+
+export interface IssueLocalLicenseRequest {
+  customerName?: string
+  customerContact?: string | null
+  customerId?: string | null
+  contractId?: string | null
+  dealReference?: string | null
+  edition: string
+  deviceLimit: number
+  notes?: string | null
+}
+
+export interface IssueLocalLicenseResult {
+  id: string
+  licenseKey: string
+}
+
+export interface LocalLicenseActionRequest {
+  reason: string
+}
+
+export interface LocalLicenseTransferRequest {
+  oldInstallationId?: string | null
+  reason: string
+}
+
+export const LOCAL_LICENSE_ENDPOINTS = {
+  list: '/platform-api/local-licenses',
+  issue: '/platform-api/local-licenses',
+  detail: (id: string) => `/platform-api/local-licenses/${id}`,
+  suspend: (id: string) => `/platform-api/local-licenses/${id}/suspend`,
+  revoke: (id: string) => `/platform-api/local-licenses/${id}/revoke`,
+  reactivate: (id: string) => `/platform-api/local-licenses/${id}/reactivate`,
+  authorizeTransfer: (id: string) => `/platform-api/local-licenses/${id}/authorize-transfer`,
+} as const
+
+export const CUSTOMER_ENDPOINTS = {
+  list: '/platform-api/customers',
+  detail: (id: string) => `/platform-api/customers/${id}`,
+  profile: (id: string) => `/platform-api/customers/${id}/profile`,
+  passwordReset: (id: string) => `/platform-api/customers/${id}/owner-password-reset`,
+  contracts: '/platform-api/contracts',
+  contract: (id: string) => `/platform-api/contracts/${id}`,
+  contractStatus: (id: string) => `/platform-api/contracts/${id}/status`,
+  payments: '/platform-api/customer-payments',
+  catalog: '/platform-api/catalog-products',
+  catalogItem: (id: string) => `/platform-api/catalog-products/${id}`,
+  tickets: '/platform-api/support-tickets',
+  ticket: (id: string) => `/platform-api/support-tickets/${id}`,
+  deskFeedback: '/platform-api/desk-feedback',
+  deskFeedbackItem: (id: string) => `/platform-api/desk-feedback/${id}`,
+  salesContractTerms: '/platform-api/local-sales-contract-terms',
+  salesContracts: '/platform-api/local-sales-contracts',
+  salesContract: (contractId: string) => `/platform-api/contracts/${contractId}/sales-contract`,
+  salesContractPreview: (contractId: string) => `/platform-api/contracts/${contractId}/sales-contract/preview`,
+  salesContractHtml: (contractId: string) => `/platform-api/contracts/${contractId}/sales-contract/html`,
+  salesContractReprint: (contractId: string) => `/platform-api/contracts/${contractId}/sales-contract/reprint`,
+} as const
+
+export const LOCAL_OWNER_RECOVERY_ENDPOINTS = {
+  list: '/platform-api/local-owner-recoveries',
+  detail: (id: string) => `/platform-api/local-owner-recoveries/${id}`,
+  importChallenge: '/platform-api/local-owner-recoveries/import-challenge',
+  approve: (id: string) => `/platform-api/local-owner-recoveries/${id}/approve`,
+  reject: (id: string) => `/platform-api/local-owner-recoveries/${id}/reject`,
+  revoke: (id: string) => `/platform-api/local-owner-recoveries/${id}/revoke`,
+} as const
+
+export interface PlatformCustomerListItemDto {
+  id: string
+  businessName: string
+  ownerName: string
+  phone?: string | null
+  email?: string | null
+  status: string
+  leadSource?: string | null
+  assignedSalesRepPlatformAdminUserId?: string | null
+  tenantId?: string | null
+  openTicketCount: number
+  createdAtUtc: string
+}
+
+export interface PlatformCustomerDetailDto extends PlatformCustomerListItemDto {
+  whatsApp?: string | null
+  address?: string | null
+  preferredContactMethod: string
+  notes?: string | null
+  createdByPlatformAdminUserId?: string | null
+  ownerUsername?: string | null
+  ownerEmail?: string | null
+  ownerAccountStatus: string
+  ownerAccountCreatedAtUtc?: string | null
+  ownerLastLoginAtUtc?: string | null
+  passwordResetInitiatedAtUtc?: string | null
+  updatedAtUtc: string
+}
+
+export interface UpsertPlatformCustomerRequest {
+  businessName: string
+  ownerName: string
+  phone?: string | null
+  whatsApp?: string | null
+  email?: string | null
+  address?: string | null
+  preferredContactMethod?: string | null
+  notes?: string | null
+  status?: string | null
+  leadSource?: string | null
+  assignedSalesRepPlatformAdminUserId?: string | null
+  tenantId?: string | null
+  ownerUsername?: string | null
+  ownerEmail?: string | null
+}
+
+export interface PlatformCatalogProductDto {
+  id: string
+  sku: string
+  name: string
+  description?: string | null
+  productType: string
+  defaultPrice: number
+  currency: string
+  isActive: boolean
+}
+
+export interface UpsertCatalogProductRequest {
+  sku: string
+  name: string
+  description?: string | null
+  productType: string
+  defaultPrice: number
+  isActive: boolean
+}
+
+export interface ContractItemInput {
+  catalogProductId?: string | null
+  name?: string | null
+  quantity: number
+  unitPrice?: number | null
+  discountAmount?: number
+}
+
+export interface CreatePlatformContractRequest {
+  customerId: string
+  contractDate?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  discount?: number
+  notes?: string | null
+  items: ContractItemInput[]
+}
+
+export interface PlatformContractItemDto {
+  id: string
+  catalogProductId?: string | null
+  skuSnapshot: string
+  nameSnapshot: string
+  productTypeSnapshot: string
+  descriptionSnapshot?: string | null
+  quantity: number
+  unitPrice: number
+  discountAmount: number
+  lineTotal: number
+}
+
+export interface PlatformContractDto {
+  id: string
+  customerId: string
+  customerName?: string | null
+  contractNumber: string
+  contractDate: string
+  startDate?: string | null
+  endDate?: string | null
+  status: string
+  currency: string
+  subtotal: number
+  discount: number
+  total: number
+  paidAmount: number
+  outstandingAmount: number
+  paymentStatus: string
+  notes?: string | null
+  createdAtUtc: string
+  items: PlatformContractItemDto[]
+}
+
+export interface ChangeContractStatusRequest {
+  status: string
+}
+
+export interface RecordCustomerPaymentRequest {
+  contractId: string
+  amount: number
+  paymentDate?: string | null
+  paymentMethod: string
+  reference?: string | null
+  notes?: string | null
+}
+
+export interface PlatformCustomerPaymentDto {
+  id: string
+  customerId: string
+  contractId: string
+  contractNumber?: string | null
+  amount: number
+  currency: string
+  paymentDate: string
+  paymentMethod: string
+  reference?: string | null
+  notes?: string | null
+  createdAtUtc: string
+}
+
+export interface CreateSupportTicketRequest {
+  customerId: string
+  contractId?: string | null
+  localLicenseId?: string | null
+  localInstallationId?: string | null
+  subject: string
+  description: string
+  priority?: string | null
+}
+
+export interface UpdateSupportTicketRequest {
+  status?: string | null
+  priority?: string | null
+  assignedToPlatformAdminUserId?: string | null
+  resolution?: string | null
+}
+
+export interface PlatformSupportTicketDto {
+  id: string
+  ticketNumber: string
+  customerId: string
+  customerName?: string | null
+  contractId?: string | null
+  localLicenseId?: string | null
+  localInstallationId?: string | null
+  subject: string
+  description: string
+  priority: string
+  status: string
+  assignedToPlatformAdminUserId?: string | null
+  createdAtUtc: string
+  updatedAtUtc: string
+  resolvedAtUtc?: string | null
+  resolution?: string | null
+}
+
+export interface DeskFeedbackDto {
+  id: string
+  customerId?: string | null
+  customerName?: string | null
+  tenantId: string
+  gymCode?: string | null
+  gymName?: string | null
+  senderUserId: string
+  senderRole: string
+  senderEmail?: string | null
+  senderDisplayName?: string | null
+  category: string
+  subject?: string | null
+  message: string
+  status: string
+  appVersion?: string | null
+  pageUrl?: string | null
+  internalNote?: string | null
+  responseToCustomer?: string | null
+  reviewedByPlatformAdminUserId?: string | null
+  createdAtUtc: string
+  updatedAtUtc: string
+  alreadySubmitted?: boolean
+}
+
+export interface UpdateDeskFeedbackRequest {
+  status?: string | null
+  internalNote?: string | null
+  responseToCustomer?: string | null
+}
+
+export interface InitiateOwnerPasswordResetRequest {
+  reason: string
+}
+
+export interface InitiateOwnerPasswordResetResult {
+  initiated: boolean
+  message: string
+}
+
+export interface PlatformCustomerProfileDto {
+  customer: PlatformCustomerDetailDto
+  latestContract?: PlatformContractDto | null
+  purchasedItems: PlatformContractItemDto[]
+  contractTotal: number
+  paidAmount: number
+  outstandingAmount: number
+  paymentStatus: string
+  license?: LocalLicenseListItemDto | null
+  licenses?: LocalLicenseListItemDto[] | null
+  installation?: LocalInstallationDto | null
+  openSupportTicketCount: number
+  lastValidation?: string | null
+}
+
+export type LocalOwnerRecoveryStatus =
+  | 'pending'
+  | 'approved'
+  | 'completed'
+  | 'rejected'
+  | 'expired'
+  | 'cancelled'
+  | 'revoked'
+
+export interface LocalOwnerRecoveryHistoryItemDto {
+  atUtc: string
+  event: string
+  actor?: string | null
+  outcome?: string | null
+  reason?: string | null
+}
+
+export interface LocalOwnerRecoveryListItemDto {
+  id: string
+  licenseId: string
+  customerId?: string | null
+  installationId: string
+  gymCode: string
+  gymName?: string | null
+  status: LocalOwnerRecoveryStatus | string
+  method: string
+  createdAtUtc: string
+  expiresAtUtc?: string | null
+  completedAtUtc?: string | null
+  reference: string
+}
+
+export interface LocalOwnerRecoveryDetailDto extends LocalOwnerRecoveryListItemDto {
+  approvedAtUtc?: string | null
+  rejectedAtUtc?: string | null
+  revokedAtUtc?: string | null
+  decisionByPlatformUserId?: string | null
+  decisionReason?: string | null
+  history: LocalOwnerRecoveryHistoryItemDto[]
+  recoveryCode?: string | null
+}
+
+export interface OwnerRecoveryDecisionRequest {
+  reason: string
+  method?: 'online' | 'offline' | string
+}
+
+export interface LocalSalesContractTermsDto {
+  termsEn: string
+  termsAr: string
+  updatedAtUtc: string
+}
+
+export interface UpsertLocalSalesContractTermsRequest {
+  termsEn: string
+  termsAr: string
+}
+
+export interface LocalSalesContractDocumentDto {
+  id: string
+  contractId: string
+  customerId: string
+  contractNumber: string
+  language: string
+  status: string
+  issuedAtUtc: string
+  printCount: number
+  lastPrintedAtUtc?: string | null
+}
+
+export interface LocalSalesContractHtmlDto extends LocalSalesContractDocumentDto {
+  html: string
+  issued: boolean
 }
 
 export const PLANS_ENDPOINTS = {

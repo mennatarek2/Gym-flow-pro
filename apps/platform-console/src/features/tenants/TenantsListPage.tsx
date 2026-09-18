@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchTenants } from '@/lib/api'
-import { RiskBandBadge, StatusBadge, TierBadge } from '@/components/Badges'
+import { RiskBandBadge, StatusBadge, StatusChip, TierBadge } from '@/components/Status'
 import { RenewalFilter } from '@/components/RenewalFilter'
 import { capTone } from '@/features/tenants/UsagePanel'
 import { formatCairoDate, formatCairoDateTime, formatEgp } from '@/lib/format'
 import { isOpsOrAbove } from '@/lib/platform-roles'
 import { useAuthStore } from '@/stores/auth-store'
+import { useUiStore } from '@/stores/ui-store'
 import { ProvisionGymDialog } from './ProvisionGymDialog'
 
 const STATUS_OPTIONS = ['trialing', 'active', 'past_due', 'suspended', 'cancelled']
@@ -15,7 +16,8 @@ const TIER_OPTIONS = ['starter', 'growth', 'pro', 'enterprise']
 const RISK_OPTIONS = ['healthy', 'watch', 'at_risk', 'critical']
 const PAGE_SIZE_OPTIONS = [20, 50, 100]
 
-export function TenantsListPage() {
+export function TenantsListPage({ embedded = false }: { embedded?: boolean }) {
+  const t = useUiStore((s) => s.t)
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const role = useAuthStore((s) => s.user?.role)
@@ -35,14 +37,14 @@ export function TenantsListPage() {
   const [searchDraft, setSearchDraft] = useState(search)
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       const next = new URLSearchParams(params)
       if (searchDraft) next.set('search', searchDraft)
       else next.delete('search')
       next.set('page', '1')
       setParams(next, { replace: true })
     }, 300)
-    return () => window.clearTimeout(t)
+    return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchDraft])
 
@@ -97,16 +99,14 @@ export function TenantsListPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {!embedded ? (
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight text-gray-900">Tenants</h1>
-          <p className="mt-1 text-[13.5px] text-gray-500">
-            Lifecycle control plane — open a row for subscription, usage, health, users, billing, and
-            audit.
-          </p>
+          <h1 className="cp-page-title">{t('gyms.cloud')}</h1>
+          <p className="cp-page-subtitle">{t('gyms.cloudSubtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <span title={canProvision ? undefined : 'Requires Platform Ops'}>
+          <span title={canProvision ? undefined : t('gyms.requiresOps')}>
             <button
               type="button"
               disabled={!canProvision}
@@ -114,11 +114,11 @@ export function TenantsListPage() {
               aria-disabled={!canProvision}
               className="cp-btn cp-btn-primary disabled:cursor-not-allowed"
             >
-              Create Tenant
+              {t('gyms.provision')}
             </button>
           </span>
           <label className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="text-gray-500">Rows</span>
+            <span className="text-gray-500">{t('gyms.rows')}</span>
             <select
               value={pageSize}
               onChange={(e) => patchParams({ pageSize: e.target.value, page: '1' })}
@@ -133,6 +133,21 @@ export function TenantsListPage() {
           </label>
         </div>
       </header>
+      ) : (
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <span title={canProvision ? undefined : t('gyms.requiresOps')}>
+            <button
+              type="button"
+              disabled={!canProvision}
+              onClick={() => setProvisionOpen(true)}
+              aria-disabled={!canProvision}
+              className="cp-btn cp-btn-primary disabled:cursor-not-allowed"
+            >
+              {t('gyms.provision')}
+            </button>
+          </span>
+        </div>
+      )}
 
       <ProvisionGymDialog open={provisionOpen} onClose={() => setProvisionOpen(false)} />
 
@@ -141,23 +156,30 @@ export function TenantsListPage() {
           role="status"
           className="rounded-[var(--radius)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
         >
-          No billing subscription on these gyms — provision StartTrial or open Platform Ops checklist.
+          {t('gyms.noSubscription')}
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-gray-200 bg-white p-4 shadow-[var(--shadow-sm)]">
+      <div
+        role="status"
+        className="rounded-[var(--radius)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+      >
+        {t('gyms.lifetimeTrialHint')}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-white p-4">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-gray-600">Search gym name / code</span>
+          <span className="text-gray-600">{t('gyms.searchCloud')}</span>
           <input
             value={searchDraft}
             onChange={(e) => setSearchDraft(e.target.value)}
             className="cp-input max-w-md"
-            placeholder="e.g. Cairo or GYM-"
+            placeholder={t('gyms.searchPlaceholder')}
           />
         </label>
         <div className="flex flex-wrap gap-4 text-sm">
           <fieldset>
-            <legend className="mb-1 text-gray-500">Status</legend>
+            <legend className="mb-1 text-gray-500">{t('gyms.filterStatus')}</legend>
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((s) => (
                 <label
@@ -169,31 +191,31 @@ export function TenantsListPage() {
                     checked={selectedStatus.has(s)}
                     onChange={() => toggleCsv('status', s)}
                   />
-                  {s.replace('_', ' ')}
+                  <StatusChip value={s} />
                 </label>
               ))}
             </div>
           </fieldset>
           <fieldset>
-            <legend className="mb-1 text-gray-500">Plan</legend>
+            <legend className="mb-1 text-gray-500">{t('gyms.filterPlan')}</legend>
             <div className="flex flex-wrap gap-2">
-              {TIER_OPTIONS.map((t) => (
+              {TIER_OPTIONS.map((tier) => (
                 <label
-                  key={t}
+                  key={tier}
                   className="inline-flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-2 py-1 capitalize"
                 >
                   <input
                     type="checkbox"
-                    checked={selectedTier.has(t)}
-                    onChange={() => toggleCsv('tier', t)}
+                    checked={selectedTier.has(tier)}
+                    onChange={() => toggleCsv('tier', tier)}
                   />
-                  {t}
+                  {tier}
                 </label>
               ))}
             </div>
           </fieldset>
           <fieldset>
-            <legend className="mb-1 text-gray-500">Health / risk</legend>
+            <legend className="mb-1 text-gray-500">{t('gyms.filterRisk')}</legend>
             <div className="flex flex-wrap gap-2">
               {RISK_OPTIONS.map((r) => (
                 <label
@@ -205,31 +227,31 @@ export function TenantsListPage() {
                     checked={selectedRisk.has(r)}
                     onChange={() => toggleCsv('riskBand', r)}
                   />
-                  {r.replace('_', ' ')}
+                  <StatusChip value={r} />
                 </label>
               ))}
             </div>
           </fieldset>
         </div>
         <div>
-          <div className="mb-1 text-sm text-gray-500">Renewal</div>
+          <div className="mb-1 text-sm text-gray-500">{t('gyms.filterRenewal')}</div>
           <RenewalFilter value={renewingBefore} onChange={(v) => patchParams({ renewingBefore: v || null, page: '1' })} />
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-gray-200 bg-white shadow-[var(--shadow-sm)]">
+      <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-white">
         <table className="cp-table min-w-[1100px]">
           <thead>
             <tr>
-              <th>Tenant</th>
-              <th>Owner</th>
-              <th>Plan</th>
-              <th>Status</th>
-              <th>Members</th>
-              <th>Renewal</th>
-              <th>Health</th>
-              <th>Last Login</th>
-              <th>Price</th>
+              <th>{t('gyms.gym')}</th>
+              <th>{t('customers.owner')}</th>
+              <th>{t('gyms.plan')}</th>
+              <th>{t('gyms.filterStatus')}</th>
+              <th>{t('gyms.members')}</th>
+              <th>{t('gyms.renewal')}</th>
+              <th>{t('gyms.health')}</th>
+              <th>{t('gyms.lastLogin')}</th>
+              <th>{t('gyms.price')}</th>
             </tr>
           </thead>
           <tbody>
@@ -247,9 +269,9 @@ export function TenantsListPage() {
             {isError ? (
               <tr>
                 <td colSpan={colCount} className="py-8 text-center text-red-600">
-                  Failed to load tenants.{' '}
+                  {t('gyms.failedLoad')}{' '}
                   <button type="button" className="underline" onClick={() => refetch()}>
-                    Retry
+                    {t('common.retry')}
                   </button>
                 </td>
               </tr>
@@ -257,7 +279,7 @@ export function TenantsListPage() {
             {!isLoading && !isError && data?.items.length === 0 ? (
               <tr>
                 <td colSpan={colCount} className="py-8 text-center text-gray-500">
-                  No tenants match these filters.{' '}
+                  {t('gyms.emptyCloud')}{' '}
                   <button
                     type="button"
                     className="underline"
@@ -266,7 +288,7 @@ export function TenantsListPage() {
                       setParams({}, { replace: true })
                     }}
                   >
-                    Clear filters
+                    {t('gyms.clearFilters')}
                   </button>
                 </td>
               </tr>
@@ -341,8 +363,8 @@ export function TenantsListPage() {
       {data ? (
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span>
-            Page {data.page} of {Math.max(data.totalPages, 1)} · {data.totalCount} total
-            {isFetching ? ' · updating…' : ''}
+            {t('gyms.pageOf', { page: data.page, pages: Math.max(data.totalPages, 1), total: data.totalCount })}
+            {isFetching ? ` · ${t('gyms.updating')}` : ''}
           </span>
           <div className="flex gap-2">
             <button
@@ -351,7 +373,7 @@ export function TenantsListPage() {
               className="cp-btn cp-btn-secondary"
               onClick={() => patchParams({ page: String(page - 1) })}
             >
-              Previous
+              {t('common.previous')}
             </button>
             <button
               type="button"
@@ -359,14 +381,14 @@ export function TenantsListPage() {
               className="cp-btn cp-btn-secondary"
               onClick={() => patchParams({ page: String(page + 1) })}
             >
-              Next
+              {t('common.next')}
             </button>
           </div>
         </div>
       ) : null}
 
       <p className="sr-only">
-        <Link to="/tenants">Tenants list</Link>
+        <Link to="/gyms?mode=cloud">{t('gyms.title')}</Link>
       </p>
     </div>
   )

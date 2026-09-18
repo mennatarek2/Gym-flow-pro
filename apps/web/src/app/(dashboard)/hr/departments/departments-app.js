@@ -34,6 +34,7 @@
 
   var rows = [];
   var editingId = null;
+  var pendingDeleteId = null;
 
   function t(en, ar) {
     if (I18n && I18n.tLabel) return I18n.tLabel(en, ar);
@@ -48,10 +49,24 @@
     return globalThis.toastShared(msg, type);
   }
   function apiError(r) {
-    if (I18n && I18n.displayApiError) return I18n.displayApiError(r) || t('Request failed', 'فشل الطلب');
+    if (I18n && I18n.displayApiError) {
+      var shown = I18n.displayApiError(r);
+      if (shown && shown !== 'Request failed') return shown;
+    }
     if (!r) return t('Request failed', 'فشل الطلب');
     var e = (r && r.error) || {};
-    return e.message || t('Request failed', 'فشل الطلب');
+    var d = (r && r.data) || {};
+    var detail = e.message || d.error || d.message || d.detail || '';
+    if (typeof detail === 'object' && detail) detail = detail.message || detail.error || '';
+    if (detail && String(detail).indexOf(' / ') !== -1) detail = String(detail).split(' / ')[0].trim();
+    if (detail && detail !== 'Request failed') return String(detail);
+    if (r.status === 404 || r.status === 405) {
+      return t(
+        'Delete is not available on this API yet — restart the API and try again.',
+        'الحذف غير متاح على الـ API الحالي — أعد تشغيل الـ API وجرب تاني.'
+      );
+    }
+    return t('Request failed', 'فشل الطلب') + (r.status ? ' (' + r.status + ')' : '');
   }
   function applyLocale() {
     if (I18n && I18n.applyDocumentLocale) I18n.applyDocumentLocale();
@@ -62,6 +77,25 @@
   }
   function closeModal(id) {
     document.getElementById(id).hidden = true;
+  }
+
+  function openDeleteModal(id) {
+    var d = rows.filter(function (r) { return r.id === id; })[0];
+    if (!d) return;
+    pendingDeleteId = id;
+    var msg = document.getElementById('deptDelMessage');
+    if (msg) {
+      msg.textContent = t(
+        'Delete department "' + (d.name || '') + '"?',
+        'حذف القسم «' + (d.name || '') + '»؟'
+      );
+    }
+    openModal('deptDeleteModal');
+  }
+
+  function closeDeleteModal() {
+    pendingDeleteId = null;
+    closeModal('deptDeleteModal');
   }
 
   (function chrome() {
@@ -137,7 +171,10 @@
         '<td><span class="status-badge ' + (d.isActive ? 'active' : 'terminated') + '"><span class="dot"></span>' +
           esc(d.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) + '</span></td>' +
         (canManage
-          ? '<td><div class="act-group"><button type="button" class="act-btn" data-edit="' + esc(d.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-pencil"></i></button></div></td>'
+          ? '<td><div class="act-group">' +
+            '<button type="button" class="act-btn" data-edit="' + esc(d.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-pencil"></i></button>' +
+            '<button type="button" class="act-btn danger" data-del="' + esc(d.id) + '" title="' + esc(t('Delete', 'حذف')) + '"><i class="ti ti-trash"></i></button>' +
+            '</div></td>'
           : '') +
         '</tr>';
     });
@@ -146,6 +183,11 @@
     Array.prototype.forEach.call(host.querySelectorAll('[data-edit]'), function (btn) {
       btn.addEventListener('click', function () {
         openEdit(btn.getAttribute('data-edit'));
+      });
+    });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-del]'), function (btn) {
+      btn.addEventListener('click', function () {
+        openDeleteModal(btn.getAttribute('data-del'));
       });
     });
     applyLocale();
@@ -196,6 +238,34 @@
     closeModal('deptModal');
     toast(t('Saved', 'تم الحفظ'), 'ok');
     loadList();
+  });
+
+  ['btnDeptDelCancel', 'btnDeptDelCancelX'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', closeDeleteModal);
+  });
+
+  document.getElementById('btnDeptDelConfirm').addEventListener('click', async function () {
+    var id = pendingDeleteId;
+    if (!id || !canManage) return;
+    var btn = document.getElementById('btnDeptDelConfirm');
+    btn.disabled = true;
+    try {
+      var r = await Gfp.del('/hr/departments/' + id);
+      if (!r.ok) {
+        toast(apiError(r) || t('Could not delete department', 'تعذر حذف القسم'), 'err');
+        return;
+      }
+      closeDeleteModal();
+      toast(t('Department deleted', 'تم حذف القسم'), 'ok');
+      if (editingId === id) {
+        editingId = null;
+        closeModal('deptModal');
+      }
+      loadList();
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   loadList();

@@ -3,11 +3,11 @@
   const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
   const PAGE_SIZE = 20;
   const TABS = {
-    sell_membership: { kind: 'sell', lineType: 'membership', title: 'Memberships' },
-    sell_products: { kind: 'sell', lineType: 'retail', title: 'Products sold' },
-    sell_classes: { kind: 'sell', lineType: 'drop_in', title: 'Classes & drop-ins' },
-    buy: { kind: 'buy', title: 'Bought from suppliers' },
-    all: { kind: 'all', title: 'All' },
+    sell_membership: { kind: 'sell', lineType: 'membership', title: window.GfpI18n.tLabel('Memberships', 'الاشتراكات') },
+    sell_products: { kind: 'sell', lineType: 'retail', title: window.GfpI18n.tLabel('Products sold', 'منتجات مباعة') },
+    sell_classes: { kind: 'sell', lineType: 'drop_in', title: window.GfpI18n.tLabel('Classes & drop-ins', 'الحصص والدخول الفردي') },
+    buy: { kind: 'buy', title: window.GfpI18n.tLabel('Bought from suppliers', 'مشتريات من الموردين') },
+    all: { kind: 'all', title: window.GfpI18n.tLabel('All', 'الكل') },
   };
 
   function getToken() {
@@ -137,14 +137,14 @@
         });
   }
   function friendlyType(type) {
-    if (type === 'credit_note') return 'Credit note';
-    if (type === 'invoice') return 'Invoice';
+    if (type === 'credit_note') return window.GfpI18n.tLabel('Credit note', 'إشعار دائن');
+    if (type === 'invoice') return window.GfpI18n.tLabel('Invoice', 'فاتورة');
     return type || '—';
   }
   function friendlyStatus(st) {
-    if (st === 'issued') return 'Issued';
-    if (st === 'voided') return 'Voided';
-    if (st === 'received') return 'Received';
+    if (st === 'issued') return window.GfpI18n.tLabel('Issued', 'صادرة');
+    if (st === 'voided') return window.GfpI18n.tLabel('Voided', 'ملغاة');
+    if (st === 'received') return window.GfpI18n.tLabel('Received', 'مستلمة');
     return st || '—';
   }
   function productRecord(id) {
@@ -153,7 +153,7 @@
   }
   function productLabel(id) {
     const p = productRecord(id);
-    return (p && (p.name || p.sku)) || 'Product';
+    return (p && (p.name || p.sku)) || window.GfpI18n.tLabel('Product', 'منتج');
   }
   function mediaUrl(url) {
     if (!url) return '';
@@ -168,7 +168,7 @@
   }
   function productCellHtml(id, fallbackName) {
     const p = productRecord(id);
-    const name = (fallbackName && String(fallbackName).trim()) || (p && (p.name || p.sku)) || 'Product';
+    const name = (fallbackName && String(fallbackName).trim()) || (p && (p.name || p.sku)) || window.GfpI18n.tLabel('Product', 'منتج');
     const src = mediaUrl(p && p.imageUrl);
     const thumb = src
       ? '<img class="thumb" src="' +
@@ -194,7 +194,7 @@
   }
   function openDetailDrawer(title) {
     const t = document.getElementById('detailTitle');
-    if (t) t.textContent = title || 'Details';
+    if (t) t.textContent = title || window.GfpI18n.tLabel('Details', 'التفاصيل');
     const d = document.getElementById('detailDrawer');
     if (d) d.hidden = false;
   }
@@ -210,7 +210,7 @@
       if (sel) {
         const keep = sel.value;
         sel.innerHTML =
-          '<option value="">All suppliers</option>' +
+          '<option value="">' + window.GfpI18n.tLabel('All suppliers', 'كل الموردين') + '</option>' +
           rows
             .filter((s) => s.isActive !== false)
             .map((s) => '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>')
@@ -238,18 +238,18 @@
     return globalThis.toastShared(msg, type, htmlExtra);
   }
   function problemMessage(data, status) {
-    if (!data) return 'Request failed (' + status + ')';
+    if (!data) return window.GfpI18n.tLabel('Request failed (' + status + ')', 'فشل الطلب (' + status + ')');
     const title = data.title || '';
     const detail = data.detail || data.message || data.error || '';
     const map = {
-      INVOICE_NOT_FOUND: 'Invoice not found.',
-      ALREADY_VOIDED: 'Invoice is already voided.',
-      FEATURE_DISABLED: 'Feature disabled for this tenant.',
-      FORBIDDEN: 'You do not have permission for this action.',
+      INVOICE_NOT_FOUND: window.GfpI18n.tLabel('Invoice not found.', 'الفاتورة غير موجودة.'),
+      ALREADY_VOIDED: window.GfpI18n.tLabel('Invoice is already voided.', 'الفاتورة ملغاة بالفعل.'),
+      FEATURE_DISABLED: window.GfpI18n.tLabel('Feature disabled for this tenant.', 'هذه الميزة غير مفعّلة لهذا الحساب.'),
+      FORBIDDEN: window.GfpI18n.tLabel('You do not have permission for this action.', 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'),
     };
     if (map[title]) return map[title];
     if (detail && detail.indexOf(' / ') !== -1) return detail.split(' / ')[0].trim();
-    return detail || title || 'Request failed (' + status + ')';
+    return detail || title || window.GfpI18n.tLabel('Request failed (' + status + ')', 'فشل الطلب (' + status + ')');
   }
 
   async function api(method, path, body, opts) {
@@ -265,11 +265,10 @@
         ok: false,
         status: 0,
         data: {
-          message:
-            'Network error talking to API (' +
-            (API_BASE || '') +
-            '). ' +
-            (err && err.message ? err.message : 'Failed to fetch'),
+          message: window.GfpI18n.tLabel(
+            'Network error talking to API (' + (API_BASE || '') + '). ' + (err && err.message ? err.message : 'Failed to fetch'),
+            'خطأ في الاتصال بالخادم (' + (API_BASE || '') + '). ' + (err && err.message ? err.message : 'فشل الاتصال'),
+          ),
         },
         text: null,
       };
@@ -287,7 +286,7 @@
     if (ct.includes('json')) data = await res.json().catch(() => null);
     else if (!res.ok) {
       const text = await res.text().catch(() => '');
-      data = { message: text ? text.slice(0, 180) : 'Request failed (' + res.status + ')' };
+      data = { message: text ? text.slice(0, 180) : window.GfpI18n.tLabel('Request failed (' + res.status + ')', 'فشل الطلب (' + res.status + ')') };
     }
     return { ok: res.ok, status: res.status, data, text: null };
   }
@@ -315,27 +314,39 @@
       return (
         '<span class="pdf-ready"><a href="' +
         esc(inv.pdfUrl) +
-        '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open PDF</a></span>'
+        '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' +
+        window.GfpI18n.tLabel('Open PDF', 'فتح PDF') +
+        '</a></span>'
       );
     }
-    return '<span class="pdf-pending" title="PDF still generating">Not ready yet</span>';
+    return (
+      '<span class="pdf-pending" title="' +
+      esc(window.GfpI18n.tLabel('PDF still generating', 'جاري إنشاء PDF')) +
+      '">' +
+      window.GfpI18n.tLabel('Not ready yet', 'غير جاهز بعد') +
+      '</span>'
+    );
   }
 
   function renderPager(totalPages, totalCount, onPage) {
+    const pageInfo = window.GfpI18n.tLabel(
+      'Page ' + page + ' / ' + Math.max(1, totalPages || 1) + ' · ' + String(totalCount || 0) + ' total',
+      'صفحة ' + page + ' / ' + Math.max(1, totalPages || 1) + ' · ' + String(totalCount || 0) + ' إجمالي',
+    );
     const mk =
       '<button type="button" class="btn secondary js-prev"' +
       (page <= 1 ? ' disabled' : '') +
-      '>Prev</button>' +
-      '<span>Page ' +
-      page +
-      ' / ' +
-      Math.max(1, totalPages || 1) +
-      ' · ' +
-      esc(String(totalCount || 0)) +
-      ' total</span>' +
+      '>' +
+      window.GfpI18n.tLabel('Prev', 'السابق') +
+      '</button>' +
+      '<span>' +
+      esc(pageInfo) +
+      '</span>' +
       '<button type="button" class="btn secondary js-next"' +
       (page >= (totalPages || 1) ? ' disabled' : '') +
-      '>Next</button>';
+      '>' +
+      window.GfpI18n.tLabel('Next', 'التالي') +
+      '</button>';
     ['pagerTop', 'pagerBottom'].forEach((id) => {
       const el = document.getElementById(id);
       el.innerHTML = mk;
@@ -361,7 +372,7 @@
   function renderSellRows(items) {
     const tbody = document.getElementById('tbody');
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="muted">No invoices</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="muted">' + window.GfpI18n.tLabel('No invoices', 'لا توجد فواتير') + '</td></tr>';
       return;
     }
     tbody.innerHTML = items
@@ -414,7 +425,7 @@
     const tbody = document.getElementById('tbody');
     if (!buyRows.length) {
       tbody.innerHTML =
-        '<tr><td colspan="4" class="muted">No purchases yet</td></tr>';
+        '<tr><td colspan="4" class="muted">' + window.GfpI18n.tLabel('No purchases yet', 'لا توجد مشتريات بعد') + '</td></tr>';
       return;
     }
     tbody.innerHTML = buyRows
@@ -438,7 +449,7 @@
           '<td>' +
           esc(money(row.totalAmount)) +
           '</td>' +
-          '<td><span class="st received">Received</span></td>' +
+          '<td><span class="st received">' + window.GfpI18n.tLabel('Received', 'مستلمة') + '</span></td>' +
           '</tr>'
         );
       })
@@ -460,7 +471,9 @@
   async function loadSellList(lineType) {
     if (!canViewSell) {
       document.getElementById('tbody').innerHTML =
-        '<tr><td colspan="7" class="muted">Need reports.financial.view</td></tr>';
+        '<tr><td colspan="7" class="muted">' +
+        window.GfpI18n.tLabel('Need reports.financial.view', 'يتطلب صلاحية reports.financial.view') +
+        '</td></tr>';
       renderPager(1, 0, loadList);
       return;
     }
@@ -499,7 +512,9 @@
     await ensureBuyLookups();
     if (!canViewBuy) {
       document.getElementById('tbody').innerHTML =
-        '<tr><td colspan="4" class="muted">Need inventory.view</td></tr>';
+        '<tr><td colspan="4" class="muted">' +
+        window.GfpI18n.tLabel('Need inventory.view', 'يتطلب صلاحية inventory.view') +
+        '</td></tr>';
       renderPager(1, 0, loadList);
       return;
     }
@@ -585,6 +600,7 @@
       });
     });
     buyItems.forEach((row) => {
+      const purchaseLabel = esc(window.GfpI18n.tLabel('Purchase', 'مشترى'));
       merged.push({
         sortAt: row.receivedAtUtc,
         kind: 'buy',
@@ -592,20 +608,26 @@
         html:
           '<tr data-kind="buy" data-id="' +
           esc(row.id) +
-          '"><td>Purchase</td><td>Purchase</td><td>' +
+          '"><td>' +
+          purchaseLabel +
+          '</td><td>' +
+          purchaseLabel +
+          '</td><td>' +
           esc(row.supplierName || '—') +
           '</td><td>' +
           esc(dt(row.receivedAtUtc)) +
           '</td><td>' +
           esc(money(row.totalAmount)) +
-          '</td><td><span class="st received">Received</span></td><td>—</td></tr>',
+          '</td><td><span class="st received">' +
+          window.GfpI18n.tLabel('Received', 'مستلمة') +
+          '</span></td><td>—</td></tr>',
       });
     });
     merged.sort((a, b) => new Date(b.sortAt || 0) - new Date(a.sortAt || 0));
     buyRows = buyItems;
     const tbody = document.getElementById('tbody');
     if (!merged.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="muted">No documents</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="muted">' + window.GfpI18n.tLabel('No documents', 'لا توجد مستندات') + '</td></tr>';
     } else {
       tbody.innerHTML = merged.map((m) => m.html).join('');
       bindRowClicks();
@@ -657,7 +679,15 @@
     const body = document.getElementById('detailBody');
     const lines = Array.isArray(doc.lines) ? doc.lines : [];
     const linesHtml = lines.length
-      ? '<table class="lines-tbl"><thead><tr><th>Product</th><th>Qty</th><th>Cost each</th><th>Line</th></tr></thead><tbody>' +
+      ? '<table class="lines-tbl"><thead><tr><th>' +
+        window.GfpI18n.tLabel('Product', 'المنتج') +
+        '</th><th>' +
+        window.GfpI18n.tLabel('Qty', 'الكمية') +
+        '</th><th>' +
+        window.GfpI18n.tLabel('Cost each', 'تكلفة الوحدة') +
+        '</th><th>' +
+        window.GfpI18n.tLabel('Line', 'السطر') +
+        '</th></tr></thead><tbody>' +
         lines
           .map((ln) => {
             const lineTotal =
@@ -676,12 +706,12 @@
           })
           .join('') +
         '</tbody></table>'
-      : '<p class="muted">No items on this purchase</p>';
+      : '<p class="muted">' + window.GfpI18n.tLabel('No items on this purchase', 'لا توجد أصناف في هذا المشترى') + '</p>';
 
     body.innerHTML =
       '<div class="detail-hero">' +
       '<div class="who">' +
-      esc(doc.supplierName || 'Supplier') +
+      esc(doc.supplierName || window.GfpI18n.tLabel('Supplier', 'المورد')) +
       '</div>' +
       '<div class="when">' +
       esc(dt(doc.receivedAtUtc)) +
@@ -691,23 +721,29 @@
       '</div>' +
       '</div>' +
       '<div class="detail-meta">' +
-      '<div class="row"><span>Status</span><span class="st received">Received</span></div>' +
+      '<div class="row"><span>' +
+      window.GfpI18n.tLabel('Status', 'الحالة') +
+      '</span><span class="st received">' +
+      window.GfpI18n.tLabel('Received', 'مستلمة') +
+      '</span></div>' +
       '</div>' +
-      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">Items</h3>' +
+      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">' +
+      window.GfpI18n.tLabel('Items', 'الأصناف') +
+      '</h3>' +
       linesHtml +
       '<div class="actions">' +
       (doc.purchaseOrderId
         ? '<a class="btn secondary" href="/dashboard/inventory/purchase-orders/?id=' +
           esc(doc.purchaseOrderId) +
-          '">Open purchase</a>'
+          '">' + window.GfpI18n.tLabel('Open purchase', 'فتح أمر الشراء') + '</a>'
         : '') +
       (doc.supplierId
         ? '<a class="btn secondary" href="/dashboard/inventory/suppliers/?id=' +
           esc(doc.supplierId) +
-          '">Supplier account</a>'
+          '">' + window.GfpI18n.tLabel('Supplier account', 'حساب المورد') + '</a>'
         : '') +
       '</div>';
-    openDetailDrawer('Purchase');
+    openDetailDrawer(window.GfpI18n.tLabel('Purchase', 'مشترى'));
   }
 
   function renderDetail(inv) {
@@ -715,7 +751,15 @@
 
     const lines = Array.isArray(inv.lines) ? inv.lines : [];
     const linesHtml = lines.length
-      ? '<table class="lines-tbl"><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Line</th></tr></thead><tbody>' +
+      ? '<table class="lines-tbl"><thead><tr><th>' +
+        window.GfpI18n.tLabel('Description', 'الوصف') +
+        '</th><th>' +
+        window.GfpI18n.tLabel('Qty', 'الكمية') +
+        '</th><th>' +
+        window.GfpI18n.tLabel('Unit', 'الوحدة') +
+        '</th><th>' +
+        window.GfpI18n.tLabel('Line', 'السطر') +
+        '</th></tr></thead><tbody>' +
         lines
           .map(
             (ln) =>
@@ -734,29 +778,39 @@
           )
           .join('') +
         '</tbody></table>'
-      : '<p class="muted">No items</p>';
+      : '<p class="muted">' + window.GfpI18n.tLabel('No items', 'لا توجد أصناف') + '</p>';
 
     const pdfBlock = inv.pdfUrl
       ? '<a class="btn secondary" href="' +
         esc(inv.pdfUrl) +
-        '" target="_blank" rel="noopener"><i class="ti ti-file-type-pdf"></i> PDF</a>'
-      : '<span class="pdf-pending">PDF not ready yet</span>';
+        '" target="_blank" rel="noopener"><i class="ti ti-file-type-pdf"></i> ' +
+        window.GfpI18n.tLabel('PDF', 'PDF') +
+        '</a>'
+      : '<span class="pdf-pending">' + window.GfpI18n.tLabel('PDF not ready yet', 'ملف PDF غير جاهز بعد') + '</span>';
 
     const actions = [];
     if (canReceipt && inv.status === 'issued') {
       actions.push(
-        '<button type="button" class="btn primary" id="btnPrintA4"><i class="ti ti-printer"></i> Print invoice</button>',
-        '<button type="button" class="btn secondary" id="btnReceipt"><i class="ti ti-receipt"></i> 80mm receipt</button>',
+        '<button type="button" class="btn primary" id="btnPrintA4"><i class="ti ti-printer"></i> ' +
+          window.GfpI18n.tLabel('Print invoice', 'طباعة الفاتورة') +
+          '</button>',
+        '<button type="button" class="btn secondary" id="btnReceipt"><i class="ti ti-receipt"></i> ' +
+          window.GfpI18n.tLabel('80mm receipt', 'إيصال 80مم') +
+          '</button>',
       );
     }
     if (canResend && inv.status === 'issued') {
       actions.push(
-        '<button type="button" class="btn secondary" id="btnResend"><i class="ti ti-send"></i> Resend</button>',
+        '<button type="button" class="btn secondary" id="btnResend"><i class="ti ti-send"></i> ' +
+          window.GfpI18n.tLabel('Resend', 'إعادة إرسال') +
+          '</button>',
       );
     }
     if (canVoid && inv.status === 'issued') {
       actions.push(
-        '<button type="button" class="btn danger" id="btnVoid"><i class="ti ti-ban"></i> Void</button>',
+        '<button type="button" class="btn danger" id="btnVoid"><i class="ti ti-ban"></i> ' +
+          window.GfpI18n.tLabel('Void', 'إلغاء') +
+          '</button>',
       );
     }
     if (
@@ -767,14 +821,17 @@
       (window.GfpRefundAction ? window.GfpRefundAction.canRequest() : canRefundRequest)
     ) {
       actions.push(
-        '<button type="button" class="btn primary" id="btnRefundSale"><i class="ti ti-receipt-refund"></i> Refund</button>',
+        '<button type="button" class="btn primary" id="btnRefundSale"><i class="ti ti-receipt-refund"></i> ' +
+          window.GfpI18n.tLabel('Refund', 'استرداد') +
+          '</button>',
       );
     }
 
+    const vatRateStr = String(inv.vatRate != null ? inv.vatRate : '');
     body.innerHTML =
       '<div class="detail-hero">' +
       '<div class="who">' +
-      esc(inv.memberNameSnapshot || inv.invoiceNumber || 'Invoice') +
+      esc(inv.memberNameSnapshot || inv.invoiceNumber || window.GfpI18n.tLabel('Invoice', 'فاتورة')) +
       '</div>' +
       '<div class="when">' +
       esc(inv.invoiceNumber) +
@@ -786,36 +843,50 @@
       '</div>' +
       '</div>' +
       '<div class="detail-meta">' +
-      '<div class="row"><span>Type</span><span>' +
+      '<div class="row"><span>' +
+      window.GfpI18n.tLabel('Type', 'النوع') +
+      '</span><span>' +
       esc(friendlyType(inv.type)) +
       '</span></div>' +
-      '<div class="row"><span>Status</span><span class="st ' +
+      '<div class="row"><span>' +
+      window.GfpI18n.tLabel('Status', 'الحالة') +
+      '</span><span class="st ' +
       esc(inv.status) +
       '">' +
       esc(friendlyStatus(inv.status)) +
       '</span></div>' +
       (inv.memberPhoneSnapshot
-        ? '<div class="row"><span>Phone</span><span>' + esc(inv.memberPhoneSnapshot) + '</span></div>'
+        ? '<div class="row"><span>' + window.GfpI18n.tLabel('Phone', 'الهاتف') + '</span><span>' + esc(inv.memberPhoneSnapshot) + '</span></div>'
         : '') +
       (inv.voidReason
-        ? '<div class="row"><span>Void reason</span><span>' + esc(inv.voidReason) + '</span></div>'
+        ? '<div class="row"><span>' + window.GfpI18n.tLabel('Void reason', 'سبب الإلغاء') + '</span><span>' + esc(inv.voidReason) + '</span></div>'
         : '') +
       '</div>' +
-      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">Items</h3>' +
+      '<h3 style="font-family:var(--fd);font-size:14px;margin-bottom:6px">' +
+      window.GfpI18n.tLabel('Items', 'الأصناف') +
+      '</h3>' +
       linesHtml +
       '<div class="totals">' +
-      '<div>Subtotal: ' +
-      esc(money(inv.subtotal, inv.currency)) +
+      '<div>' +
+      esc(window.GfpI18n.tLabel(
+        'Subtotal: ' + money(inv.subtotal, inv.currency),
+        'الإجمالي الفرعي: ' + money(inv.subtotal, inv.currency),
+      )) +
       '</div>' +
-      '<div>Discount: ' +
-      esc(money(inv.discountAmount, inv.currency)) +
+      '<div>' +
+      esc(window.GfpI18n.tLabel(
+        'Discount: ' + money(inv.discountAmount, inv.currency),
+        'الخصم: ' + money(inv.discountAmount, inv.currency),
+      )) +
       '</div>' +
-      '<div>VAT (' +
-      esc(String(inv.vatRate != null ? inv.vatRate : '')) +
-      '%): ' +
-      esc(money(inv.vatAmount, inv.currency)) +
+      '<div>' +
+      esc(window.GfpI18n.tLabel(
+        'VAT (' + vatRateStr + '%): ' + money(inv.vatAmount, inv.currency),
+        'ضريبة القيمة المضافة (' + vatRateStr + '%): ' + money(inv.vatAmount, inv.currency),
+      )) +
       '</div>' +
-      '<div class="grand">Total: ' +
+      '<div class="grand">' +
+      window.GfpI18n.tLabel('Total: ', 'الإجمالي: ') +
       displayTotal(inv) +
       '</div>' +
       '</div>' +
@@ -824,7 +895,7 @@
       actions.join('') +
       '</div>';
 
-    openDetailDrawer(inv.type === 'credit_note' ? 'Credit note' : 'Invoice');
+    openDetailDrawer(inv.type === 'credit_note' ? window.GfpI18n.tLabel('Credit note', 'إشعار دائن') : window.GfpI18n.tLabel('Invoice', 'فاتورة'));
 
     const btnReceipt = document.getElementById('btnReceipt');
     if (btnReceipt) btnReceipt.onclick = () => openReceiptModal(inv.id, 'thermal');
@@ -852,11 +923,11 @@
 
   function openSaleRefund(inv) {
     if (!inv || !inv.saleId) {
-      toast('This invoice is not linked to a sale.', 'err');
+      toast(window.GfpI18n.tLabel('This invoice is not linked to a sale.', 'هذه الفاتورة غير مرتبطة بعملية بيع.'), 'err');
       return;
     }
     if (!window.GfpRefundAction || typeof window.GfpRefundAction.open !== 'function') {
-      toast('Refund is still loading. Refresh the page.', 'err');
+      toast(window.GfpI18n.tLabel('Refund is still loading. Refresh the page.', 'ميزة الاسترداد لا تزال قيد التحميل. أعد تحميل الصفحة.'), 'err');
       return;
     }
     window.GfpRefundAction.open({
@@ -874,7 +945,7 @@
       toast(problemMessage(res.data, res.status), 'err');
       return;
     }
-    toast('Invoice resend queued.', 'ok');
+    toast(window.GfpI18n.tLabel('Invoice resend queued.', 'تم جدولة إعادة إرسال الفاتورة.'), 'ok');
   }
 
   document.getElementById('btnVoidCancel').onclick = () => {
@@ -884,7 +955,7 @@
   document.getElementById('btnVoidConfirm').onclick = async () => {
     const reason = document.getElementById('voidReason').value.trim();
     if (!reason || !voidTargetId) {
-      toast('Void reason required.', 'err');
+      toast(window.GfpI18n.tLabel('Void reason required.', 'سبب الإلغاء مطلوب.'), 'err');
       return;
     }
     const res = await api('POST', '/invoices/' + voidTargetId + '/void', { reason });
@@ -893,7 +964,7 @@
       return;
     }
     document.getElementById('voidModal').classList.remove('show');
-    toast('Invoice voided.', 'ok');
+    toast(window.GfpI18n.tLabel('Invoice voided.', 'تم إلغاء الفاتورة.'), 'ok');
     const id = voidTargetId;
     voidTargetId = null;
     await loadList();
@@ -906,13 +977,17 @@
     var isA4 = receiptFormat === 'a4';
     var box = document.getElementById('printBox');
     if (box) box.classList.toggle('is-a4', isA4);
-    document.getElementById('printModalTitle').textContent = isA4 ? 'Print invoice' : '80mm receipt';
+    document.getElementById('printModalTitle').textContent = isA4
+      ? window.GfpI18n.tLabel('Print invoice', 'طباعة الفاتورة')
+      : window.GfpI18n.tLabel('80mm receipt', 'إيصال 80مم');
     document.getElementById('printModalHint').textContent = isA4
-      ? 'A4 invoice with this gym’s name, logo, and brand color.'
-      : 'Compact receipt for the 80mm printer. Same invoice number and totals.';
+      ? window.GfpI18n.tLabel('A4 invoice with this gym’s name, logo, and brand color.', 'فاتورة A4 باسم النادي وشعاره ولونه المميز.')
+      : window.GfpI18n.tLabel('Compact receipt for the 80mm printer. Same invoice number and totals.', 'إيصال مختصر لطابعة الـ80مم. بنفس رقم الفاتورة والإجماليات.');
     document.getElementById('receiptPaymentId').value = '';
     document.getElementById('receiptFrame').srcdoc =
-      '<p style="padding:16px;font-family:sans-serif;color:#666">Loading…</p>';
+      '<p style="padding:16px;font-family:sans-serif;color:#666">' +
+      window.GfpI18n.tLabel('Loading…', 'جاري التحميل…') +
+      '</p>';
     document.getElementById('printModal').classList.add('show');
     await loadReceiptHtml();
   }
@@ -924,7 +999,7 @@
     if (paymentId) path += '&paymentId=' + encodeURIComponent(paymentId);
     const res = await api('GET', path, undefined, { acceptHtml: true });
     if (!res.ok) {
-      let msg = 'Failed to load invoice (' + res.status + ')';
+      let msg = window.GfpI18n.tLabel('Failed to load invoice (' + res.status + ')', 'فشل تحميل الفاتورة (' + res.status + ')');
       try {
         const parsed = JSON.parse(res.text || '{}');
         msg = problemMessage(parsed, res.status);
@@ -946,7 +1021,7 @@
       frame.contentWindow.focus();
       frame.contentWindow.print();
     } catch (e) {
-      toast('Print failed — wait for the invoice to load.', 'err');
+      toast(window.GfpI18n.tLabel('Print failed — wait for the invoice to load.', 'فشلت الطباعة — انتظر تحميل الفاتورة.'), 'err');
     }
   };
 
@@ -988,7 +1063,7 @@
       loadList().catch((err) => {
         document.getElementById('tbody').innerHTML =
           '<tr><td colspan="7" class="muted">' +
-          esc(err && err.message ? err.message : 'Failed to load') +
+          esc(err && err.message ? err.message : window.GfpI18n.tLabel('Failed to load', 'فشل التحميل')) +
           '</td></tr>';
       });
     };
@@ -1005,7 +1080,7 @@
     .catch((err) => {
     document.getElementById('tbody').innerHTML =
       '<tr><td colspan="7" class="muted">' +
-      esc(err && err.message ? err.message : 'Failed to load') +
+      esc(err && err.message ? err.message : window.GfpI18n.tLabel('Failed to load', 'فشل التحميل')) +
       '</td></tr>';
   });
 })();

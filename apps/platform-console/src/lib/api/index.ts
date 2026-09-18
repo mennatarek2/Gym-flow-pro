@@ -42,6 +42,46 @@ export { fetchPlatformUsers,
   changePlatformUserRole,
 } from './platform-users-api'
 export {
+  fetchLocalLicenses,
+  fetchLocalLicenseDetail,
+  issueLocalLicense,
+  suspendLocalLicense,
+  revokeLocalLicense,
+  reactivateLocalLicense,
+  authorizeLocalLicenseTransfer,
+} from './local-licenses-api'
+export {
+  fetchCustomers,
+  fetchCustomer,
+  fetchCustomerProfile,
+  createCustomer,
+  updateCustomer,
+  initiateOwnerPasswordReset,
+  fetchContracts,
+  fetchContract,
+  createContract,
+  changeContractStatus,
+  fetchCustomerPayments,
+  recordCustomerPayment,
+  fetchCatalogProducts,
+  createCatalogProduct,
+  updateCatalogProduct,
+  fetchSupportTickets,
+  fetchSupportTicket,
+  createSupportTicket,
+  updateSupportTicket,
+  fetchDeskFeedback,
+  fetchDeskFeedbackItem,
+  updateDeskFeedback,
+  fetchLocalSalesContractTerms,
+  updateLocalSalesContractTerms,
+  fetchIssuedSalesContracts,
+  previewSalesContract,
+  issueSalesContract,
+  fetchIssuedSalesContractHtml,
+  reprintSalesContract,
+} from './customers-api'
+export {
   fetchCommercialPlans,
   fetchCommercialPlan,
   fetchPlanHistory,
@@ -58,7 +98,16 @@ export {
   disableTenantStaff,
   reactivateTenantStaff,
   changeTenantStaffRole,
+  resetTenantStaffPassword,
 } from './tenant-staff-api'
+export {
+  fetchLocalOwnerRecoveries,
+  fetchLocalOwnerRecovery,
+  importLocalOwnerRecoveryChallenge,
+  approveLocalOwnerRecovery,
+  rejectLocalOwnerRecovery,
+  revokeLocalOwnerRecovery,
+} from './local-owner-recovery-api'
 export { getAccessToken, setAccessToken, clearAccessToken } from './token'
 export { ApiClientError, parsePlatformError } from './errors'
 export * from './types'

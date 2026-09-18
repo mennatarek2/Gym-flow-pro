@@ -5,6 +5,7 @@ import {
   type CreateTenantStaffRequest,
   type DisableTenantStaffRequest,
   type ReactivateTenantStaffRequest,
+  type ResetTenantStaffPasswordRequest,
   type TenantStaffDto,
 } from './types'
 
@@ -47,6 +48,16 @@ export function changeTenantStaffRole(tenantId: string, staffId: string, body: C
   return apiRequest<TenantStaffDto>({
     method: 'PUT',
     url: TENANT_STAFF_ENDPOINTS.changeRole(tenantId, staffId),
+    data: body,
+  })
+}
+
+/** PlatformOpsOrAbove. Sets a new password for any tenant staff account including Owner.
+ * The password is never returned. Gym-side staff-reset stays Owner-protected. */
+export function resetTenantStaffPassword(tenantId: string, staffId: string, body: ResetTenantStaffPasswordRequest) {
+  return apiRequest<TenantStaffDto>({
+    method: 'POST',
+    url: TENANT_STAFF_ENDPOINTS.resetPassword(tenantId, staffId),
     data: body,
   })
 }

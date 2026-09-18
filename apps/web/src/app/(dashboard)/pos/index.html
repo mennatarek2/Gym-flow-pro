@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Sale</title>
 <meta name="description" content="Front desk sale for retail products — cart, payment, and receipt.">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
 <link rel="stylesheet" href="pos.css?v=theme2">
 <link rel="stylesheet" href="/shared/refund-action.css?v=3">
 <script>
@@ -217,6 +217,7 @@ if(/^Owner$/i.test(user.role||'')) document.getElementById('navStaff').style.dis
 document.getElementById('btnLogout').onclick=function(){['gfp_access_token','gfp_refresh_token','gfp_user','gfp_expires_at'].forEach(k=>{localStorage.removeItem(k);sessionStorage.removeItem(k);});location.href='/auth/login/';};
 (async()=>{const r=await fetch(API_BASE+'/settings',{headers:getH()});if(r.ok){const s=await r.json();document.getElementById('gymName').textContent=s.gymName||'';document.getElementById('gymNameAr').textContent=s.gymNameAr||'';}})();
 </script>
+<script src="/shared/gfp-deployment.js"></script>
 <script src="/shared/refund-action.js?v=2"></script>
 <script src="pos-app.js?v=desk21"></script>
 </body>

@@ -132,7 +132,7 @@ async function apiPost(path, body) {
 /** GET text/html (access card). */
 async function apiHtml(path) {
   const Gfp = window.GfpApi;
-  const base = (window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').replace(/\/$/, '');
+  const base = (window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api').replace(/\/$/, '');
   const token =
     localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');
   const headers = {};
@@ -234,5 +234,15 @@ function canFreezeMemberships() {
 }
 
 /** Assign payment methods (no vodafone_cash). Renew adds vodafone_cash. */
-const ASSIGN_PAY_METHODS = ['cash', 'paymob', 'fawry'];
-const RENEW_PAY_METHODS = ['cash', 'paymob', 'fawry', 'vodafone_cash'];
+let ASSIGN_PAY_METHODS = ['cash', 'paymob', 'fawry'];
+let RENEW_PAY_METHODS = ['cash', 'paymob', 'fawry', 'vodafone_cash'];
+// Local Edition has no online payment gateways — drop them from both lists (renew/assign modals
+// in memberships-detail.js read these at render time, well after this resolves).
+if (window.GfpDeployment) {
+  window.GfpDeployment.getEdition().then(function (edition) {
+    if (edition === 'Local') {
+      ASSIGN_PAY_METHODS = window.GfpDeployment.filterOnlineGatewayCodes(ASSIGN_PAY_METHODS);
+      RENEW_PAY_METHODS = window.GfpDeployment.filterOnlineGatewayCodes(RENEW_PAY_METHODS);
+    }
+  });
+}

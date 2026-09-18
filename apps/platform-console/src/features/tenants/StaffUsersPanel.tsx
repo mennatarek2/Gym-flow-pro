@@ -7,6 +7,7 @@ import {
   disableTenantStaff,
   fetchTenantStaff,
   reactivateTenantStaff,
+  resetTenantStaffPassword,
 } from '@/lib/api'
 import { ApiClientError } from '@/lib/api/errors'
 import { TENANT_STAFF_ROLES, type TenantStaffDto } from '@/lib/api/types'
@@ -40,7 +41,7 @@ function isOwnerRole(role: string | null | undefined): boolean {
   return (role ?? '').toLowerCase() === 'owner'
 }
 
-type ModalKind = 'create' | 'disable' | 'reactivate' | 'role' | null
+type ModalKind = 'create' | 'disable' | 'reactivate' | 'role' | 'reset' | null
 
 function errorMessage(err: unknown): string {
   if (err instanceof ApiClientError) {
@@ -122,6 +123,9 @@ export function StaffUsersPanel({ tenantId, tenantName }: StaffUsersPanelProps) 
     if (kind === 'role' && row) {
       setRoleValue(TENANT_STAFF_ROLES.includes(row.role as (typeof TENANT_STAFF_ROLES)[number]) ? row.role : TENANT_STAFF_ROLES[0])
     }
+    if (kind === 'reset') {
+      setNewPassword('')
+    }
   }
 
   function closeModal() {
@@ -193,8 +197,28 @@ export function StaffUsersPanel({ tenantId, tenantName }: StaffUsersPanelProps) 
     onError: (err) => setFormError(errorMessage(err)),
   })
 
+  const resetMutation = useMutation({
+    mutationFn: () => {
+      if (!target) return Promise.reject(new Error('No staff member selected.'))
+      if (newPassword.length < 10) {
+        return Promise.reject(new Error('Password must be at least 10 characters.'))
+      }
+      return resetTenantStaffPassword(tenantId, target.id, { newPassword, reason: reason.trim() })
+    },
+    onSuccess: async () => {
+      showToast(`${target?.fullName} password updated.`, 'success')
+      await invalidate()
+      closeModal()
+    },
+    onError: (err) => setFormError(errorMessage(err)),
+  })
+
   const busy =
-    createMutation.isPending || disableMutation.isPending || reactivateMutation.isPending || roleMutation.isPending
+    createMutation.isPending ||
+    disableMutation.isPending ||
+    reactivateMutation.isPending ||
+    roleMutation.isPending ||
+    resetMutation.isPending
 
   const reasonOk = validateReason(reason) === null
   const runWithReason = (fn: () => void) => {
@@ -298,38 +322,47 @@ export function StaffUsersPanel({ tenantId, tenantName }: StaffUsersPanelProps) 
                   <td className="px-3 py-2 text-gray-700">{formatCairoDateTime(u.lastLoginAt)}</td>
                   {canManage ? (
                     <td className="px-3 py-2">
-                      {owner ? (
-                        <span className="text-xs text-gray-500" title="The owner account is protected — role changes, disabling, and ownership transfer are not available here.">
-                          Protected
-                        </span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openModal('role', u)}
-                            className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200"
-                          >
-                            Change Role
-                          </button>
-                          {u.isActive ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openModal('reset', u)}
+                          className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200"
+                        >
+                          Reset password
+                        </button>
+                        {owner ? (
+                          <span className="self-center text-xs text-gray-500" title="The owner account is protected — role changes, disabling, and ownership transfer are not available here.">
+                            Protected
+                          </span>
+                        ) : (
+                          <>
                             <button
                               type="button"
-                              onClick={() => openModal('disable', u)}
-                              className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-800 hover:bg-red-100"
-                            >
-                              Disable
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => openModal('reactivate', u)}
+                              onClick={() => openModal('role', u)}
                               className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200"
                             >
-                              Reactivate
+                              Change Role
                             </button>
-                          )}
-                        </div>
-                      )}
+                            {u.isActive ? (
+                              <button
+                                type="button"
+                                onClick={() => openModal('disable', u)}
+                                className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-800 hover:bg-red-100"
+                              >
+                                Disable
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openModal('reactivate', u)}
+                                className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200"
+                              >
+                                Reactivate
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </td>
                   ) : null}
                 </tr>
@@ -474,6 +507,38 @@ export function StaffUsersPanel({ tenantId, tenantName }: StaffUsersPanelProps) 
           </select>
         </label>
         <ReasonField id="role-reason" value={reason} onChange={setReason} disabled={busy} />
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={modal === 'reset'}
+        title="Reset password"
+        description={
+          target ? (
+            <>
+              Sets a new Cloud login password for <strong>{target.fullName}</strong> ({target.email}) on {tenantName}.
+              Owner is allowed here. The password is never stored or shown again.
+            </>
+          ) : null
+        }
+        confirmLabel="Reset password"
+        busy={busy}
+        error={formError}
+        confirmDisabled={!reasonOk || newPassword.length < 10}
+        onClose={closeModal}
+        onConfirm={() => runWithReason(() => resetMutation.mutate())}
+      >
+        <label className="mt-2 block text-sm">
+          <span className="text-gray-500">New password (min 10 characters)</span>
+          <input
+            type="password"
+            value={newPassword}
+            disabled={busy}
+            autoComplete="new-password"
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="mt-1 w-full rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2"
+          />
+        </label>
+        <ReasonField id="reset-reason" value={reason} onChange={setReason} disabled={busy} />
       </ConfirmDialog>
     </section>
   )

@@ -15,12 +15,14 @@ interface UiState {
   locale: Locale
   dir: 'ltr' | 'rtl'
   sidebarCollapsed: boolean
+  mobileNavOpen: boolean
   banner: string | null
   toast: ToastMessage | null
   setLocale: (locale: Locale) => void
   toggleLocale: () => void
   applyDocumentDirection: () => void
   toggleSidebar: () => void
+  setMobileNavOpen: (open: boolean) => void
   setBanner: (message: string | null) => void
   showToast: (message: string, tone?: ToastTone, durationMs?: number) => void
   /** Toast from catalog key */
@@ -48,6 +50,7 @@ export const useUiStore = create<UiState>()(
       locale: 'en',
       dir: 'ltr',
       sidebarCollapsed: false,
+      mobileNavOpen: false,
       banner: null,
       toast: null,
       setLocale: (locale) => {
@@ -63,6 +66,7 @@ export const useUiStore = create<UiState>()(
         applyDom(get().locale)
       },
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      setMobileNavOpen: (mobileNavOpen) => set({ mobileNavOpen }),
       setBanner: (banner) => set({ banner }),
       showToast: (message, tone = 'info', durationMs = 4000) =>
         set({ toast: { message, tone, durationMs } }),

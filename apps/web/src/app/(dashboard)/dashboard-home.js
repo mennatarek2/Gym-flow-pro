@@ -171,7 +171,9 @@
       from = new Date(from.getFullYear() - 1, 0, 1);
       to = new Date(from.getFullYear(), 11, 31);
     } else {
+      // Full calendar month (matches API) so Closed payroll can appear.
       from = new Date(from.getFullYear(), from.getMonth(), 1);
+      to = new Date(from.getFullYear(), from.getMonth() + 1, 0);
     }
     return { from: fmtDateOnly(from), to: fmtDateOnly(to) };
   }
@@ -324,7 +326,15 @@
       r.status === 401 &&
       !(r.headers && String(r.headers.get('Token-Expired') || '').toLowerCase() === 'true')
     ) {
-      global.location.href = '/auth/login/';
+      // Must clear the stored session before leaving, not just redirect - login/index.html's own
+      // "already logged in" check only looks at whether gfp_access_token/gfp_expires_at are still
+      // present and not yet past their self-reported expiry (it never re-validates against the
+      // server). A raw location.href here leaves both in place, so login immediately bounces back
+      // to /dashboard/, which 401s again and bounces back to login again - an infinite loop that
+      // makes every click/page load in the app look like it "doesn't open". GfpApi.logout() clears
+      // storage first, exactly like the sidebar logout button already does two functions below.
+      if (global.GfpApi.logout) global.GfpApi.logout();
+      else global.location.href = '/auth/login/';
       return { ok: false, status: 401, data: null };
     }
     return r;
@@ -345,7 +355,9 @@
       r.status === 401 &&
       !(r.headers && String(r.headers.get('Token-Expired') || '').toLowerCase() === 'true')
     ) {
-      global.location.href = '/auth/login/';
+      // See apiGet's comment above - must clear the session, not just redirect.
+      if (global.GfpApi.logout) global.GfpApi.logout();
+      else global.location.href = '/auth/login/';
     }
     return r;
   }
@@ -355,7 +367,7 @@
     if (chartJsLoading) return chartJsLoading;
     chartJsLoading = new Promise(function (resolve) {
       var s = global.document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
+      s.src = '/shared/vendor/chartjs/chart.umd.min.js';
       s.async = true;
       s.onload = function () {
         resolve(!!global.Chart);
@@ -861,9 +873,19 @@
       : running === 0
         ? t('None posted', 'لا يوجد مسجّل')
         : money(running);
-    var payrollLine = opts.payrollAvailable && opts.payroll != null
-      ? money(opts.payroll)
-      : t('Unavailable', 'غير متاح');
+    var payrollLine;
+    if (opts.payrollAvailable && opts.payroll != null) {
+      payrollLine = money(opts.payroll);
+    } else if (opts.payrollCoverageStatus === 'PAYROLL_PERIOD_NOT_FULLY_COVERED') {
+      payrollLine = t(
+        'Select full month',
+        'اختر الشهر كاملاً'
+      );
+    } else if (opts.payrollCoverageStatus === 'NO_PAYROLL_PERIOD') {
+      payrollLine = t('No closed period', 'لا توجد فترة مغلقة');
+    } else {
+      payrollLine = t('Unavailable', 'غير متاح');
+    }
     var totalDisplay = opts.total != null ? money(opts.total) : '—';
     var addLink = running === 0 && opts.canManage
       ? '<a class="dash-link" href="/dashboard/reports/?tab=expenses">' +
@@ -933,8 +955,8 @@
         items.push({
           title: t('Payroll unavailable', 'الرواتب غير متاحة'),
           body: t(
-            'Net Profit includes salaries only when the selected range fully covers an approved/closed payroll month. Partial day or month-to-date ranges exclude payroll (not prorated).',
-            'صافي الربح يشمل الرواتب فقط عندما يغطي النطاق المحدد شهر رواتب معتمد/مغلق بالكامل. الفترات الجزئية (يوم أو منذ بداية الشهر) تستبعد الرواتب (بدون تقسيم يومي).'
+            'Net Profit includes salaries when the selected range fully covers an approved/closed payroll month. Use the Month filter (full calendar month). Day or week views exclude payroll (not prorated).',
+            'صافي الربح يشمل الرواتب عندما يغطي النطاق المحدد شهر رواتب معتمد/مغلق بالكامل. استخدم فلتر الشهر (شهر تقويمي كامل). عروض اليوم أو الأسبوع تستبعد الرواتب (بدون تقسيم يومي).'
           ),
           href: '/dashboard/reports/?tab=profitability',
           cta: t('Review Payroll', 'مراجعة الرواتب')
@@ -1172,6 +1194,9 @@
         runningCosts: runningCosts,
         payroll: payrollExpense,
         payrollAvailable: payrollAvailable,
+        payrollCoverageStatus: dashboardFinancial
+          ? dashboardFinancial.payrollCoverageStatus
+          : null,
         total: costToRunTotal,
         periodLabel: periodLabel,
         canManage: canManageExpenses
@@ -1307,8 +1332,8 @@
         [
           t('Payroll warning', 'تحذير الرواتب'),
           t(
-            'Salaries enter Net Profit only when the selected range fully covers the payroll calendar month. Day or month-to-date views exclude payroll (never prorated).',
-            'تدخل الرواتب صافي الربح فقط عندما يغطي النطاق المحدد شهر الرواتب كاملاً. عروض اليوم أو منذ بداية الشهر تستبعد الرواتب (بدون تقسيم يومي).'
+            'Salaries enter Net Profit when Month (full calendar month) or another range fully covers an approved/closed payroll period. Day or week views exclude payroll (never prorated).',
+            'تدخل الرواتب صافي الربح عندما يغطي «الشهر» (شهر تقويمي كامل) أو نطاق آخر فترة رواتب معتمدة/مغلقة بالكامل. عروض اليوم أو الأسبوع تستبعد الرواتب (بدون تقسيم يومي).'
           )
         ],
         [
@@ -2743,7 +2768,7 @@
         return;
       }
       var labels = {
-        renewals_due: t('Memberships expiring within 7 days', 'عضويات تنتهي خلال 7 أيام'),
+        renewals_due: t('Renewals to follow up', 'تجديدات للمتابعة'),
         outstanding_payments: t('Outstanding payments', 'مدفوعات مستحقة'),
         inactive_members: t('Inactive members', 'أعضاء غير نشطين'),
         trials_ending_soon: t('Trials ending soon', 'تجارب تنتهي قريباً'),
@@ -2756,16 +2781,19 @@
         trials_ending_soon: 'ti-hourglass',
         classes_near_full: 'ti-users-group'
       };
+      // Deep-link to Call Sheet with the matching reason + date=open so the queue shows every
+      // open follow-up for that reason (default "today" hid items scheduled for later).
+      var CALL_SHEET_REASON = { renewals_due: 'renewal', outstanding_payments: 'payment', inactive_members: 'inactive' };
       el.innerHTML = '<div class="dash-attention-grid">' + liveItems.map(function (item) {
         var key = item.key || '';
         var amount = item.amount == null ? '' : ' · ' + money(item.amount);
-        var target = key === 'outstanding_payments' || key === 'inactive_members'
-          ? 'members/'
+        var target = CALL_SHEET_REASON[key]
+          ? 'call-sheet/?reason=' + CALL_SHEET_REASON[key] + '&date=open'
           : key === 'classes_near_full'
             ? 'classes/'
             : key === 'trials_ending_soon'
-              ? 'trials/'
-              : 'call-sheet/';
+              ? 'call-sheet/?reason=trial&date=open'
+              : 'call-sheet/?date=open';
         return '<a class="dash-attention-item" href="/dashboard/' +
           target +
           '"><i class="ti ' + esc(icons[key] || 'ti-alert-circle') + '"></i><span>' +
@@ -2779,9 +2807,9 @@
     if (canSales() && Array.isArray(state.expiring) && state.expiring.length) {
       items.push({
         icon: 'ti-calendar-event',
-        label: t('Memberships expiring within 7 days', 'عضويات تنتهي خلال 7 أيام'),
+        label: t('Renewals to follow up', 'تجديدات للمتابعة'),
         value: state.expiring.length,
-        href: '/dashboard/call-sheet/'
+        href: '/dashboard/call-sheet/?reason=renewal&date=open'
       });
     }
     if (canFinance() && state.debtorsSummary
@@ -2790,7 +2818,7 @@
         icon: 'ti-receipt',
         label: t('Outstanding payments', 'مدفوعات مستحقة'),
         value: state.debtorsSummary.debtorCount,
-        href: '/dashboard/members/'
+        href: '/dashboard/call-sheet/?reason=payment&date=open'
       });
     }
     if (canMembers() && state.membersStatus && !state.membersStatus.__err && Number(state.membersStatus.expired) > 0) {
@@ -2798,7 +2826,7 @@
         icon: 'ti-user-off',
         label: t('Expired memberships', 'عضويات منتهية'),
         value: state.membersStatus.expired,
-        href: '/dashboard/members/'
+        href: '/dashboard/members/?status=expired'
       });
     }
     if (canMembers() && Array.isArray(state.sessionsToday)) {
@@ -3035,7 +3063,11 @@
   function paintUserChrome() {
     var user = (global.GfpApi && global.GfpApi.tokens.getUser()) || null;
     if (!user) {
-      global.location.href = '/auth/login/';
+      // Clear via GfpApi.logout() (not a raw redirect) in case gfp_access_token/gfp_expires_at
+      // are still present even though gfp_user is missing - login's own session check only looks
+      // at the former two, so leaving them behind here would bounce straight back to /dashboard/.
+      if (global.GfpApi && global.GfpApi.logout) global.GfpApi.logout();
+      else global.location.href = '/auth/login/';
       return false;
     }
     var av = global.document.getElementById('userAvatar');

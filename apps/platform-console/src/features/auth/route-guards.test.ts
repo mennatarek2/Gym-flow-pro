@@ -10,7 +10,7 @@ function guardRedirect(path: string): string {
   const { isAuthenticated, mfaPhase } = useAuthStore.getState()
   if (mfaPhase === 'setup') return '/mfa-setup'
   if (mfaPhase === 'challenge') return '/mfa-challenge'
-  if (!isAuthenticated && path.startsWith('/tenants')) return '/login'
+  if (!isAuthenticated && (path.startsWith('/tenants') || path.startsWith('/gyms') || path.startsWith('/overview') || path.startsWith('/oc'))) return '/login'
   return path
 }
 
@@ -19,8 +19,8 @@ describe('route protection', () => {
     useAuthStore.getState().logout()
   })
 
-  it('unauthenticated /tenants redirects to login', () => {
-    expect(guardRedirect('/tenants')).toBe('/login')
+  it('unauthenticated /oc redirects to login', () => {
+    expect(guardRedirect('/oc')).toBe('/login')
   })
 
   it('mfa setup incomplete cannot reach tenants', () => {
@@ -35,15 +35,15 @@ describe('route protection', () => {
       },
       { email: 'a@b.c', password: 'p' },
     )
-    expect(guardRedirect('/tenants')).toBe('/mfa-setup')
+    expect(guardRedirect('/gyms')).toBe('/mfa-setup')
   })
 
   it('mfa challenge incomplete cannot reach tenants', () => {
     useAuthStore.getState().beginMfaChallenge({ email: 'a@b.c', password: 'p' })
-    expect(guardRedirect('/tenants')).toBe('/mfa-challenge')
+    expect(guardRedirect('/gyms')).toBe('/mfa-challenge')
   })
 
-  it('authenticated reaches tenants', () => {
+  it('authenticated reaches gyms and oc', () => {
     useAuthStore.getState().applySuccessfulAuth({
       success: true,
       expiresInSeconds: 600,
@@ -57,6 +57,7 @@ describe('route protection', () => {
         mfaEnabled: true,
       },
     })
-    expect(guardRedirect('/tenants')).toBe('/tenants')
+    expect(guardRedirect('/gyms')).toBe('/gyms')
+    expect(guardRedirect('/oc')).toBe('/oc')
   })
 })

@@ -62,8 +62,8 @@ export const useImpersonationSessionStore = create<ImpersonationUiState>((set, g
 
 /** Build tenant-admin deep link with short-lived token in query (never stored in platform console). */
 export function buildImpersonationAdminUrl(accessToken: string): string {
-  const base = (import.meta.env.VITE_TENANT_ADMIN_BASE_URL as string | undefined)?.replace(/\/$/, '')
-    || 'http://localhost:5173'
+  const configured = (import.meta.env.VITE_TENANT_ADMIN_BASE_URL as string | undefined)?.trim()
+  const base = (configured || 'http://localhost:5173/app').replace(/\/$/, '')
   const url = new URL(base.includes('://') ? base : `http://${base}`)
   url.searchParams.set('impersonation_token', accessToken)
   return url.toString()

@@ -189,7 +189,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .ent-section-hint i{font-size:13px}
 .ent-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .ent-card{border:1px solid var(--ls3);border-radius:var(--rmd);background:var(--ls1);padding:12px;transition:border-color var(--tf),box-shadow var(--tf),background var(--tf)}
-.ent-card.is-on{border-color:rgba(122,204,0,.55);background:#FBFDF8;box-shadow:0 1px 4px rgba(94,175,0,.08)}
+.ent-card.is-on{border-color:rgba(122,204,0,.55);background:var(--l100);box-shadow:0 1px 4px rgba(94,175,0,.08)}
 .ent-card-toggle{display:flex;align-items:flex-start;gap:9px;cursor:pointer}
 .ent-card-toggle input{position:absolute;opacity:0;pointer-events:none}
 .ent-check{width:19px;height:19px;border:2px solid var(--ls4);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:transparent;background:var(--ls1);transition:all var(--tf)}

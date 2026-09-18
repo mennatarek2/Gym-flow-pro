@@ -1,15 +1,18 @@
 /**
  * HyMotion web — shared API origin.
- * Production (same host as API): uses window.location.origin + '/api'
+ * Default (any host, including localhost): same-origin, window.location.origin + '/api' - correct
+ * whenever the .NET backend serves the dashboard itself (SaaS production, HyMotion Local Edition,
+ * and `dotnet run` browsed directly), since the API always lives at that same origin's /api.
  * Override: <meta name="gfp-api-base" content="https://your-domain.com/api">
  * Dev persist: localStorage.gfp_api_base
- * Dev default: local HTTPS API (https://localhost:5001/api).
- * Local API must be started with: dotnet run --launch-profile https
- * See docs/getting-started/STAFF_WEB_LOCAL_HTTPS.md (W-04).
- * Remote environments must opt in through the meta tag or gfp_api_base storage key.
+ * The Node dev server (apps/web/server.js, default localhost:3000) serves the frontend from a
+ * DIFFERENT origin than the .NET API, so it always injects the meta tag above itself - see its
+ * CONFIGURED_API_BASE. Do not reintroduce a hardcoded "localhost means <some other port>" guess
+ * here: HyMotion Local Edition also runs on localhost, on its own port (7140), and a hardcoded
+ * guess broke it (Network error on every API call) since nothing else overrides this default.
  */
 (function (global) {
-  var LOCAL_API = 'https://localhost:5001/api';
+  var LOCAL_API = 'http://localhost:5000/api'; // last-resort only, no window.location at all (non-browser context)
 
   function normalizeApiBase(raw) {
     if (!raw) return '';
@@ -31,10 +34,6 @@
       var stored = normalizeApiBase(localStorage.getItem('gfp_api_base') || sessionStorage.getItem('gfp_api_base'));
       if (stored) return stored;
     } catch (e) { /* ignore */ }
-    var host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return LOCAL_API;
-    }
     return window.location.origin + '/api';
   }
 

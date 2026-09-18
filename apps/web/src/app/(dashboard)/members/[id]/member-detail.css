@@ -272,6 +272,12 @@ html[data-theme="dark"] .tl-badge.frozen{color:var(--frztxt)}
 .btn-confirm:hover{background:var(--l400);box-shadow:var(--shg)}
 .btn-confirm.danger{background:var(--dng500);color:#fff}
 .btn-confirm.danger:hover{background:#dc2626}
+.btn-confirm:disabled,.btn-confirm.danger:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.btn-confirm.danger:disabled:hover{background:var(--dng500)}
+.confirm-type-box{margin-bottom:4px}
+.confirm-type-box .form-label{text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--lts);margin-bottom:8px}
+.confirm-type-box .form-label strong{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--dng500);font-weight:700}
+.confirm-type-box .form-input{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.02em}
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:24px;right:24px;z-index:300;padding:12px 20px;border-radius:var(--rmd);font-family:var(--fd);font-size:13px;font-weight:600;color:#fff;box-shadow:var(--sh4);transform:translateY(80px);opacity:0;transition:all var(--tb);display:flex;align-items:center;gap:8px}
@@ -299,3 +305,12 @@ html[data-theme="dark"] .tl-badge.frozen{color:var(--frztxt)}
 .credit-balance-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ltt);font-weight:600}
 .credit-balance-val{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--c900)}
 .credit-hint{font-size:12px;color:var(--ltt);margin:0 0 14px}
+
+/* Access card lifecycle (Member 360) */
+.access-card-status{margin:8px 0 4px}
+.access-card-status-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--suc100);color:var(--suctxt)}
+.access-card-status-pill.warn{background:var(--wrn100);color:var(--wrn700)}
+.access-card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.access-card-actions .btn-ms.danger{border-color:var(--dng500);color:var(--dng500)}
+.access-card-scan-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.access-card-scan-input{flex:1;min-width:140px;padding:8px 12px;border:1px solid var(--ls3);border-radius:var(--rmd);font-family:var(--fd);font-size:13px}

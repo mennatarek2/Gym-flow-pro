@@ -519,5 +519,25 @@
     }
   });
 
+  // Deep-link support: /dashboard/call-sheet/?reason=inactive&date=open — dashboard attention
+  // cards land on the matching open queue (default "today" hid later-scheduled rows).
+  (function applyInitialFiltersFromUrl() {
+    var qp = new URLSearchParams(window.location.search);
+    var reason = qp.get('reason');
+    var status = qp.get('status');
+    var priority = qp.get('priority');
+    var date = qp.get('date');
+    if (reason) { filters.reason = reason; document.getElementById('fltReason').value = reason; }
+    if (status) { filters.status = status; document.getElementById('fltStatus').value = status; }
+    if (priority) { filters.priority = priority; document.getElementById('fltPriority').value = priority; }
+    if (date) {
+      dateChip = date;
+      document.querySelectorAll('#dateChips .chip').forEach(function (c) {
+        c.classList.toggle('act', c.getAttribute('data-date') === dateChip);
+      });
+    }
+    if (reason || status || priority) syncFilterCount();
+  })();
+
   load();
 })();

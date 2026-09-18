@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Departments</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="departments.css?v=1">
+<script src="../hr-ops-embed.js?v=4"></script>
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
+<link rel="stylesheet" href="departments.css?v=deptdel1">
 </head>
 <body>
 <div class="app">
@@ -68,7 +69,24 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="deptDeleteModal" hidden>
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr">
+      <h2 data-en="Delete department" data-ar="حذف القسم">Delete department</h2>
+      <button type="button" class="modal-close" id="btnDeptDelCancelX"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="deptDelMessage" style="font-size:14px;font-weight:600;margin:0 0 8px;line-height:1.45"></p>
+      <p style="font-size:12px;color:var(--ltt);margin:0 0 4px;line-height:1.45" data-en="This permanently deletes the department. Employees and positions keep working with no department linked." data-ar="هيتشال القسم نهائي. الموظفين والمناصب هتفضل شغالة من غير قسم.">This permanently deletes the department. Employees and positions keep working with no department linked.</p>
+      <div class="modal-actions" style="padding-left:0;padding-right:0;border:0">
+        <button type="button" class="btn-cancel" id="btnDeptDelCancel" data-en="Cancel" data-ar="إلغاء">Cancel</button>
+        <button type="button" class="btn-danger" id="btnDeptDelConfirm" data-en="Delete" data-ar="حذف">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
-<script src="departments-app.js?v=1"></script>
+<script src="departments-app.js?v=deptdel2"></script>
 </body>
 </html>

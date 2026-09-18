@@ -157,12 +157,28 @@
 
   // ── Modal helpers ──
   function openModal(id){document.getElementById(id).classList.add('open');}
-  function closeModal(id){document.getElementById(id).classList.remove('open');}
+  function closeModal(id){
+    document.getElementById(id).classList.remove('open');
+    if(id==='modalDeactivate'){
+      const inp=document.getElementById('deactivateConfirmInput');
+      const btn=document.getElementById('btnConfirmDeactivate');
+      if(inp) inp.value='';
+      if(btn) btn.disabled=true;
+    }
+  }
   document.querySelectorAll('.modal-overlay').forEach(o=>{
-    o.addEventListener('click',function(e){if(e.target===this) this.classList.remove('open');});
+    o.addEventListener('click',function(e){
+      if(e.target!==this) return;
+      if(this.id) closeModal(this.id);
+      else this.classList.remove('open');
+    });
   });
   document.querySelectorAll('.modal-close').forEach(b=>{
-    b.addEventListener('click',function(){this.closest('.modal-overlay').classList.remove('open');});
+    b.addEventListener('click',function(){
+      const overlay=this.closest('.modal-overlay');
+      if(overlay&&overlay.id) closeModal(overlay.id);
+      else if(overlay) overlay.classList.remove('open');
+    });
   });
 
   // ── Tab switching ──
@@ -234,7 +250,7 @@
       document.getElementById('profileAv').innerHTML=`<img src="${m.profilePhotoUrl}" alt="${m.fullName||m.fullNameAr||''}">`;
     }
     document.getElementById('profileMemberNum').textContent='#'+m.memberNumber;
-    renderAccessBarcode(m.memberNumber);
+    renderAccessCardPanel(m);
     var loc = (window.GfpI18n && window.GfpI18n.getLocale) ? window.GfpI18n.getLocale() : 'en';
     var primaryName = loc === 'ar' ? (m.fullNameAr || m.fullName || '') : (m.fullName || m.fullNameAr || '');
     var secondaryName = loc === 'ar' ? (m.fullName && m.fullNameAr && m.fullName !== m.fullNameAr ? m.fullName : '') : (m.fullNameAr && m.fullNameAr !== m.fullName ? m.fullNameAr : '');
@@ -615,31 +631,33 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  Access barcode + reprint card
+  //  Access card inventory panel (Assigned AccessCard.Code, else MemberNumber)
   //  GET /api/members/{id}/access-card-html  (members.view)
-  //  Barcode value = MemberNumber (desk barcode-checkin)
+  //  POST /api/access-cards/assign|replace|{id}/lost  (members.edit)
   // ═══════════════════════════════════════════════════════════════
-  function renderAccessBarcode(memberNumber){
+  var _cardScanMode = null; // 'assign' | 'replace' | null
+
+  function renderAccessBarcode(code){
     const svg=document.getElementById('accessBarcodeSvg');
     const numEl=document.getElementById('accessBarcodeNum');
-    const code=String(memberNumber||'').trim();
-    if(numEl) numEl.textContent=code?('#'+code):'—';
+    const payload=String(code||'').trim();
+    if(numEl) numEl.textContent=payload?('#'+payload):'—';
     if(!svg) return;
     while(svg.firstChild) svg.removeChild(svg.firstChild);
-    if(!code){
+    if(!payload){
       svg.setAttribute('width','0');
       svg.setAttribute('height','0');
       return;
     }
     if(typeof JsBarcode!=='function'){
-      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x','10'); t.setAttribute('y','28');
-      t.setAttribute('font-size','12'); t.textContent=code;
-      svg.appendChild(t);
+      const tnode=document.createElementNS('http://www.w3.org/2000/svg','text');
+      tnode.setAttribute('x','10'); tnode.setAttribute('y','28');
+      tnode.setAttribute('font-size','12'); tnode.textContent=payload;
+      svg.appendChild(tnode);
       return;
     }
     try{
-      JsBarcode(svg, code, {
+      JsBarcode(svg, payload, {
         format:'CODE128',
         displayValue:false,
         margin:8,
@@ -649,9 +667,177 @@
         lineColor:'#0D0D0D'
       });
     }catch(e){
-      if(numEl) numEl.textContent=code+' (barcode unavailable)';
+      if(numEl) numEl.textContent=payload+' (barcode unavailable)';
     }
   }
+
+  function canEditCards(){
+    return !!canEdit || !!isOwner;
+  }
+
+  function renderAccessCardPanel(m){
+    const card=m && m.accessCard ? m.accessCard : null;
+    const assigned=!!(card && card.code && String(card.status||'')==='Assigned');
+    const code=assigned ? card.code : '';
+    renderAccessBarcode(code);
+
+    const statusRow=document.getElementById('accessCardStatusRow');
+    const pill=document.getElementById('accessCardStatusPill');
+    const sub=document.getElementById('accessCardSub');
+    const barcodeWrap=document.getElementById('accessBarcodeWrap');
+    const emptyEl=document.getElementById('accessCardEmpty');
+    const btnAssign=document.getElementById('btnAssignCard');
+    const btnReplace=document.getElementById('btnReplaceCard');
+    const btnLost=document.getElementById('btnMarkCardLost');
+    const btnReprint=document.getElementById('btnReprintCard2');
+    const btnReprintTop=document.getElementById('btnReprintCard');
+    const edit=canEditCards();
+
+    if(btnReprint) btnReprint.hidden=true;
+    if(btnReprintTop) btnReprintTop.hidden=true;
+
+    if(assigned){
+      if(barcodeWrap) barcodeWrap.hidden=false;
+      if(emptyEl) emptyEl.hidden=true;
+      if(statusRow) statusRow.hidden=false;
+      if(pill){
+        pill.textContent=t(card.status, card.status);
+        pill.className='access-card-status-pill';
+      }
+      if(sub){
+        sub.setAttribute('data-en','Assigned PVC card — desk scan uses this code');
+        sub.setAttribute('data-ar','كارنيه معيَّن — المسح يستخدم هذا الكود');
+        sub.textContent=t('Assigned PVC card — desk scan uses this code','كارنيه معيَّن — المسح يستخدم هذا الكود');
+      }
+      if(btnAssign) btnAssign.hidden=true;
+      if(btnReplace) btnReplace.hidden=!edit;
+      if(btnLost) btnLost.hidden=!edit;
+    }else if(card){
+      // Non-Assigned inventory state (Lost / Damaged / Blocked) — need replace
+      if(barcodeWrap) barcodeWrap.hidden=true;
+      if(emptyEl){
+        emptyEl.hidden=false;
+        emptyEl.innerHTML='<span>'+t('No active PVC card. Assign or replace from stock.','لا يوجد كارنيه نشط. عيّن أو استبدل من المخزون.')+'</span>';
+      }
+      if(statusRow) statusRow.hidden=false;
+      if(pill){
+        pill.textContent=t(card.status, card.status);
+        pill.className='access-card-status-pill warn';
+      }
+      if(sub){
+        sub.setAttribute('data-en','Previous card is not active for check-in');
+        sub.setAttribute('data-ar','الكارنيه السابق غير نشط للدخول');
+        sub.textContent=t('Previous card is not active for check-in','الكارنيه السابق غير نشط للدخول');
+      }
+      if(btnAssign) btnAssign.hidden=!edit;
+      if(btnReplace) btnReplace.hidden=!edit;
+      if(btnLost) btnLost.hidden=true;
+    }else{
+      if(barcodeWrap) barcodeWrap.hidden=true;
+      if(emptyEl){
+        emptyEl.hidden=false;
+        emptyEl.innerHTML='<span data-en="No PVC card assigned yet." data-ar="لا يوجد كارنيه معيَّن بعد.">'+
+          t('No PVC card assigned yet.','لا يوجد كارنيه معيَّن بعد.')+'</span>';
+      }
+      if(statusRow) statusRow.hidden=true;
+      if(sub){
+        sub.setAttribute('data-en','Assign a blank PVC card from stock');
+        sub.setAttribute('data-ar','عيّن كارنيه PVC من المخزون');
+        sub.textContent=t('Assign a blank PVC card from stock','عيّن كارنيه PVC من المخزون');
+      }
+      if(btnAssign){
+        btnAssign.hidden=!edit;
+        btnAssign.className='btn-ms primary';
+      }
+      if(btnReplace) btnReplace.hidden=true;
+      if(btnLost) btnLost.hidden=true;
+    }
+    hideCardScanRow();
+  }
+
+  function hideCardScanRow(){
+    _cardScanMode=null;
+    const row=document.getElementById('accessCardScanRow');
+    const input=document.getElementById('accessCardScanInput');
+    if(row) row.hidden=true;
+    if(input) input.value='';
+  }
+
+  function showCardScanRow(mode){
+    _cardScanMode=mode;
+    const row=document.getElementById('accessCardScanRow');
+    const input=document.getElementById('accessCardScanInput');
+    if(row) row.hidden=false;
+    if(input){ input.value=''; input.focus(); }
+  }
+
+  async function confirmCardScan(){
+    const input=document.getElementById('accessCardScanInput');
+    const code=String(input && input.value || '').trim();
+    if(!code){
+      toast(t('Scan an Available card','امسح كارنيه متاح'),'error');
+      return;
+    }
+    if(!memberId || !Gfp) return;
+    try{
+      var r;
+      if(_cardScanMode==='assign'){
+        r=await Gfp.post('/access-cards/assign',{ memberId:memberId, code:code });
+      }else if(_cardScanMode==='replace'){
+        r=await Gfp.post('/access-cards/replace',{ memberId:memberId, newCode:code, oldStatus:'Lost' });
+      }else{
+        return;
+      }
+      if(!r || !r.ok){
+        toast(apiErr(r)||t('Card action failed','فشل إجراء الكارنيه'),'error');
+        return;
+      }
+      toast(_cardScanMode==='replace'
+        ? t('Card replaced','تم استبدال الكارنيه')
+        : t('Card assigned','تم تعيين الكارنيه'));
+      hideCardScanRow();
+      await loadMember();
+    }catch(e){
+      toast(t('Card action failed','فشل إجراء الكارنيه'),'error');
+    }
+  }
+
+  async function markCurrentCardLost(){
+    const card=memberData && memberData.accessCard;
+    if(!card || !card.id || !Gfp) return;
+    if(!confirm(t('Mark this card as lost? It will no longer check in.','تبليغ الكارنيه مفقود؟ لن يعمل للدخول.'))) return;
+    try{
+      const r=await Gfp.post('/access-cards/'+encodeURIComponent(card.id)+'/lost',{
+        reason:'Marked lost from member 360'
+      });
+      if(!r || !r.ok){
+        toast(apiErr(r)||t('Could not mark lost','تعذر التبليغ مفقود'),'error');
+        return;
+      }
+      toast(t('Card marked lost','تم تبليغ الكارنيه مفقود'));
+      await loadMember();
+    }catch(e){
+      toast(t('Could not mark lost','تعذر التبليغ مفقود'),'error');
+    }
+  }
+
+  function wireAccessCardActions(){
+    const btnAssign=document.getElementById('btnAssignCard');
+    const btnReplace=document.getElementById('btnReplaceCard');
+    const btnLost=document.getElementById('btnMarkCardLost');
+    const btnConfirm=document.getElementById('btnConfirmCardScan');
+    const btnCancel=document.getElementById('btnCancelCardScan');
+    const input=document.getElementById('accessCardScanInput');
+    if(btnAssign) btnAssign.addEventListener('click',function(){ showCardScanRow('assign'); });
+    if(btnReplace) btnReplace.addEventListener('click',function(){ showCardScanRow('replace'); });
+    if(btnLost) btnLost.addEventListener('click',function(){ markCurrentCardLost(); });
+    if(btnConfirm) btnConfirm.addEventListener('click',confirmCardScan);
+    if(btnCancel) btnCancel.addEventListener('click',hideCardScanRow);
+    if(input) input.addEventListener('keydown',function(ev){
+      if(ev.key==='Enter'){ ev.preventDefault(); confirmCardScan(); }
+    });
+  }
+  wireAccessCardActions();
 
   function closeAccessPrint(){
     const ov=document.getElementById('accessPrintOverlay');
@@ -664,7 +850,7 @@
     if(window.GfpApi && typeof window.GfpApi.apiBase==='function'){
       return String(window.GfpApi.apiBase()).replace(/\/$/,'');
     }
-    return String(window.API_BASE || API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').replace(/\/$/,'');
+    return String(window.API_BASE || API_BASE || window.GFP_DEFAULT_API_BASE || '/api').replace(/\/$/,'');
   }
 
   async function fetchAccessCardHtml(){
@@ -1512,6 +1698,40 @@
     });
   }
 
+  // Deactivate confirm — must type exact "Delete" before confirm is enabled
+  const DEACTIVATE_CONFIRM_WORD='Delete';
+  const deactivateConfirmInput=document.getElementById('deactivateConfirmInput');
+  const btnConfirmDeactivate=document.getElementById('btnConfirmDeactivate');
+
+  function syncDeactivateConfirmBtn(){
+    if(!btnConfirmDeactivate) return;
+    const typed=(deactivateConfirmInput&&deactivateConfirmInput.value||'').trim();
+    btnConfirmDeactivate.disabled=typed!==DEACTIVATE_CONFIRM_WORD;
+  }
+
+  function openDeactivateConfirmModal(){
+    const name=(memberData&&memberData.fullName)||t('Member','العضو');
+    document.getElementById('deactivateModalTitle').textContent=t('Deactivate','إلغاء تفعيل')+' '+name+'?';
+    if(deactivateConfirmInput){
+      deactivateConfirmInput.value='';
+      deactivateConfirmInput.focus();
+    }
+    syncDeactivateConfirmBtn();
+    openModal('modalDeactivate');
+    // Focus after open so the field is usable immediately
+    setTimeout(function(){ if(deactivateConfirmInput) deactivateConfirmInput.focus(); }, 50);
+  }
+
+  if(deactivateConfirmInput){
+    deactivateConfirmInput.addEventListener('input',syncDeactivateConfirmBtn);
+    deactivateConfirmInput.addEventListener('keydown',function(e){
+      if(e.key==='Enter'&&btnConfirmDeactivate&&!btnConfirmDeactivate.disabled){
+        e.preventDefault();
+        btnConfirmDeactivate.click();
+      }
+    });
+  }
+
   // Status toggle — account IsActive only (OwnerOnly). Independent of membership plan.
   document.getElementById('statusToggle').addEventListener('change',async function(){
     if(!isOwner){
@@ -1522,8 +1742,7 @@
     const wantActive=this.checked;
     if(!wantActive){
       this.checked=true; // revert until confirm
-      document.getElementById('deactivateModalTitle').textContent=t('Deactivate','إلغاء تفعيل')+' '+((memberData&&memberData.fullName)||t('Member','العضو'))+'?';
-      openModal('modalDeactivate');
+      openDeactivateConfirmModal();
       return;
     }
     // Reactivate account — never requires assigning a new plan.
@@ -1539,25 +1758,37 @@
     }
   });
 
-  document.getElementById('btnConfirmDeactivate').addEventListener('click',async function(){
+  btnConfirmDeactivate.addEventListener('click',async function(){
     if(!isOwner){toast('Only Owners can deactivate members','error');return;}
     if(!Gfp||!memberData) return;
+    const typed=(deactivateConfirmInput&&deactivateConfirmInput.value||'').trim();
+    if(typed!==DEACTIVATE_CONFIRM_WORD){
+      toast(t('Type Delete to confirm','اكتب Delete للتأكيد'),'error');
+      syncDeactivateConfirmBtn();
+      if(deactivateConfirmInput) deactivateConfirmInput.focus();
+      return;
+    }
+    this.disabled=true;
     const r=await Gfp.del('/members/'+memberData.id);
     if(r.ok){
       closeModal('modalDeactivate');
+      if(deactivateConfirmInput) deactivateConfirmInput.value='';
+      syncDeactivateConfirmBtn();
       toast('Member account deactivated (membership unchanged)');
       loadMember();
       if(typeof window.loadMembers==='function') window.loadMembers();
       if(typeof window.loadStats==='function') window.loadStats();
-    } else toast(apiErr(r)||'Failed to deactivate','error');
+    } else {
+      toast(apiErr(r)||'Failed to deactivate','error');
+      syncDeactivateConfirmBtn();
+    }
   });
 
   document.getElementById('btnDeactivate').addEventListener('click',async function(){
     if(!isOwner){toast('Only Owners can change account status','error');return;}
     if(!memberData) return;
     if(memberData.isActive){
-      document.getElementById('deactivateModalTitle').textContent=t('Deactivate','إلغاء تفعيل')+' '+memberData.fullName+'?';
-      openModal('modalDeactivate');
+      openDeactivateConfirmModal();
       return;
     }
     if(!Gfp) return;
@@ -1665,7 +1896,7 @@
     if(wrap) wrap.style.display=covering?'block':'none';
     if(!banner||!preview) return;
     if(!covering){
-      banner.textContent='No covering membership — new plan starts today for a full duration.';
+      banner.textContent=t('No covering membership — new plan starts today for a full duration.','مفيش عضوية سارية — الخطة الجديدة تبدأ النهاردة لمدة كاملة.');
       preview.textContent='';
       return;
     }
@@ -1677,15 +1908,15 @@
     if(mode==='queue_next'){
       start=addDaysLocal(priorEnd,1);
       end=addDaysLocal(start,duration);
-      copy='Queue next plan — current stays active until it ends; new plan starts after.';
+      copy=t('Queue next plan — current stays active until it ends; new plan starts after.','حجز الخطة الجاية — الخطة الحالية تفضل شغالة لحد ما تنتهي؛ الخطة الجديدة تبدأ بعدها.');
     } else if(mode==='manual_rollover'){
       end=addDaysLocal(priorEnd,duration);
-      copy='Add remaining days onto the new plan (legacy rollover).';
+      copy=t('Add remaining days onto the new plan (legacy rollover).','إضافة الأيام المتبقية على الخطة الجديدة (ترحيل قديم).');
     } else {
-      copy='Cancel & switch — current ends today; new plan starts today.';
+      copy=t('Cancel & switch — current ends today; new plan starts today.','إلغاء والتبديل — الخطة الحالية تنتهي النهاردة؛ الخطة الجديدة تبدأ النهاردة.');
     }
     banner.textContent=copy;
-    preview.textContent='Estimated: '+fmtDate(start)+' → '+fmtDate(end)+' (server confirms).';
+    preview.innerHTML=t('Estimated: ','التقدير: ')+'<span dir="ltr">'+escHtml(fmtDate(start))+'</span> → <span dir="ltr">'+escHtml(fmtDate(end))+'</span> '+t('(server confirms).','(السيرفر يؤكد).');
 
     const cancelBtn=document.getElementById('renewTransCancel');
     const queueBtn=document.getElementById('renewTransQueue');
@@ -1708,13 +1939,13 @@
     if(!sel||!Gfp) return;
     try{
       const r=await Gfp.get('/membership-plans');
-      if(!r.ok){ sel.innerHTML='<option value="">Cannot load plans (needs plans.manage)</option>'; return; }
+      if(!r.ok){ sel.innerHTML='<option value="">'+escHtml(t('Cannot load plans (needs plans.manage)','تعذّر تحميل الباقات (يلزم plans.manage)'))+'</option>'; return; }
       renewPlansCache=(Array.isArray(r.data)?r.data:[]).filter(p=>p&&p.isActive!==false);
-      sel.innerHTML='<option value="">— Select a plan —</option>'+renewPlansCache.map(p=>
-        `<option value="${p.id}">${p.name} — EGP ${p.price||0} (${p.durationDays||0}d)</option>`
+      sel.innerHTML='<option value="" data-en="— Select a plan —" data-ar="— اختر خطة —">'+escHtml(t('— Select a plan —','— اختر خطة —'))+'</option>'+renewPlansCache.map(p=>
+        `<option value="${p.id}">${escHtml(p.name)} — EGP ${p.price||0} (${p.durationDays||0}${t('d','ي')})</option>`
       ).join('');
     }catch(e){
-      sel.innerHTML='<option value="">Failed to load plans</option>';
+      sel.innerHTML='<option value="">'+escHtml(t('Failed to load plans','فشل تحميل الباقات'))+'</option>';
     }
   }
   const renewModeSame=document.getElementById('renewModeSame');
@@ -1750,8 +1981,8 @@
     const hint=document.getElementById('renewPayHint');
     if(!pay||!hint) return;
     hint.textContent=pay.value==='cash'
-      ?'Cash activates immediately and posts to your open shift.'
-      :'Gateway: membership stays pending until webhook — refresh status after payment (no live push).';
+      ?t('Cash activates immediately and posts to your open shift.','النقد بيتفعّل فورًا وبيتسجّل على الوردية المفتوحة.')
+      :t('Gateway: membership stays pending until webhook — refresh status after payment (no live push).','بوابة الدفع: العضوية تفضل قيد الانتظار لحد التأكيد — حدّث الحالة بعد الدفع (مفيش تحديث لحظي).');
   }
   const renewPayEl=document.getElementById('renewPayment');
   if(renewPayEl) renewPayEl.addEventListener('change',updateRenewHint);
@@ -1762,7 +1993,7 @@
     btnDoRenew.addEventListener('click',async function(e){
       e.preventDefault();
       const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
-      if(!canMgr){ toast('Manager or above required','error'); return; }
+      if(!canMgr){ toast(t('Manager or above required','يلزم مدير أو أعلى'),'error'); return; }
       if(!Gfp||!memberId) return;
       const payEl=document.getElementById('renewPayment');
       const amtEl=document.getElementById('renewAmount');
@@ -1776,7 +2007,7 @@
         transitionMode: getRenewTransitionMode()
       };
       if(renewMode==='diff'&&!body.planId){
-        if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent='Select a plan'; }
+        if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent=t('Select a plan','اختر خطة'); }
         return;
       }
       btnDoRenew.disabled=true;
@@ -1784,7 +2015,7 @@
         if(payMethod==='cash'&&amountPaid>0){
           const sh=await Gfp.get('/shifts/current');
           if(!sh.ok||!sh.data||!sh.data.id){
-            if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent='Open a shift before accepting cash renewal.'; }
+            if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent=t('Open a shift before accepting cash renewal.','افتح وردية قبل قبول تجديد نقدي.'); }
             btnDoRenew.disabled=false;
             return;
           }
@@ -1793,19 +2024,52 @@
         if(r.ok){
           closeModal('modalRenew');
           const pending=r.data&&String(r.data.status||'').toLowerCase()==='pending';
-          toast(pending?'Renewed — waiting for payment. Use Refresh status.':'Renewed');
+          toast(pending?t('Renewed — waiting for payment. Use Refresh status.','تم التجديد — في انتظار الدفع. استخدم تحديث الحالة.'):t('Renewed','تم التجديد'));
           loadMember();
           loadHistory();
         } else {
-          if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent=apiErr(r)||'Renew failed'; }
-          toast(apiErr(r)||'Renew failed','error');
+          if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent=apiErr(r)||t('Renew failed','فشل التجديد'); }
+          toast(apiErr(r)||t('Renew failed','فشل التجديد'),'error');
         }
       }catch(err){
-        toast('Network error','error');
+        toast(t('Network error','خطأ في الشبكة'),'error');
       }
       btnDoRenew.disabled=false;
     });
   }
+
+  // Refresh renew chrome when opening / locale switches
+  (function wireRenewOpenLocale(){
+    const prev=window.openModal;
+    window.openModal=function(id){
+      if(typeof prev==='function') prev(id);
+      else {
+        const el=document.getElementById(id);
+        if(el) el.classList.add('open');
+      }
+      if(id==='modalRenew'){
+        updateRenewTransitionUi();
+        updateRenewHint();
+        applyLocaleBits(document.getElementById('modalRenew'));
+      }
+    };
+  })();
+
+  window.addEventListener('gfp:locale',function(){
+    updateRenewTransitionUi();
+    updateRenewHint();
+    applyLocaleBits(document.getElementById('modalRenew'));
+    if(renewMode==='diff' && renewPlansCache.length){
+      const sel=document.getElementById('renewPlanSelect');
+      const cur=sel&&sel.value;
+      if(sel){
+        sel.innerHTML='<option value="" data-en="— Select a plan —" data-ar="— اختر خطة —">'+escHtml(t('— Select a plan —','— اختر خطة —'))+'</option>'+renewPlansCache.map(p=>
+          `<option value="${p.id}">${escHtml(p.name)} — EGP ${p.price||0} (${p.durationDays||0}${t('d','ي')})</option>`
+        ).join('');
+        if(cur) sel.value=cur;
+      }
+    }
+  });
 
   // ── Init ──
   window.loadMember = loadMember;

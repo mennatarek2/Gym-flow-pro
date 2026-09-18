@@ -174,6 +174,47 @@
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
+  // Friendly labels for the raw backend before/after field names shown in the "Changes" list
+  // (buildDiffRows keys come straight from BeforeJson/AfterJson property names - camelCase C#
+  // DTO fields, not something a gym owner should have to read raw).
+  const FIELD_LABELS = {
+    role: ['Role', 'الدور'],
+    isCustomized: ['Customized', 'مخصّص'],
+    permissions: ['Permissions', 'الصلاحيات'],
+    name: ['Name', 'الاسم'],
+    nameAr: ['Name (Arabic)', 'الاسم (عربي)'],
+    firstName: ['First name', 'الاسم الأول'],
+    lastName: ['Last name', 'اسم العائلة'],
+    email: ['Email', 'البريد الإلكتروني'],
+    phoneNumber: ['Phone number', 'رقم الهاتف'],
+    status: ['Status', 'الحالة'],
+    isActive: ['Active', 'مفعّل'],
+    price: ['Price', 'السعر'],
+    quantity: ['Quantity', 'الكمية'],
+  };
+
+  function fieldLabel(key) {
+    var lastSegment = key.indexOf('.') >= 0 ? key.slice(key.lastIndexOf('.') + 1) : key;
+    var pair = FIELD_LABELS[lastSegment];
+    if (pair) return t(pair[0], pair[1]);
+    return humanizeCode(lastSegment);
+  }
+
+  // Some diff values are JSON-stringified arrays of raw permission-style dotted codes
+  // (e.g. '["shift.open","shift.close"]') - show them as a readable list instead of the raw
+  // code array so a non-technical owner can actually read what changed.
+  function formatDiffValue(val) {
+    if (val === undefined || val === null) return undefined;
+    var s = String(val);
+    if (s.charAt(0) === '[') {
+      try {
+        var arr = JSON.parse(s);
+        if (Array.isArray(arr)) return arr.map(humanizeCode).join(', ') || t('None', 'لا شيء');
+      } catch (e) { /* not valid JSON, fall through to raw string */ }
+    }
+    return s;
+  }
+
   function entityTypeLabel(type) {
     if (!type) return '';
     var pair = ENTITY_LABELS[type];
@@ -380,12 +421,16 @@
     currentDiffId = ev.id;
     const before = parseJsonField(ev.beforeJson);
     const after = parseJsonField(ev.afterJson);
-    document.getElementById('diffMeta').textContent =
+    const diffMetaEl = document.getElementById('diffMeta');
+    diffMetaEl.textContent =
       actionLabel(ev.action) +
       (ev.entityType ? ' · ' + entityTypeLabel(ev.entityType) : '') +
-      (ev.entityId ? ' · ' + ev.entityId : '') +
       ' · ' +
       dt(ev.createdAtUtc);
+    // Internal record id stays available on hover for support/debugging, not as visible page
+    // copy - a gym owner reading this page shouldn't have to look at a raw backend GUID.
+    if (ev.entityId) diffMetaEl.title = ev.entityId;
+    else diffMetaEl.removeAttribute('title');
     document.getElementById('diffBefore').textContent = before.pretty;
     document.getElementById('diffAfter').textContent = after.pretty;
 
@@ -406,12 +451,14 @@
                 (r) =>
                   '<div class="diff-row ' +
                   r.cls +
-                  '"><div class="diff-k">' +
+                  '" title="' +
                   esc(r.k) +
+                  '"><div class="diff-k">' +
+                  esc(fieldLabel(r.k)) +
                   '</div><div>' +
-                  esc(r.bv === undefined ? '—' : String(r.bv)) +
+                  esc(formatDiffValue(r.bv) ?? '—') +
                   '</div><div>' +
-                  esc(r.av === undefined ? '—' : String(r.av)) +
+                  esc(formatDiffValue(r.av) ?? '—') +
                   '</div></div>',
               )
               .join('')
@@ -487,11 +534,10 @@
           '</strong></td>' +
           '<td>' +
           '<span title="' +
-          esc(ev.entityType || '') +
+          esc(ev.entityType || '') + (ev.entityId ? ' · ' + esc(ev.entityId) : '') +
           '">' +
           esc(ev.entityType ? entityTypeLabel(ev.entityType) : '—') +
           '</span>' +
-          (ev.entityId ? '<div class="muted"><code>' + esc(ev.entityId) + '</code></div>' : '') +
           '</td>' +
           '<td>' +
           esc(ev.ipAddress || '—') +

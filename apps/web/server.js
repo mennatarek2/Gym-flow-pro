@@ -44,35 +44,38 @@ const SHARED_ROOT = path.join(STATIC_ROOT, 'shared');
 const DEV_ROOT = path.join(STATIC_ROOT, 'dev');
 const SHARED_SCRIPTS = [
   '/shared/api-config.js',
-  '/shared/api-client.js?v=refund1',
+  '/shared/api-client.js?v=session1',
   '/shared/authz.js',
   '/shared/features.js?v=8',
   '/shared/i18n-catalog.js',
   '/shared/i18n.js?v=loc2',
   '/shared/theme.js?v=1',
+  '/shared/feedback.js?v=1',
   '/shared/nav.js?v=5',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=5',
   '/shared/analytics.js?v=1',
-  '/shared/shell.js?v=qa3',
+  '/shared/shell.js?v=feedback1',
   '/shared/staff-notifications.js?v=2',
   '/shared/quick-actions.js?v=6',
   '/shared/refund-action.js?v=3',
   '/shared/toast.js?v=1',
   '/shared/network-status.js?v=1',
   '/shared/error-handler.js?v=1',
-  '/shared/session-guard.js?v=1',
+  '/shared/session-guard.js?v=session1',
   '/shared/app-version.js?v=1',
+  '/shared/local-nav-gate.js?v=session1',
 ];
 
 const SHARED_STYLES = [
   '/shared/rtl.css',
   '/shared/typography.css?v=1',
   '/shared/refund-action.css',
-  '/shared/theme.css?v=3',
+  '/shared/theme.css?v=4',
+  '/shared/feedback.css?v=1',
   '/shared/responsive.css?v=1',
-  '/shared/shell-layout.css?v=2',
+  '/shared/shell-layout.css?v=session1',
   '/shared/shell-header.css?v=1',
   '/shared/dashboard-layout.css?v=1',
   '/shared/table-layout.css?v=1',
@@ -93,7 +96,7 @@ const MEMBER_SHARED_SCRIPTS = [
 const MEMBER_SHARED_STYLES = [
   '/shared/rtl.css',
   '/shared/typography.css?v=1',
-  '/shared/theme.css?v=3',
+  '/shared/theme.css?v=4',
   '/shared/responsive.css?v=1',
   '/shared/form-layout.css?v=1',
   '/shared/sweep-layout.css?v=2',
@@ -124,6 +127,7 @@ function sendHtml(res, filePath, memberScope = false) {
   const missingJs = scripts.filter((src) => !hasScriptSrc(html, src));
   const needEarly = !html.includes('data-gfp-early-locale');
   const needThemeBoot = !html.includes('data-gfp-theme-boot');
+  const needFavicon = !/rel=["']icon["']/i.test(html);
 
   // Early locale/theme/branding must run before first paint → top of <head>.
   // Shared CSS (esp. typography + theme) must load AFTER page styles → end of <head>.
@@ -132,8 +136,15 @@ function sendHtml(res, filePath, memberScope = false) {
   if (!/<meta[^>]+name=["']viewport["']/i.test(html)) {
     headStart.push('<meta name="viewport" content="width=device-width, initial-scale=1">');
   }
-  if (CONFIGURED_API_BASE && !/<meta[^>]+name=["']gfp-api-base["']/i.test(html)) {
-    const safe = CONFIGURED_API_BASE.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  if (!/<meta[^>]+name=["']gfp-api-base["']/i.test(html)) {
+    // Always inject this (not just when GFP_API_BASE/.env is explicitly set): this dev server
+    // serves the frontend from its own origin (default localhost:3000), separate from the .NET
+    // API's origin - shared/api-config.js can no longer guess "the API is on localhost:5001"
+    // for every localhost page (that broke HyMotion Local Edition, which serves its dashboard AND
+    // API together from one process on a different port). This meta tag is now the only thing
+    // telling pages served by *this* dev server where the separately-running API actually is.
+    const apiBase = CONFIGURED_API_BASE || 'http://localhost:5000/api';
+    const safe = apiBase.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     headStart.push(`<meta name="gfp-api-base" content="${safe}">`);
   }
   if (needThemeBoot) {
@@ -146,6 +157,7 @@ function sendHtml(res, filePath, memberScope = false) {
       '<script data-gfp-early-locale>(function(){try{var h=document.documentElement;var l=localStorage.getItem("gfp_locale");if(l!=="ar"&&l!=="en")l="en";h.lang=l;h.dir=l==="ar"?"rtl":"ltr";var pref=localStorage.getItem("gfp_appearance");try{var u0=JSON.parse(localStorage.getItem("gfp_user")||"null");var uid=u0&&(u0.id||u0.Id||u0.userId||u0.UserId);if(uid){var p2=localStorage.getItem("gfp_appearance:"+uid);if(p2==="light"||p2==="dark"||p2==="system")pref=p2;}}catch(e0){}if(pref!=="light"&&pref!=="dark"&&pref!=="system")pref="light";var dark=pref==="dark"||(pref==="system"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);h.setAttribute("data-theme",dark?"dark":"light");h.setAttribute("data-appearance",pref);h.style.colorScheme=dark?"dark":"light";var u=JSON.parse(localStorage.getItem("gfp_user")||"null");var tid=u&&(u.tenantId||u.TenantId);var raw=tid&&localStorage.getItem("gfp_branding:"+tid);if(!raw)raw=localStorage.getItem("gfp_branding");if(!raw)return;var b=JSON.parse(raw);var p=b.primaryColor||b.PrimaryColor||"#7ACC00";var a=b.accentColor||b.AccentColor||"#A0E040";h.style.setProperty("--gfp-brand-primary",p);h.style.setProperty("--gfp-brand-accent",a);h.style.setProperty("--l500",p);h.style.setProperty("--l400",a);h.style.setProperty("--l600",p);h.style.setProperty("--l300",a);}catch(e){}})();</script>'
     );
   }
+  if (needFavicon) headEnd.push('<link rel="icon" href="/shared/favicon.ico">');
   missingCss.forEach((href) => headEnd.push(`<link rel="stylesheet" href="${href}">`));
   missingJs.forEach((src) => headEnd.push(`<script src="${src}"></script>`));
 
@@ -203,9 +215,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Shared assets (api-config, etc.) ──
-app.get('/shared/:file', (req, res) => {
-  const f = path.join(SHARED_ROOT, path.basename(req.params.file));
+// ── Shared assets (api-config.js, vendor/tabler-icons/*, vendor/fonts/*, etc.) ──
+// Was `/shared/:file` (path.basename only) - Express params only capture one path segment, so
+// any nested asset (every /shared/vendor/... reference in every page - Tabler icon font/CSS,
+// Cairo/Inter webfonts, chart.js, jsbarcode, signalr) 404'd on this dev server. The .NET-hosted
+// build never hit this because prepare-wwwroot.mjs flattens vendor assets before publish: it
+// still matters here since apps/web/server.js is what actually serves this src tree directly.
+// Regex route (not a '/shared/*' string pattern) - Express 5's path-to-regexp requires a named
+// wildcard ('/shared/*splat') for string patterns; a plain '*' throws "Missing parameter name" at
+// startup. A regex sidesteps that version-specific syntax entirely.
+app.get(/^\/shared\/(.+)$/, (req, res) => {
+  const rel = req.params[0];
+  const f = path.join(SHARED_ROOT, rel);
+  if (!f.startsWith(SHARED_ROOT + path.sep) && f !== SHARED_ROOT) {
+    res.status(400).end();
+    return;
+  }
   if (fs.existsSync(f) && fs.statSync(f).isFile()) {
     res.sendFile(f);
     return;

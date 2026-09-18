@@ -3,7 +3,7 @@
   // Trials removed from HyMotion product IA
   window.location.replace('/dashboard/');
   return;
-  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
 
   function getToken() {
     return localStorage.getItem('gfp_access_token') || sessionStorage.getItem('gfp_access_token');

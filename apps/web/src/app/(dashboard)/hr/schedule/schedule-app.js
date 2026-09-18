@@ -93,52 +93,23 @@
     if (canManage) document.getElementById('manageActions').hidden = false;
   })();
 
-  function setScheduleView(view) {
-    var isTemplates = view === 'templates';
-    // Same-tab navigation only. New tabs / iframes do not share sessionStorage auth → fake logout.
-    if (isTemplates) {
-      window.location.href = '/dashboard/hr/shifts/?from=schedule';
-      return;
-    }
-    Array.prototype.forEach.call(document.querySelectorAll('#scheduleViewTabs .hub-tab'), function (btn) {
-      btn.classList.toggle('act', btn.getAttribute('data-view') === view);
-    });
-    var assignments = document.getElementById('assignmentsPane');
-    var templates = document.getElementById('templatesPane');
-    if (assignments) assignments.hidden = false;
-    if (templates) templates.hidden = true;
-    var bulk = document.getElementById('btnBulk');
-    var create = document.getElementById('btnCreate');
-    var btnT = document.getElementById('btnTemplates');
-    if (bulk) bulk.hidden = false;
-    if (create) create.hidden = false;
-    if (btnT) btnT.hidden = false;
-    try {
-      var u = new URL(window.location.href);
-      u.searchParams.delete('tab');
-      window.history.replaceState({}, '', u.pathname + u.search);
-    } catch (e) { /* ignore */ }
-    applyLocale();
+  function openTemplatesPage() {
+    window.location.href = '/dashboard/hr/shifts/?from=schedule';
   }
 
-  Array.prototype.forEach.call(document.querySelectorAll('#scheduleViewTabs .hub-tab'), function (btn) {
-    btn.addEventListener('click', function () { setScheduleView(btn.getAttribute('data-view')); });
-  });
-  var btnTemplates = document.getElementById('btnTemplates');
-  if (btnTemplates) {
-    btnTemplates.addEventListener('click', function () { setScheduleView('templates'); });
-  }
   Array.prototype.forEach.call(document.querySelectorAll('.js-open-templates'), function (el) {
     el.addEventListener('click', function (ev) {
       ev.preventDefault();
       closeModal('assignModal');
       closeModal('bulkModal');
-      setScheduleView('templates');
+      openTemplatesPage();
     });
   });
+  // Old ?tab=templates bookmarks → real templates page (no nested iframe).
   try {
     if (new URLSearchParams(window.location.search).get('tab') === 'templates') {
-      setScheduleView('templates');
+      openTemplatesPage();
+      return;
     }
   } catch (e) { /* ignore */ }
 

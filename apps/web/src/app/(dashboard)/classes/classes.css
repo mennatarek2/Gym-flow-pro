@@ -116,7 +116,7 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .cap-bar{height:8px;background:var(--ls3);border-radius:4px;overflow:hidden;margin-bottom:4px}
 .cap-fill{height:100%;border-radius:4px;background:var(--l500);transition:width .3s}
 .session-card.full .cap-fill{background:var(--dng500)}
-.cap-text{font-size:12px;font-weight:700;color:var(--lts)}
+.cap-text{font-size:12px;font-weight:700;color:var(--lts);unicode-bidi:isolate}
 .cap-text.full-text{color:var(--dng500)}
 .cap-spots{font-size:11px;font-weight:700;color:var(--l600);margin-top:2px}
 .cap-spots.low{color:var(--wrn500)}
@@ -333,6 +333,12 @@ body{font-family:var(--fb);background:var(--lbg);color:var(--ltp);line-height:1.
 .fac-tag.walkin{background:var(--suc100);color:var(--suc500)}
 .fac-tag.reserve{background:var(--inf100);color:var(--inf500)}
 .fac-tag.open{background:var(--ls2);color:var(--lts)}
+.fac-card.fac-bookable{border-color:rgba(59,130,246,.35)}
+.fac-quota-hint{font-size:11px;color:var(--ltt);margin-top:8px;line-height:1.35}
+.fac-book-btn{margin-top:10px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:none;border-radius:var(--rsm);background:var(--l500);color:var(--c900);font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer}
+.fac-book-btn:hover{background:var(--l400)}
+.sess-kind{display:inline-block;margin-inline-start:6px;padding:1px 7px;border-radius:var(--rpl);font-size:10px;font-weight:700;vertical-align:middle;letter-spacing:.3px}
+.sess-kind.facility{background:var(--inf100);color:var(--inf500)}
 
 /* ── Dark mode fixes (theme.css remaps light tokens under html[data-theme=dark]) ── */
 html[data-theme="dark"] .cap-bar{background:var(--ls3)}

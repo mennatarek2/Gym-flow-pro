@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Schedule</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="schedule.css?v=3">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
+<link rel="stylesheet" href="schedule.css?v=4">
 </head>
 <body>
 <div class="app">
@@ -33,38 +33,29 @@
         <h1 class="page-title" data-en="Schedule" data-ar="الجدول الوظيفي">Schedule</h1>
         <p class="page-subtitle" data-en="Who's working which shift, and when." data-ar="من يعمل في أي وردية، ومتى.">Who's working which shift, and when.</p>
       </div>
-      <div id="manageActions" hidden>
-        <button type="button" class="btn-secondary" id="btnTemplates" style="width:auto;padding:0 16px;gap:6px"><i class="ti ti-clock"></i> <span data-en="Shift templates" data-ar="قوالب الورديات">Shift templates</span></button>
-        <button type="button" class="btn-secondary" id="btnBulk" style="width:auto;padding:0 16px;gap:6px"><i class="ti ti-users"></i> <span data-en="Bulk assign" data-ar="تعيين جماعي">Bulk assign</span></button>
+      <div id="manageActions" class="sched-actions" hidden>
+        <a href="/dashboard/hr/shifts/?from=schedule" class="btn-secondary" id="btnTemplates"><i class="ti ti-clock"></i> <span data-en="Shift templates" data-ar="قوالب الورديات">Shift templates</span></a>
+        <button type="button" class="btn-secondary" id="btnBulk"><i class="ti ti-users"></i> <span data-en="Bulk assign" data-ar="تعيين جماعي">Bulk assign</span></button>
         <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="Assign shift" data-ar="تعيين وردية">Assign shift</span></button>
       </div>
     </div>
-    
-    <div class="hub-tabs" id="scheduleViewTabs">
-      <button type="button" class="hub-tab act" data-view="assignments" data-en="Assignments" data-ar="التعيينات">Assignments</button>
-      <button type="button" class="hub-tab" data-view="templates" data-en="Shift templates" data-ar="قوالب الورديات">Shift templates</button>
-    </div>
+
     <div id="assignmentsPane">
-    <div class="toolbar">
-      <div class="chk-group" id="dateChips">
-        <button type="button" class="date-chip act" data-mode="today" data-en="Today" data-ar="اليوم">Today</button>
-        <button type="button" class="date-chip" data-mode="week" data-en="This week" data-ar="هذا الأسبوع">This week</button>
-        <button type="button" class="date-chip" data-mode="custom" data-en="Custom" data-ar="مخصص">Custom</button>
+      <div class="toolbar">
+        <div class="chk-group" id="dateChips">
+          <button type="button" class="date-chip act" data-mode="today" data-en="Today" data-ar="اليوم">Today</button>
+          <button type="button" class="date-chip" data-mode="week" data-en="This week" data-ar="هذا الأسبوع">This week</button>
+          <button type="button" class="date-chip" data-mode="custom" data-en="Custom" data-ar="مخصص">Custom</button>
+        </div>
+        <input type="date" id="customFrom" class="date-input" hidden>
+        <span class="date-sep" id="customSep" hidden>→</span>
+        <input type="date" id="customTo" class="date-input" hidden>
+        <select id="filterEmployee" aria-label="Employee"><option value="" data-en="All employees" data-ar="كل الموظفين">All employees</option></select>
+        <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
       </div>
-      <input type="date" id="customFrom" class="date-input" hidden>
-      <span class="date-sep" id="customSep" hidden>→</span>
-      <input type="date" id="customTo" class="date-input" hidden>
-      <select id="filterEmployee" aria-label="Employee"><option value="" data-en="All employees" data-ar="كل الموظفين">All employees</option></select>
-      <button type="button" class="btn-secondary" id="btnRefresh"><i class="ti ti-refresh"></i></button>
+      <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
     </div>
-    <div class="table-wrap" id="tableHost"><div class="loading-state"><div class="loader"></div><p data-en="Loading…" data-ar="جاري التحميل…">Loading…</p></div></div>
-  
-    </div>
-    <div id="templatesPane" hidden>
-      <p class="page-subtitle" style="margin-bottom:12px" data-en="Reusable shift times you assign to employees (Morning, Evening, …)." data-ar="أوقات ورديات جاهزة لتعيينها للموظفين.">Reusable shift times you assign to employees (Morning, Evening, …).</p>
-      <iframe id="templatesFrame" class="hub-iframe" title="Shift templates" src="about:blank"></iframe>
-    </div>
-    </div>
+  </div>
 </div>
 </div>
 </div>
@@ -116,6 +107,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="schedule-app.js?v=3"></script>
+<script src="schedule-app.js?v=5"></script>
 </body>
 </html>

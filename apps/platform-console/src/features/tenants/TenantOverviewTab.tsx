@@ -5,7 +5,7 @@ import { labelAuditAction, extractReasonFromAudit } from '@/features/tenants/Aud
 import type { PlatformTenantDetailDto } from '@/lib/api/types'
 import { formatCairoDate, formatCairoDateTime, formatEgp } from '@/lib/format'
 
-type DetailTab = 'overview' | 'subscription' | 'usage' | 'health' | 'users' | 'billing' | 'audit'
+type DetailTab = 'overview' | 'subscription' | 'usage' | 'users' | 'activity'
 
 interface TenantOverviewTabProps {
   tenant: PlatformTenantDetailDto
@@ -82,10 +82,10 @@ export function TenantOverviewTab({ tenant, onGotoTab }: TenantOverviewTabProps)
         <section className="rounded-[var(--radius)] border border-gray-200 bg-white p-4">
           <header className="flex items-center justify-between">
             <h2 className="text-lg font-medium">Health &amp; Risk</h2>
-            <TabLink label="Details" onClick={() => onGotoTab('health')} />
+            <TabLink label="Details" onClick={() => onGotoTab('activity')} />
           </header>
           {!healthView ? (
-            <p className="mt-2 text-sm text-gray-500">Not yet computed for this tenant.</p>
+            <p className="mt-2 text-sm text-gray-500">Not yet computed for this gym.</p>
           ) : (
             <div className="mt-3 flex items-baseline gap-3">
               <span className="font-[var(--mono)] text-3xl font-semibold tabular-nums text-gray-900">
@@ -132,10 +132,10 @@ export function TenantOverviewTab({ tenant, onGotoTab }: TenantOverviewTabProps)
       <section className="rounded-[var(--radius)] border border-gray-200 bg-white p-4">
         <header className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Recent Activity</h2>
-          <TabLink label="View all" onClick={() => onGotoTab('audit')} />
+          <TabLink label="View all" onClick={() => onGotoTab('activity')} />
         </header>
         {!recentAudit.length ? (
-          <p className="mt-2 text-sm text-gray-500">No audit events yet for this tenant.</p>
+          <p className="mt-2 text-sm text-gray-500">No audit events yet for this gym.</p>
         ) : (
           <ul className="mt-3 flex flex-col divide-y divide-gray-200">
             {recentAudit.map((row) => (

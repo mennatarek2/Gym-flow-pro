@@ -62,6 +62,7 @@
     'shift.close': 'إغلاق الوردية',
     'shift.reconcile.approve': 'اعتماد تسوية الوردية',
     'memberships.freeze': 'تجميد الاشتراكات',
+    'memberships.assign': 'إسناد / تجديد الاشتراكات',
     'plans.manage': 'إدارة الباقات',
     'reports.financial.view': 'عرض التقارير المالية',
     'reports.expenses.view': 'عرض المصروفات',

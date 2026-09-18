@@ -153,9 +153,9 @@
     }
     if (!origin) {
       try {
-        origin = new URL(window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').origin;
+        origin = new URL(window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api', window.location.origin).origin;
       } catch (e) {
-        origin = 'https://reach-lullaby-tighten.ngrok-free.dev';
+        origin = window.location.origin;
       }
     }
     return origin + (u.charAt(0) === '/' ? u : '/' + u);

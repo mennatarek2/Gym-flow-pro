@@ -296,7 +296,6 @@
 
   function clear() {
     lastBranding = null;
-    revokeLogo();
     try {
       Object.keys(localStorage).forEach(function (k) {
         if (k.indexOf(KEY_PREFIX) === 0) localStorage.removeItem(k);

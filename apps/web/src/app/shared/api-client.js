@@ -6,6 +6,8 @@
  * - Persist the newest refresh token immediately (rotation revokes the old one).
  * - Refresh failure = logout once — never retry refresh in a loop.
  * - Only silent-refresh when the response carries Token-Expired: true (not every 401).
+ * - Local keep-signed-in stores the refresh token in DPAPI (GET/POST /auth/device-session),
+ *   never in localStorage. Gym identity is a separate non-secret cache (gfp_gym_identity).
  */
 (function (global) {
   'use strict';
@@ -15,8 +17,24 @@
     refresh: 'gfp_refresh_token',
     user: 'gfp_user',
     expires: 'gfp_expires_at',
-    persist: 'gfp_persist' // '1' = localStorage, '0' = sessionStorage
+    persist: 'gfp_persist', // '1' = keep signed in / localStorage access, '0' = sessionStorage
+    gymIdentity: 'gfp_gym_identity'
   };
+
+  var localEdition = false;
+
+  function isStaffDesk() {
+    var path = global.GFP_LOGIN_PATH || '';
+    return path.indexOf('/member') === -1;
+  }
+
+  function useSecureLocalDeviceSession() {
+    return localEdition && isStaffDesk();
+  }
+
+  function setLocalEdition(value) {
+    localEdition = !!value;
+  }
 
   function apiBase() {
     // REM-F3: no hardcoded remote URL. api-config.js resolves the base
@@ -58,8 +76,13 @@
       // small skew: treat as expired 5s early
       return new Date(exp).getTime() <= Date.now() + 5000;
     },
+    hasRefreshCredential: function () {
+      if (this.getRefresh()) return true;
+      return useSecureLocalDeviceSession() && global.localStorage.getItem(KEYS.persist) === '1';
+    },
     /**
      * Persist LoginResponse / refresh result immediately (including rotated refresh token).
+     * Local keep-signed-in never writes the refresh token to localStorage.
      * @param {{ accessToken: string, refreshToken: string, expiresAtUtc: string, user?: object }} data
      * @param {{ remember?: boolean }} [opts]
      */
@@ -69,18 +92,45 @@
       if (typeof remember === 'boolean') {
         global.localStorage.setItem(KEYS.persist, remember ? '1' : '0');
       }
+      var persistFlag = global.localStorage.getItem(KEYS.persist) === '1';
       var store = storeForWrite();
       if (data.accessToken) writeBothClearOther(store, KEYS.access, data.accessToken);
-      // CRITICAL: write rotated refresh immediately — old one is revoked server-side
-      if (data.refreshToken) writeBothClearOther(store, KEYS.refresh, data.refreshToken);
       if (data.expiresAtUtc) writeBothClearOther(store, KEYS.expires, data.expiresAtUtc);
       if (data.user) writeBothClearOther(store, KEYS.user, JSON.stringify(data.user));
+      if (data.refreshToken) {
+        if (persistFlag && useSecureLocalDeviceSession()) {
+          writeBothClearOther(global.sessionStorage, KEYS.refresh, data.refreshToken);
+          scheduleDeviceSessionSave(data.refreshToken);
+        } else {
+          writeBothClearOther(store, KEYS.refresh, data.refreshToken);
+        }
+      }
     },
     clear: function () {
       [KEYS.access, KEYS.refresh, KEYS.user, KEYS.expires, KEYS.persist].forEach(function (k) {
         global.localStorage.removeItem(k);
         global.sessionStorage.removeItem(k);
       });
+    }
+  };
+
+  var gymIdentity = {
+    get: function () {
+      try { return JSON.parse(global.localStorage.getItem(KEYS.gymIdentity) || 'null'); } catch (e) { return null; }
+    },
+    remember: function (identity) {
+      if (!identity || !identity.gymCode) return;
+      var prev = this.get() || {};
+      var next = {
+        gymCode: String(identity.gymCode),
+        gymName: identity.gymName != null ? String(identity.gymName) : (prev.gymName || ''),
+        installationId: identity.installationId != null ? String(identity.installationId) : (prev.installationId || ''),
+        logoUrl: identity.logoUrl != null ? String(identity.logoUrl) : (prev.logoUrl || '')
+      };
+      global.localStorage.setItem(KEYS.gymIdentity, JSON.stringify(next));
+    },
+    clear: function () {
+      global.localStorage.removeItem(KEYS.gymIdentity);
     }
   };
 
@@ -148,8 +198,57 @@
     }
   }
 
+  function deviceSessionHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    };
+  }
+
+  var deviceSavePromise = null;
+
+  function scheduleDeviceSessionSave(refreshToken) {
+    if (!refreshToken || !useSecureLocalDeviceSession()) return;
+    deviceSavePromise = (async function () {
+      try {
+        await fetch(apiBase() + '/auth/device-session', {
+          method: 'POST',
+          headers: deviceSessionHeaders(),
+          body: JSON.stringify({ refreshToken: refreshToken })
+        });
+      } catch (e) { /* keep sessionStorage copy for this process */ }
+    })();
+  }
+
+  async function loadDeviceRefreshToken() {
+    if (!useSecureLocalDeviceSession()) return null;
+    try {
+      var res = await fetch(apiBase() + '/auth/device-session', {
+        method: 'GET',
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      });
+      if (!res.ok || res.status === 204) return null;
+      var data = await res.json().catch(function () { return null; });
+      var tok = data && (data.refreshToken || data.RefreshToken);
+      return tok ? String(tok) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearDeviceSession() {
+    if (!useSecureLocalDeviceSession()) return;
+    try {
+      fetch(apiBase() + '/auth/device-session', {
+        method: 'DELETE',
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      }).catch(function () { /* ignore */ });
+    } catch (e) { /* ignore */ }
+  }
+
   function logoutToLogin() {
     tokens.clear();
+    clearDeviceSession();
     // Member App pages set window.GFP_LOGIN_PATH = '/member/login/' before this script loads
     // so an expired session bounces back to the member login, not the staff one.
     var loginPath = global.GFP_LOGIN_PATH || '/auth/login/';
@@ -159,16 +258,21 @@
   }
 
   /**
-   * Single-flight refresh. Failure clears session (no retry loop).
+   * Single-flight refresh. Failure clears the auth session (no retry loop) but never gym identity.
+   * @param {{ quiet?: boolean }} [opts]
    * @returns {Promise<boolean>}
    */
-  function silentRefresh() {
+  function silentRefresh(opts) {
+    opts = opts || {};
     if (refreshPromise) return refreshPromise;
 
     refreshPromise = (async function () {
       var rt = tokens.getRefresh();
+      if (!rt && useSecureLocalDeviceSession() && global.localStorage.getItem(KEYS.persist) === '1') {
+        rt = await loadDeviceRefreshToken();
+      }
       if (!rt) {
-        logoutToLogin();
+        if (!opts.quiet) logoutToLogin();
         return false;
       }
       try {
@@ -182,14 +286,24 @@
         });
         var data = await res.json().catch(function () { return null; });
         if (!res.ok || !data || !data.accessToken || !data.refreshToken) {
-          logoutToLogin();
+          if (opts.quiet) {
+            tokens.clear();
+            clearDeviceSession();
+          } else {
+            logoutToLogin();
+          }
           return false;
         }
-        // Persist rotated pair immediately
         tokens.persistSession(data);
+        if (deviceSavePromise) await deviceSavePromise;
         return true;
       } catch (e) {
-        logoutToLogin();
+        if (opts.quiet) {
+          tokens.clear();
+          clearDeviceSession();
+        } else {
+          logoutToLogin();
+        }
         return false;
       } finally {
         refreshPromise = null;
@@ -226,6 +340,11 @@
     try {
       res = await fetch(apiBase() + path, init);
     } catch (e) {
+      // The real cause (CORS, connection refused, timeout, mixed content, ...) was previously
+      // discarded here entirely - every actual fetch failure surfaced only as a generic "Network
+      // error" with nothing in the console to diagnose it by. Log it (not swallow it) so the
+      // browser's own console/network tab shows what's actually wrong.
+      console.error('[GfpApi] fetch failed for ' + method + ' ' + path + ':', e);
       return {
         ok: false,
         status: 0,
@@ -297,14 +416,30 @@
      * @param {{ remember?: boolean }} [opts]
      */
     login: async function (body, opts) {
+      var remember = !!(opts && opts.remember);
       var r = await request('POST', '/auth/login', { body: body, auth: false });
       if (r.ok && r.data && r.data.accessToken) {
-        tokens.persistSession(r.data, { remember: !!(opts && opts.remember) });
+        tokens.persistSession(r.data, { remember: remember });
+        if (useSecureLocalDeviceSession()) {
+          if (remember) {
+            if (deviceSavePromise) await deviceSavePromise;
+          } else {
+            clearDeviceSession();
+          }
+        }
+        var user = r.data.user || {};
+        var extra = (opts && opts.gymIdentity) || {};
+        gymIdentity.remember({
+          gymCode: extra.gymCode || user.gymCode || user.GymCode,
+          gymName: extra.gymName || user.gymName || user.GymName,
+          installationId: extra.installationId,
+          logoUrl: extra.logoUrl
+        });
       }
       return r;
     },
-    /** Explicit refresh (rarely needed — interceptor handles Token-Expired). */
-    refresh: function () { return silentRefresh(); },
+    /** Explicit refresh. Pass { quiet: true } on the login page so failure stays on login. */
+    refresh: function (opts) { return silentRefresh(opts || {}); },
     /** Member OTP send stub — POST /api/auth/member-otp */
     requestMemberOtp: function (body) {
       return request('POST', '/auth/member-otp', { body: body, auth: false });
@@ -335,6 +470,9 @@
 
   var GfpApi = {
     tokens: tokens,
+    gymIdentity: gymIdentity,
+    setLocalEdition: setLocalEdition,
+    isLocalEdition: function () { return localEdition; },
     parseError: parseError,
     asPaged: asPaged,
     request: request,

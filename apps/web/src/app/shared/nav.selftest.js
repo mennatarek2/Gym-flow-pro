@@ -209,17 +209,17 @@ assert(
 
 assertShape('Owner', runFixture('Owner', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'invitations', 'attendance'],
+  members: ['members', 'invitations', 'attendance', 'access-cards'],
   'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts', 'z-report'],
   money: ['invoices', 'reports'],
   catalog: CATALOG_OWNER_KEYS.slice(),
-  administration: ['imports', 'audit', 'notifications', 'staff', 'roles', 'settings']
+  administration: ['imports', 'audit', 'notifications', 'staff', 'roles', 'settings', 'backup']
 });
 
 assertShape('Manager', runFixture('Manager', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'invitations', 'attendance'],
+  members: ['members', 'invitations', 'attendance', 'access-cards'],
   'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts', 'z-report'],
   money: ['invoices', 'reports'],
@@ -235,7 +235,7 @@ assertShape('Trainer', runFixture('Trainer', ALL_ON), {
 
 assertShape('Receptionist', runFixture('Receptionist', ALL_ON), {
   overview: ['dashboard'],
-  members: ['members', 'invitations', 'attendance'],
+  members: ['members', 'invitations', 'attendance', 'access-cards'],
   'front-desk': ['classes', 'pos', 'member-orders', 'call-sheet'],
   shifts: ['shifts'],
   money: ['reports'],

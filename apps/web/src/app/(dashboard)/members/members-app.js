@@ -35,6 +35,7 @@
   const canView = Authz ? Authz.useCan('members.view') : true;
   const canCreate = Authz ? Authz.useCan('members.create') : false;
   const canEdit = Authz ? Authz.useCan('members.edit') : false;
+  const isOwner = Authz ? Authz.useCanRole('OwnerOnly') : false;
   if(!canView){window.location.href='/dashboard/';return;}
 
   const ini=(user.fullName||'U').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
@@ -97,15 +98,41 @@
     return { accountOk: accountOk, mem: mem, primary: primary, days: d };
   }
 
-  const PERSON_STATUS_META = {
-    active:   { label: 'Active',   cls: 'active',    icon: 'ti-circle-check' },
-    archived: { label: 'Archived', cls: 'suspended', icon: 'ti-user-off' }
-  };
+  function personStatusMeta(){
+    return {
+      active:   { label: tLabel('Active', 'نشط'),     cls: 'active',    icon: 'ti-circle-check' },
+      archived: { label: tLabel('Archived', 'مؤرشف'), cls: 'suspended', icon: 'ti-user-off' }
+    };
+  }
+
+  // Membership-status indicator — restored per explicit request (was removed by P12-R1/R1-FE-08,
+  // which only intended to stop showing Expired/Frozen as the PERSON's own status, see
+  // resolveListStatus above). Shown as a light dot+label under the account-status pill, not a
+  // second full badge (two equal-weight pills stacked looked "dirty"/heavy — feedback from a
+  // real deploy). Reuses the .q-dot.<status> color classes already defined in members.css and
+  // GfpI18n.statusLabel's existing translations.
+  const MEMBERSHIP_DOT_CLASSES = ['active', 'frozen', 'expired', 'cancelled', 'pending', 'scheduled'];
 
   function renderPersonStatusCell(info){
-    const meta = PERSON_STATUS_META[info.primary] || PERSON_STATUS_META.archived;
-    return '<div class="st-stack"><span class="st-badge '+meta.cls+'" title="Person account status">'
-      +'<i class="ti '+meta.icon+'"></i>'+meta.label+'</span></div>';
+    const statusMeta = personStatusMeta();
+    const meta = statusMeta[info.primary] || statusMeta.archived;
+    const personTitle = window.GfpI18n && window.GfpI18n.tLabel
+      ? window.GfpI18n.tLabel('Person account status', 'حالة حساب الشخص')
+      : 'Person account status';
+    let html = '<div class="st-stack"><span class="st-badge '+meta.cls+'" title="'+personTitle+'">'
+      +'<i class="ti '+meta.icon+'"></i>'+meta.label+'</span>';
+    if(info.accountOk && info.mem && info.mem !== 'none'){
+      const dotCls = MEMBERSHIP_DOT_CLASSES.indexOf(info.mem) !== -1 ? info.mem : 'cancelled';
+      const memText = (window.GfpI18n && window.GfpI18n.statusLabel)
+        ? window.GfpI18n.statusLabel(info.mem)
+        : info.mem;
+      const memTitle = window.GfpI18n && window.GfpI18n.tLabel
+        ? window.GfpI18n.tLabel('Membership status', 'حالة العضوية')
+        : 'Membership status';
+      html += '<span class="st-sub" title="'+memTitle+'"><span class="q-dot '+dotCls+'"></span>'+memText+'</span>';
+    }
+    html += '</div>';
+    return html;
   }
 
   function updatePeopleCount(){
@@ -217,7 +244,6 @@
       let remaining = '—';
       if(sessions != null) remaining = sessions + ' ' + tLabel('sess', 'حصة');
       else if(remDays != null) remaining = remDays + tLabel('d', 'ي');
-      const memLabel = info.mem && info.mem !== 'none' ? info.mem : '';
 
       return `<tr class="${rowCls}">
         <td>
@@ -232,16 +258,16 @@
         </td>
         <td>
           ${renderPersonStatusCell(info)}
-          ${memLabel && info.accountOk ? '<div style="margin-top:4px;font-size:11px;color:var(--ltt);text-transform:capitalize">'+memLabel+'</div>' : ''}
         </td>
         <td style="font-size:13px;font-weight:500">${planName}</td>
         <td style="font-size:12px;color:var(--lts)">${expiry ? new Date(expiry).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
         <td style="font-size:12px;font-weight:600">${remaining}</td>
         <td>
           <div class="act-btns">
-            <button class="act-btn" title="View" onclick="window.location.href='${detailHref}'"><i class="ti ti-eye"></i></button>
-            ${canEdit?`<button class="act-btn" title="Edit" onclick="if(window.openEditDrawer) window.openEditDrawer('${m.id}')"><i class="ti ti-edit"></i></button>`:''}
-            <button class="act-btn act-renew" title="Open member (renew / membership)" onclick="window.location.href='${detailHref}'"><i class="ti ti-refresh"></i></button>
+            <button class="act-btn" title="${tLabel('View','عرض')}" onclick="window.location.href='${detailHref}'"><i class="ti ti-eye"></i></button>
+            ${canEdit?`<button class="act-btn" title="${tLabel('Edit','تعديل')}" onclick="if(window.openEditDrawer) window.openEditDrawer('${m.id}')"><i class="ti ti-edit"></i></button>`:''}
+            <button class="act-btn act-renew" title="${tLabel('Open member (renew / membership)','فتح العضو (تجديد / عضوية)')}" onclick="window.location.href='${detailHref}'"><i class="ti ti-refresh"></i></button>
+            ${isOwner && info.accountOk ? `<button type="button" class="act-btn act-delete" title="${tLabel('Deactivate','إلغاء التفعيل')}" data-delete-id="${m.id}" data-delete-name="${String(displayName).replace(/"/g,'&quot;')}"><i class="ti ti-trash"></i></button>` : ''}
           </div>
         </td>
       </tr>`;
@@ -294,6 +320,113 @@
     if(page < totalPages){ page++; loadMembers(); }
   });
 
+  // ── Delete / deactivate (OwnerOnly) — type exact "Delete" to confirm ──
+  const DELETE_CONFIRM_WORD = 'Delete';
+  let pendingDeleteId = null;
+  const deleteModal = document.getElementById('deleteMemberModal');
+  const deleteTitle = document.getElementById('deleteMemberTitle');
+  const deleteInput = document.getElementById('deleteMemberConfirmInput');
+  const deleteConfirmBtn = document.getElementById('btnConfirmDeleteMember');
+
+  function toast(msg, type){
+    if(typeof globalThis.toastShared === 'function') return globalThis.toastShared(msg, type || 'success');
+    if(typeof globalThis.toast === 'function') return globalThis.toast(msg, type || 'success');
+  }
+
+  function escHtml(s){
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function syncDeleteConfirmBtn(){
+    if(!deleteConfirmBtn) return;
+    const typed = (deleteInput && deleteInput.value || '').trim();
+    deleteConfirmBtn.disabled = typed !== DELETE_CONFIRM_WORD;
+  }
+
+  function openDeleteConfirm(id, name){
+    if(!isOwner){
+      toast(tLabel('Only Owners can deactivate members','إلغاء التفعيل للمالك فقط'), 'error');
+      return;
+    }
+    pendingDeleteId = id;
+    if(deleteTitle){
+      deleteTitle.innerHTML = '<i class="ti ti-trash" style="color:var(--dng500)"></i> ' +
+        escHtml(tLabel('Deactivate','إلغاء تفعيل')) + ' ' + escHtml(name || tLabel('Member','العضو')) + '?';
+    }
+    if(deleteInput){
+      deleteInput.value = '';
+    }
+    syncDeleteConfirmBtn();
+    if(deleteModal) deleteModal.classList.add('open');
+    setTimeout(function(){ if(deleteInput) deleteInput.focus(); }, 50);
+  }
+
+  function closeDeleteConfirm(){
+    pendingDeleteId = null;
+    if(deleteInput) deleteInput.value = '';
+    syncDeleteConfirmBtn();
+    if(deleteModal) deleteModal.classList.remove('open');
+  }
+
+  // Event delegation — delete buttons are re-rendered each load
+  const tblBody = document.getElementById('tblBody');
+  if(tblBody){
+    tblBody.addEventListener('click', function(e){
+      const btn = e.target.closest('[data-delete-id]');
+      if(!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openDeleteConfirm(btn.getAttribute('data-delete-id'), btn.getAttribute('data-delete-name') || '');
+    });
+  }
+
+  if(deleteInput){
+    deleteInput.addEventListener('input', syncDeleteConfirmBtn);
+    deleteInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && deleteConfirmBtn && !deleteConfirmBtn.disabled){
+        e.preventDefault();
+        deleteConfirmBtn.click();
+      }
+    });
+  }
+
+  if(deleteConfirmBtn){
+    deleteConfirmBtn.addEventListener('click', async function(){
+      if(!isOwner){ toast(tLabel('Only Owners can deactivate members','إلغاء التفعيل للمالك فقط'), 'error'); return; }
+      if(!pendingDeleteId || !Gfp) return;
+      const typed = (deleteInput && deleteInput.value || '').trim();
+      if(typed !== DELETE_CONFIRM_WORD){
+        toast(tLabel('Type Delete to confirm','اكتب Delete للتأكيد'), 'error');
+        syncDeleteConfirmBtn();
+        if(deleteInput) deleteInput.focus();
+        return;
+      }
+      this.disabled = true;
+      const r = await Gfp.del('/members/' + pendingDeleteId);
+      if(r.ok){
+        closeDeleteConfirm();
+        toast(tLabel('Member account deactivated (membership unchanged)','تم إلغاء تفعيل الحساب (العضوية كما هي)'));
+        loadMembers();
+        loadStats();
+      } else {
+        const msg = (r.data && (r.data.message || r.data.error || r.data.detail)) || tLabel('Failed to deactivate','فشل إلغاء التفعيل');
+        toast(msg, 'error');
+        syncDeleteConfirmBtn();
+      }
+    });
+  }
+
+  // Clear typed word when modal closes via overlay / X / Cancel
+  if(deleteModal){
+    deleteModal.addEventListener('click', function(e){
+      if(e.target === this) closeDeleteConfirm();
+    });
+  }
+  const btnCancelDelete = document.getElementById('btnCancelDeleteMember');
+  const btnCloseDelete = document.getElementById('btnCloseDeleteMember');
+  if(btnCancelDelete) btnCancelDelete.addEventListener('click', closeDeleteConfirm);
+  if(btnCloseDelete) btnCloseDelete.addEventListener('click', closeDeleteConfirm);
+
   window.loadMembers = loadMembers;
   window.loadStats = loadStats;
 
@@ -303,6 +436,21 @@
     }
     if (membersData && membersData.length) render();
   });
+
+  // Deep-link support: /dashboard/members/?status=expired (etc.) — lets other pages (e.g. the
+  // dashboard's "attention" widget) land on the actually-matching filtered list instead of
+  // always the fully generic view (this page previously ignored its own URL entirely).
+  (function applyInitialStatusFromUrl(){
+    const qp = new URLSearchParams(window.location.search);
+    const wanted = qp.get('status');
+    const valid = ['all','active','frozen','expired','cancelled','inactive'];
+    if(wanted && valid.indexOf(wanted) !== -1){
+      statusFilter = wanted;
+      document.querySelectorAll('.f-chip').forEach(chip=>{
+        chip.classList.toggle('act', chip.dataset.status === wanted);
+      });
+    }
+  })();
 
   loadTenant();
   loadStats();

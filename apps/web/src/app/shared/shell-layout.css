@@ -250,25 +250,129 @@ html[data-gfp-sb] .gfp-sb-nav {
   overflow-y: auto;
 }
 
+/* User footer: identity + logout must stay on one clear row (no wrap / no overflow overlap). */
 html[data-gfp-sb] .sb-ft {
   flex-shrink: 0;
   position: relative;
   z-index: 130;
   isolation: isolate;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  box-sizing: border-box;
+  min-height: var(--gfp-sb-ft-h, 72px);
+  overflow: hidden;
+}
+
+html[data-gfp-sb] .sb-ft .av-sm,
+html[data-gfp-sb] .sb-ft #userAvatar {
+  flex: 0 0 auto;
+}
+
+html[data-gfp-sb] .sb-ft-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html[data-gfp-sb] .sb-ft-name,
+html[data-gfp-sb] .sb-ft #userName {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html[data-gfp-sb] .sb-ft-role,
+html[data-gfp-sb] .sb-ft #userRole {
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html[data-gfp-sb] .sb-switch-acc,
+html[data-gfp-sb] #btnSwitchAccount {
+  display: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c400, #8C8C8C);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: start;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html[data-gfp-edition='local'][data-gfp-sb] .sb-switch-acc,
+html[data-gfp-edition='local'][data-gfp-sb] #btnSwitchAccount {
+  display: inline;
+}
+
+html[data-gfp-edition='local'][data-gfp-sb] .sb-switch-acc:hover,
+html[data-gfp-edition='local'][data-gfp-sb] #btnSwitchAccount:hover {
+  color: var(--dtp, #F0F0F0);
+  text-decoration: underline;
 }
 
 html[data-gfp-sb] .sb-logout,
 html[data-gfp-sb] #btnLogout {
   position: relative;
   z-index: 131;
-  flex-shrink: 0;
-  min-width: 40px;
-  min-height: 40px;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
   cursor: pointer;
   pointer-events: auto;
+}
+
+html[data-gfp-sb] .sb-logout:hover,
+html[data-gfp-sb] #btnLogout:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--dng500, #ef4444);
+}
+
+html[data-gfp-sb] .sb-logout:focus-visible,
+html[data-gfp-sb] #btnLogout:focus-visible {
+  outline: 2px solid var(--l400, #a0e040);
+  outline-offset: 2px;
+}
+
+/* Narrow rail: drop name/role — avatar + logout only (titles carry identity). */
+html[data-gfp-sb-compact-ft] .sb-ft {
+  justify-content: space-between;
+  gap: 8px;
+  padding-inline: 10px;
+}
+
+html[data-gfp-sb-compact-ft] .sb-ft-info {
+  display: none;
 }
 
 html.gfp-sb-dragging,

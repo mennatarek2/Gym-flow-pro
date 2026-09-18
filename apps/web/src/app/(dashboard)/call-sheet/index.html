@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Call Sheet</title>
 <meta name="description" content="Daily member follow-up and action queue.">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
 <link rel="stylesheet" href="../pos/pos.css?v=theme2">
 <link rel="stylesheet" href="call-sheet.css?v=locale2">
 </head>
@@ -43,6 +43,7 @@
       <button type="button" class="chip" data-date="tomorrow" data-en="Tomorrow" data-ar="بكرة">Tomorrow</button>
       <button type="button" class="chip" data-date="upcoming" data-en="Upcoming" data-ar="القادمة">Upcoming</button>
       <button type="button" class="chip warn" data-date="overdue" data-en="Overdue" data-ar="متأخرة">Overdue</button>
+      <button type="button" class="chip" data-date="open" data-en="Open" data-ar="مفتوحة">Open</button>
       <button type="button" class="chip" data-date="all" data-en="All" data-ar="الكل">All</button>
     </div>
     <div class="cs-search"><i class="ti ti-search"></i><input id="searchQ" type="search" placeholder="Name, phone, or member number" data-en-placeholder="Name, phone, or member number" data-ar-placeholder="الاسم أو الهاتف أو رقم العضوية" autocomplete="off"></div>
@@ -174,6 +175,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="call-sheet-app.js?v=locale2"></script>
+<script src="call-sheet-app.js?v=attn-fix1"></script>
 </body>
 </html>

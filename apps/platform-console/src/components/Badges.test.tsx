@@ -16,12 +16,12 @@ describe('Badges (real render)', () => {
 
   it('renders a known status label with underscores replaced', () => {
     render(<StatusBadge status="past_due" />)
-    expect(screen.getByText('past due')).toBeInTheDocument()
+    expect(screen.getByText('Past due')).toBeInTheDocument()
   })
 
   it('renders a risk band label uppercased via CSS, text content unchanged', () => {
     render(<RiskBandBadge band="at_risk" />)
-    expect(screen.getByText('at risk')).toBeInTheDocument()
+    expect(screen.getByText('At risk')).toBeInTheDocument()
   })
 
   it('renders a placeholder for a missing value instead of crashing', () => {

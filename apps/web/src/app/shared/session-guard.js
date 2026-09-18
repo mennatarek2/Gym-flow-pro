@@ -23,6 +23,9 @@
   }
 
   function hasRefreshToken() {
+    if (global.GfpApi && global.GfpApi.tokens && typeof global.GfpApi.tokens.hasRefreshCredential === 'function') {
+      return !!global.GfpApi.tokens.hasRefreshCredential();
+    }
     return !!(global.GfpApi && global.GfpApi.tokens && global.GfpApi.tokens.getRefresh());
   }
 

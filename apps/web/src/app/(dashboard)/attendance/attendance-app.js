@@ -297,13 +297,13 @@
   }
 
   function hubBase() {
-    const api = (window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api').replace(/\/$/, '');
+    const api = (window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api').replace(/\/$/, '');
     // Hub is sibling of /api → https://host/hubs/attendance
     if (/\/api$/i.test(api)) return api.replace(/\/api$/i, '') + '/hubs/attendance';
     try {
-      return new URL(api).origin + '/hubs/attendance';
+      return new URL(api, window.location.origin).origin + '/hubs/attendance';
     } catch (e) {
-      return 'https://reach-lullaby-tighten.ngrok-free.dev/hubs/attendance';
+      return window.location.origin + '/hubs/attendance';
     }
   }
 

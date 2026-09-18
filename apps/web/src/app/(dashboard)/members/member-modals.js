@@ -5,6 +5,9 @@
 (function(){
   const Gfp = window.GfpApi;
   const Authz = window.GfpAuthz;
+  // Local Edition has no online payment gateways — hide those radio options wherever they appear
+  // (member onboarding, membership assign) instead of duplicating an edition check per form.
+  if (window.GfpDeployment) window.GfpDeployment.hideOnlineGatewayRadios();
   function canCreate(){ return Authz ? Authz.useCan('members.create') : !!window.__gfpCanCreateMember; }
   function canEdit(){ return Authz ? Authz.useCan('members.edit') : !!window.__gfpCanEditMember; }
   function apiMsg(r, fallback){
@@ -70,7 +73,7 @@
   }
 
   // Compat for remaining non-§2 calls (assign uses memberships API)
-  const API_BASE = window.API_BASE || 'https://reach-lullaby-tighten.ngrok-free.dev/api';
+  const API_BASE = window.API_BASE || window.GFP_DEFAULT_API_BASE || '/api';
   function getAuthHeaders(){
     const t=(Gfp&&Gfp.tokens?Gfp.tokens.getAccess():null)||localStorage.getItem('gfp_access_token')||sessionStorage.getItem('gfp_access_token');
     const h={'Content-Type':'application/json'};
@@ -128,9 +131,9 @@
       if(btnCreate) btnCreate.style.display=(step===4)?'none':'';
       if(btnCancel) btnCancel.style.display=(step===4)?'none':'';
       if(label){
-        if(step===1) label.innerHTML='<i class="ti ti-arrow-right"></i> Continue';
-        else if(step===2) label.innerHTML='<i class="ti ti-arrow-right"></i> Continue';
-        else if(step===3) label.innerHTML='<i class="ti ti-check"></i> Complete payment';
+        if(step===1) label.innerHTML='<i class="ti ti-arrow-right"></i> '+window.GfpI18n.tLabel('Continue','متابعة');
+        else if(step===2) label.innerHTML='<i class="ti ti-arrow-right"></i> '+window.GfpI18n.tLabel('Continue','متابعة');
+        else if(step===3) label.innerHTML='<i class="ti ti-check"></i> '+window.GfpI18n.tLabel('Complete payment','إتمام الدفع');
       }
       if(btnCreate) btnCreate.disabled=step===1?!validateAddForm():(step===2?!selectedPlan:false);
     }
@@ -158,13 +161,13 @@
       const overlay=document.getElementById('onboardPrintOverlay');
       const frame=document.getElementById('onboardPrintFrame');
       const titleEl=document.getElementById('onboardPrintTitle');
-      if(!overlay||!frame){ toast('Print view not available','error'); return; }
-      if(titleEl) titleEl.textContent=title||'Print';
+      if(!overlay||!frame){ toast(window.GfpI18n.tLabel('Print view not available','عرض الطباعة غير متاح'),'error'); return; }
+      if(titleEl) titleEl.textContent=title||window.GfpI18n.tLabel('Print','طباعة');
       overlay.hidden=false;
-      frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#666">Loading…</p>';
+      frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#666">'+window.GfpI18n.tLabel('Loading…','جارٍ التحميل...')+'</p>';
       const res=await onboardFetchHtml(htmlPath);
       if(!res.ok){
-        const msg='Could not load print view'+(res.status?' (HTTP '+res.status+')':'');
+        const msg=window.GfpI18n.tLabel('Could not load print view','تعذر تحميل عرض الطباعة')+(res.status?' (HTTP '+res.status+')':'');
         toast(msg,'error');
         frame.srcdoc='<p style="padding:16px;font-family:sans-serif;color:#991b1b">'+msg+'</p>';
         return;
@@ -173,7 +176,7 @@
       if(autoPrint){
         setTimeout(function(){
           try{ frame.contentWindow.focus(); frame.contentWindow.print(); }
-          catch(e){ toast('Allow pop-ups / try Print again','error'); }
+          catch(e){ toast(window.GfpI18n.tLabel('Allow pop-ups / try Print again','فعّل النوافذ المنبثقة أو حاول الطباعة مرة أخرى'),'error'); }
         }, 450);
       }
     }
@@ -202,8 +205,11 @@
       onboardInvoiceNumber=null;
       const invStatus=document.getElementById('onboardInvoiceStatus');
       const btnInv=document.getElementById('btnOnboardPrintInvoice');
-      const btnCard=document.getElementById('btnOnboardPrintCard');
       const cardStatus=document.getElementById('onboardCardStatus');
+      const assignRow=document.getElementById('onboardAssignCardRow');
+      const assignedBox=document.getElementById('onboardCardAssigned');
+      const scanInput=document.getElementById('onboardCardScanInput');
+      const btnAssign=document.getElementById('btnOnboardAssignCard');
       const btnRf=document.getElementById('btnOnboardRefund');
       function showOnboardRefund(){
         const RA=window.GfpRefundAction;
@@ -223,28 +229,39 @@
         };
       }
 
-      if(btnCard&&createdMember&&createdMember.id){
-        btnCard.disabled=false;
-        if(cardStatus) cardStatus.textContent='Ready — print the member barcode card.';
-      } else if(btnCard){
-        btnCard.disabled=true;
-        if(cardStatus) cardStatus.textContent='Member id missing — card unavailable.';
+      if(assignedBox) assignedBox.hidden=true;
+      if(scanInput) scanInput.value='';
+      if(createdMember&&createdMember.id){
+        if(assignRow) assignRow.style.display='flex';
+        if(btnAssign) btnAssign.disabled=false;
+        if(cardStatus) cardStatus.textContent=window.GfpI18n.tLabel(
+          'Scan a blank Available PVC card to assign to this member.',
+          'امسح كارنيه PVC متاح لتعيينه لهذا العضو.'
+        );
+        if(scanInput) setTimeout(function(){ try{ scanInput.focus(); }catch(e){} }, 80);
+      } else {
+        if(assignRow) assignRow.style.display='none';
+        if(btnAssign) btnAssign.disabled=true;
+        if(cardStatus) cardStatus.textContent=window.GfpI18n.tLabel(
+          'Member id missing — cannot assign a card.',
+          'رقم العضو غير موجود — لا يمكن تعيين كارنيه.'
+        );
       }
 
       if(!onboardSale){
-        if(invStatus) invStatus.textContent='No sale invoice (membership assigned without POS sale).';
+        if(invStatus) invStatus.textContent=window.GfpI18n.tLabel('No sale invoice (membership assigned without POS sale).','لا توجد فاتورة بيع (تم تفعيل العضوية بدون عملية بيع في نقطة البيع).');
         if(btnInv) btnInv.disabled=true;
         showOnboardRefund();
         return;
       }
       const skipped=onboardSale.invoiceStatus==='skipped'||onboardSale.invoiceStatus==='not_applicable';
       if(skipped){
-        if(invStatus) invStatus.textContent='No invoice for this sale.';
+        if(invStatus) invStatus.textContent=window.GfpI18n.tLabel('No invoice for this sale.','لا توجد فاتورة لهذه العملية.');
         if(btnInv) btnInv.disabled=true;
         showOnboardRefund();
         return;
       }
-      if(invStatus) invStatus.textContent='Preparing invoice…';
+      if(invStatus) invStatus.textContent=window.GfpI18n.tLabel('Preparing invoice…','جارٍ تجهيز الفاتورة...');
       if(btnInv) btnInv.disabled=true;
       const inv=await resolveOnboardInvoice(onboardSale);
       if(inv&&inv.invoiceId){
@@ -252,12 +269,12 @@
         onboardInvoiceNumber=inv.invoiceNumber;
         if(invStatus){
           invStatus.textContent=onboardInvoiceNumber
-            ?('Invoice '+onboardInvoiceNumber+' ready to print')
-            :'Invoice ready to print';
+            ?(window.GfpI18n.tLabel('Invoice ','فاتورة ')+onboardInvoiceNumber+window.GfpI18n.tLabel(' ready to print',' جاهزة للطباعة'))
+            :window.GfpI18n.tLabel('Invoice ready to print','الفاتورة جاهزة للطباعة');
         }
         if(btnInv) btnInv.disabled=false;
       } else {
-        if(invStatus) invStatus.textContent='Invoice not ready yet — try Print again in a moment.';
+        if(invStatus) invStatus.textContent=window.GfpI18n.tLabel('Invoice not ready yet — try Print again in a moment.','الفاتورة غير جاهزة بعد — حاول الطباعة مرة أخرى بعد قليل.');
         if(btnInv) btnInv.disabled=false; // allow retry via click handler re-resolve
       }
       showOnboardRefund();
@@ -295,10 +312,10 @@
       }
       if(hint){
         if(isPartial){
-          hint.textContent='EGP '+due.toLocaleString()+' stays outstanding — collect later from Member 360.';
+          hint.textContent='EGP '+due.toLocaleString()+window.GfpI18n.tLabel(' stays outstanding — collect later from Member 360.',' متبقٍ — حصّله لاحقًا من صفحة العضو (Member 360).');
           hint.classList.add('has-due');
         } else {
-          hint.textContent='Pay less than the plan price to record a partial payment.';
+          hint.textContent=window.GfpI18n.tLabel('Pay less than the plan price to record a partial payment.','ادفع أقل من سعر الخطة لتسجيل دفعة جزئية.');
           hint.classList.remove('has-due');
         }
       }
@@ -310,20 +327,20 @@
       if(loading) loading.style.display='block';
       if(host) host.innerHTML='';
       try{
-        if(!Gfp) throw new Error('API missing');
+        if(!Gfp) throw new Error(window.GfpI18n.tLabel('API missing','واجهة البرمجة (API) غير متاحة'));
         const r=await Gfp.get('/membership-plans');
-        if(!r.ok) throw new Error(apiMsg(r,'Failed to load plans'));
+        if(!r.ok) throw new Error(apiMsg(r,window.GfpI18n.tLabel('Failed to load plans','تعذر تحميل الخطط')));
         onboardPlans=(Array.isArray(r.data)?r.data:[]).filter(function(p){
           return p&&p.isActive!==false&&String(p.planType||'').toLowerCase()!=='trial';
         });
         if(!onboardPlans.length){
-          if(host) host.innerHTML='<div class="mdl-error-banner show"><i class="ti ti-alert-circle"></i><div class="error-text">No active membership plans</div></div>';
+          if(host) host.innerHTML='<div class="mdl-error-banner show"><i class="ti ti-alert-circle"></i><div class="error-text">'+window.GfpI18n.tLabel('No active membership plans','لا توجد خطط عضوية نشطة')+'</div></div>';
         } else if(host){
           host.innerHTML=onboardPlans.map(function(p){
             return '<button type="button" class="plan-card" data-plan-id="'+p.id+'" style="text-align:left;width:100%;border:1px solid var(--ls3);background:var(--ls1);border-radius:var(--rmd);padding:12px;cursor:pointer">'
               +'<div style="display:flex;justify-content:space-between;gap:8px"><strong>'+(p.name||'')+'</strong><span>EGP '+(p.price||0).toLocaleString()+'</span></div>'
-              +'<div style="font-size:12px;color:var(--ltt);margin-top:4px">'+(p.durationDays||0)+' days'
-              +(p.sessionCount?' · '+p.sessionCount+' sessions':'')+'</div></button>';
+              +'<div style="font-size:12px;color:var(--ltt);margin-top:4px">'+(p.durationDays||0)+' '+window.GfpI18n.tLabel('days','يوم')
+              +(p.sessionCount?' · '+p.sessionCount+' '+window.GfpI18n.tLabel('sessions','جلسة'):'')+'</div></button>';
           }).join('');
           host.querySelectorAll('[data-plan-id]').forEach(function(btn){
             btn.addEventListener('click',function(){
@@ -336,7 +353,7 @@
           });
         }
       }catch(e){
-        if(host) host.innerHTML='<div class="mdl-error-banner show"><i class="ti ti-alert-circle"></i><div class="error-text">'+(e.message||'Cannot load plans (plans.manage may be required)')+'</div></div>';
+        if(host) host.innerHTML='<div class="mdl-error-banner show"><i class="ti ti-alert-circle"></i><div class="error-text">'+(e.message||window.GfpI18n.tLabel('Cannot load plans (plans.manage may be required)','تعذر تحميل الخطط (قد تحتاج صلاحية plans.manage)'))+'</div></div>';
       }
       if(loading) loading.style.display='none';
     }
@@ -349,11 +366,11 @@
       const start=(startEl&&startEl.value)||new Date().toISOString().slice(0,10);
       const end=addDaysIso(start, Number(selectedPlan.durationDays)||0);
       box.innerHTML=
-        '<div class="plan-detail-row"><span class="plan-detail-label">Member</span><span class="plan-detail-val">'+(createdMember.fullName||'')+'</span></div>'+
-        '<div class="plan-detail-row"><span class="plan-detail-label">Plan</span><span class="plan-detail-val">'+(selectedPlan.name||'')+'</span></div>'+
-        '<div class="plan-detail-row"><span class="plan-detail-label">Start</span><span class="plan-detail-val">'+fmtObDate(start)+'</span></div>'+
-        '<div class="plan-detail-row"><span class="plan-detail-label">End</span><span class="plan-detail-val">'+fmtObDate(end)+'</span></div>'+
-        '<div class="plan-detail-row"><span class="plan-detail-label">Price</span><span class="plan-price"><span class="currency">EGP</span> '+(selectedPlan.price||0).toLocaleString()+'</span></div>';
+        '<div class="plan-detail-row"><span class="plan-detail-label">'+window.GfpI18n.tLabel('Member','العضو')+'</span><span class="plan-detail-val">'+(createdMember.fullName||'')+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">'+window.GfpI18n.tLabel('Plan','الخطة')+'</span><span class="plan-detail-val">'+(selectedPlan.name||'')+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">'+window.GfpI18n.tLabel('Start','البداية')+'</span><span class="plan-detail-val">'+fmtObDate(start)+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">'+window.GfpI18n.tLabel('End','النهاية')+'</span><span class="plan-detail-val">'+fmtObDate(end)+'</span></div>'+
+        '<div class="plan-detail-row"><span class="plan-detail-label">'+window.GfpI18n.tLabel('Price','السعر')+'</span><span class="plan-price"><span class="currency">EGP</span> '+(selectedPlan.price||0).toLocaleString()+'</span></div>';
       if(amtEl && (amtEl.value===''||amtEl.value==null)) amtEl.value=String(selectedPlan.price||0);
       updateOnboardDueHint();
     }
@@ -379,7 +396,7 @@
           const startEl=overlay.querySelector('#onboardStartDate');
           const dueDate=(dueEl&&dueEl.value)||(startEl&&startEl.value)||todayYmdOb();
           if(!dueDate){
-            showAddError('Due date required for partial payment.');
+            showAddError(window.GfpI18n.tLabel('Due date required for partial payment.','التاريخ المستحق مطلوب للدفعة الجزئية.'));
             return false;
           }
           body.partialPayment={ dueDate: dueDate };
@@ -387,13 +404,13 @@
         if(method==='cash'&&amount>0){
           const sh=await Gfp.get('/shifts/current');
           if(!sh.ok||!sh.data||!sh.data.id){
-            showAddError('Open a shift before accepting cash payment.');
+            showAddError(window.GfpI18n.tLabel('Open a shift before accepting cash payment.','افتح وردية قبل قبول الدفع نقدًا.'));
             return false;
           }
         }
         const key=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('ob-'+Date.now());
         const r=await Gfp.post('/sales', body, { headers: { 'X-Idempotency-Key': key } });
-        if(!r.ok){ showAddError(apiMsg(r,'Sale failed')); return false; }
+        if(!r.ok){ showAddError(apiMsg(r,window.GfpI18n.tLabel('Sale failed','فشلت عملية البيع'))); return false; }
         return { sale:r.data, payMethod:pay, amount:amount };
       }
       if(canMgr){
@@ -402,10 +419,10 @@
           paymentMethod: pay==='vodafone_cash'?'fawry':pay,
           amountPaid: pay==='cash'?amount:undefined
         });
-        if(!(r.ok||r.status===201)){ showAddError(apiMsg(r,'Assign failed')); return false; }
+        if(!(r.ok||r.status===201)){ showAddError(apiMsg(r,window.GfpI18n.tLabel('Assign failed','فشل تعيين العضوية'))); return false; }
         return { membership:r.data, payMethod:pay, amount:amount };
       }
-      showAddError('Missing sales.sell or manager permission to complete membership payment');
+      showAddError(window.GfpI18n.tLabel('Missing sales.sell or manager permission to complete membership payment','صلاحية sales.sell أو صلاحية مدير مطلوبة لإتمام دفع العضوية'));
       return false;
     }
 
@@ -428,7 +445,7 @@
           if(!validatePhone(v)){
             phoneWrap&&phoneWrap.classList.add('error');
             phoneErr&&phoneErr.classList.add('show');
-            phoneErr&&(phoneErr.querySelector('.field-error-text').textContent='Invalid Egyptian phone format');
+            phoneErr&&(phoneErr.querySelector('.field-error-text').textContent=window.GfpI18n.tLabel('Invalid Egyptian phone format','صيغة رقم الهاتف المصري غير صحيحة'));
           } else {
             phoneWrap&&phoneWrap.classList.remove('error');
             phoneErr&&phoneErr.classList.remove('show');
@@ -451,7 +468,7 @@
           if(dobErr){
             dobErr.classList.add('show');
             const t=dobErr.querySelector('.field-error-text');
-            if(t) t.textContent='Member must be at least 10 years old';
+            if(t) t.textContent=window.GfpI18n.tLabel('Member must be at least 10 years old','يجب أن يكون عمر العضو 10 سنوات على الأقل');
           }
         } else {
           this.classList.remove('error');
@@ -485,7 +502,7 @@
         const errEl=overlay.querySelector(`#add${k.charAt(0).toUpperCase()+k.slice(1)}Error`);
         if(!this.value.trim()){
           this.classList.add('error');
-          if(errEl){errEl.classList.add('show');errEl.querySelector('.field-error-text').textContent='This field is required';}
+          if(errEl){errEl.classList.add('show');errEl.querySelector('.field-error-text').textContent=window.GfpI18n.tLabel('This field is required','هذا الحقل مطلوب');}
         } else {
           this.classList.remove('error');
           if(errEl) errEl.classList.remove('show');
@@ -502,8 +519,8 @@
         try{
           if(onboardStep===1){
             if(!validateAddForm()) return;
-            if(!canCreate()){ showAddError('Missing members.create permission'); return; }
-            if(!Gfp){ showAddError('API client missing'); return; }
+            if(!canCreate()){ showAddError(window.GfpI18n.tLabel('Missing members.create permission','صلاحية members.create مطلوبة')); return; }
+            if(!Gfp){ showAddError(window.GfpI18n.tLabel('API client missing','عميل API غير متاح')); return; }
             const body={
               fullName: form.nameEn.value.trim(),
               fullNameAr: form.nameAr.value.trim(),
@@ -517,14 +534,14 @@
             if(form.referralCode&&form.referralCode.value.trim())
               body.referralCode=form.referralCode.value.trim().toUpperCase();
             const r=await Gfp.post('/members', body);
-            if(!r.ok){ showAddError(apiMsg(r,'Failed to create member')); return; }
+            if(!r.ok){ showAddError(apiMsg(r,window.GfpI18n.tLabel('Failed to create member','فشل إنشاء العضو'))); return; }
             createdMember=r.data||{};
             if(!createdMember.id&&r.data) createdMember=r.data;
             // Some APIs return only id string / nested member / PascalCase Id
             if(!createdMember.id&&createdMember.Id) createdMember.id=createdMember.Id;
             if(!createdMember.id&&typeof r.data==='string') createdMember={ id:r.data, fullName:body.fullName };
             if(!createdMember.fullName) createdMember.fullName=body.fullName||createdMember.FullName;
-            toast('Member created — select a membership');
+            toast(window.GfpI18n.tLabel('Member created — select a membership','تم إنشاء العضو — اختر عضوية'));
             const startEl=overlay.querySelector('#onboardStartDate');
             if(startEl&&!startEl.value) startEl.value=new Date().toISOString().slice(0,10);
             setOnboardStep(2);
@@ -532,7 +549,7 @@
             if(typeof window.loadMembers==='function') window.loadMembers();
             if(typeof window.loadStats==='function') window.loadStats();
           } else if(onboardStep===2){
-            if(!selectedPlan){ showAddError('Select a membership plan'); return; }
+            if(!selectedPlan){ showAddError(window.GfpI18n.tLabel('Select a membership plan','اختر خطة عضوية')); return; }
             renderOnboardSummary();
             setOnboardStep(3);
           } else if(onboardStep===3){
@@ -548,18 +565,19 @@
                 '<div><strong>'+(createdMember.fullName||'')+'</strong></div>'+
                 '<div>'+(selectedPlan.name||'')+'</div>'+
                 '<div>'+fmtObDate(start)+' → '+fmtObDate(end)+'</div>'+
-                '<div>Paid: EGP '+(result.amount||0).toLocaleString()+' ('+result.payMethod+')</div>'+
-                (outstanding>0.004?('<div>Outstanding: EGP '+outstanding.toLocaleString()+'</div>'):'');
+                '<div>'+window.GfpI18n.tLabel('Paid: EGP ','المدفوع: EGP ')+(result.amount||0).toLocaleString()+' ('+result.payMethod+')</div>'+
+                (outstanding>0.004?('<div>'+window.GfpI18n.tLabel('Outstanding: EGP ','المستحق: EGP ')+outstanding.toLocaleString()+'</div>'):'');
             }
             const view=overlay.querySelector('#btnOnboardViewMember');
             if(view&&createdMember.id) view.href='/dashboard/members/'+encodeURIComponent(createdMember.id)+'/';
             setOnboardStep(4);
-            toast('Onboarding complete — print invoice & card');
+            toast(window.GfpI18n.tLabel('Onboarding complete — print invoice & assign card','تم إكمال التسجيل — اطبع الفاتورة وعيّن الكارنيه'));
             await prepareOnboardPrintStep(result);
             if(typeof window.loadMembers==='function') window.loadMembers();
           }
         }catch(e){
-          showAddError('Network error — please try again');
+          console.error('[AddMember] step '+onboardStep+' failed:', e);
+          showAddError(window.GfpI18n.tLabel('Network error — please try again','خطأ في الشبكة — حاول مرة أخرى'));
         } finally {
           btnCreate.classList.remove('loading');
           if(onboardStep===1) validateAddForm();
@@ -574,7 +592,7 @@
       btnSkip.addEventListener('click',function(){
         closeOverlay('addMemberModal');
         resetAddForm();
-        toast('Member created without membership');
+        toast(window.GfpI18n.tLabel('Member created without membership','تم إنشاء العضو بدون عضوية'));
         if(typeof window.loadMembers==='function') window.loadMembers();
       });
     }
@@ -606,28 +624,67 @@
           }
         }
         if(!onboardInvoiceId){
-          toast('Invoice not ready yet','error');
+          toast(window.GfpI18n.tLabel('Invoice not ready yet','الفاتورة غير جاهزة بعد'),'error');
           return;
         }
         await openOnboardPrintHtml(
-          onboardInvoiceNumber?('Invoice '+onboardInvoiceNumber):'Invoice',
+          onboardInvoiceNumber?(window.GfpI18n.tLabel('Invoice ','فاتورة ')+onboardInvoiceNumber):window.GfpI18n.tLabel('Invoice','فاتورة'),
           '/invoices/'+encodeURIComponent(onboardInvoiceId)+'/receipt-html',
           true
         );
       });
     }
-    const btnPrintCard=document.getElementById('btnOnboardPrintCard');
-    if(btnPrintCard){
-      btnPrintCard.addEventListener('click',async function(){
-        if(!createdMember||!createdMember.id){
-          toast('Member id missing','error');
+    async function assignOnboardCard(){
+      const cardStatus=document.getElementById('onboardCardStatus');
+      const scanInput=document.getElementById('onboardCardScanInput');
+      const btnAssign=document.getElementById('btnOnboardAssignCard');
+      const assignRow=document.getElementById('onboardAssignCardRow');
+      const assignedBox=document.getElementById('onboardCardAssigned');
+      const assignedCode=document.getElementById('onboardCardAssignedCode');
+      if(!createdMember||!createdMember.id){
+        toast(window.GfpI18n.tLabel('Member id missing','رقم العضو غير موجود'),'error');
+        return;
+      }
+      if(!canEdit()){
+        toast(window.GfpI18n.tLabel('Missing members.edit permission','صلاحية members.edit مطلوبة'),'error');
+        return;
+      }
+      const code=String(scanInput&&scanInput.value||'').trim();
+      if(!code){
+        toast(window.GfpI18n.tLabel('Scan an Available card','امسح كارنيه متاح'),'error');
+        if(scanInput) scanInput.focus();
+        return;
+      }
+      if(btnAssign) btnAssign.disabled=true;
+      try{
+        const r=await Gfp.post('/access-cards/assign',{ memberId:createdMember.id, code:code });
+        if(!r||!r.ok){
+          toast(apiMsg(r, window.GfpI18n.tLabel('Card assign failed','فشل تعيين الكارنيه')),'error');
+          if(btnAssign) btnAssign.disabled=false;
           return;
         }
-        await openOnboardPrintHtml(
-          'Member card',
-          '/members/'+encodeURIComponent(createdMember.id)+'/access-card-html',
-          true
+        const assigned=(r.data&&(r.data.code||r.data.Code))||code;
+        if(assignRow) assignRow.style.display='none';
+        if(assignedBox) assignedBox.hidden=false;
+        if(assignedCode) assignedCode.textContent=assigned;
+        if(cardStatus) cardStatus.textContent=window.GfpI18n.tLabel(
+          'PVC card assigned. Desk check-in uses this code.',
+          'تم تعيين الكارنيه. المسح عند الاستقبال يستخدم هذا الكود.'
         );
+        toast(window.GfpI18n.tLabel('Card assigned','تم تعيين الكارنيه'));
+      }catch(e){
+        toast(window.GfpI18n.tLabel('Card assign failed','فشل تعيين الكارنيه'),'error');
+        if(btnAssign) btnAssign.disabled=false;
+      }
+    }
+    const btnOnboardAssign=document.getElementById('btnOnboardAssignCard');
+    if(btnOnboardAssign){
+      btnOnboardAssign.addEventListener('click',function(){ assignOnboardCard(); });
+    }
+    const onboardScanInput=document.getElementById('onboardCardScanInput');
+    if(onboardScanInput){
+      onboardScanInput.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'){ ev.preventDefault(); assignOnboardCard(); }
       });
     }
     const btnPrintDo=document.getElementById('btnOnboardPrintDo');
@@ -635,7 +692,7 @@
       btnPrintDo.addEventListener('click',function(){
         const frame=document.getElementById('onboardPrintFrame');
         try{ if(frame&&frame.contentWindow){ frame.contentWindow.focus(); frame.contentWindow.print(); } }
-        catch(e){ toast('Allow pop-ups / try Print again','error'); }
+        catch(e){ toast(window.GfpI18n.tLabel('Allow pop-ups / try Print again','فعّل النوافذ المنبثقة أو حاول الطباعة مرة أخرى'),'error'); }
       });
     }
     const btnPrintClose=document.getElementById('btnOnboardPrintClose');
@@ -652,11 +709,22 @@
       const invStatus=document.getElementById('onboardInvoiceStatus');
       const cardStatus=document.getElementById('onboardCardStatus');
       const btnInv=document.getElementById('btnOnboardPrintInvoice');
-      const btnCard=document.getElementById('btnOnboardPrintCard');
-      if(invStatus) invStatus.textContent='Preparing invoice…';
-      if(cardStatus) cardStatus.textContent='Member access card with barcode.';
+      const assignRow=document.getElementById('onboardAssignCardRow');
+      const assignedBox=document.getElementById('onboardCardAssigned');
+      const assignedCode=document.getElementById('onboardCardAssignedCode');
+      const scanInput=document.getElementById('onboardCardScanInput');
+      const btnAssign=document.getElementById('btnOnboardAssignCard');
+      if(invStatus) invStatus.textContent=window.GfpI18n.tLabel('Preparing invoice…','جارٍ تجهيز الفاتورة...');
+      if(cardStatus) cardStatus.textContent=window.GfpI18n.tLabel(
+        'Scan a blank Available PVC card to assign.',
+        'امسح كارنيه PVC متاح للتعيين.'
+      );
       if(btnInv) btnInv.disabled=true;
-      if(btnCard) btnCard.disabled=true;
+      if(assignRow) assignRow.style.display='flex';
+      if(assignedBox) assignedBox.hidden=true;
+      if(assignedCode) assignedCode.textContent='—';
+      if(scanInput) scanInput.value='';
+      if(btnAssign) btnAssign.disabled=false;
       const dueEl=overlay.querySelector('#onboardDueDate');
       const dueHint=overlay.querySelector('#onboardDueHint');
       const dueWrap=overlay.querySelector('#onboardDueDateWrap');
@@ -681,7 +749,7 @@
   let editMemberId=null;
 
   window.openEditDrawer=function(memberDataOrId){
-    if(!canEdit()){ toast('Missing members.edit permission','error'); return; }
+    if(!canEdit()){ toast(window.GfpI18n.tLabel('Missing members.edit permission','صلاحية members.edit مطلوبة'),'error'); return; }
     const overlay=document.getElementById('editMemberDrawer');
     if(!overlay) return;
     if(typeof memberDataOrId==='string'){
@@ -698,12 +766,12 @@
     const overlay=document.getElementById('editMemberDrawer');
     if(!overlay) return;
     try{
-      if(!Gfp){ toast('API client missing','error'); return; }
+      if(!Gfp){ toast(window.GfpI18n.tLabel('API client missing','عميل API غير متاح'),'error'); return; }
       const r=await Gfp.get('/members/'+id);
       if(!r.ok) throw new Error('Not found');
       populateEditForm(r.data);
     }catch(e){
-      toast('Failed to load member data','error');
+      toast(window.GfpI18n.tLabel('Failed to load member data','فشل تحميل بيانات العضو'),'error');
     }
   }
 
@@ -739,10 +807,10 @@
     // Timestamp
     const ts=overlay.querySelector('#editTimestamp');
     if(ts&&m.updatedAtUtc){
-      ts.textContent='Last updated: '+new Date(m.updatedAtUtc).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      ts.textContent=window.GfpI18n.tLabel('Last updated: ','آخر تحديث: ')+new Date(m.updatedAtUtc).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
       ts.style.display='flex';
     } else if(ts&&m.createdAtUtc){
-      ts.textContent='Created: '+new Date(m.createdAtUtc).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      ts.textContent=window.GfpI18n.tLabel('Created: ','تاريخ الإنشاء: ')+new Date(m.createdAtUtc).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
       ts.style.display='flex';
     }
     validateEditForm();
@@ -790,7 +858,7 @@
         const dobErr=overlay.querySelector('#editDobError');
         if(this.value&&!validateDob(this.value)){
           this.classList.add('error');
-          if(dobErr){ dobErr.classList.add('show'); const t=dobErr.querySelector('.field-error-text'); if(t) t.textContent='Member must be at least 10 years old'; }
+          if(dobErr){ dobErr.classList.add('show'); const t=dobErr.querySelector('.field-error-text'); if(t) t.textContent=window.GfpI18n.tLabel('Member must be at least 10 years old','يجب أن يكون عمر العضو 10 سنوات على الأقل'); }
         } else {
           this.classList.remove('error');
           dobErr&&dobErr.classList.remove('show');
@@ -847,20 +915,21 @@
         if(notes) body.notes=notes.value.trim();
 
         try{
-          if(!canEdit()){ showEditError('Missing members.edit permission'); return; }
-          if(!Gfp){ showEditError('API client missing'); return; }
+          if(!canEdit()){ showEditError(window.GfpI18n.tLabel('Missing members.edit permission','صلاحية members.edit مطلوبة')); return; }
+          if(!Gfp){ showEditError(window.GfpI18n.tLabel('API client missing','عميل API غير متاح')); return; }
           const r=await Gfp.put('/members/'+editMemberId, body);
           if(r.ok){
-            toast('Member updated successfully');
+            toast(window.GfpI18n.tLabel('Member updated successfully','تم تحديث العضو بنجاح'));
             closeOverlay('editMemberDrawer');
             // Re-fetch — ActivePlan/MembershipStatus are server-derived
             if(typeof window.loadMembers==='function') window.loadMembers();
             if(typeof window.loadMember==='function') window.loadMember();
           } else {
-            showEditError(apiMsg(r,'Failed to update member'));
+            showEditError(apiMsg(r,window.GfpI18n.tLabel('Failed to update member','فشل تحديث بيانات العضو')));
           }
         }catch(e){
-          showEditError('Network error — please try again');
+          console.error('[EditMember] save failed:', e);
+          showEditError(window.GfpI18n.tLabel('Network error — please try again','خطأ في الشبكة — حاول مرة أخرى'));
         }
         btnSave.classList.remove('loading');
         validateEditForm();
@@ -893,12 +962,12 @@
   }
 
   window.openAssignModal=async function(memberId){
-    if(!memberId){ toast('Member id required','error'); return; }
+    if(!memberId){ toast(window.GfpI18n.tLabel('Member id required','رقم العضو مطلوب'),'error'); return; }
     const canMgr=Authz?Authz.useCanRole('ManagerOrAbove'):false;
-    if(!canMgr){ toast('Manager or above required to assign','error'); return; }
+    if(!canMgr){ toast(window.GfpI18n.tLabel('Manager or above required to assign','صلاحية مدير أو أعلى مطلوبة للتعيين'),'error'); return; }
     assignMemberId=memberId;
     const overlay=assignModalEl();
-    if(!overlay){ toast('Assign modal missing','error'); return; }
+    if(!overlay){ toast(window.GfpI18n.tLabel('Assign modal missing','نافذة التعيين غير متاحة'),'error'); return; }
     overlay.classList.add('open');
     const err=overlay.querySelector('#assignErrorBanner');
     if(err) err.classList.remove('show');
@@ -943,18 +1012,18 @@
         }
       }
       if(select){
-        select.innerHTML='<option value="">— Select a plan —</option>';
+        select.innerHTML='<option value="">'+window.GfpI18n.tLabel('— Select a plan —','— اختر خطة —')+'</option>';
         (plansCache||[]).filter(p=>p&&p.isActive!==false&&String(p.planType||'').toLowerCase()!=='trial').forEach(p=>{
           const opt=document.createElement('option');
           opt.value=p.id;
-          opt.textContent=`${p.name} — EGP ${p.price} (${p.durationDays} days)`;
+          opt.textContent=`${p.name} — EGP ${p.price} (${p.durationDays} ${window.GfpI18n.tLabel('days','يوم')})`;
           opt.dataset.plan=JSON.stringify(p);
           select.appendChild(opt);
         });
         select.style.display='';
       }
     }catch(e){
-      if(select){select.innerHTML='<option value="">Failed to load plans (needs plans.manage)</option>';select.style.display='';}
+      if(select){select.innerHTML='<option value="">'+window.GfpI18n.tLabel('Failed to load plans (needs plans.manage)','تعذر تحميل الخطط (يتطلب صلاحية plans.manage)')+'</option>';select.style.display='';}
     }
     if(loading) loading.style.display='none';
   }
@@ -997,10 +1066,10 @@
       const cash=Number.isFinite(paid)?paid:0;
       const due=Math.max(0, price-cash);
       if(due>0.004){
-        hint.textContent='EGP '+due.toLocaleString()+' stays outstanding — Collect Payment on this member.';
+        hint.textContent='EGP '+due.toLocaleString()+window.GfpI18n.tLabel(' stays outstanding — Collect Payment on this member.',' متبقٍ — حصّل الدفعة من هذا العضو.');
         hint.classList.add('has-due');
       } else {
-        hint.textContent='Leave as the plan price to pay in full. Pay less if they cannot pay everything now.';
+        hint.textContent=window.GfpI18n.tLabel('Leave as the plan price to pay in full. Pay less if they cannot pay everything now.','اترك المبلغ كسعر الخطة للدفع الكامل، أو ادفع أقل إذا تعذر الدفع بالكامل الآن.');
         hint.classList.remove('has-due');
       }
     }
@@ -1018,7 +1087,7 @@
             const typeEl=detail.querySelector('.pdc-type');
             if(typeEl) typeEl.textContent=(p.planType||'').replace(/_/g,' ');
             detail.querySelector('.pdc-price').innerHTML=`<span class="currency">EGP</span> ${(p.price||0).toLocaleString()}`;
-            detail.querySelector('.pdc-duration').textContent=(p.durationDays||0)+' days';
+            detail.querySelector('.pdc-duration').textContent=(p.durationDays||0)+' '+window.GfpI18n.tLabel('days','يوم');
             detail.classList.add('show');
           }
           const amtEl=overlay.querySelector('#assignAmountPaid');
@@ -1034,10 +1103,10 @@
       radio.addEventListener('change',function(){
         if(paymentNote){
           if(this.value==='cash'){
-            paymentNote.innerHTML='<i class="ti ti-info-circle"></i> Cash activates the membership now. Pay less than the plan price and the rest stays Outstanding.';
+            paymentNote.innerHTML='<i class="ti ti-info-circle"></i> '+window.GfpI18n.tLabel('Cash activates the membership now. Pay less than the plan price and the rest stays Outstanding.','الدفع النقدي يفعّل العضوية فورًا. ادفع أقل من سعر الخطة ويبقى الباقي كمبلغ مستحق.');
             paymentNote.className='payment-note show';
           } else {
-            paymentNote.innerHTML='<i class="ti ti-alert-triangle"></i> Membership will be created as "pending" and activated automatically when payment is confirmed via webhook.';
+            paymentNote.innerHTML='<i class="ti ti-alert-triangle"></i> '+window.GfpI18n.tLabel('Membership will be created as "pending" and activated automatically when payment is confirmed via webhook.','سيتم إنشاء العضوية بحالة "قيد الانتظار" وتُفعّل تلقائيًا عند تأكيد الدفع عبر webhook.');
             paymentNote.className='payment-note warning show';
           }
         }
@@ -1077,7 +1146,7 @@
             if(!sh.ok||!sh.data||!sh.data.id){
               if(errorBanner){
                 const te=errorBanner.querySelector('.error-text');
-                if(te) te.textContent='Open a shift before accepting cash.';
+                if(te) te.textContent=window.GfpI18n.tLabel('Open a shift before accepting cash.','افتح وردية قبل قبول الدفع نقدًا.');
                 errorBanner.classList.add('show');
               }
               btnAssign.classList.remove('loading');
@@ -1100,31 +1169,31 @@
             toast(
               payMethod==='cash'
                 ?(due>0.004
-                  ?'Assigned. EGP '+due.toLocaleString()+' outstanding — Collect Payment on this member.'
-                  :'Membership assigned & activated!')
-                :'Assigned — waiting for payment. Refresh the membership panel (no live push).',
+                  ?window.GfpI18n.tLabel('Assigned. EGP ','تم التعيين. EGP ')+due.toLocaleString()+window.GfpI18n.tLabel(' outstanding — Collect Payment on this member.',' متبقٍ — حصّل الدفعة من هذا العضو.')
+                  :window.GfpI18n.tLabel('Membership assigned & activated!','تم تعيين العضوية وتفعيلها!'))
+                :window.GfpI18n.tLabel('Assigned — waiting for payment. Refresh the membership panel (no live push).','تم التعيين — في انتظار الدفع. حدّث لوحة العضوية (لا يوجد تحديث تلقائي).'),
               pending?'error':'success'
             );
             closeOverlay(overlay.id);
             if(typeof window.loadMember==='function') window.loadMember();
             if(typeof window.loadMembers==='function') window.loadMembers();
           } else if(res.status===409){
-            const msg=(res.data&&(res.data.message||res.data.error))||'Already has an active membership — cannot assign another.';
+            const msg=(res.data&&(res.data.message||res.data.error))||window.GfpI18n.tLabel('Already has an active membership — cannot assign another.','يوجد بالفعل عضوية نشطة — لا يمكن تعيين عضوية أخرى.');
             if(errorBanner){
               const te=errorBanner.querySelector('.error-text');
-              if(te) te.textContent='Active membership conflict: '+msg;
+              if(te) te.textContent=window.GfpI18n.tLabel('Active membership conflict: ','تعارض في العضوية النشطة: ')+msg;
               errorBanner.classList.add('show');
             }
-            toast('Blocked: active membership exists','error');
+            toast(window.GfpI18n.tLabel('Blocked: active membership exists','محظور: توجد عضوية نشطة بالفعل'),'error');
           } else {
-            const msg=(res.data&&(res.data.message||res.data.error))||(res.error&&res.error.message)||'Failed to assign membership';
+            const msg=(res.data&&(res.data.message||res.data.error))||(res.error&&res.error.message)||window.GfpI18n.tLabel('Failed to assign membership','فشل تعيين العضوية');
             if(errorBanner){
               errorBanner.querySelector('.error-text').textContent=msg;
               errorBanner.classList.add('show');
             }
           }
         }catch(e){
-          if(errorBanner){errorBanner.querySelector('.error-text').textContent='Network error';errorBanner.classList.add('show');}
+          if(errorBanner){errorBanner.querySelector('.error-text').textContent=window.GfpI18n.tLabel('Network error','خطأ في الشبكة');errorBanner.classList.add('show');}
         }
         btnAssign.classList.remove('loading');
         validateAssignForm();
@@ -1153,7 +1222,7 @@
   // Wire "Add Member" button on members list page
   const btnAdd=document.getElementById('btnAddMember');
   function openAddMemberModal(){
-    if(!canCreate()){ toast('Missing members.create permission','error'); return; }
+    if(!canCreate()){ toast(window.GfpI18n.tLabel('Missing members.create permission','صلاحية members.create مطلوبة'),'error'); return; }
     const m=document.getElementById('addMemberModal');
     if(m) m.classList.add('open');
   }

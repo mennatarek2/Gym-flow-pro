@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { platformLogin } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
+import { useUiStore } from '@/stores/ui-store'
 import { InternalStrip } from '@/components/InternalStrip'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const t = useUiStore((s) => s.t)
   const beginMfaSetup = useAuthStore((s) => s.beginMfaSetup)
   const beginMfaChallenge = useAuthStore((s) => s.beginMfaChallenge)
   const applySuccessfulAuth = useAuthStore((s) => s.applySuccessfulAuth)
@@ -39,13 +41,20 @@ export function LoginPage() {
       if (status === 200 && data.success && data.accessToken) {
         applySuccessfulAuth(data)
         const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
-        navigate(from && from !== '/login' ? from : '/tenants', { replace: true })
+        navigate(from && from !== '/login' ? from : '/oc', { replace: true })
         return
       }
 
-      setError(data.errorMessage || 'Invalid email or password.')
+      const message = data && typeof data === 'object' ? (data as { errorMessage?: string }).errorMessage : undefined
+
+      if (status === 401) {
+        setError(message || t('auth.invalidCredentials'))
+        return
+      }
+
+      setError(message || t('errors.generic'))
     } catch {
-      setError('Unable to reach the platform API. Check the API is running.')
+      setError(t('errors.network'))
     } finally {
       setSubmitting(false)
     }
@@ -56,32 +65,30 @@ export function LoginPage() {
       <InternalStrip />
       <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Sign in</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            Platform Console access requires two-factor authentication because this tool can view every gym&apos;s account.
-          </p>
+          <h1 className="cp-page-title">{t('auth.signIn')}</h1>
+          <p className="cp-page-subtitle">{t('auth.platformHint')}</p>
         </div>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-[var(--radius)] border border-gray-200 bg-white p-6">
+        <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-gray-700">Email</span>
+            <span className="text-[var(--text)]">{t('auth.email')}</span>
             <input
               type="email"
               required
               autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2 text-gray-900"
+              className="cp-input"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-gray-700">Password</span>
+            <span className="text-[var(--text)]">{t('auth.password')}</span>
             <input
               type="password"
               required
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2 text-gray-900"
+              className="cp-input"
             />
           </label>
           {error ? (
@@ -89,12 +96,8 @@ export function LoginPage() {
               {error}
             </p>
           ) : null}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-[var(--radius)] bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {submitting ? 'Signing in…' : 'Continue'}
+          <button type="submit" disabled={submitting} className="cp-btn cp-btn-primary disabled:opacity-60">
+            {submitting ? t('auth.signingIn') : t('common.continue')}
           </button>
         </form>
       </main>

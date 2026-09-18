@@ -5,10 +5,13 @@ import { fetchAuditLog } from '@/lib/api'
 import { ApiClientError } from '@/lib/api/errors'
 import { labelAuditAction, extractReasonFromAudit } from '@/features/tenants/AuditTrailPanel'
 import { formatCairoDateTime } from '@/lib/format'
+import { PageHeader } from '@/components/PageHeader'
+import { useUiStore } from '@/stores/ui-store'
 
 const PAGE_SIZE = 25
 
 export function AuditLogPage() {
+  const t = useUiStore((s) => s.t)
   const [params, setParams] = useSearchParams()
   const tenantId = params.get('tenantId') ?? ''
   const action = params.get('action') ?? ''
@@ -56,76 +59,68 @@ export function AuditLogPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header>
-        <h1 className="text-2xl font-semibold text-gray-900">Audit Log</h1>
-        <p className="text-sm text-gray-500">
-          Cross-tenant platform activity — the same audit trail shown per-tenant, without the tenant filter.
-        </p>
-      </header>
+      <PageHeader title={t('audit.title')} subtitle={t('audit.subtitle')} />
 
       <div className="flex flex-col gap-3 rounded-[var(--radius)] border border-gray-200 bg-white p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-gray-500">Tenant ID</span>
+            <span className="text-gray-500">{t('audit.tenantId')}</span>
             <input
               value={tenantId}
               onChange={(e) => patchParams({ tenantId: e.target.value || null, page: '1' })}
-              placeholder="Paste a tenant GUID"
-              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2"
+              placeholder={t('audit.tenantPlaceholder')}
+              className="cp-input"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-gray-500">Action</span>
+            <span className="text-gray-500">{t('audit.action')}</span>
             <input
               value={action}
               onChange={(e) => patchParams({ action: e.target.value || null, page: '1' })}
-              placeholder="e.g. platform.tenant.force_suspend"
-              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2"
+              placeholder={t('audit.actionPlaceholder')}
+              className="cp-input"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-gray-500">Actor (this page only)</span>
+            <span className="text-gray-500">{t('audit.actor')}</span>
             <input
               value={actorFilter}
               onChange={(e) => setActorFilter(e.target.value)}
-              placeholder="Filter loaded rows"
-              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2"
+              placeholder={t('audit.actorPlaceholder')}
+              className="cp-input"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-gray-500">From</span>
+            <span className="text-gray-500">{t('audit.from')}</span>
             <input
               type="date"
               value={from}
               onChange={(e) => patchParams({ from: e.target.value || null, page: '1' })}
-              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2"
+              className="cp-input"
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-gray-500">To</span>
+            <span className="text-gray-500">{t('audit.to')}</span>
             <input
               type="date"
               value={to}
               onChange={(e) => patchParams({ to: e.target.value || null, page: '1' })}
-              className="rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2"
+              className="cp-input"
             />
           </label>
         </div>
-        <p className="text-xs text-gray-500">
-          Tenant/Action/Date filters query the server. Actor filters only the rows already loaded on
-          this page — the endpoint has no actor query parameter today.
-        </p>
+        <p className="text-xs text-gray-500">{t('audit.filterHint')}</p>
       </div>
 
       <div className="overflow-x-auto rounded-[var(--radius)] border border-gray-200">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-500">
+        <table className="cp-table min-w-full text-left text-sm">
+          <thead>
             <tr>
-              <th className="px-3 py-2 font-medium">Timestamp</th>
-              <th className="px-3 py-2 font-medium">Tenant</th>
-              <th className="px-3 py-2 font-medium">Action</th>
-              <th className="px-3 py-2 font-medium">Actor</th>
-              <th className="px-3 py-2 font-medium">Details</th>
+              <th>{t('audit.timestamp')}</th>
+              <th>{t('audit.gym')}</th>
+              <th>{t('audit.action')}</th>
+              <th>{t('audit.actorCol')}</th>
+              <th>{t('audit.details')}</th>
             </tr>
           </thead>
           <tbody>
@@ -143,9 +138,9 @@ export function AuditLogPage() {
             {query.isError ? (
               <tr>
                 <td colSpan={colCount} className="px-3 py-8 text-center text-red-600">
-                  {query.error instanceof ApiClientError ? query.error.message : 'Failed to load the audit log.'}{' '}
+                  {query.error instanceof ApiClientError ? query.error.message : t('audit.failedLoad')}{' '}
                   <button type="button" className="underline" onClick={() => query.refetch()}>
-                    Retry
+                    {t('common.retry')}
                   </button>
                 </td>
               </tr>
@@ -153,7 +148,7 @@ export function AuditLogPage() {
             {!query.isLoading && !query.isError && visibleRows.length === 0 ? (
               <tr>
                 <td colSpan={colCount} className="px-3 py-8 text-center text-gray-500">
-                  No audit events match these filters.
+                  {t('audit.empty')}
                 </td>
               </tr>
             ) : null}
@@ -166,7 +161,7 @@ export function AuditLogPage() {
                   </td>
                   <td className="px-3 py-2">
                     {row.tenantId ? (
-                      <Link to={`/tenants/${row.tenantId}`} className="text-blue-600 underline-offset-2 hover:underline">
+                      <Link to={`/oc/gyms/cloud/${row.tenantId}`} className="text-blue-600 underline-offset-2 hover:underline">
                         {row.tenantName ?? row.gymCode ?? row.tenantId.slice(0, 8)}
                       </Link>
                     ) : (
@@ -195,25 +190,25 @@ export function AuditLogPage() {
       {query.data ? (
         <div className="flex items-center justify-between text-sm text-gray-500">
           <span>
-            Page {query.data.page} of {Math.max(query.data.totalPages, 1)} · {query.data.totalCount} total
-            {query.isFetching && !query.isLoading ? ' · updating…' : ''}
+            {t('gyms.pageOf', { page: query.data.page, pages: Math.max(query.data.totalPages, 1), total: query.data.totalCount })}
+            {query.isFetching && !query.isLoading ? ` · ${t('gyms.updating')}` : ''}
           </span>
           <div className="flex gap-2">
             <button
               type="button"
               disabled={!query.data.hasPrevious}
-              className="rounded border border-gray-200 px-3 py-1 disabled:opacity-40"
+              className="cp-btn cp-btn-secondary"
               onClick={() => patchParams({ page: String(page - 1) })}
             >
-              Previous
+              {t('common.previous')}
             </button>
             <button
               type="button"
               disabled={!query.data.hasNext}
-              className="rounded border border-gray-200 px-3 py-1 disabled:opacity-40"
+              className="cp-btn cp-btn-secondary"
               onClick={() => patchParams({ page: String(page + 1) })}
             >
-              Next
+              {t('common.next')}
             </button>
           </div>
         </div>

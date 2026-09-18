@@ -4,11 +4,12 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { impersonateTenant } from '@/lib/api/tenant-actions-api'
 import { ApiClientError } from '@/lib/api/errors'
 import type { PlatformTenantDetailDto } from '@/lib/api/types'
-import { validateReason, MIN_REASON_LENGTH } from '@/lib/platform-roles'
+import { isOpsOrAbove, validateReason, MIN_REASON_LENGTH } from '@/lib/platform-roles'
 import {
   buildImpersonationAdminUrl,
   useImpersonationSessionStore,
 } from '@/stores/impersonation-session-store'
+import { useAuthStore } from '@/stores/auth-store'
 import { useUiStore } from '@/stores/ui-store'
 import { formatCairoDateTime } from '@/lib/format'
 
@@ -24,6 +25,7 @@ export function ImpersonateButton({ tenant }: ImpersonateButtonProps) {
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const role = useAuthStore((s) => s.user?.role)
   const showToast = useUiStore((s) => s.showToast)
   const setSession = useImpersonationSessionStore((s) => s.setSession)
   const queryClient = useQueryClient()
@@ -73,6 +75,8 @@ export function ImpersonateButton({ tenant }: ImpersonateButtonProps) {
 
   const reasonOk = validateReason(reason) === null
   const busy = mutation.isPending
+
+  if (!isOpsOrAbove(role)) return null
 
   return (
     <>

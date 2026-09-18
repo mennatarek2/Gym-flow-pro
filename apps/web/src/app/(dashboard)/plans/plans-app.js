@@ -100,7 +100,8 @@
       color: 'var(--inf500)',
       accent: '#3B82F6',
       bg: 'var(--inf100)',
-      short: 'Monthly'
+      short: 'Monthly',
+      shortAr: 'شهري'
     },
     session_pack: {
       label: 'Session Pack',
@@ -109,7 +110,8 @@
       color: 'var(--wrn500)',
       accent: '#F59E0B',
       bg: 'var(--wrn100)',
-      short: 'Sessions'
+      short: 'Sessions',
+      shortAr: 'جلسات'
     },
     time_limited: {
       label: 'Time Limited',
@@ -118,7 +120,8 @@
       color: 'var(--purple)',
       accent: '#8B5CF6',
       bg: 'var(--purple100)',
-      short: 'Time'
+      short: 'Time',
+      shortAr: 'وقت'
     },
     pt_credits: {
       label: 'Private Training',
@@ -127,7 +130,8 @@
       color: 'var(--t500)',
       accent: '#148F8F',
       bg: 'var(--t100)',
-      short: 'Private'
+      short: 'Private',
+      shortAr: 'برايفت'
     },
     family: {
       label: 'Family',
@@ -136,7 +140,8 @@
       color: 'var(--coral)',
       accent: '#F97316',
       bg: 'var(--coral100)',
-      short: 'Family'
+      short: 'Family',
+      shortAr: 'عائلية'
     },
     trial: {
       label: 'Trial',
@@ -145,7 +150,8 @@
       color: 'var(--inf500)',
       accent: '#06B6D4',
       bg: 'var(--inf100)',
-      short: 'Trial'
+      short: 'Trial',
+      shortAr: 'تجريبي'
     },
     day_pass: {
       label: 'Day Pass',
@@ -154,7 +160,8 @@
       color: 'var(--wrn500)',
       accent: '#EAB308',
       bg: 'var(--wrn100)',
-      short: 'Day'
+      short: 'Day',
+      shortAr: 'يوم'
     }
   };
 
@@ -163,10 +170,10 @@
   }
 
   function errMsg(r) {
-    if (!r) return 'Request failed';
+    if (!r) return t('Request failed', 'فشل الطلب');
     if (r.error && r.error.message) return r.error.message;
-    if (r.data) return r.data.message || r.data.error || 'Request failed';
-    return 'Request failed';
+    if (r.data) return r.data.message || r.data.error || t('Request failed', 'فشل الطلب');
+    return t('Request failed', 'فشل الطلب');
   }
 
   function openModal() {
@@ -210,16 +217,22 @@
 
   async function loadPlans() {
     grid.innerHTML =
-      '<div class="loading-state"><div class="loader"></div><p>Loading plans...</p></div>';
+      '<div class="loading-state"><div class="loader"></div><p>' +
+      t('Loading plans...', 'جارٍ تحميل الخطط...') +
+      '</p></div>';
     if (!Gfp) {
       grid.innerHTML =
-        '<div class="empty-state"><div class="empty-title">API client missing</div></div>';
+        '<div class="empty-state"><div class="empty-title">' +
+        t('API client missing', 'عميل الـ API غير متوفر') +
+        '</div></div>';
       return;
     }
     const r = await Gfp.get('/membership-plans');
     if (!r.ok) {
       grid.innerHTML =
-        '<div class="empty-state"><div class="empty-icon"><i class="ti ti-alert-circle"></i></div><div class="empty-title">Could not load plans</div><div class="empty-desc">' +
+        '<div class="empty-state"><div class="empty-icon"><i class="ti ti-alert-circle"></i></div><div class="empty-title">' +
+        t('Could not load plans', 'تعذّر تحميل الخطط') +
+        '</div><div class="empty-desc">' +
         esc(errMsg(r)) +
         '</div></div>';
       return;
@@ -273,7 +286,13 @@
   function renderPlans(plans) {
     if (!plans.length) {
       grid.innerHTML =
-        '<div class="empty-state"><div class="empty-icon"><i class="ti ti-package-off"></i></div><div class="empty-title">No Plans Yet</div><div class="empty-desc">Create your first membership plan to get started.</div><button class="btn-create" id="emptyCreate"><i class="ti ti-plus"></i> Create Plan</button></div>';
+        '<div class="empty-state"><div class="empty-icon"><i class="ti ti-package-off"></i></div><div class="empty-title">' +
+        t('No Plans Yet', 'لا توجد خطط بعد') +
+        '</div><div class="empty-desc">' +
+        t('Create your first membership plan to get started.', 'أنشئ أول خطة عضوية للبدء.') +
+        '</div><button class="btn-create" id="emptyCreate"><i class="ti ti-plus"></i> ' +
+        t('Create Plan', 'إنشاء خطة') +
+        '</button></div>';
       const ec = document.getElementById('emptyCreate');
       if (ec) ec.addEventListener('click', function () {
         showPlanModal();
@@ -325,23 +344,32 @@
       '</div>' +
       '<div class="plan-duration"><i class="ti ti-calendar"></i>' +
       p.durationDays +
-      ' days</div>' +
+      t(' days', ' يوم') +
+      '</div>' +
       features +
       '<div class="card-stats">' +
       '<div class="card-stat"><div class="card-stat-val">' +
       (p.activeMemberships || 0) +
-      '</div><div class="card-stat-lbl">Active</div></div>' +
+      '</div><div class="card-stat-lbl">' +
+      t('Active', 'نشط') +
+      '</div></div>' +
       '<div class="card-stat"><div class="card-stat-val">' +
       (p.totalMemberships || 0) +
-      '</div><div class="card-stat-lbl">Total</div></div>' +
+      '</div><div class="card-stat-lbl">' +
+      t('Total', 'الإجمالي') +
+      '</div></div>' +
       '</div>' +
       '<div class="card-actions">' +
       '<button class="card-btn" data-action="edit" data-id="' +
       p.id +
-      '"><i class="ti ti-edit"></i> Edit</button>' +
+      '"><i class="ti ti-edit"></i> ' +
+      t('Edit', 'تعديل') +
+      '</button>' +
       '<button class="card-btn del" data-action="delete" data-id="' +
       p.id +
-      '"><i class="ti ti-trash"></i> Soft delete</button>' +
+      '"><i class="ti ti-trash"></i> ' +
+      t('Soft delete', 'إلغاء التفعيل') +
+      '</button>' +
       '</div></div></div>'
     );
   }
@@ -350,15 +378,15 @@
     const items = [];
     if (p.planType === 'session_pack' && p.sessionCount) {
       items.push(
-        '<div class="plan-feature"><i class="ti ti-bolt"></i>' + p.sessionCount + ' sessions included</div>'
+        '<div class="plan-feature"><i class="ti ti-bolt"></i>' + p.sessionCount + t(' sessions included', ' جلسة متضمّنة') + '</div>'
       );
     }
     if (p.planType === 'pt_credits' && p.sessionCount) {
       items.push(
         '<div class="plan-feature"><i class="ti ti-barbell"></i>' +
           p.sessionCount +
-          ' PT sessions' +
-          (p.ptSessionDurationMinutes ? ' · ' + p.ptSessionDurationMinutes + ' min' : '') +
+          t(' PT sessions', ' جلسة برايفت') +
+          (p.ptSessionDurationMinutes ? ' · ' + p.ptSessionDurationMinutes + t(' min', ' دقيقة') : '') +
           '</div>'
       );
     }
@@ -375,14 +403,16 @@
       items.push(
         '<div class="plan-feature"><i class="ti ti-user-plus"></i>' +
           p.referralInviteQuota +
-          ' invitations / membership</div>'
+          t(' invitations / membership', ' دعوة / عضوية') +
+          '</div>'
       );
     }
     if (p.planType === 'trial' && p.trialVisitLimit) {
       items.push(
         '<div class="plan-feature"><i class="ti ti-flask"></i>' +
           p.trialVisitLimit +
-          ' visit limit</div>'
+          t(' visit limit', ' حد الزيارات') +
+          '</div>'
       );
     }
     if (p.description) {
@@ -413,21 +443,28 @@
 
     dlg.innerHTML =
       '<div class="del-icon warn"><i class="ti ti-trash"></i></div>' +
-      '<div class="del-title">Soft-delete &quot;' +
-      esc(plan.name) +
-      '&quot;?</div>' +
-      '<div class="del-msg">This deactivates the plan (soft delete). It will no longer be assignable.' +
+      '<div class="del-title">' +
+      t('Soft-delete &quot;' + esc(plan.name) + '&quot;?', 'إلغاء تفعيل &quot;' + esc(plan.name) + '&quot;؟') +
+      '</div>' +
+      '<div class="del-msg">' +
+      t('This deactivates the plan (soft delete). It will no longer be assignable.', 'هذا يعطّل الخطة (إلغاء تفعيل). لن تكون قابلة للتخصيص بعد الآن.') +
       (active > 0
-        ? '<br><br><strong>Note:</strong> This plan currently shows <strong>' +
-          active +
-          ' active membership' +
-          (active > 1 ? 's' : '') +
-          '</strong>. If still in use, the server will reject with conflict.'
+        ? '<br><br>' +
+          t(
+            '<strong>Note:</strong> This plan currently shows <strong>' +
+              active +
+              ' active membership' +
+              (active > 1 ? 's' : '') +
+              '</strong>. If still in use, the server will reject with conflict.',
+            '<strong>ملاحظة:</strong> تعرض هذه الخطة حاليًا <strong>' +
+              active +
+              ' عضوية نشطة</strong>. إذا كانت لا تزال قيد الاستخدام، سيرفض الخادم الطلب بسبب تعارض.'
+          )
         : '') +
       '</div>' +
       '<div class="del-actions">' +
-      '<button class="btn-cancel" id="delCancel">Cancel</button>' +
-      '<button class="btn-primary" style="background:var(--dng500);box-shadow:0 2px 8px rgba(239,68,68,.3)" id="delConfirm"><i class="ti ti-trash"></i> Soft delete</button>' +
+      '<button class="btn-cancel" id="delCancel">' + t('Cancel', 'إلغاء') + '</button>' +
+      '<button class="btn-primary" style="background:var(--dng500);box-shadow:0 2px 8px rgba(239,68,68,.3)" id="delConfirm"><i class="ti ti-trash"></i> ' + t('Soft delete', 'إلغاء التفعيل') + '</button>' +
       '</div>';
     openDelete();
     document.getElementById('delCancel').addEventListener('click', closeDelete);
@@ -437,7 +474,7 @@
       const res = await Gfp.del('/membership-plans/' + id);
       if (res.ok || res.status === 204) {
         closeDelete();
-        toast('Plan soft-deleted (inactive)');
+        toast(t('Plan soft-deleted (inactive)', 'تم إلغاء تفعيل الخطة'));
         loadPlans();
         return;
       }
@@ -445,11 +482,11 @@
         const serverMsg = errMsg(res);
         dlg.innerHTML =
           '<div class="del-icon conflict"><i class="ti ti-alert-triangle"></i></div>' +
-          '<div class="del-title">Plan in use</div>' +
-          '<div class="del-msg">This plan cannot be deleted while it has active or frozen memberships.<br><br>' +
+          '<div class="del-title">' + t('Plan in use', 'الخطة قيد الاستخدام') + '</div>' +
+          '<div class="del-msg">' + t('This plan cannot be deleted while it has active or frozen memberships.', 'لا يمكن حذف هذه الخطة أثناء وجود عضويات نشطة أو مجمّدة عليها.') + '<br><br>' +
           esc(serverMsg) +
           '</div>' +
-          '<div class="del-actions"><button class="btn-cancel" id="delClose">Understood</button></div>';
+          '<div class="del-actions"><button class="btn-cancel" id="delClose">' + t('Understood', 'مفهوم') + '</button></div>';
         document.getElementById('delClose').addEventListener('click', closeDelete);
         return;
       }
@@ -464,7 +501,7 @@
     if (isEdit) {
       const r = await Gfp.get('/membership-plans/' + editId);
       if (!r.ok || !r.data) {
-        toast(errMsg(r) || 'Failed to load plan', 'error');
+        toast(errMsg(r) || t('Failed to load plan', 'تعذّر تحميل الخطة'), 'error');
         return;
       }
       plan = r.data;
@@ -530,22 +567,22 @@
       }
       btn.disabled = true;
       btn.innerHTML =
-        '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> Saving...';
+        '<i class="ti ti-loader-2" style="animation:spin .6s linear infinite"></i> ' + t('Saving...', 'جارٍ الحفظ...');
 
       const res = isEdit
         ? await Gfp.put('/membership-plans/' + editId, collected.body)
         : await Gfp.post('/membership-plans', collected.body);
 
       if (res && res.ok) {
-        toast(isEdit ? 'Plan updated' : 'Plan created');
+        toast(isEdit ? t('Plan updated', 'تم تحديث الخطة') : t('Plan created', 'تم إنشاء الخطة'));
         closeModal();
         loadPlans();
       } else {
-        toast(errMsg(res) || 'Failed to save plan', 'error');
+        toast(errMsg(res) || t('Failed to save plan', 'تعذّر حفظ الخطة'), 'error');
         btn.disabled = false;
         btn.innerHTML = isEdit
-          ? '<i class="ti ti-check"></i> Update Plan'
-          : '<i class="ti ti-plus"></i> Create Plan';
+          ? '<i class="ti ti-check"></i> ' + t('Update Plan', 'تحديث الخطة')
+          : '<i class="ti ti-plus"></i> ' + t('Create Plan', 'إنشاء خطة');
       }
     });
   }
@@ -560,7 +597,7 @@
     if (type === 'trial') {
       priceInput.value = '0';
       priceInput.readOnly = true;
-      priceInput.title = 'Trial plans must be free (price 0)';
+      priceInput.title = t('Trial plans must be free (price 0)', 'يجب أن تكون الخطط التجريبية مجانية (السعر 0)');
     } else {
       priceInput.readOnly = false;
       priceInput.title = '';
@@ -586,7 +623,7 @@
     if (body.planType === 'session_pack') {
       const sc = parseInt(fd.get('sessionCustom'), 10);
       if (SESSION_PACK_COUNTS.indexOf(sc) === -1) {
-        return { error: 'Session pack count must be 10, 20, or 50' };
+        return { error: t('Session pack count must be 10, 20, or 50', 'يجب أن يكون عدد جلسات الباقة 10 أو 20 أو 50') };
       }
       body.sessionCount = sc;
     }
@@ -595,7 +632,7 @@
       const start = fd.get('timeStart');
       const end = fd.get('timeEnd');
       if (!start || !end) {
-        return { error: 'Time-limited plans require both start and end times' };
+        return { error: t('Time-limited plans require both start and end times', 'الخطط المحدودة بالوقت تتطلب وقت بداية ونهاية') };
       }
       body.timeRestrictionStart = toTimeOnly(start);
       body.timeRestrictionEnd = toTimeOnly(end);
@@ -604,7 +641,7 @@
     if (body.planType === 'pt_credits') {
       const psc = parseInt(fd.get('ptSessionCount'), 10);
       if (!psc || psc < 1) {
-        return { error: 'Included sessions must be a positive number / عدد الجلسات المضمنة يجب أن يكون رقمًا موجبًا' };
+        return { error: t('Included sessions must be a positive number', 'عدد الجلسات المضمنة يجب أن يكون رقمًا موجبًا') };
       }
       body.sessionCount = psc;
       const psd = parseInt(fd.get('ptSessionDuration'), 10);
@@ -660,7 +697,7 @@
           !(parseInt((document.getElementById('entLimit-' + a.id) || {}).value, 10) > 0);
       });
       if (limitedMissing) {
-        return { error: 'Limited access needs a quota of at least 1' };
+        return { error: t('Limited access needs a quota of at least 1', 'الوصول المحدود يحتاج إلى حصة لا تقل عن 1') };
       }
       body.entitlements = ents;
     }
@@ -692,7 +729,7 @@
     const f = document.getElementById('planForm');
     if (!f) return;
     const fd = new FormData(f);
-    const name = fd.get('name') || 'Plan Name';
+    const name = fd.get('name') || t('Plan Name', 'اسم الخطة');
     const nameAr = fd.get('nameAr') || '';
     const type = fd.get('planType') || 'monthly_unlimited';
     const price = type === 'trial' ? '0' : fd.get('price') || '0';
@@ -705,7 +742,8 @@
       feats =
         '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-bolt" style="color:var(--l600)"></i>' +
         sc +
-        ' sessions</div>';
+        t(' sessions', ' جلسة') +
+        '</div>';
     }
     if (type === 'pt_credits') {
       const psc = fd.get('ptSessionCount') || '12';
@@ -713,9 +751,10 @@
       feats =
         '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-barbell" style="color:var(--l600)"></i>' +
         psc +
-        ' PT sessions · ' +
+        t(' PT sessions · ', ' جلسة برايفت · ') +
         psd +
-        ' min</div>';
+        t(' min', ' دقيقة') +
+        '</div>';
     }
     if (type === 'time_limited') {
       const ts = fd.get('timeStart') || '08:00';
@@ -735,7 +774,8 @@
       feats +=
         '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-user-plus" style="color:var(--l600)"></i>' +
         iqPreview +
-        ' invitations / membership</div>';
+        t(' invitations / membership', ' دعوة / عضوية') +
+        '</div>';
     }
     if (activityCatalog) {
       const n = activityCatalog.filter(function (a) {
@@ -746,7 +786,8 @@
         feats +=
           '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-run" style="color:var(--l600)"></i>' +
           n +
-          ' included activities</div>';
+          t(' included activities', ' نشاط متضمّن') +
+          '</div>';
       }
     }
     if (type === 'trial') {
@@ -754,13 +795,15 @@
       feats = tv
         ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-flask" style="color:var(--l600)"></i>' +
           tv +
-          ' visits</div>'
+          t(' visits', ' زيارة') +
+          '</div>'
         : '';
       if (iqPreview > 0) {
         feats +=
           '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--lts);padding:8px 16px"><i class="ti ti-ticket" style="color:var(--l600)"></i>' +
           iqPreview +
-          ' guest invitations/month</div>';
+          t(' guest invitations/month', ' دعوة ضيف/شهريًا') +
+          '</div>';
       }
     }
 
@@ -791,7 +834,8 @@
       '</span></div>' +
       '<div style="font-size:11px;color:var(--ltt);display:flex;align-items:center;gap:4px"><i class="ti ti-calendar" style="font-size:13px"></i>' +
       dur +
-      ' days</div>' +
+      t(' days', ' يوم') +
+      '</div>' +
       feats +
       '</div>';
   }
@@ -799,8 +843,8 @@
   function entitlementSectionHtml(plan, isEdit, catalog) {
     if (!catalog.length) {
       return '<div class="cond-section visible" id="cond-entitlements" style="display:block">' +
-        '<div class="cond-title"><i class="ti ti-run"></i> Includes</div>' +
-        '<div class="modal-header-sub">Could not load activities. Save without changing includes, or open Catalog → Activities first.</div></div>';
+        '<div class="cond-title"><i class="ti ti-run"></i> ' + t('Includes', 'يتضمّن') + '</div>' +
+        '<div class="modal-header-sub">' + t('Could not load activities. Save without changing includes, or open Catalog → Activities first.', 'تعذّر تحميل الأنشطة. احفظ دون تغيير المتضمّنات، أو افتح الكتالوج ← الأنشطة أولاً.') + '</div></div>';
     }
     const existing = (plan && Array.isArray(plan.entitlements)) ? plan.entitlements : [];
     const byId = {};
@@ -819,26 +863,26 @@
         (checked ? ' checked' : '') + '>' +
         '<span class="ent-check"><i class="ti ti-check"></i></span>' +
         '<span class="ent-card-name"><strong>' + esc(a.name) + '</strong>' +
-        '<small>' + esc((a.isSystem ? 'System activity' : 'Custom activity') + (a.kind === 'facility' ? ' · Facility access' : ' · Class booking')) + '</small></span>' +
+        '<small>' + esc(t((a.isSystem ? 'System activity' : 'Custom activity') + (a.kind === 'facility' ? ' · Facility access' : ' · Class booking'), (a.isSystem ? 'نشاط نظامي' : 'نشاط مخصّص') + (a.kind === 'facility' ? ' · وصول للمرافق' : ' · حجز حصة'))) + '</small></span>' +
         '</label>' +
         '<div class="ent-card-controls">' +
-        '<label class="ent-control"><span>Access</span><select id="entMode-' + a.id + '">' +
-        '<option value="included"' + (mode === 'included' ? ' selected' : '') + '>Included</option>' +
-        '<option value="unlimited"' + (mode === 'unlimited' ? ' selected' : '') + '>Unlimited</option>' +
-        '<option value="limited"' + (mode === 'limited' ? ' selected' : '') + '>Limited</option>' +
+        '<label class="ent-control"><span>' + t('Access', 'الوصول') + '</span><select id="entMode-' + a.id + '">' +
+        '<option value="included"' + (mode === 'included' ? ' selected' : '') + '>' + t('Included', 'متضمّن') + '</option>' +
+        '<option value="unlimited"' + (mode === 'unlimited' ? ' selected' : '') + '>' + t('Unlimited', 'غير محدود') + '</option>' +
+        '<option value="limited"' + (mode === 'limited' ? ' selected' : '') + '>' + t('Limited', 'محدود') + '</option>' +
         '</select></label>' +
-        '<label class="ent-control ent-quota-control"><span>Quota</span><input type="number" id="entLimit-' + a.id + '" min="1" placeholder="e.g. 8" value="' + limit + '"></label>' +
-        '<label class="ent-control ent-period-control"><span>Resets</span><select id="entPeriod-' + a.id + '">' +
-        '<option value="cairo_month"' + (period === 'cairo_month' || period === 'monthly' ? ' selected' : '') + '>Every Cairo month</option>' +
-        '<option value="membership"' + (period === 'membership' ? ' selected' : '') + '>Per membership</option>' +
-        '<option value="one_time"' + (period === 'one_time' ? ' selected' : '') + '>One time</option>' +
+        '<label class="ent-control ent-quota-control"><span>' + t('Quota', 'الحصة') + '</span><input type="number" id="entLimit-' + a.id + '" min="1" placeholder="' + t('e.g. 8', 'مثال: 8') + '" value="' + limit + '"></label>' +
+        '<label class="ent-control ent-period-control"><span>' + t('Resets', 'يُعاد التعيين') + '</span><select id="entPeriod-' + a.id + '">' +
+        '<option value="cairo_month"' + (period === 'cairo_month' || period === 'monthly' ? ' selected' : '') + '>' + t('Every Cairo month', 'كل شهر (بتوقيت القاهرة)') + '</option>' +
+        '<option value="membership"' + (period === 'membership' ? ' selected' : '') + '>' + t('Per membership', 'لكل عضوية') + '</option>' +
+        '<option value="one_time"' + (period === 'one_time' ? ' selected' : '') + '>' + t('One time', 'مرة واحدة') + '</option>' +
         '</select></label>' +
         '</div></div>';
     }).join('');
     return '<div class="cond-section visible" id="cond-entitlements" style="display:block">' +
-      '<div class="ent-section-header"><div><div class="cond-title"><i class="ti ti-run"></i> Activity access</div>' +
-      '<div class="modal-header-sub">Choose what members can use. Limited access consumes one credit per booking; the remaining balance is calculated from real usage.</div></div>' +
-      '<span class="ent-section-hint"><i class="ti ti-database"></i> Live usage</span></div>' +
+      '<div class="ent-section-header"><div><div class="cond-title"><i class="ti ti-run"></i> ' + t('Activity access', 'صلاحية الأنشطة') + '</div>' +
+      '<div class="modal-header-sub">' + t('Choose what members can use. Limited access consumes one credit per booking; the remaining balance is calculated from real usage.', 'اختر ما يمكن للأعضاء استخدامه. الوصول المحدود يستهلك رصيدًا واحدًا لكل حجز؛ ويُحسب الرصيد المتبقي من الاستخدام الفعلي.') + '</div></div>' +
+      '<span class="ent-section-hint"><i class="ti ti-database"></i> ' + t('Live usage', 'استخدام مباشر') + '</span></div>' +
       '<div class="ent-grid">' + rows + '</div></div>';
   }
 
@@ -883,26 +927,26 @@
     return (
       '<div class="modal-header">' +
       '<div><h2>' +
-      (isEdit ? 'Edit Plan' : 'Create New Plan') +
+      (isEdit ? t('Edit Plan', 'تعديل الخطة') : t('Create New Plan', 'إنشاء خطة جديدة')) +
       '</h2>' +
       '<div class="modal-header-sub">' +
-      (isEdit ? 'Update plan details' : 'Add a new membership plan') +
+      (isEdit ? t('Update plan details', 'تحديث تفاصيل الخطة') : t('Add a new membership plan', 'إضافة خطة عضوية جديدة')) +
       '</div></div>' +
       '<button type="button" class="modal-close"><i class="ti ti-x"></i></button>' +
       '</div>' +
       '<form id="planForm">' +
       '<div class="modal-body">' +
       '<div class="form-row">' +
-      '<div class="fg"><label>Plan Name (English) <span class="req">*</span></label><input name="name" value="' +
+      '<div class="fg"><label>' + t('Plan Name (English)', 'اسم الخطة (إنجليزي)') + ' <span class="req">*</span></label><input name="name" value="' +
       esc(v.name || '') +
       '" required placeholder="e.g. Monthly Unlimited"></div>' +
-      '<div class="fg"><label>Plan Name (Arabic) <span class="req">*</span></label><input name="nameAr" value="' +
+      '<div class="fg"><label>' + t('Plan Name (Arabic)', 'اسم الخطة (عربي)') + ' <span class="req">*</span></label><input name="nameAr" value="' +
       esc(v.nameAr || '') +
       '" required placeholder="مثال: شهري غير محدود" dir="rtl" style="font-family:var(--fa)"></div>' +
       '</div>' +
-      '<div class="fg"><label>Plan Type <span class="req">*</span></label>' +
+      '<div class="fg"><label>' + t('Plan Type', 'نوع الخطة') + ' <span class="req">*</span></label>' +
       (isEdit
-        ? '<div class="modal-header-sub" style="margin-bottom:8px">Type is fixed after create</div>'
+        ? '<div class="modal-header-sub" style="margin-bottom:8px">' + t('Type is fixed after create', 'النوع ثابت بعد الإنشاء') + '</div>'
         : '') +
       '</div>' +
       '<div class="type-selector">' +
@@ -939,25 +983,25 @@
             cfg.icon +
             '"></i></div>' +
             '<div class="type-card-name">' +
-            cfg.short +
+            t(cfg.short, cfg.shortAr) +
             '</div></div>'
           );
         })
         .join('') +
       '</div>' +
       '<div class="form-row">' +
-      '<div class="fg"><label>Price (EGP) <span class="req">*</span></label><input type="number" name="price" step="0.01" min="0" value="' +
+      '<div class="fg"><label>' + t('Price (EGP)', 'السعر (جنيه)') + ' <span class="req">*</span></label><input type="number" name="price" step="0.01" min="0" value="' +
       (selType === 'trial' ? '0' : v.price != null ? v.price : '') +
       '" required placeholder="500" ' +
       (selType === 'trial' ? 'readonly' : '') +
       '></div>' +
-      '<div class="fg"><label>Duration (days) <span class="req">*</span></label><input type="number" name="durationDays" min="1" value="' +
+      '<div class="fg"><label>' + t('Duration (days)', 'المدة (بالأيام)') + ' <span class="req">*</span></label><input type="number" name="durationDays" min="1" value="' +
       (v.durationDays != null ? v.durationDays : '') +
       '" required placeholder="30"></div>' +
       '</div>' +
       '<div class="cond-section" id="cond-session_pack">' +
-      '<div class="cond-title"><i class="ti ti-bolt"></i> Session Pack Options</div>' +
-      '<label style="font-size:12px;font-weight:600;color:var(--lts);margin-bottom:8px;display:block">Number of Sessions (10 / 20 / 50)</label>' +
+      '<div class="cond-title"><i class="ti ti-bolt"></i> ' + t('Session Pack Options', 'خيارات باقة الجلسات') + '</div>' +
+      '<label style="font-size:12px;font-weight:600;color:var(--lts);margin-bottom:8px;display:block">' + t('Number of Sessions (10 / 20 / 50)', 'عدد الجلسات (10 / 20 / 50)') + '</label>' +
       '<div class="session-options">' +
       SESSION_PACK_COUNTS.map(function (n) {
         return (
@@ -969,7 +1013,7 @@
           (sessCount == n ? 'checked' : '') +
           '><div class="session-opt-val">' +
           n +
-          '</div><div class="session-opt-lbl">sessions</div></div>'
+          '</div><div class="session-opt-lbl">' + t('sessions', 'جلسة') + '</div></div>'
         );
       }).join('') +
       '</div>' +
@@ -978,60 +1022,60 @@
       '">' +
       '</div>' +
       '<div class="cond-section" id="cond-time_limited">' +
-      '<div class="cond-title"><i class="ti ti-clock-hour-4"></i> Time Restriction (both required)</div>' +
+      '<div class="cond-title"><i class="ti ti-clock-hour-4"></i> ' + t('Time Restriction (both required)', 'قيود الوقت (كلاهما مطلوب)') + '</div>' +
       '<div class="form-row">' +
-      '<div class="fg"><label>Start Time <span class="req">*</span></label><input type="time" name="timeStart" value="' +
+      '<div class="fg"><label>' + t('Start Time', 'وقت البداية') + ' <span class="req">*</span></label><input type="time" name="timeStart" value="' +
       toTimeInputValue(v.timeRestrictionStart || '08:00') +
       '"></div>' +
-      '<div class="fg"><label>End Time <span class="req">*</span></label><input type="time" name="timeEnd" value="' +
+      '<div class="fg"><label>' + t('End Time', 'وقت النهاية') + ' <span class="req">*</span></label><input type="time" name="timeEnd" value="' +
       toTimeInputValue(v.timeRestrictionEnd || '17:00') +
       '"></div>' +
       '</div></div>' +
       '<div class="cond-section" id="cond-pt_credits">' +
-      '<div class="cond-title"><i class="ti ti-barbell"></i> Private Training Options / خيارات البرايفت</div>' +
+      '<div class="cond-title"><i class="ti ti-barbell"></i> ' + t('Private Training Options', 'خيارات البرايفت') + '</div>' +
       '<div class="form-row">' +
-      '<div class="fg"><label>Included Sessions <span class="req">*</span></label><input type="number" name="ptSessionCount" min="1" value="' +
+      '<div class="fg"><label>' + t('Included Sessions', 'الجلسات المضمّنة') + ' <span class="req">*</span></label><input type="number" name="ptSessionCount" min="1" value="' +
       ptSessionCount +
-      '" placeholder="e.g. 12"><div class="modal-header-sub">Personal training sessions included in this package / عدد جلسات التدريب الشخصي المضمنة في الباقة</div></div>' +
-      '<div class="fg"><label>Session Duration</label><select name="ptSessionDuration">' +
+      '" placeholder="' + t('e.g. 12', 'مثال: 12') + '"><div class="modal-header-sub">' + t('Personal training sessions included in this package', 'عدد جلسات التدريب الشخصي المضمنة في الباقة') + '</div></div>' +
+      '<div class="fg"><label>' + t('Session Duration', 'مدة الجلسة') + '</label><select name="ptSessionDuration">' +
       PT_SESSION_DURATIONS.map(function (m) {
-        return '<option value="' + m + '"' + (ptSessionDuration === m ? ' selected' : '') + '>' + m + ' minutes</option>';
+        return '<option value="' + m + '"' + (ptSessionDuration === m ? ' selected' : '') + '>' + m + ' ' + t('minutes', 'دقيقة') + '</option>';
       }).join('') +
-      '</select><div class="modal-header-sub">Length of one PT session / مدة الجلسة الواحدة</div></div>' +
+      '</select><div class="modal-header-sub">' + t('Length of one PT session', 'مدة الجلسة الواحدة') + '</div></div>' +
       '</div>' +
-      '<div class="modal-header-sub">Trainer is assigned per session when the PT session is booked/scheduled, not on the plan itself. Gym floor access and other activities are controlled below under Activity access.</div>' +
+      '<div class="modal-header-sub">' + t('Trainer is assigned per session when the PT session is booked/scheduled, not on the plan itself. Gym floor access and other activities are controlled below under Activity access.', 'يتم تعيين المدرب لكل جلسة عند حجز/جدولة جلسة البرايفت، وليس على مستوى الخطة نفسها. الوصول لصالة الجيم والأنشطة الأخرى يُتحكم بها أدناه ضمن صلاحية الأنشطة.') + '</div>' +
       '</div>' +
       '<div class="cond-section" id="cond-family">' +
-      '<div class="cond-title"><i class="ti ti-users-group"></i> Family Plan Options</div>' +
-      '<div class="modal-header-sub">Invitations for this plan are configured below.</div></div>' +
+      '<div class="cond-title"><i class="ti ti-users-group"></i> ' + t('Family Plan Options', 'خيارات الخطة العائلية') + '</div>' +
+      '<div class="modal-header-sub">' + t('Invitations for this plan are configured below.', 'يتم إعداد دعوات هذه الخطة أدناه.') + '</div></div>' +
       '<div class="cond-section visible" id="cond-invite-quota" style="display:block">' +
-      '<div class="cond-title"><i class="ti ti-user-plus"></i> Invitations</div>' +
-      '<div class="fg"><label>Invitations per membership</label><input type="number" name="referralInviteQuota" min="0" value="' +
+      '<div class="cond-title"><i class="ti ti-user-plus"></i> ' + t('Invitations', 'الدعوات') + '</div>' +
+      '<div class="fg"><label>' + t('Invitations per membership', 'الدعوات لكل عضوية') + '</label><input type="number" name="referralInviteQuota" min="0" value="' +
       (v.referralInviteQuota != null ? v.referralInviteQuota : 0) +
-      '" placeholder="0 = none"><div class="modal-header-sub">How many friends a member on this plan may invite during this membership. Unused invitations do not carry to the next membership. Frozen, expired, or cancelled = 0.</div></div></div>' +
+      '" placeholder="' + t('0 = none', '0 = بدون') + '"><div class="modal-header-sub">' + t('How many friends a member on this plan may invite during this membership. Unused invitations do not carry to the next membership. Frozen, expired, or cancelled = 0.', 'عدد الأصدقاء الذين يمكن للعضو على هذه الخطة دعوتهم خلال هذه العضوية. الدعوات غير المستخدمة لا تُرحّل للعضوية التالية. عند التجميد أو الانتهاء أو الإلغاء = 0.') + '</div></div></div>' +
       entitlementSectionHtml(v, isEdit, catalog) +
       '<div class="cond-section" id="cond-trial">' +
-      '<div class="cond-title"><i class="ti ti-flask"></i> Trial Options</div>' +
-      '<div class="fg"><label>Visit limit (optional)</label><input type="number" name="trialVisitLimit" min="1" value="' +
+      '<div class="cond-title"><i class="ti ti-flask"></i> ' + t('Trial Options', 'خيارات التجربة') + '</div>' +
+      '<div class="fg"><label>' + t('Visit limit (optional)', 'حد الزيارات (اختياري)') + '</label><input type="number" name="trialVisitLimit" min="1" value="' +
       (v.trialVisitLimit != null ? v.trialVisitLimit : '') +
-      '" placeholder="e.g. 3"><div class="modal-header-sub">Price is always 0 for trial plans</div></div></div>' +
+      '" placeholder="' + t('e.g. 3', 'مثال: 3') + '"><div class="modal-header-sub">' + t('Price is always 0 for trial plans', 'السعر دائمًا 0 للخطط التجريبية') + '</div></div></div>' +
       '<div class="form-row">' +
-      '<div class="fg"><label>Description (English)</label><textarea name="description" placeholder="Optional plan description...">' +
+      '<div class="fg"><label>' + t('Description (English)', 'الوصف (إنجليزي)') + '</label><textarea name="description" placeholder="' + t('Optional plan description...', 'وصف اختياري للخطة...') + '">' +
       esc(v.description || '') +
       '</textarea></div>' +
-      '<div class="fg"><label>Description (Arabic)</label><textarea name="descriptionAr" placeholder="وصف الباقة..." dir="rtl" style="font-family:var(--fa)">' +
+      '<div class="fg"><label>' + t('Description (Arabic)', 'الوصف (عربي)') + '</label><textarea name="descriptionAr" placeholder="وصف الباقة..." dir="rtl" style="font-family:var(--fa)">' +
       esc(v.descriptionAr || '') +
       '</textarea></div></div>' +
       '<div class="preview-section">' +
-      '<div class="preview-label"><i class="ti ti-eye"></i> Live Preview</div>' +
+      '<div class="preview-label"><i class="ti ti-eye"></i> ' + t('Live Preview', 'معاينة مباشرة') + '</div>' +
       '<div class="preview-card" id="previewCard"></div></div>' +
       '</div>' +
       '<div class="modal-footer">' +
-      '<button type="button" class="btn-cancel" id="modalCancel">Cancel</button>' +
+      '<button type="button" class="btn-cancel" id="modalCancel">' + t('Cancel', 'إلغاء') + '</button>' +
       '<button type="submit" class="btn-primary">' +
       (isEdit
-        ? '<i class="ti ti-check"></i> Update Plan'
-        : '<i class="ti ti-plus"></i> Create Plan') +
+        ? '<i class="ti ti-check"></i> ' + t('Update Plan', 'تحديث الخطة')
+        : '<i class="ti ti-plus"></i> ' + t('Create Plan', 'إنشاء خطة')) +
       '</button></div></form>'
     );
   }

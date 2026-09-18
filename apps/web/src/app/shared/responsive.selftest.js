@@ -41,6 +41,6 @@ assert(formLayout.indexOf('@media (max-width: 767.98px)') !== -1, 'forms stack o
 assert(modalLayout.indexOf('max-height: min(90vh') !== -1, 'modals cap height');
 assert(sweepLayout.indexOf('.toast') !== -1, 'sweep constrains notifications');
 assert(serverSrc.indexOf('/shared/sweep-layout.css?v=2') !== -1, 'server injects sweep v2');
-assert(serverSrc.indexOf('shell.js?v=qa1') !== -1, 'server injects shell qa cache bust');
+assert(serverSrc.indexOf('shell.js?v=footer2') !== -1, 'server injects shell qa cache bust');
 
 console.log('responsive.selftest: OK');

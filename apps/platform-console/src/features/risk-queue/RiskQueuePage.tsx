@@ -43,16 +43,10 @@ export function deriveStatus(row: RiskQueueItemDto): QueueStatus {
   return TERMINAL_OUTCOMES.has(latest.outcome) ? 'resolved' : 'in_progress'
 }
 
-const STATUS_LABEL: Record<QueueStatus, string> = {
-  new: 'New',
-  in_progress: 'In Progress',
-  resolved: 'Resolved',
-}
-
 const STATUS_BADGE: Record<QueueStatus, string> = {
-  new: 'bg-gray-100 text-gray-800 ring-1 ring-gray-200',
-  in_progress: 'bg-amber-50 text-amber-900 ring-1 ring-amber-200',
-  resolved: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200',
+  new: 'cp-status cp-status-neutral',
+  in_progress: 'cp-status cp-status-warning',
+  resolved: 'cp-status cp-status-success',
 }
 
 export function ageLabel(computedAtUtc: string): string {
@@ -102,7 +96,8 @@ function errorMessage(err: unknown): string {
   return 'Request failed'
 }
 
-export function RiskQueuePage() {
+export function RiskQueuePage({ embedded = false }: { embedded?: boolean }) {
+  const t = useUiStore((s) => s.t)
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -176,7 +171,7 @@ export function RiskQueuePage() {
       return assignRiskQueue(target.tenantId, { assignedPlatformUserId: user.id })
     },
     onSuccess: async () => {
-      showToast(modal === 'clear' ? 'Assignee cleared' : 'Assigned to you', 'success')
+      showToast(modal === 'clear' ? t('risk.assigneeCleared') : t('risk.assignedToYou'), 'success')
       await invalidate()
       closeModal(true)
     },
@@ -192,7 +187,7 @@ export function RiskQueuePage() {
       })
     },
     onSuccess: async () => {
-      showToast('Outcome recorded', 'success')
+      showToast(t('risk.outcomeRecorded'), 'success')
       await invalidate()
       closeModal(true)
     },
@@ -200,7 +195,7 @@ export function RiskQueuePage() {
   })
 
   function openTenant(row: RiskQueueItemDto) {
-    const returnTo = `/risk-queue${params.toString() ? `?${params.toString()}` : ''}`
+    const returnTo = `/support?tab=risk`
     navigate(`/tenants/${row.tenantId}?returnTo=${encodeURIComponent(returnTo)}`)
   }
 
@@ -208,21 +203,21 @@ export function RiskQueuePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Risk Queue</h1>
-          <p className="text-sm text-gray-500">
-            Churn early-warning — default bands at_risk + critical when no filter is set.
-          </p>
-        </div>
-        {isFetching && !isLoading ? (
-          <span className="text-xs text-gray-500">Refreshing…</span>
-        ) : null}
-      </header>
+      {embedded ? null : (
+        <header className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="cp-page-title">{t('risk.title')}</h1>
+            <p className="cp-page-subtitle">{t('risk.subtitle')}</p>
+          </div>
+          {isFetching && !isLoading ? (
+            <span className="text-xs text-gray-500">{t('risk.refreshing')}</span>
+          ) : null}
+        </header>
+      )}
 
       <div className="flex flex-col gap-4 rounded-[var(--radius)] border border-gray-200 bg-white p-4">
         <fieldset>
-          <legend className="mb-2 text-sm text-gray-500">Risk band</legend>
+          <legend className="mb-2 text-sm text-gray-500">{t('risk.band')}</legend>
           <div className="flex flex-wrap gap-3 text-sm">
             {RISK_QUEUE_BANDS.map((b) => (
               <label key={b} className="inline-flex items-center gap-2 text-gray-800">
@@ -231,36 +226,34 @@ export function RiskQueuePage() {
                   checked={selectedBands.has(b)}
                   onChange={() => patchBandToggle(b)}
                 />
-                <span className="capitalize">{b.replace(/_/g, ' ')}</span>
+                <StatusBadge status={b} />
               </label>
             ))}
           </div>
-          <p className="mt-2 text-xs text-gray-500">
-            Leave unchecked to use server default (at_risk, critical).
-          </p>
+          <p className="mt-2 text-xs text-gray-500">{t('risk.bandHint')}</p>
         </fieldset>
 
         <div className="flex flex-wrap gap-6 border-t border-gray-200 pt-3">
           <fieldset>
-            <legend className="mb-1.5 text-xs uppercase tracking-wide text-gray-500">Assignment</legend>
+            <legend className="mb-1.5 text-xs uppercase tracking-wide text-gray-500">{t('risk.assignment')}</legend>
             <div className="flex gap-1 rounded-[var(--radius)] border border-gray-200 bg-white p-0.5 text-sm">
               {(['all', 'assigned', 'unassigned'] as AssignmentFilter[]).map((v) => (
                 <button
                   key={v}
                   type="button"
                   onClick={() => setAssignmentFilter(v)}
-                  className={`rounded px-2.5 py-1 capitalize ${
+                  className={`rounded px-2.5 py-1 ${
                     assignmentFilter === v ? 'bg-gray-200 text-blue-600' : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
-                  {v}
+                  {t(`risk.${v}`)}
                 </button>
               ))}
             </div>
           </fieldset>
           <fieldset>
             <legend className="mb-1.5 text-xs uppercase tracking-wide text-gray-500">
-              Status (derived from outcomes)
+              {t('risk.statusDerived')}
             </legend>
             <div className="flex gap-1 rounded-[var(--radius)] border border-gray-200 bg-white p-0.5 text-sm">
               {(['all', 'new', 'in_progress', 'resolved'] as StatusFilter[]).map((v) => (
@@ -272,7 +265,7 @@ export function RiskQueuePage() {
                     statusFilter === v ? 'bg-gray-200 text-blue-600' : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
-                  {v === 'all' ? 'All' : STATUS_LABEL[v]}
+                  {v === 'all' ? t('risk.all') : t(`risk.status.${v}`)}
                 </button>
               ))}
             </div>
@@ -284,15 +277,15 @@ export function RiskQueuePage() {
         <table className="min-w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
-              <th className="px-3 py-2 font-medium">Tenant</th>
-              <th className="px-3 py-2 font-medium">Risk Score</th>
-              <th className="px-3 py-2 font-medium">Risk Band</th>
-              <th className="px-3 py-2 font-medium">Primary Drivers</th>
-              <th className="px-3 py-2 font-medium">Assigned To</th>
-              <th className="px-3 py-2 font-medium">Age</th>
-              <th className="px-3 py-2 font-medium">Last Action</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium">Actions</th>
+              <th className="px-3 py-2 font-medium">{t('risk.gym')}</th>
+              <th className="px-3 py-2 font-medium">{t('risk.score')}</th>
+              <th className="px-3 py-2 font-medium">{t('risk.bandCol')}</th>
+              <th className="px-3 py-2 font-medium">{t('risk.drivers')}</th>
+              <th className="px-3 py-2 font-medium">{t('risk.assignedTo')}</th>
+              <th className="px-3 py-2 font-medium">{t('risk.age')}</th>
+              <th className="px-3 py-2 font-medium">{t('risk.lastAction')}</th>
+              <th className="px-3 py-2 font-medium">{t('gyms.filterStatus')}</th>
+              <th className="px-3 py-2 font-medium">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -310,9 +303,9 @@ export function RiskQueuePage() {
             {isError ? (
               <tr>
                 <td colSpan={colCount} className="px-3 py-8 text-center text-red-600">
-                  Failed to load risk queue.{' '}
+                  {t('risk.failedLoad')}{' '}
                   <button type="button" className="underline" onClick={() => refetch()}>
-                    Retry
+                    {t('common.retry')}
                   </button>
                 </td>
               </tr>
@@ -320,7 +313,7 @@ export function RiskQueuePage() {
             {!isLoading && !isError && rows.length === 0 ? (
               <tr>
                 <td colSpan={colCount} className="px-3 py-8 text-center text-gray-500">
-                  No gyms match these filters.
+                  {t('gyms.emptyCloud')}
                 </td>
               </tr>
             ) : null}
@@ -356,7 +349,7 @@ export function RiskQueuePage() {
                   <td className="px-3 py-2 text-gray-700">
                     {row.assignedPlatformUserId
                       ? assignedToMe
-                        ? 'You'
+                        ? t('risk.you')
                         : shortId(row.assignedPlatformUserId)
                       : '—'}
                   </td>
@@ -364,7 +357,7 @@ export function RiskQueuePage() {
                   <td className="max-w-[12rem] px-3 py-2 text-gray-500">
                     {lastOutcome ? (
                       <>
-                        <span className="capitalize">{lastOutcome.outcome.replace(/_/g, ' ')}</span>
+                        <span>{t(`risk.outcome.${lastOutcome.outcome}`)}</span>
                         <div className="text-xs text-gray-400">{formatCairoDateTime(lastOutcome.createdAtUtc)}</div>
                       </>
                     ) : (
@@ -372,38 +365,38 @@ export function RiskQueuePage() {
                     )}
                   </td>
                   <td className="px-3 py-2">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}>
-                      {STATUS_LABEL[status]}
+                    <span className={`inline-flex px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[status]}`}>
+                      {t(`risk.status.${status}`)}
                     </span>
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1.5">
-                      <span title={ops ? undefined : 'Requires Platform Ops'}>
+                      <span title={ops ? undefined : t('gyms.requiresOps')}>
                         <button
                           type="button"
                           disabled={!ops}
                           onClick={() => openModal('assign', row)}
-                          className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-45"
+                          className="cp-btn cp-btn-secondary disabled:cursor-not-allowed disabled:opacity-45"
                         >
-                          Assign me
+                          {t('risk.assignMe')}
                         </button>
                       </span>
-                      <span title={ops ? undefined : 'Requires Platform Ops'}>
+                      <span title={ops ? undefined : t('gyms.requiresOps')}>
                         <button
                           type="button"
                           disabled={!ops || !row.assignedPlatformUserId}
                           onClick={() => openModal('clear', row)}
-                          className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-45"
+                          className="cp-btn cp-btn-secondary disabled:cursor-not-allowed disabled:opacity-45"
                         >
-                          Clear
+                          {t('risk.clear')}
                         </button>
                       </span>
                       <button
                         type="button"
                         onClick={() => openModal('outcome', row)}
-                        className="rounded border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-800 hover:bg-blue-100"
+                        className="cp-btn cp-btn-primary"
                       >
-                        Outcome
+                        {t('risk.outcome')}
                       </button>
                     </div>
                   </td>
@@ -416,15 +409,11 @@ export function RiskQueuePage() {
 
       <ConfirmDialog
         open={modal === 'assign'}
-        title="Assign to you"
+        title={t('risk.assignYou')}
         description={
-          target ? (
-            <>
-              Assign <strong>{target.name}</strong> ({target.gymCode}) to your platform user.
-            </>
-          ) : null
+          target ? t('risk.assignDesc', { name: target.name, code: target.gymCode }) : null
         }
-        confirmLabel="Assign"
+        confirmLabel={t('risk.assign')}
         busy={assignMutation.isPending}
         error={formError}
         onConfirm={() => assignMutation.mutate()}
@@ -433,15 +422,11 @@ export function RiskQueuePage() {
 
       <ConfirmDialog
         open={modal === 'clear'}
-        title="Clear assignee"
+        title={t('risk.clearAssignee')}
         description={
-          target ? (
-            <>
-              Clear the assignee on <strong>{target.name}</strong> ({target.gymCode}).
-            </>
-          ) : null
+          target ? t('risk.clearDesc', { name: target.name, code: target.gymCode }) : null
         }
-        confirmLabel="Clear"
+        confirmLabel={t('risk.clear')}
         confirmTone="danger"
         busy={assignMutation.isPending}
         error={formError}
@@ -451,22 +436,18 @@ export function RiskQueuePage() {
 
       <ConfirmDialog
         open={modal === 'outcome'}
-        title="Record outcome"
+        title={t('risk.recordOutcome')}
         description={
-          target ? (
-            <>
-              Log a call-sheet outcome for <strong>{target.name}</strong> ({target.gymCode}).
-            </>
-          ) : null
+          target ? t('risk.recordDesc', { name: target.name, code: target.gymCode }) : null
         }
-        confirmLabel="Save outcome"
+        confirmLabel={t('risk.saveOutcome')}
         busy={outcomeMutation.isPending}
         error={formError}
         onConfirm={() => outcomeMutation.mutate()}
         onClose={closeModal}
       >
         <label className="mt-1 block text-sm">
-          <span className="text-gray-500">Outcome</span>
+          <span className="text-gray-500">{t('risk.outcome')}</span>
           <select
             value={outcome}
             disabled={outcomeMutation.isPending}
@@ -475,20 +456,20 @@ export function RiskQueuePage() {
           >
             {RISK_QUEUE_OUTCOMES.map((o) => (
               <option key={o} value={o}>
-                {o.replace(/_/g, ' ')}
+                {t(`risk.outcome.${o}`)}
               </option>
             ))}
           </select>
         </label>
         <label className="mt-2 block text-sm">
-          <span className="text-gray-500">Note (optional)</span>
+          <span className="text-gray-500">{t('risk.note')}</span>
           <textarea
             value={note}
             disabled={outcomeMutation.isPending}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
             className="mt-1 w-full rounded-[var(--radius)] border border-gray-300 bg-white px-3 py-2"
-            placeholder="What happened on the call…"
+            placeholder={t('risk.notePlaceholder')}
           />
         </label>
       </ConfirmDialog>

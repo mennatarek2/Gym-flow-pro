@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Settings</title>
 <meta name="description" content="Manage gym settings, QR check-in, and subscription for your fitness business.">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
 <link rel="stylesheet" href="/dashboard/settings/settings.css?v=theme2">
 </head>
 <body>
@@ -426,7 +426,37 @@
   }
 })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="/shared/gfp-deployment.js"></script>
 <script src="/dashboard/settings/settings-app.js?v=liveqr2"></script>
+<script>
+// Local Edition has no Member App / QR check-in (Barcode only - see Phase 1/3 boundaries). The QR
+// tab's own CDN library is also broken today regardless of edition (see Phase 2/3 findings) with
+// a fallback that sends the check-in token to a third-party image service (api.qrserver.com) -
+// settings-app.js already null-checks window.QRCode before use, so loading it dynamically here
+// (instead of a static synchronous <script src>) changes only WHEN it loads for SaaS, not
+// whether/how it behaves. For Local it is never requested at all - the only way to guarantee zero
+// network call, since a static tag can't be conditioned on this async edition check.
+(function () {
+  function loadQrLib() {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js';
+    document.body.appendChild(s);
+  }
+  if (window.GfpDeployment) {
+    window.GfpDeployment.getEdition().then(function (edition) {
+      if (edition === 'Local') {
+        var tabBtn = document.querySelector('.tab-btn[data-tab="qr"]');
+        var tabPanel = document.getElementById('tab-qr');
+        if (tabBtn) tabBtn.style.display = 'none';
+        if (tabPanel) tabPanel.remove();
+      } else {
+        loadQrLib();
+      }
+    });
+  } else {
+    loadQrLib();
+  }
+})();
+</script>
 </body>
 </html>

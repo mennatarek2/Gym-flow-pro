@@ -1634,7 +1634,12 @@
           '<label class="fg"><span>' + esc(t('Status', 'الحالة')) + '</span><input value="' + esc(t('Active', 'نشط')) + '" disabled></label>' +
           '<label class="fg"><span>' + esc(t('Department', 'القسم')) + '</span><select id="obDepartment">' + deptOpts + '</select></label>' +
           '<label class="fg"><span>' + esc(t('Position', 'المسمى الوظيفي')) + '</span><select id="obPosition">' + posOpts + '</select></label>' +
-        '</div>';
+        '</div>' +
+        '<p class="form-hint" style="margin-top:10px">' +
+          '<a href="/dashboard/hr/settings/?tab=departments" target="_self">' +
+            esc(t('Add or edit departments & positions', 'إضافة أو تعديل الأقسام والمسميات')) +
+          '</a>' +
+        '</p>';
     } else if (key === 'compensation') {
       panel.innerHTML =
         '<p class="page-subtitle" style="margin-bottom:12px">' + esc(t('Optional first contract. You can skip and add later.', 'عقد أول اختياري. يمكنك التخطي والإضافة لاحقاً.')) + '</p>' +

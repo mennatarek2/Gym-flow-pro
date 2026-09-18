@@ -61,7 +61,13 @@
 .q-dot.expired{background:var(--dng500)}
 .q-dot.frozen{background:var(--frz500)}
 .q-dot.cancelled{background:var(--c400)}
+.q-dot.pending,.q-dot.scheduled{background:var(--wrn500)}
 .q-val{font-weight:700;color:var(--ltp)}
+
+/* Membership status shown as a light secondary indicator under the account-status pill —
+   not a second full badge, to avoid two equal-weight pills stacked on top of each other. */
+.st-sub{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--lts)}
+.st-sub .q-dot{width:6px;height:6px}
 
 /* ── Table Card ── */
 .tbl-card{
@@ -147,6 +153,7 @@ html[data-theme="dark"] .rem-pending{color:var(--gfp-wrn)}
 .m-av-muted{opacity:.55;filter:grayscale(.4)}
 .act-btn.act-renew:hover{color:var(--l600);background:var(--l100)}
 .act-btn.act-assign:hover{color:var(--inf500);background:var(--inf100)}
+.act-btn.act-delete:hover{color:var(--dng500);background:var(--dng100,rgba(239,68,68,.12))}
 
 /* Expiry highlight (legacy) */
 .exp-warn{color:var(--dng500);font-weight:600}
@@ -159,6 +166,7 @@ html[data-theme="dark"] .rem-pending{color:var(--gfp-wrn)}
   border-radius:var(--rsm);transition:all var(--tf);font-size:16px;
 }
 .act-btn:hover{background:var(--ls2);color:var(--l600)}
+.mdl-btn.danger:disabled{opacity:.45;cursor:not-allowed}
 
 /* ── Pagination ── */
 .pagi{

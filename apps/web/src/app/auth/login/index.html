@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HyMotion — Staff Login</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
   ║  HyMotion Staff Login Page                                     ║
@@ -136,7 +134,7 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 
 /* Logo — assets/icons/brand/ */
 .logo-row{display:flex;align-items:center;gap:14px;margin-bottom:48px}
-.logo-row svg{width:52px;height:52px;flex-shrink:0;filter:drop-shadow(0 0 12px var(--lglow))}
+.logo-row img{width:52px;height:52px;flex-shrink:0;filter:drop-shadow(0 0 12px var(--lglow))}
 .logo-row span{font-family:var(--fd);font-size:30px;font-weight:700;letter-spacing:-.5px;color:var(--l400)}
 
 /* Tagline — lib/i18n/en.json + ar.json */
@@ -242,9 +240,40 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 [dir="rtl"] .tooltip-trigger:hover+.tooltip-content,.tooltip-content:hover{transform:translateX(50%)}
 
 /* Remember me */
-.check-row{display:flex;align-items:center;margin-bottom:28px}
+.check-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px;flex-wrap:wrap}
 .check-label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--lts);cursor:pointer}
 .check-label input[type="checkbox"]{width:16px;height:16px;accent-color:var(--l600);cursor:pointer;border-radius:3px}
+.forgot-link{
+  display:none;background:none;border:none;padding:0;font:inherit;font-size:13px;font-weight:600;
+  color:var(--l600);cursor:pointer;text-decoration:none;
+}
+.forgot-link.show{display:inline}
+.forgot-link:hover{text-decoration:underline}
+
+.recovery-panel{display:none;text-align:start}
+.recovery-panel.show{display:block}
+.recovery-panel p{font-size:13px;color:var(--lts);margin:0 0 12px;line-height:1.55}
+.recovery-panel .ref{
+  font-family:var(--fd);font-size:22px;font-weight:700;letter-spacing:.08em;margin:8px 0 16px;
+}
+.recovery-panel textarea,.recovery-panel .form-input{width:100%}
+.recovery-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.btn-secondary{
+  height:44px;padding:0 18px;font-family:var(--fb);font-size:14px;font-weight:600;
+  border:1px solid var(--lbd);background:var(--ls1);color:var(--ltp);border-radius:var(--rpl);cursor:pointer;
+}
+.btn-secondary:hover{border-color:var(--l500)}
+.challenge-box{
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.45;
+  background:var(--ls2);border:1px solid var(--lbd);border-radius:var(--rmd);padding:10px;
+  word-break:break-all;max-height:96px;overflow:auto;margin-bottom:12px;
+}
+.alert-ok{
+  display:none;align-items:flex-start;gap:10px;padding:14px 16px;border-radius:var(--rmd);
+  background:var(--suc100);border:1px solid rgba(34,197,94,.3);color:var(--suctxt);
+  font-size:13px;margin-bottom:16px;line-height:1.5;
+}
+.alert-ok.show{display:flex}
 
 /* Login Button — components/ui/button/Button.tsx */
 .btn-login{
@@ -273,6 +302,23 @@ body{font-family:var(--fb);background:var(--ls1);color:var(--ltp);line-height:1.
 .alert-err.show{display:flex}
 .alert-err svg{width:18px;height:18px;flex-shrink:0;margin-top:1px;color:var(--dng500)}
 html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
+
+/* First-run setup link — Local Edition only (hidden until the /local-setup/status probe below
+   confirms this isn't SaaS, where the endpoint 404s and the link would be meaningless). Harmless
+   to click even on an already-set-up install: /auth/local-setup/ checks status itself and opens the setup chooser
+   straight back here (isCompleted === true) rather than letting a second gym be created. */
+.setup-link{display:none;margin-top:24px;text-align:center;font-size:13px;color:var(--ltt)}
+.setup-link.show{display:block}
+.setup-link a{color:var(--l600);font-weight:600;text-decoration:none}
+.setup-link a:hover{text-decoration:underline}
+.setup-link .hint{display:block;margin-bottom:6px;font-size:12px;color:var(--ltt)}
+
+.gym-identity{display:none;text-align:center;margin:0 0 22px}
+.gym-identity.show{display:block}
+.gym-identity img{width:56px;height:56px;border-radius:12px;object-fit:contain;background:#fff;display:block;margin:0 auto 10px;border:1px solid var(--lbd)}
+.gym-identity .bound-name{font-family:var(--fd);font-size:20px;font-weight:700;line-height:1.3}
+.gym-identity .bound-code{font-size:13px;color:var(--ltt);letter-spacing:.04em;margin-top:2px}
+.form-group.gym-code-field.bound{display:none}
 
 /* ═══════════════════════════════════════════════════════════════
    Responsive
@@ -308,13 +354,9 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
     <div class="glow-orb"></div>
     <div class="brand-content">
 
-      <!-- Logo — assets/icons/brand/ -->
+      <!-- Logo -->
       <div class="logo-row">
-        <svg viewBox="0 0 52 52" fill="none">
-          <rect width="52" height="52" rx="13" fill="#7ACC00"/>
-          <path d="M16 36L26 15L36 36" stroke="#0D0D0D" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M20 30H32" stroke="#0D0D0D" stroke-width="2.5" stroke-linecap="round"/>
-        </svg>
+        <img src="/shared/hymotion-mark.png" alt="HyMotion" width="52" height="52">
         <span>HyMotion</span>
       </div>
 
@@ -372,6 +414,12 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
 
     <div class="login-card">
 
+      <div class="gym-identity" id="gymIdentity">
+        <img id="gymLogo" src="/shared/hymotion-mark.png" alt="">
+        <div class="bound-name" id="boundGymName"></div>
+        <div class="bound-code" id="boundGymCode"></div>
+      </div>
+
       <!-- Heading — one locale at a time -->
       <h1 data-login-i18n="welcomeBack">Welcome back</h1>
       <p class="sub-label" data-login-i18n="staffPortal">Staff Portal</p>
@@ -415,8 +463,8 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
           <div class="form-err-text" id="pwErr" data-login-i18n="pwErr">Password is required</div>
         </div>
 
-        <!-- Gym Code — tenant identifier from your gym owner -->
-        <div class="form-group">
+        <!-- Gym Code — hidden once this PC is already bound to a gym -->
+        <div class="form-group gym-code-field" id="gymCodeField">
           <label for="gymCode">
             <span data-login-i18n="gymCodeLabel">Gym Code</span> <span class="req">*</span>
             <span class="tooltip-wrap">
@@ -431,12 +479,13 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
           <div class="form-err-text" id="gymCodeErr" data-login-i18n="gymCodeErr">Gym code is required</div>
         </div>
 
-        <!-- Remember me (no self-service password reset) -->
+        <!-- Keep me signed in + owner recovery (Local only; never enumerates accounts) -->
         <div class="check-row">
           <label class="check-label">
             <input type="checkbox" name="remember" id="remember">
-            <span data-login-i18n="rememberMe">Remember me</span>
+            <span data-login-i18n="rememberMe">Keep me signed in on this device</span>
           </label>
+          <button type="button" class="forgot-link" id="forgotPasswordBtn" data-login-i18n="forgotPassword">Forgot password?</button>
         </div>
 
         <button type="submit" class="btn-login" id="btnLogin">
@@ -444,6 +493,39 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
           <span class="spinner"><span class="spinner-circle"></span></span>
         </button>
       </form>
+
+      <div class="recovery-panel" id="recoveryPanel" hidden>
+        <div class="alert-ok" id="recoveryOk"><span id="recoveryOkText"></span></div>
+        <div class="alert-err" id="recoveryErr"><span id="recoveryErrText"></span></div>
+        <p id="recoveryCopy" data-login-i18n="recoveryIntro">Request help to set a new owner password. HyMotion never sees your current password.</p>
+        <div class="bound-code" id="recoveryGym"></div>
+        <div class="ref" id="recoveryRef" hidden></div>
+        <div class="challenge-box" id="recoveryChallenge" hidden></div>
+        <div class="form-group" id="recoveryCodeGroup" hidden>
+          <label for="recoveryCode" data-login-i18n="recoveryCodeLabel">Recovery code from support</label>
+          <input class="form-input" type="text" id="recoveryCode" autocomplete="off">
+        </div>
+        <div class="form-group" id="recoveryPasswordGroup" hidden>
+          <label for="recoveryPassword" data-login-i18n="recoveryPwLabel">New owner password</label>
+          <input class="form-input" type="password" id="recoveryPassword" autocomplete="new-password">
+          <label for="recoveryPassword2" data-login-i18n="recoveryPw2Label">Confirm password</label>
+          <input class="form-input" type="password" id="recoveryPassword2" autocomplete="new-password">
+        </div>
+        <div class="recovery-actions">
+          <button type="button" class="btn-login" id="recoveryPrimary" data-login-i18n="recoveryRequest">Request recovery</button>
+          <button type="button" class="btn-secondary" id="recoverySecondary" hidden></button>
+          <button type="button" class="btn-secondary" id="recoveryBack" data-login-i18n="recoveryBack">Back to sign in</button>
+        </div>
+      </div>
+
+      <p class="setup-link" id="setupLink">
+        <span data-login-i18n="setupPrompt">First time setting up this gym?</span>
+        <a href="/auth/local-setup/?v=setup6" data-login-i18n="setupCta">Set up now</a>
+      </p>
+      <p class="setup-link" id="changeGymLink">
+        <span class="hint" data-login-i18n="changeGymHint">Changing gym is not the same as signing out. This PC will stay bound to this gym until you reconnect it on purpose.</span>
+        <a href="/auth/local-setup/?v=setup6" data-login-i18n="changeGymCta">Change / reconnect gym</a>
+      </p>
 
     </div>
   </div>
@@ -455,6 +537,115 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
      ═══════════════════════════════════════════════════════════════ -->
 <script>
 (function(){
+  var boundGym = null;
+
+  function cachedIdentity() {
+    try {
+      if (window.GfpApi && window.GfpApi.gymIdentity) return window.GfpApi.gymIdentity.get();
+      return JSON.parse(localStorage.getItem('gfp_gym_identity') || 'null');
+    } catch (e) { return null; }
+  }
+
+  function paintBoundGym(identity) {
+    if (!identity || !identity.gymCode) return;
+    boundGym = identity;
+    var wrap = document.getElementById('gymIdentity');
+    var nameEl = document.getElementById('boundGymName');
+    var codeEl = document.getElementById('boundGymCode');
+    var logoEl = document.getElementById('gymLogo');
+    var field = document.getElementById('gymCodeField');
+    var input = document.getElementById('gymCode');
+    if (nameEl) nameEl.textContent = identity.gymName || identity.gymCode;
+    if (codeEl) codeEl.textContent = identity.gymCode;
+    if (logoEl && identity.logoUrl) logoEl.src = identity.logoUrl;
+    if (wrap) wrap.classList.add('show');
+    if (field) field.classList.add('bound');
+    if (input) {
+      input.value = identity.gymCode;
+      input.required = false;
+      input.removeAttribute('required');
+    }
+    var change = document.getElementById('changeGymLink');
+    if (change) change.classList.add('show');
+    var setup = document.getElementById('setupLink');
+    if (setup) setup.classList.remove('show');
+  }
+
+  async function goLanding() {
+    var land = '/dashboard/';
+    try {
+      if (window.GfpShell && window.GfpShell.resolveLandingPath) {
+        land = await window.GfpShell.resolveLandingPath();
+      }
+    } catch (e) {}
+    window.location.href = land;
+  }
+
+  (async function bootLocalIdentityAndSession() {
+    var Gfp = window.GfpApi;
+    if (!Gfp) return;
+
+    var statusOk = false;
+    var status = null;
+    var saas = false;
+    try {
+      var r = await Gfp.get('/local-setup/status', { auth: false });
+      if (r.ok && r.data) {
+        statusOk = true;
+        status = r.data;
+        if (typeof Gfp.setLocalEdition === 'function') Gfp.setLocalEdition(true);
+        var forgot = document.getElementById('forgotPasswordBtn');
+        if (forgot) forgot.classList.add('show');
+      } else if (r.status === 404) {
+        saas = true;
+      }
+    } catch (e) { /* stay on login */ }
+
+    if (statusOk && status) {
+      var gymCode = status.gymCode || status.GymCode;
+      var gymName = status.gymName || status.GymName;
+      var installId = status.license && (status.license.installationId || status.license.InstallationId);
+      if (gymCode) {
+        var cached = cachedIdentity() || {};
+        paintBoundGym({
+          gymCode: gymCode,
+          gymName: gymName || cached.gymName || '',
+          installationId: installId || cached.installationId || '',
+          logoUrl: cached.logoUrl || ''
+        });
+        Gfp.gymIdentity.remember({
+          gymCode: gymCode,
+          gymName: gymName || cached.gymName || '',
+          installationId: installId || cached.installationId || '',
+          logoUrl: cached.logoUrl || ''
+        });
+        if (status.ownerMissing === true) {
+          window.location.href = '/auth/local-setup/?v=setup6';
+          return;
+        }
+      } else if (status.isCompleted === false) {
+        window.location.href = '/auth/local-setup/?v=setup6';
+        return;
+      }
+    } else if (!saas) {
+      var fallback = cachedIdentity();
+      if (fallback && fallback.gymCode) paintBoundGym(fallback);
+    }
+
+    var token = Gfp.tokens.getAccess();
+    var expires = Gfp.tokens.getExpiresAt();
+    if (token && expires && new Date(expires) > new Date()) {
+      await goLanding();
+      return;
+    }
+    var keep = false;
+    try { keep = localStorage.getItem('gfp_persist') === '1'; } catch (e2) {}
+    if (keep) {
+      var restored = await Gfp.auth.refresh({ quiet: true });
+      if (restored) await goLanding();
+    }
+  })();
+
   // ── i18n — lib/i18n/en.json + ar.json ──
   const translations = {
     en: {
@@ -479,9 +670,34 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
       gymCodeHint: 'Ask your gym owner if you do not know this code',
       gymCodeErr: 'Gym code is required',
       gymCodeTooltip: 'The code for your gym. Ask your gym owner or manager if you do not have it.',
-      rememberMe: 'Remember me',
+      rememberMe: 'Keep me signed in on this device',
+      forgotPassword: 'Forgot password?',
+      recoveryIntro: 'Request help to set a new owner password. HyMotion never sees your current password.',
+      recoveryRequest: 'Request recovery',
+      recoveryBack: 'Back to sign in',
+      recoveryPending: 'HyMotion support will verify it is you, then approve recovery. Share this reference if you call support.',
+      recoveryOffline: 'If this PC has no internet, copy the request below and send it to HyMotion support.',
+      recoveryCopy: 'Copy request',
+      recoveryCodeLabel: 'Recovery code from support',
+      recoveryEnterCode: 'I have a recovery code',
+      recoverySubmitCode: 'Continue',
+      recoveryReady: 'Set a new owner password on this gym. Then sign in.',
+      recoveryPwLabel: 'New owner password',
+      recoveryPw2Label: 'Confirm password',
+      recoverySetPassword: 'Set new password',
+      recoveryDone: 'Owner password updated. Sign in with the new password.',
+      recoveryRejected: 'This recovery request was not approved. Contact HyMotion support.',
+      recoveryExpired: 'This recovery request expired. You can start a new one.',
+      recoveryWait: 'Approved. Waiting to finish on this gym PC.',
+      recoveryCheck: 'Check status',
+      recoveryNeedGym: 'This PC must be set up as a gym before owner recovery can start.',
+      recoveryUnavailable: 'Owner recovery is not available on this gym PC yet. Restart HyMotion and try again.',
       signIn: 'Sign In',
-      errInvalid: 'Invalid credentials or gym code. Please check and try again.'
+      errInvalid: 'Invalid credentials or gym code. Please check and try again.',
+      setupPrompt: 'First time setting up this gym?',
+      setupCta: 'Set up now',
+      changeGymHint: 'Changing gym is not the same as signing out. This PC will stay bound to this gym until you reconnect it on purpose.',
+      changeGymCta: 'Change / reconnect gym'
     },
     ar: {
       tagline: 'أدّر ناديك<br>بوضوح',
@@ -505,9 +721,34 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
       gymCodeHint: 'اسأل مالك النادي إذا لم تعرف هذا الرمز',
       gymCodeErr: 'رمز النادي مطلوب',
       gymCodeTooltip: 'رمز ناديك. اسأل مالك النادي أو المدير إذا لم يكن لديك.',
-      rememberMe: 'تذكرني',
+      rememberMe: 'أبقني مسجّلاً على هذا الجهاز',
+      forgotPassword: 'نسيت كلمة المرور؟',
+      recoveryIntro: 'اطلب المساعدة لتعيين كلمة مرور مالك جديدة. HyMotion لا يرى كلمة المرور الحالية.',
+      recoveryRequest: 'طلب الاسترداد',
+      recoveryBack: 'العودة لتسجيل الدخول',
+      recoveryPending: 'سيتحقق دعم HyMotion من هويتك ثم يوافق على الاسترداد. شارك هذا المرجع عند التواصل.',
+      recoveryOffline: 'إذا لم يكن لهذا الجهاز إنترنت، انسخ الطلب أدناه وأرسله لدعم HyMotion.',
+      recoveryCopy: 'نسخ الطلب',
+      recoveryCodeLabel: 'رمز الاسترداد من الدعم',
+      recoveryEnterCode: 'لدي رمز استرداد',
+      recoverySubmitCode: 'متابعة',
+      recoveryReady: 'عيّن كلمة مرور مالك جديدة على هذه الصالة ثم سجّل الدخول.',
+      recoveryPwLabel: 'كلمة مرور المالك الجديدة',
+      recoveryPw2Label: 'تأكيد كلمة المرور',
+      recoverySetPassword: 'تعيين كلمة المرور',
+      recoveryDone: 'تم تحديث كلمة مرور المالك. سجّل الدخول بالكلمة الجديدة.',
+      recoveryRejected: 'لم يُوافق على طلب الاسترداد. تواصل مع دعم HyMotion.',
+      recoveryExpired: 'انتهت صلاحية الطلب. يمكنك بدء طلب جديد.',
+      recoveryWait: 'تمت الموافقة. بانتظار الإكمال على جهاز الصالة.',
+      recoveryCheck: 'تحقق من الحالة',
+      recoveryNeedGym: 'يجب إعداد هذا الجهاز كنادٍ قبل استرداد المالك.',
+      recoveryUnavailable: 'استرداد المالك غير متاح على هذا الجهاز بعد. أعد تشغيل HyMotion ثم حاول مرة أخرى.',
       signIn: 'تسجيل الدخول',
-      errInvalid: 'بيانات اعتماد أو رمز نادي غير صالح. يرجى التحقق والمحاولة مرة أخرى.'
+      errInvalid: 'بيانات اعتماد أو رمز نادي غير صالح. يرجى التحقق والمحاولة مرة أخرى.',
+      setupPrompt: 'هل هذه أول مرة تُعِدّ فيها هذا النادي؟',
+      setupCta: 'الإعداد الآن',
+      changeGymHint: 'تغيير النادي ليس تسجيل خروج. سيبقى هذا الجهاز تابعاً لهذا النادي حتى تعيد ربطه عمداً.',
+      changeGymCta: 'تغيير / إعادة ربط النادي'
     }
   };
 
@@ -635,13 +876,211 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
     }, 600);
   }
 
+  // ── Owner recovery (Local Edition). Never enumerates emails/usernames. ──
+  var recoveryState = null;
+  var loginFormEl = document.getElementById('loginForm');
+  var recoveryPanel = document.getElementById('recoveryPanel');
+  var recoveryPrimary = document.getElementById('recoveryPrimary');
+  var recoverySecondary = document.getElementById('recoverySecondary');
+  var recoveryBack = document.getElementById('recoveryBack');
+  var forgotBtn = document.getElementById('forgotPasswordBtn');
+
+  function tLogin(key) {
+    return (translations[currentLang] && translations[currentLang][key]) || key;
+  }
+
+  function showRecoveryError(msg) {
+    var box = document.getElementById('recoveryErr');
+    var text = document.getElementById('recoveryErrText');
+    if (text) text.textContent = msg || tLogin('errInvalid');
+    if (box) box.classList.add('show');
+    document.getElementById('recoveryOk').classList.remove('show');
+  }
+
+  function recoveryFailureMessage(result) {
+    var status = result && result.status;
+    if (!result || status === 0 || status === 404 || status === 405) return tLogin('recoveryUnavailable');
+    var data = result.data || {};
+    var msg = data.message || data.error;
+    if (typeof msg === 'string' && msg.trim()) return msg;
+    return tLogin('errInvalid');
+  }
+
+  function showRecoveryOk(msg) {
+    var box = document.getElementById('recoveryOk');
+    var text = document.getElementById('recoveryOkText');
+    if (text) text.textContent = msg || '';
+    if (box) box.classList.toggle('show', !!msg);
+    document.getElementById('recoveryErr').classList.remove('show');
+  }
+
+  function paintRecovery(status) {
+    recoveryState = status || recoveryState;
+    var gym = document.getElementById('recoveryGym');
+    var ref = document.getElementById('recoveryRef');
+    var challenge = document.getElementById('recoveryChallenge');
+    var codeGroup = document.getElementById('recoveryCodeGroup');
+    var pwGroup = document.getElementById('recoveryPasswordGroup');
+    var copy = document.getElementById('recoveryCopy');
+    var st = (recoveryState && recoveryState.status) || 'none';
+    var gymLabel = (recoveryState && (recoveryState.gymName || recoveryState.gymCode))
+      || (boundGym && (boundGym.gymName || boundGym.gymCode)) || '';
+    if (gym) gym.textContent = gymLabel;
+    if (ref) {
+      if (recoveryState && recoveryState.reference) {
+        ref.hidden = false;
+        ref.textContent = recoveryState.reference;
+      } else {
+        ref.hidden = true;
+      }
+    }
+    if (challenge) {
+      if (recoveryState && recoveryState.challengeText && (st === 'pending' || st === 'approved')) {
+        challenge.hidden = false;
+        challenge.textContent = recoveryState.challengeText;
+      } else {
+        challenge.hidden = true;
+      }
+    }
+    codeGroup.hidden = st !== 'pending';
+    pwGroup.hidden = st !== 'approved';
+    recoverySecondary.hidden = true;
+    if (st === 'none' || st === 'cancelled') {
+      copy.setAttribute('data-login-i18n', 'recoveryIntro');
+      copy.innerHTML = tLogin('recoveryIntro');
+      recoveryPrimary.textContent = tLogin('recoveryRequest');
+      recoveryPrimary.dataset.mode = 'request';
+    } else if (st === 'pending') {
+      copy.innerHTML = tLogin('recoveryPending') + ' ' + tLogin('recoveryOffline');
+      recoveryPrimary.textContent = tLogin('recoveryCheck');
+      recoveryPrimary.dataset.mode = 'poll';
+      recoverySecondary.hidden = false;
+      recoverySecondary.textContent = tLogin('recoverySubmitCode');
+      recoverySecondary.dataset.mode = 'code';
+    } else if (st === 'approved') {
+      copy.innerHTML = tLogin('recoveryReady');
+      recoveryPrimary.textContent = tLogin('recoverySetPassword');
+      recoveryPrimary.dataset.mode = 'complete';
+    } else if (st === 'completed') {
+      copy.innerHTML = tLogin('recoveryDone');
+      recoveryPrimary.textContent = tLogin('signIn');
+      recoveryPrimary.dataset.mode = 'back';
+      showRecoveryOk(tLogin('recoveryDone'));
+    } else if (st === 'rejected' || st === 'revoked') {
+      copy.innerHTML = tLogin('recoveryRejected');
+      recoveryPrimary.textContent = tLogin('recoveryRequest');
+      recoveryPrimary.dataset.mode = 'request';
+    } else if (st === 'expired') {
+      copy.innerHTML = tLogin('recoveryExpired');
+      recoveryPrimary.textContent = tLogin('recoveryRequest');
+      recoveryPrimary.dataset.mode = 'request';
+    }
+  }
+
+  function openRecovery() {
+    if (loginFormEl) loginFormEl.style.display = 'none';
+    if (recoveryPanel) {
+      recoveryPanel.hidden = false;
+      recoveryPanel.classList.add('show');
+    }
+    var change = document.getElementById('changeGymLink');
+    if (change) change.classList.remove('show');
+    var setup = document.getElementById('setupLink');
+    if (setup) setup.classList.remove('show');
+    showRecoveryOk('');
+    document.getElementById('recoveryErr').classList.remove('show');
+    paintRecovery(recoveryState);
+  }
+
+  function closeRecovery() {
+    if (loginFormEl) loginFormEl.style.display = '';
+    if (recoveryPanel) {
+      recoveryPanel.hidden = true;
+      recoveryPanel.classList.remove('show');
+    }
+    var change = document.getElementById('changeGymLink');
+    if (change && boundGym && boundGym.gymCode) change.classList.add('show');
+  }
+
+  async function recoveryApi(method, path, body) {
+    var Gfp = getGfp();
+    if (!Gfp) throw new Error('offline');
+    if (method === 'GET') return Gfp.get(path, { auth: false });
+    return Gfp.post(path, body || {}, { auth: false });
+  }
+
+  if (forgotBtn) {
+    forgotBtn.addEventListener('click', async function() {
+      openRecovery();
+      try {
+        var ctx = await recoveryApi('GET', '/auth/owner-recovery/context');
+        if (ctx.ok && ctx.data && ctx.data.gymCode) {
+          paintRecovery(Object.assign({}, recoveryState || { status: 'none' }, {
+            gymCode: ctx.data.gymCode,
+            gymName: ctx.data.gymName
+          }));
+        }
+        var st = await recoveryApi('GET', '/auth/owner-recovery/status');
+        if (st.ok && st.data && st.data.status && st.data.status !== 'none') paintRecovery(st.data);
+      } catch (e) {}
+    });
+  }
+  if (recoveryBack) recoveryBack.addEventListener('click', closeRecovery);
+  if (recoverySecondary) {
+    recoverySecondary.addEventListener('click', async function() {
+      var code = (document.getElementById('recoveryCode').value || '').trim();
+      if (!code) { showRecoveryError(tLogin('recoveryCodeLabel')); return; }
+      try {
+        var r = await recoveryApi('POST', '/auth/owner-recovery/submit-code', { recoveryCode: code });
+        if (!r.ok) { showRecoveryError(recoveryFailureMessage(r)); return; }
+        showRecoveryOk('');
+        paintRecovery(r.data);
+      } catch (e) { showRecoveryError(tLogin('errInvalid')); }
+    });
+  }
+  if (recoveryPrimary) {
+    recoveryPrimary.addEventListener('click', async function() {
+      var mode = recoveryPrimary.dataset.mode || 'request';
+      if (mode === 'back') { closeRecovery(); return; }
+      try {
+        if (mode === 'request') {
+          var started = await recoveryApi('POST', '/auth/owner-recovery/request');
+          if (!started.ok) {
+            showRecoveryError(recoveryFailureMessage(started));
+            return;
+          }
+          showRecoveryOk('');
+          paintRecovery(started.data);
+          return;
+        }
+        if (mode === 'poll') {
+          var polled = await recoveryApi('GET', '/auth/owner-recovery/status');
+          if (polled.ok) paintRecovery(polled.data);
+          return;
+        }
+        if (mode === 'complete') {
+          var pw = document.getElementById('recoveryPassword').value;
+          var pw2 = document.getElementById('recoveryPassword2').value;
+          var done = await recoveryApi('POST', '/auth/owner-recovery/complete', { newPassword: pw, confirmPassword: pw2 });
+          if (!done.ok) {
+            showRecoveryError(recoveryFailureMessage(done));
+            return;
+          }
+          paintRecovery(done.data);
+        }
+      } catch (e) { showRecoveryError(tLogin('errInvalid')); }
+    });
+  }
+
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
     clearErrors();
 
     const email = form.email.value.trim();
     const password = form.password.value;
-    const gymCode = form.gymCode.value.trim();
+    const gymCode = (boundGym && boundGym.gymCode)
+      ? boundGym.gymCode
+      : form.gymCode.value.trim();
     let hasError = false;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -668,7 +1107,15 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
     try {
       const r = await Gfp.auth.login(
         { email: email, password: password, gymCode: gymCode },
-        { remember: !!form.remember.checked }
+        {
+          remember: !!form.remember.checked,
+          gymIdentity: {
+            gymCode: gymCode,
+            gymName: boundGym && boundGym.gymName,
+            installationId: boundGym && boundGym.installationId,
+            logoUrl: boundGym && boundGym.logoUrl
+          }
+        }
       );
 
       if (r.ok && r.data && r.data.accessToken) {
@@ -734,22 +1181,6 @@ html[data-theme="dark"] .alert-err{color:var(--gfp-dng)}
       if (errEl) errEl.classList.remove('show');
     });
   });
-
-  // ── Auto-restore session if token exists → claim-driven default landing ──
-  (async function checkExistingSession() {
-    var Gfp = getGfp();
-    var token = Gfp && Gfp.tokens.getAccess();
-    var expires = Gfp && Gfp.tokens.getExpiresAt();
-    if (token && expires && new Date(expires) > new Date()) {
-      var land = '/dashboard/';
-      try {
-        if (window.GfpShell && window.GfpShell.resolveLandingPath) {
-          land = await window.GfpShell.resolveLandingPath();
-        }
-      } catch (e) {}
-      window.location.href = land;
-    }
-  })();
 })();
 </script>
 </body>

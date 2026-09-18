@@ -157,7 +157,7 @@ tbody tr.row-click:hover{background:rgba(122,204,0,.03)}
 html.hr-embed .sidebar,
 html.hr-embed .topbar,
 html.hr-embed .sb-ft{display:none!important}
-html.hr-embed .main{margin-left:0!important}
+html.hr-embed .main{margin-left:0!important;margin-right:0!important}
 html.hr-embed .content{padding:12px 16px!important}
 html.hr-embed .page-header{margin-bottom:12px}
 html.hr-embed .page-subtitle{display:none}

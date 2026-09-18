@@ -145,6 +145,9 @@ html[data-theme="dark"] .kpi,
 html[data-theme="dark"] .sales-kpi,
 html[data-theme="dark"] .z-kpi,
 html[data-theme="dark"] .table-wrap,
+html[data-theme="dark"] .ac-table-wrap,
+html[data-theme="dark"] .ac-stat,
+html[data-theme="dark"] .ac-search,
 html[data-theme="dark"] .queue,
 html[data-theme="dark"] .empty,
 html[data-theme="dark"] .empty-state,
@@ -163,7 +166,9 @@ html[data-theme="dark"] .gfp-refund-box,
 html[data-theme="dark"] .modal,
 html[data-theme="dark"] .modal-box,
 html[data-theme="dark"] .drawer,
-html[data-theme="dark"] .drawer-panel {
+html[data-theme="dark"] .drawer-panel,
+html[data-theme="dark"] .ent-card,
+html[data-theme="dark"] .plan-card {
   background: var(--ls1);
   background-color: var(--ls1);
   border-color: var(--ls3);
@@ -280,9 +285,46 @@ html[data-theme="dark"] .pill-danger {
 }
 
 html[data-theme="dark"] .alert,
-html[data-theme="dark"] .alert-warning {
+html[data-theme="dark"] .alert-warning,
+html[data-theme="dark"] .ac-low {
   background: var(--gfp-wrn-bg);
   color: var(--gfp-wrn);
+  border-color: color-mix(in srgb, var(--wrn500) 28%, transparent);
+}
+
+html[data-theme="dark"] .ent-card.is-on {
+  background: var(--l100);
+  background-color: var(--l100);
+  border-color: color-mix(in srgb, var(--l500, #7ACC00) 45%, var(--ls3));
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .ac-table th,
+html[data-theme="dark"] .ac-table td {
+  border-color: var(--ls3);
+  color: var(--ltp);
+}
+
+html[data-theme="dark"] .ac-table th {
+  background: var(--ls2);
+  color: var(--ltt);
+}
+
+html[data-theme="dark"] .ac-pill {
+  background: var(--gfp-suc-bg);
+  color: var(--gfp-suc);
+}
+
+html[data-theme="dark"] .ac-pill.Available {
+  background: var(--gfp-inf-bg);
+  color: var(--gfp-inf);
+}
+
+html[data-theme="dark"] .ac-pill.Lost,
+html[data-theme="dark"] .ac-pill.Damaged,
+html[data-theme="dark"] .ac-pill.Blocked {
+  background: var(--gfp-dng-bg);
+  color: var(--gfp-dng);
 }
 
 /* ── POS cream rgba leftovers ── */
@@ -410,4 +452,14 @@ html[data-theme="dark"] .toggle-slider::before {
     background-image: none !important;
     box-shadow: none !important;
   }
+}
+
+/* Local-Edition-only nav items (Backup & Recovery today - see local-nav-gate.js). Attribute-driven
+   rather than a one-time DOM removal so it survives shell.js re-rendering the nav (locale switch,
+   sidebar collapse/expand). No default-hidden state: on Local this is visible from first paint
+   (correct); on SaaS there's a brief flash until local-nav-gate.js's one API call resolves, which
+   is an acceptable trade-off for one nav link (unlike the RTL/locale flash, not worth an
+   early-injected synchronous check). */
+html[data-gfp-edition="saas"] [data-nav-key="backup"] {
+  display: none !important;
 }

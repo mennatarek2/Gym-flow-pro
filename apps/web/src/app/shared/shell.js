@@ -88,6 +88,26 @@
       });
       if (offersNav) return offersNav;
     }
+    // HR secondary desks (de-navved) still belong under their parent nav item
+    var hrAliases = [
+      { prefix: '/dashboard/hr/shifts/', key: 'hr-schedule' },
+      { prefix: '/dashboard/hr/settings/', key: 'hr-employees' },
+      { prefix: '/dashboard/hr/departments/', key: 'hr-employees' },
+      { prefix: '/dashboard/hr/positions/', key: 'hr-employees' },
+      { prefix: '/dashboard/hr/documents/', key: 'hr-employees' }
+    ];
+    for (i = 0; i < hrAliases.length; i++) {
+      var alias = hrAliases[i];
+      var pref = normalizePath(alias.prefix);
+      if (p === pref || p.indexOf(pref) === 0) {
+        var hrNav = null;
+        getNavItems().forEach(function (item) {
+          if (item.key === alias.key) hrNav = item;
+        });
+        if (hrNav) return hrNav;
+        break;
+      }
+    }
     var best = null;
     getNavItems().forEach(function (item) {
       var ip = normalizePath(item.path);
@@ -198,10 +218,10 @@
     if (global.document.getElementById('gfpLangToggle')) return;
     var I18n = global.GfpI18n;
     if (!I18n) return;
+    // Never inject into .sb-ft — that footer is already tight (avatar + name + logout).
     var host =
       global.document.querySelector('.tb-right') ||
-      global.document.querySelector('.topbar') ||
-      global.document.querySelector('.sb-ft');
+      global.document.querySelector('.topbar');
     if (!host) return;
     var btn = global.document.createElement('button');
     btn.type = 'button';
@@ -241,10 +261,10 @@
     if (global.document.getElementById('gfpAppearToggle')) return;
     var Theme = global.GfpTheme;
     if (!Theme || !Theme.setPref) return;
+    // Never inject into .sb-ft — keeps the user/logout row usable.
     var host =
       global.document.querySelector('.tb-right') ||
-      global.document.querySelector('.topbar') ||
-      global.document.querySelector('.sb-ft');
+      global.document.querySelector('.topbar');
     if (!host) return;
     var wrap = global.document.createElement('div');
     wrap.id = 'gfpAppearToggle';
@@ -494,6 +514,10 @@
   function enforceRouteAccess(registry) {
     var path = normalizePath(global.location.pathname);
     if (path.indexOf('/dashboard') !== 0) return;
+    // Backup & Recovery is Local-only and Owner-gated on the page itself
+    // (API 403 / edition empty-state). Never bounce this URL to Overview —
+    // that looks like a dead sidebar link.
+    if (path === '/dashboard/backup/' || path.indexOf('/dashboard/backup/') === 0) return;
 
     var cats = useVisibleNav(registry);
     if (!cats.length) {
@@ -505,7 +529,13 @@
     // Wait for feature probes before kicking off feature-gated routes
     if (cfg && (cfg.featureFlag || cfg.featureModule) && registry == null) return;
 
-    var allowed = cfg && isNavItemVisible(cfg, registry);
+    // Known nav item the user cannot access → Overview. Unknown nested desk
+    // routes (Backup & Recovery, member detail fallbacks, new pages whose
+    // nav.js is still cached) must stay — bouncing them to /dashboard/ looks
+    // like a broken sidebar link.
+    if (!cfg) return;
+
+    var allowed = isNavItemVisible(cfg, registry);
     if (allowed) return;
 
     var land = getDefaultLandingPath(registry) || '/dashboard/';
@@ -662,7 +692,7 @@
     var link = global.document.createElement('link');
     link.id = 'gfp-shell-layout-css';
     link.rel = 'stylesheet';
-    link.href = '/shared/shell-layout.css?v=1';
+    link.href = '/shared/shell-layout.css?v=3';
     global.document.head.appendChild(link);
   }
 
@@ -1013,7 +1043,57 @@
         }
       }
     }
+    // Narrow rail: hide name/role so avatar + logout stay tappable (no overflow crowd).
+    if (html.getAttribute('data-gfp-sb') === 'expanded' && savedWidth < 210) {
+      html.setAttribute('data-gfp-sb-compact-ft', '');
+    } else {
+      html.removeAttribute('data-gfp-sb-compact-ft');
+    }
+    syncUserFooterTitles();
     syncSidebarControls();
+  }
+
+  function syncUserFooterTitles() {
+    var nm = global.document.getElementById('userName');
+    var rl = global.document.getElementById('userRole');
+    var av = global.document.getElementById('userAvatar');
+    var logout = global.document.getElementById('btnLogout') || global.document.querySelector('.sb-logout');
+    var name = nm && nm.textContent ? String(nm.textContent).trim() : '';
+    var role = rl && rl.textContent ? String(rl.textContent).trim() : '';
+    var tip = [name, role].filter(Boolean).join(' · ');
+    if (av && tip) {
+      av.title = tip;
+      av.setAttribute('aria-label', tip);
+    }
+    if (logout) {
+      var outLabel = tLabel('Log out', 'تسجيل الخروج');
+      var switchHint = tLabel(
+        'Sign out of this account. This PC still belongs to this gym.',
+        'تسجيل الخروج من هذا الحساب. هذا الجهاز ما زال تابعاً لهذا النادي.'
+      );
+      var local = global.document.documentElement.getAttribute('data-gfp-edition') === 'local';
+      logout.title = local ? switchHint : (tip ? tip + ' — ' + outLabel : outLabel);
+      logout.setAttribute('aria-label', outLabel);
+    }
+    ensureSwitchAccountControl();
+  }
+
+  function ensureSwitchAccountControl() {
+    if (!global.document) return;
+    if (global.document.documentElement.getAttribute('data-gfp-edition') !== 'local') return;
+    if (!global.location || !/\/dashboard(\/|$)/.test(global.location.pathname)) return;
+    var info = global.document.querySelector('.sb-ft-info');
+    if (!info || global.document.getElementById('btnSwitchAccount')) return;
+    var btn = global.document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'btnSwitchAccount';
+    btn.className = 'sb-switch-acc';
+    btn.textContent = tLabel('Switch account', 'تبديل الحساب');
+    btn.title = tLabel(
+      'Sign out of this account. This PC still belongs to this gym.',
+      'تسجيل الخروج من هذا الحساب. هذا الجهاز ما زال تابعاً لهذا النادي.'
+    );
+    info.appendChild(btn);
   }
 
   function setDrawerOpen(next) {
@@ -1203,7 +1283,7 @@
       }
     } catch (e) { /* ignore */ }
 
-    // Beta feedback (lightweight): desk only — not on auth/login (clipboard-only, not a product inbox).
+    // Desk feedback: floating button opens premium modal (persists via POST /api/feedback).
     try {
       var onDashboard = global.location && /\/dashboard(\/|$)/.test(global.location.pathname);
       if (
@@ -1215,86 +1295,44 @@
         if (typeof isEmbedShell === 'function' && isEmbedShell()) {
           // Embedded shell: keep UI minimal.
         } else {
-          var dir = global.document.documentElement && global.document.documentElement.dir ? global.document.documentElement.dir : '';
-          var isRtl = dir === 'rtl';
-
           var btn = global.document.createElement('button');
           btn.type = 'button';
           btn.id = 'gfpBetaFeedbackBtn';
           btn.className = 'gfp-beta-feedback-btn';
-          btn.setAttribute('aria-label', global.GfpI18n && typeof global.GfpI18n.t === 'function' ? global.GfpI18n.t('beta.feedback') : 'beta.feedback');
-          btn.textContent =
-            global.GfpI18n && typeof global.GfpI18n.t === 'function'
-              ? global.GfpI18n.t('beta.feedback')
-              : 'beta.feedback';
+          var feedbackLabel = 'Feedback';
+          if (global.GfpI18n && typeof global.GfpI18n.t === 'function') {
+            feedbackLabel = global.GfpI18n.t('feedback.title');
+            if (!feedbackLabel || feedbackLabel === 'feedback.title') {
+              feedbackLabel = global.GfpI18n.t('beta.feedback');
+            }
+          }
+          btn.setAttribute('aria-label', feedbackLabel);
+          btn.title = feedbackLabel;
+          // Icon-only: long AR label was covering the sidebar user footer.
+          btn.innerHTML = '<i class="ti ti-message-report" aria-hidden="true"></i>';
           btn.style.cssText =
-            'position:fixed;bottom:24px;z-index:10000;' +
-            (isRtl ? 'left:24px;' : 'right:24px;') +
-            'padding:10px 14px;border-radius:var(--rmd,8px);' +
-            'background:var(--l100,#d9f99d);color:var(--l500,#7cfc00);' +
-            'border:1px solid rgba(122,204,0,.35);font-size:13px;font-weight:700;cursor:pointer;';
+            'position:fixed;bottom:24px;inset-inline-end:24px;z-index:900;' +
+            'width:44px;height:44px;padding:0;border-radius:999px;' +
+            'display:inline-flex;align-items:center;justify-content:center;' +
+            'background:var(--l100,#d9f99d);color:var(--c900,#0D0D0D);' +
+            'border:1px solid rgba(122,204,0,.35);font-size:20px;cursor:pointer;' +
+            'box-shadow:0 4px 14px rgba(0,0,0,.18);';
 
           btn.addEventListener('click', function () {
             try {
-              var promptTitle =
-                global.GfpI18n && typeof global.GfpI18n.t === 'function'
-                  ? global.GfpI18n.t('beta.feedbackPrompt')
-                  : 'beta.feedbackPrompt';
-              var details = global.prompt ? global.prompt(promptTitle) : null;
-              if (details == null) return; // cancelled
-              details = String(details).trim();
-              if (!details) return;
-
-              var version =
-                global.GfpVersion && typeof global.GfpVersion.get === 'function' ? global.GfpVersion.get() : '';
-              var env =
-                global.GfpVersion && typeof global.GfpVersion.env === 'function' ? global.GfpVersion.env() : '';
-              var url =
-                global.location && global.location.href ? String(global.location.href) : '';
-
-              var template =
-                global.GfpI18n && typeof global.GfpI18n.t === 'function'
-                  ? global.GfpI18n.t('beta.feedbackTemplate', { version: version, env: env, url: url })
-                  : 'beta.feedbackTemplate';
-
-              var body = template + '\\n\\n' + details;
-
-              function ok() {
-                if (global.GfpToast && global.GfpI18n && typeof global.GfpI18n.t === 'function') {
-                  global.GfpToast.success(global.GfpI18n.t('beta.feedbackCopied'));
-                } else if (global.GfpToast) {
-                  global.GfpToast.success('beta.feedbackCopied');
-                }
-              }
-              function fail() {
-                if (global.GfpToast && global.GfpI18n && typeof global.GfpI18n.t === 'function') {
-                  global.GfpToast.error(global.GfpI18n.t('beta.feedbackCopyFailed'));
-                } else if (global.GfpToast) {
-                  global.GfpToast.error('beta.feedbackCopyFailed');
-                }
-              }
-
-              if (global.navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                navigator.clipboard.writeText(body).then(ok).catch(fail);
+              if (global.GfpFeedback && typeof global.GfpFeedback.open === 'function') {
+                global.GfpFeedback.open();
                 return;
               }
-
-              // Fallback copy
-              var ta = global.document.createElement('textarea');
-              ta.value = body;
-              ta.setAttribute('readonly', '');
-              ta.style.position = 'fixed';
-              ta.style.left = '-9999px';
-              ta.style.top = '0';
-              global.document.body.appendChild(ta);
-              ta.select();
-              try {
-                var copied = global.document.execCommand && global.document.execCommand('copy');
-                global.document.body.removeChild(ta);
-                copied ? ok() : fail();
-              } catch (e2) {
-                try { global.document.body.removeChild(ta); } catch (e3) {}
-                fail();
+              // Lazy-load feedback.js once if injector missed it.
+              if (!global.document.getElementById('gfpFeedbackJs')) {
+                var s = global.document.createElement('script');
+                s.id = 'gfpFeedbackJs';
+                s.src = '/shared/feedback.js?v=1';
+                s.onload = function () {
+                  if (global.GfpFeedback && global.GfpFeedback.open) global.GfpFeedback.open();
+                };
+                global.document.body.appendChild(s);
               }
             } catch (e) { /* ignore */ }
           });
@@ -1323,7 +1361,7 @@
         function (ev) {
           var t = ev.target;
           if (!t || !t.closest) return;
-          var btn = t.closest('#btnLogout, .sb-logout');
+          var btn = t.closest('#btnLogout, .sb-logout, #btnSwitchAccount');
           if (!btn) return;
           ev.preventDefault();
           ev.stopPropagation();
@@ -1403,14 +1441,35 @@
       }
       renderShellNav(lastRegistry);
       syncSidebarControls();
+      syncUserFooterTitles();
+      var switchBtn = global.document.getElementById('btnSwitchAccount');
+      if (switchBtn) {
+        switchBtn.textContent = tLabel('Switch account', 'تبديل الحساب');
+      }
+      var betaBtn = global.document.getElementById('gfpBetaFeedbackBtn');
+      if (betaBtn && global.GfpI18n && typeof global.GfpI18n.t === 'function') {
+        var label = global.GfpI18n.t('feedback.title');
+        if (!label || label === 'feedback.title') label = global.GfpI18n.t('beta.feedback');
+        betaBtn.setAttribute('aria-label', label);
+        betaBtn.title = label;
+      }
     });
+
+    // Pages fill #userName after shell boot — refresh titles once identity is present.
+    global.setTimeout(syncUserFooterTitles, 0);
+    global.setTimeout(syncUserFooterTitles, 500);
+    if (global.document && global.document.addEventListener) {
+      global.document.addEventListener('gfp:edition', function () {
+        ensureSwitchAccountControl();
+        syncUserFooterTitles();
+      });
+    }
   }
 
   if (global.GfpApi && global.GfpApi.logout) {
     var prevLogout = global.GfpApi.logout.bind(global.GfpApi);
     global.GfpApi.logout = function () {
       if (global.GfpFeatures) global.GfpFeatures.clearCache();
-      if (global.GfpBranding && global.GfpBranding.clear) global.GfpBranding.clear();
       return prevLogout();
     };
   }

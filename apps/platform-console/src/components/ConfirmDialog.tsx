@@ -51,7 +51,7 @@ export function ConfirmDialog({
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      className="w-[min(100%,28rem)] rounded-[var(--radius)] border border-gray-200 bg-white p-0 text-gray-900 shadow-2xl backdrop:bg-black/40 open:flex open:flex-col"
+      className="w-[min(100%,28rem)] rounded-[var(--radius)] border border-[var(--border)] bg-white p-0 text-[var(--text)] shadow-[var(--shadow-sm)] backdrop:bg-black/40 open:flex open:flex-col"
       onCancel={(e) => {
         if (busy) {
           e.preventDefault()
@@ -80,7 +80,7 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="rounded-[var(--radius)] border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="cp-btn cp-btn-secondary disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -88,10 +88,8 @@ export function ConfirmDialog({
             type="button"
             disabled={busy || confirmDisabled}
             onClick={onConfirm}
-            className={`rounded-[var(--radius)] px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
-              confirmTone === 'danger'
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+            className={`cp-btn disabled:opacity-50 ${
+              confirmTone === 'danger' ? 'cp-btn-danger' : 'cp-btn-primary'
             }`}
           >
             {busy ? 'Working…' : confirmLabel}

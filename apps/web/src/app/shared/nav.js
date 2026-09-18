@@ -92,6 +92,14 @@
           path: '/dashboard/attendance/',
           icon: 'ti-door-enter',
           access: { kind: 'permission', value: ['checkin.manual', 'members.view'] }
+        },
+        {
+          key: 'access-cards',
+          label: 'Access cards',
+          labelAr: 'كارنيهات الدخول',
+          path: '/dashboard/access-cards/',
+          icon: 'ti-id',
+          access: { kind: 'permission', value: 'members.view' }
         }
       ]
     },
@@ -408,6 +416,17 @@
           labelAr: 'الإعدادات',
           path: '/dashboard/settings/',
           icon: 'ti-settings',
+          access: { kind: 'policy', value: 'OwnerOnly' }
+        },
+        {
+          // Local Edition only (backend 404s this on SaaS via [RequireLocalEdition] - the page
+          // itself checks GfpDeployment.getEdition() and shows a clear "not available" state
+          // rather than the nav model here growing an edition-aware access kind for one item).
+          key: 'backup',
+          label: 'Backup & Recovery',
+          labelAr: 'النسخ الاحتياطي والاسترداد',
+          path: '/dashboard/backup/',
+          icon: 'ti-database-export',
           access: { kind: 'policy', value: 'OwnerOnly' }
         }
       ]

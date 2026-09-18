@@ -362,6 +362,19 @@ export function ActionsPanel({ tenant }: ActionsPanelProps) {
           }
           onClick={() => openModal('suspend')}
         />
+        {canExtend ? (
+          <ActionButton
+            label="Extend trial"
+            disabled={!ops}
+            tooltip={!ops ? supportTooltip : undefined}
+            onClick={() => openModal('extend')}
+          />
+        ) : null}
+      </div>
+
+      <details className="mt-3">
+        <summary className="cursor-pointer text-sm font-medium text-gray-700">More</summary>
+        <div className="mt-2 flex flex-wrap gap-2">
         <ActionButton
           label="Force reactivate"
           disabled={!ops || !canReactivate}
@@ -374,14 +387,6 @@ export function ActionsPanel({ tenant }: ActionsPanelProps) {
           }
           onClick={() => openModal('reactivate')}
         />
-        {canExtend ? (
-          <ActionButton
-            label="Extend trial"
-            disabled={!ops}
-            tooltip={!ops ? supportTooltip : undefined}
-            onClick={() => openModal('extend')}
-          />
-        ) : null}
         {canConvertTrial ? (
           <ActionButton
             label="Convert to paid"
@@ -457,6 +462,7 @@ export function ActionsPanel({ tenant }: ActionsPanelProps) {
           />
         ) : null}
       </div>
+      </details>
 
       {ops && coupons.length > 0 ? (
         <div className="mt-4">

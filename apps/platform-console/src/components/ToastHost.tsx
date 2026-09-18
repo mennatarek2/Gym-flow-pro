@@ -24,7 +24,7 @@ export function ToastHost() {
     <div
       role="status"
       aria-live="polite"
-      className={`fixed bottom-4 right-4 z-50 max-w-sm rounded-[var(--radius)] border px-4 py-3 text-sm shadow-lg ${tone}`}
+      className={`fixed bottom-4 z-50 max-w-sm rounded-[var(--radius)] border px-4 py-3 text-sm shadow-[var(--shadow-sm)] [inset-inline-end:1rem] ${tone}`}
     >
       {toast.message}
     </div>

@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HyMotion — Employees</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="employees.css?v=13">
+<link href="/shared/vendor/fonts/cairo.css" rel="stylesheet">
+<link rel="stylesheet" href="/shared/vendor/tabler-icons/tabler-icons.min.css">
+<link rel="stylesheet" href="employees.css?v=14">
 </head>
 <body>
 <div class="app">
@@ -34,6 +34,7 @@
         <p class="page-subtitle" data-en="Everyone who works at your gym — with or without a system login." data-ar="كل من يعمل في صالتك — سواء كان لديه حساب دخول أم لا.">Everyone who works at your gym — with or without a system login.</p>
       </div>
       <div id="manageActions" hidden>
+        <a href="/dashboard/hr/settings/?tab=departments" class="btn-secondary" id="btnHrSettings" style="width:auto;padding:0 14px;gap:6px;text-decoration:none"><i class="ti ti-settings"></i> <span data-en="Departments &amp; positions" data-ar="الأقسام والمسميات">Departments &amp; positions</span></a>
         <button type="button" class="btn-create" id="btnCreate"><i class="ti ti-plus"></i> <span data-en="New employee" data-ar="موظف جديد">New employee</span></button>
       </div>
     </div>
@@ -245,6 +246,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="employees-app.js?v=13"></script>
+<script src="employees-app.js?v=14"></script>
 </body>
 </html>

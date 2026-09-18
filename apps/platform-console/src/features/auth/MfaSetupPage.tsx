@@ -5,8 +5,10 @@ import { platformMfaSetup } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { InternalStrip } from '@/components/InternalStrip'
 import { OtpInput } from '@/components/OtpInput'
+import { useUiStore } from '@/stores/ui-store'
 
 export function MfaSetupPage() {
+  const t = useUiStore((s) => s.t)
   const navigate = useNavigate()
   const mfaPhase = useAuthStore((s) => s.mfaPhase)
   const setupToken = useAuthStore((s) => s.setupToken)
@@ -32,17 +34,17 @@ export function MfaSetupPage() {
       const { status, data } = await platformMfaSetup({ setupToken: setupToken!, mfaCode: code })
       if (status === 200 && data.success && data.accessToken) {
         applySuccessfulAuth(data)
-        navigate('/tenants', { replace: true })
+        navigate('/oc', { replace: true })
         return
       }
       if (data.errorCode === 'SETUP_TOKEN_EXPIRED' || data.errorCode === 'SETUP_TOKEN_INVALID') {
         setExpired(true)
-        setError('This setup link expired. Please log in again.')
+        setError(t('auth.mfaSetupExpired'))
         return
       }
-      setError(data.errorMessage || 'Incorrect code — check your authenticator app and try again.')
+      setError(data.errorMessage || t('auth.mfaBadCode'))
     } catch {
-      setError('Unable to complete MFA setup. Please try again.')
+      setError(t('auth.mfaSetupFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -53,10 +55,8 @@ export function MfaSetupPage() {
       <InternalStrip />
       <main className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-12">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Set up authenticator</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            Platform Console access requires two-factor authentication because this tool can view every gym&apos;s account.
-          </p>
+          <h1 className="cp-page-title">{t('auth.mfaSetupTitle')}</h1>
+          <p className="mt-2 text-sm text-gray-500">{t('auth.mfaHint')}</p>
         </div>
         <div className="rounded-[var(--radius)] border border-gray-200 bg-white p-6">
           {otpAuthUri ? (
@@ -66,7 +66,7 @@ export function MfaSetupPage() {
           ) : null}
           {mfaManualKey ? (
             <p className="mb-4 text-sm text-gray-700">
-              Can&apos;t scan? Enter this key manually:{' '}
+              {t('auth.mfaManual')}{' '}
               <code className="select-all rounded bg-white px-2 py-1 font-[var(--mono)] text-blue-600">
                 {mfaManualKey}
               </code>
@@ -83,7 +83,7 @@ export function MfaSetupPage() {
                     onClick={() => clearMfaFlow()}
                     className="underline"
                   >
-                    Back to login
+                    {t('auth.mfaBackLogin')}
                   </Link>
                 ) : null}
               </p>
@@ -91,9 +91,9 @@ export function MfaSetupPage() {
             <button
               type="submit"
               disabled={submitting || code.length < 6}
-              className="rounded-[var(--radius)] bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              className="cp-btn cp-btn-primary disabled:opacity-60"
             >
-              {submitting ? 'Verifying…' : 'Enable MFA & continue'}
+              {submitting ? t('auth.mfaVerifying') : t('auth.mfaEnable')}
             </button>
           </form>
         </div>

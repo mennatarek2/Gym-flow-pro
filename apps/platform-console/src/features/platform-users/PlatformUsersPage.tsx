@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { PageHeader } from '@/components/PageHeader'
+import { StatusChip } from '@/components/Status'
 import {
   changePlatformUserRole,
   createPlatformUser,
@@ -17,20 +19,8 @@ import { useUiStore } from '@/stores/ui-store'
 
 type ModalKind = 'create' | 'disable' | 'reactivate' | 'role' | null
 
-const ROLE_LABEL: Record<string, string> = {
-  platform_admin: 'Platform Admin',
-  platform_ops: 'Platform Ops',
-  platform_support: 'Platform Support',
-}
-
-const ROLE_BADGE: Record<string, string> = {
-  platform_admin: 'bg-red-50 text-red-800 ring-1 ring-red-200',
-  platform_ops: 'bg-blue-50 text-blue-800 ring-1 ring-blue-200',
-  platform_support: 'bg-gray-100 text-gray-800 ring-1 ring-gray-200',
-}
-
-function roleLabel(role: string): string {
-  return ROLE_LABEL[role] ?? role
+function roleLabel(role: string, t: (key: string) => string): string {
+  return t(`users.role.${role}`)
 }
 
 function errorMessage(err: unknown): string {
@@ -43,19 +33,16 @@ function errorMessage(err: unknown): string {
 }
 
 export function PlatformUsersPage() {
+  const t = useUiStore((s) => s.t)
   const currentUser = useAuthStore((s) => s.user)
   const admin = isAdmin(currentUser?.role)
 
   if (!admin) {
     return (
       <div className="flex flex-col gap-4">
-        <header>
-          <h1 className="text-2xl font-semibold text-gray-900">Platform Users</h1>
-          <p className="text-sm text-gray-500">Accounts with access to platform-level operations.</p>
-        </header>
+        <PageHeader title={t('users.title')} subtitle={t('users.subtitle')} />
         <div className="rounded-[var(--radius)] border border-amber-200 bg-amber-50 px-4 py-6 text-center text-sm text-amber-900">
-          This section requires Platform Admin access. Your role ({currentUser?.role ?? 'unknown'}) cannot
-          view or manage platform users — this is enforced by the backend, not just hidden here.
+          {t('users.forbidden', { role: currentUser?.role ?? t('customers.unknown') })}
         </div>
       </div>
     )
@@ -65,6 +52,7 @@ export function PlatformUsersPage() {
 }
 
 function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | null }) {
+  const t = useUiStore((s) => s.t)
   const showToast = useUiStore((s) => s.showToast)
   const queryClient = useQueryClient()
 
@@ -107,7 +95,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
   const createMutation = useMutation({
     mutationFn: () => {
       if (newPassword.length < 10) {
-        return Promise.reject(new Error('Password must be at least 10 characters.'))
+        return Promise.reject(new Error(t('users.passwordMin')))
       }
       return createPlatformUser({
         email: newEmail.trim(),
@@ -117,7 +105,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
       })
     },
     onSuccess: async (user) => {
-      showToast(`${user.fullName} created as ${roleLabel(user.role)}.`, 'success')
+      showToast(t('users.createdToast', { name: user.fullName, role: roleLabel(user.role, t) }), 'success')
       await invalidate()
       closeModal()
     },
@@ -130,7 +118,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
       return disablePlatformUser(target.id)
     },
     onSuccess: async () => {
-      showToast(`${target?.fullName} disabled.`, 'success')
+      showToast(t('users.disabledToast', { name: target?.fullName ?? '' }), 'success')
       await invalidate()
       closeModal()
     },
@@ -143,7 +131,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
       return reactivatePlatformUser(target.id)
     },
     onSuccess: async () => {
-      showToast(`${target?.fullName} reactivated.`, 'success')
+      showToast(t('users.reactivatedToast', { name: target?.fullName ?? '' }), 'success')
       await invalidate()
       closeModal()
     },
@@ -156,7 +144,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
       return changePlatformUserRole(target.id, { role: roleValue })
     },
     onSuccess: async () => {
-      showToast(`${target?.fullName} is now ${roleLabel(roleValue)}.`, 'success')
+      showToast(t('users.roleToast', { name: target?.fullName ?? '', role: roleLabel(roleValue, t) }), 'success')
       await invalidate()
       closeModal()
     },
@@ -171,39 +159,34 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Platform Users</h1>
-          <p className="text-sm text-gray-500">Accounts with access to platform-level operations.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => openModal('create')}
-          className="rounded-[var(--radius)] bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Create Platform User
-        </button>
-      </header>
+      <PageHeader
+        title={t('users.title')}
+        subtitle={t('users.subtitle')}
+        actions={
+          <button type="button" onClick={() => openModal('create')} className="cp-btn cp-btn-primary">
+            {t('users.create')}
+          </button>
+        }
+      />
 
       <div
         role="status"
         className="rounded-[var(--radius)] border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-700"
       >
-        Platform users have access to platform-level operations across every tenant. Tenant users (gym staff)
-        are managed separately, per tenant.
+        {t('users.hint')}
       </div>
 
       <div className="overflow-x-auto rounded-[var(--radius)] border border-gray-200">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-500">
+        <table className="cp-table min-w-full text-left text-sm">
+          <thead>
             <tr>
-              <th className="px-3 py-2 font-medium">Name</th>
-              <th className="px-3 py-2 font-medium">Email</th>
-              <th className="px-3 py-2 font-medium">Role</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 font-medium">Last Login</th>
-              <th className="px-3 py-2 font-medium">Created</th>
-              <th className="px-3 py-2 font-medium">Actions</th>
+              <th>{t('users.name')}</th>
+              <th>{t('users.email')}</th>
+              <th>{t('users.role')}</th>
+              <th>{t('users.status')}</th>
+              <th>{t('users.lastLogin')}</th>
+              <th>{t('users.created')}</th>
+              <th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -221,9 +204,9 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
             {query.isError ? (
               <tr>
                 <td colSpan={colCount} className="px-3 py-8 text-center text-red-600">
-                  {query.error instanceof ApiClientError ? query.error.message : 'Failed to load platform users.'}{' '}
+                  {query.error instanceof ApiClientError ? query.error.message : t('users.failedLoad')}{' '}
                   <button type="button" className="underline" onClick={() => query.refetch()}>
-                    Retry
+                    {t('common.retry')}
                   </button>
                 </td>
               </tr>
@@ -231,7 +214,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
             {!query.isLoading && !query.isError && users.length === 0 ? (
               <tr>
                 <td colSpan={colCount} className="px-3 py-8 text-center text-gray-500">
-                  No platform users yet.
+                  {t('users.empty')}
                 </td>
               </tr>
             ) : null}
@@ -241,57 +224,45 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
                 <tr key={u.id} className="border-t border-gray-200">
                   <td className="px-3 py-2 font-medium text-gray-900">
                     {u.fullName}
-                    {isSelf ? <span className="ml-2 text-xs text-gray-500">(you)</span> : null}
+                    {isSelf ? <span className="ml-2 text-xs text-gray-500">{t('users.you')}</span> : null}
                   </td>
                   <td className="px-3 py-2 font-[var(--mono)] text-xs text-gray-700">{u.email}</td>
+                  <td className="px-3 py-2">{roleLabel(u.role, t)}</td>
                   <td className="px-3 py-2">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_BADGE[u.role] ?? 'bg-gray-200 text-gray-800'}`}>
-                      {roleLabel(u.role)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={
-                        u.isActive
-                          ? 'inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200'
-                          : 'inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 ring-1 ring-gray-200'
-                      }
-                    >
-                      {u.isActive ? 'Active' : 'Disabled'}
-                    </span>
+                    <StatusChip value={u.isActive ? 'active' : 'inactive'} />
                   </td>
                   <td className="px-3 py-2 text-gray-700">{formatCairoDateTime(u.lastLoginAtUtc)}</td>
                   <td className="px-3 py-2 text-gray-700">{formatCairoDateTime(u.createdAtUtc)}</td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1.5">
-                      <span title={isSelf ? "You can't change your own role" : undefined}>
+                      <span title={isSelf ? t('users.cannotChangeOwnRole') : undefined}>
                         <button
                           type="button"
                           disabled={isSelf}
                           onClick={() => openModal('role', u)}
-                          className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-45"
+                          className="cp-btn cp-btn-secondary disabled:cursor-not-allowed disabled:opacity-45"
                         >
-                          Change Role
+                          {t('users.changeRole')}
                         </button>
                       </span>
                       {u.isActive ? (
-                        <span title={isSelf ? "You can't disable your own account" : undefined}>
+                        <span title={isSelf ? t('users.cannotDisableSelf') : undefined}>
                           <button
                             type="button"
                             disabled={isSelf}
                             onClick={() => openModal('disable', u)}
-                            className="rounded border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-800 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45"
+                            className="cp-btn cp-btn-danger disabled:cursor-not-allowed disabled:opacity-45"
                           >
-                            Disable
+                            {t('users.disable')}
                           </button>
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => openModal('reactivate', u)}
-                          className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-900 hover:bg-gray-200"
+                          className="cp-btn cp-btn-secondary"
                         >
-                          Reactivate
+                          {t('users.reactivate')}
                         </button>
                       )}
                     </div>
@@ -305,9 +276,9 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
 
       <ConfirmDialog
         open={modal === 'create'}
-        title="Create Platform User"
-        description="Creates a new platform_support / platform_ops / platform_admin account. The new user completes MFA setup on first login."
-        confirmLabel="Create User"
+        title={t('users.createTitle')}
+        description={t('users.createDesc')}
+        confirmLabel={t('users.createConfirm')}
         busy={busy}
         error={formError}
         confirmDisabled={!newEmail.trim() || !newFullName.trim() || newPassword.length < 10}
@@ -315,7 +286,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
         onConfirm={() => createMutation.mutate()}
       >
         <label className="mt-2 block text-sm">
-          <span className="text-gray-500">Full name</span>
+          <span className="text-gray-500">{t('users.fullName')}</span>
           <input
             value={newFullName}
             disabled={busy}
@@ -324,7 +295,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
           />
         </label>
         <label className="mt-2 block text-sm">
-          <span className="text-gray-500">Email</span>
+          <span className="text-gray-500">{t('users.email')}</span>
           <input
             type="email"
             value={newEmail}
@@ -334,7 +305,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
           />
         </label>
         <label className="mt-2 block text-sm">
-          <span className="text-gray-500">Role</span>
+          <span className="text-gray-500">{t('users.role')}</span>
           <select
             value={newRole}
             disabled={busy}
@@ -343,13 +314,13 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
           >
             {PLATFORM_USER_ROLES.map((r) => (
               <option key={r} value={r}>
-                {roleLabel(r)}
+                {roleLabel(r, t)}
               </option>
             ))}
           </select>
         </label>
         <label className="mt-2 block text-sm">
-          <span className="text-gray-500">Temporary password (min 10 characters)</span>
+          <span className="text-gray-500">{t('users.tempPassword')}</span>
           <input
             type="password"
             value={newPassword}
@@ -362,9 +333,9 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
 
       <ConfirmDialog
         open={modal === 'disable'}
-        title="Disable Platform User"
-        description={target ? <>Disable <strong>{target.fullName}</strong>&apos;s platform access.</> : null}
-        confirmLabel="Disable"
+        title={t('users.disableTitle')}
+        description={target ? t('users.disableDesc', { name: target.fullName }) : null}
+        confirmLabel={t('users.disable')}
         confirmTone="danger"
         busy={busy}
         error={formError}
@@ -374,9 +345,9 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
 
       <ConfirmDialog
         open={modal === 'reactivate'}
-        title="Reactivate Platform User"
-        description={target ? <>Restore <strong>{target.fullName}</strong>&apos;s platform access.</> : null}
-        confirmLabel="Reactivate"
+        title={t('users.reactivateTitle')}
+        description={target ? t('users.reactivateDesc', { name: target.fullName }) : null}
+        confirmLabel={t('users.reactivate')}
         busy={busy}
         error={formError}
         onClose={closeModal}
@@ -385,9 +356,9 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
 
       <ConfirmDialog
         open={modal === 'role'}
-        title="Change Role"
-        description={target ? <>Change <strong>{target.fullName}</strong>&apos;s role.</> : null}
-        confirmLabel="Change Role"
+        title={t('users.roleTitle')}
+        description={target ? t('users.roleDesc', { name: target.fullName }) : null}
+        confirmLabel={t('users.changeRole')}
         busy={busy}
         error={formError}
         confirmDisabled={target?.role === roleValue}
@@ -395,7 +366,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
         onConfirm={() => roleMutation.mutate()}
       >
         <label className="mt-2 block text-sm">
-          <span className="text-gray-500">New role</span>
+          <span className="text-gray-500">{t('users.newRole')}</span>
           <select
             value={roleValue}
             disabled={busy}
@@ -404,7 +375,7 @@ function PlatformUsersAdminView({ currentUserId }: { currentUserId: string | nul
           >
             {PLATFORM_USER_ROLES.map((r) => (
               <option key={r} value={r}>
-                {roleLabel(r)}
+                {roleLabel(r, t)}
               </option>
             ))}
           </select>

@@ -15,9 +15,9 @@ export const LIMIT_TIER_LABEL: Record<LimitTier, string> = {
 }
 
 export const LIMIT_TIER_BADGE: Record<LimitTier, string> = {
-  approaching: 'bg-amber-900 text-amber-100',
-  critical: 'bg-red-900 text-red-200',
-  exceeded: 'bg-red-950 text-red-100 ring-1 ring-red-700',
+  approaching: 'cp-status cp-status-warning',
+  critical: 'cp-status cp-status-danger',
+  exceeded: 'cp-status cp-status-danger',
 }
 
 export function groupByLimitTier(rows: TenantNearLimitDto[]): Record<LimitTier, TenantNearLimitDto[]> {

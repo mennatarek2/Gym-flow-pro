@@ -17,22 +17,15 @@ import { AuditTrailPanel } from '@/features/tenants/AuditTrailPanel'
 import { formatCairoDate, formatCairoDateTime, formatEgp } from '@/lib/format'
 import { ApiClientError } from '@/lib/api/errors'
 import { PLATFORM_TRIAL_DAYS } from '@/lib/platform-plans'
+import { isOpsOrAbove } from '@/lib/platform-roles'
+import { useAuthStore } from '@/stores/auth-store'
+import { useUiStore } from '@/stores/ui-store'
 
-const DETAIL_TABS = ['overview', 'subscription', 'usage', 'health', 'users', 'billing', 'audit'] as const
+const DETAIL_TABS = ['overview', 'subscription', 'usage', 'users', 'activity'] as const
 type DetailTab = (typeof DETAIL_TABS)[number]
 
 function isDetailTab(value: string | null): value is DetailTab {
   return !!value && (DETAIL_TABS as readonly string[]).includes(value)
-}
-
-const TAB_LABEL: Record<DetailTab, string> = {
-  overview: 'Overview',
-  subscription: 'Subscription',
-  usage: 'Usage',
-  health: 'Health',
-  users: 'Users',
-  billing: 'Billing',
-  audit: 'Audit',
 }
 
 function daysUntil(iso: string | null | undefined): number | null {
@@ -44,8 +37,11 @@ function daysUntil(iso: string | null | undefined): number | null {
 }
 
 export function TenantDetailPage() {
+  const t = useUiStore((s) => s.t)
   const { id = '' } = useParams()
   const [params, setParams] = useSearchParams()
+  const role = useAuthStore((s) => s.user?.role)
+  const canImpersonate = isOpsOrAbove(role)
 
   // Tab selection lives in the URL so deep links, refresh, and back/forward preserve state.
   const activeTab: DetailTab = isDetailTab(params.get('tab')) ? (params.get('tab') as DetailTab) : 'overview'
@@ -65,14 +61,8 @@ export function TenantDetailPage() {
   backParams.delete('tab')
   backParams.delete('returnTo')
   const backQuery = backParams.toString()
-  const backHref = returnTo ?? `/tenants${backQuery ? `?${backQuery}` : ''}`
-  const backLabel = returnTo?.startsWith('/risk-queue')
-    ? '← Back to risk queue'
-    : returnTo?.startsWith('/subscriptions')
-      ? '← Back to subscriptions'
-      : returnTo?.startsWith('/trials')
-        ? '← Back to trials'
-        : '← Back to tenants'
+  const backHref = returnTo ?? `/gyms?mode=cloud${backQuery ? `&${backQuery}` : ''}`
+  const backLabel = returnTo?.startsWith('/support') ? `← ${t('gyms.backSupport')}` : `← ${t('gyms.back')}`
 
   const detailQuery = useQuery({
     queryKey: ['tenant', id],
@@ -108,15 +98,13 @@ export function TenantDetailPage() {
     return (
       <div className="cp-card p-6">
         <h1 className="text-xl font-semibold text-gray-900">
-          {notFound ? 'Tenant not found' : 'Failed to load tenant'}
+          {notFound ? t('gyms.notFound') : t('gyms.failedLoadDetail')}
         </h1>
         <p className="mt-2 text-sm text-gray-500">
-          {notFound
-            ? 'This tenant id does not exist or was deleted.'
-            : 'Something went wrong loading this tenant.'}
+          {notFound ? t('gyms.missingOrDeleted') : t('gyms.loadError')}
         </p>
-        <Link to={backHref} className="mt-4 inline-block text-blue-600 underline">
-          Back to list
+        <Link to={backHref} className="mt-4 inline-block text-[var(--accent)] underline">
+          {t('gyms.back')}
         </Link>
       </div>
     )
@@ -146,7 +134,7 @@ export function TenantDetailPage() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">{tenant.name}</h1>
+              <h1 className="text-xl font-semibold text-[var(--text)]">{tenant.name}</h1>
               <span className="font-[var(--mono)] text-sm text-gray-400">{tenant.gymCode}</span>
               <TierBadge tier={sub?.planTier} />
               <StatusBadge status={sub?.status} />
@@ -157,27 +145,27 @@ export function TenantDetailPage() {
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
               {owner ? (
                 <span>
-                  Owner:{' '}
+                  {t('customers.owner')}:{' '}
                   <span className="font-semibold text-gray-800">
                     {owner.fullName}
                     {owner.email ? ` · ${owner.email}` : ''}
                   </span>
                 </span>
               ) : (
-                <span className="text-gray-400">Owner: —</span>
+                <span className="text-gray-400">{t('customers.owner')}: —</span>
               )}
               {sub?.status === 'trialing' ? (
                 <span>
-                  Trial ends {formatCairoDateTime(sub.trialEndsAtUtc ?? sub.currentPeriodEnd)}
+                  {t('gyms.trialEnds', { date: formatCairoDateTime(sub.trialEndsAtUtc ?? sub.currentPeriodEnd) })}
                   {trialDaysLeft != null ? (
                     <span className="ml-1 font-semibold text-amber-700">
-                      ({trialDaysLeft}d left · default {PLATFORM_TRIAL_DAYS}d config)
+                      {t('gyms.daysLeftConfig', { days: trialDaysLeft, config: PLATFORM_TRIAL_DAYS })}
                     </span>
                   ) : null}
                 </span>
               ) : sub ? (
                 <span>
-                  Renewal {formatCairoDate(sub.currentPeriodEnd)} · {formatEgp(sub.priceEgp)}
+                  {t('gyms.renewalPrice', { date: formatCairoDate(sub.currentPeriodEnd), price: formatEgp(sub.priceEgp) })}
                 </span>
               ) : null}
             </div>
@@ -185,12 +173,19 @@ export function TenantDetailPage() {
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <button
               type="button"
-              className="cp-btn cp-btn-secondary"
+              className="cp-btn cp-btn-primary"
               onClick={() => setActiveTab('subscription')}
             >
-              Manage subscription
+              {t('gyms.manageSubscription')}
             </button>
-            <ImpersonateButton tenant={tenant} />
+            {canImpersonate ? (
+              <details className="relative">
+                <summary className="cp-btn cp-btn-secondary cursor-pointer list-none">{t('common.more')}</summary>
+                <div className="absolute end-0 z-10 mt-1 min-w-[12rem] rounded-[var(--radius)] border border-[var(--border)] bg-white p-2">
+                  <ImpersonateButton tenant={tenant} />
+                </div>
+              </details>
+            ) : null}
           </div>
         </header>
       </div>
@@ -198,7 +193,7 @@ export function TenantDetailPage() {
       <div
         className="flex gap-1 overflow-x-auto border-b border-gray-200"
         role="tablist"
-        aria-label="Tenant sections"
+        aria-label={t('gyms.sectionsAria')}
       >
         {DETAIL_TABS.map((tab) => (
           <button
@@ -213,7 +208,7 @@ export function TenantDetailPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-800'
             }`}
           >
-            {TAB_LABEL[tab]}
+            {t(`gyms.tab.${tab}`)}
           </button>
         ))}
       </div>
@@ -224,14 +219,11 @@ export function TenantDetailPage() {
         <div className="flex flex-col gap-6">
           {sub?.status === 'trialing' ? (
             <section className="cp-card border-l-4 border-l-amber-500 p-4">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-amber-800">Trial</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Tenant is in trial. At period end: card on file → <strong>Active</strong>; no card →{' '}
-                <strong>Cancelled</strong>.
-              </p>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-amber-800">{t('gyms.trialBanner')}</h2>
+              <p className="mt-1 text-sm text-gray-600">{t('gyms.trialBannerBody')}</p>
               <div className="trial-rail mt-3">
                 <div className="text-xs font-semibold text-gray-500">
-                  Started
+                  {t('gyms.trialStarted')}
                   <div className="mt-0.5 font-normal text-gray-700">
                     {formatCairoDate(sub.currentPeriodStart)}
                   </div>
@@ -239,11 +231,11 @@ export function TenantDetailPage() {
                 <div>
                   <div className="rail" aria-hidden />
                   <div className="mt-1 text-center text-[11px] font-semibold uppercase text-blue-700">
-                    {trialDaysLeft != null ? `${trialDaysLeft} days remaining` : 'In trial'}
+                    {trialDaysLeft != null ? t('gyms.trialRemaining', { days: trialDaysLeft }) : t('gyms.inTrial')}
                   </div>
                 </div>
                 <div className="text-right text-xs font-semibold text-amber-700">
-                  Ends
+                  {t('gyms.trialEndsLabel')}
                   <div className="mt-0.5 font-normal text-gray-700">
                     {formatCairoDateTime(sub.trialEndsAtUtc ?? sub.currentPeriodEnd)}
                   </div>
@@ -251,16 +243,16 @@ export function TenantDetailPage() {
               </div>
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                  <dt className="text-gray-500">Plan</dt>
+                  <dt className="text-gray-500">{t('gyms.plan')}</dt>
                   <dd className="capitalize font-semibold">{sub.planTier}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Frozen price</dt>
+                  <dt className="text-gray-500">{t('gyms.frozenPrice')}</dt>
                   <dd className="font-[var(--mono)]">{formatEgp(sub.priceEgp)}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Payment method</dt>
-                  <dd>{sub.hasPaymentMethodOnFile ? 'Card on file' : 'No card on file'}</dd>
+                  <dt className="text-gray-500">{t('gyms.paymentMethod')}</dt>
+                  <dd>{sub.hasPaymentMethodOnFile ? t('gyms.cardOnFile') : t('gyms.noCard')}</dd>
                 </div>
               </dl>
             </section>
@@ -268,17 +260,19 @@ export function TenantDetailPage() {
 
           {sub?.status === 'active' ? (
             <section className="cp-card border-l-4 border-l-emerald-500 p-4">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-emerald-800">Active</h2>
-              <p className="mt-1 text-sm text-gray-600">Paid subscription is live and renews at period end.</p>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-emerald-800">{t('gyms.activeBanner')}</h2>
+              <p className="mt-1 text-sm text-gray-600">{t('gyms.activeBannerBody')}</p>
               {sub.cancelAtPeriodEnd ? (
                 <p className="mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
-                  Cancels at period end ({formatCairoDate(sub.currentPeriodEnd)})
+                  {t('gyms.cancelsAt', { date: formatCairoDate(sub.currentPeriodEnd) })}
                 </p>
               ) : null}
               {sub.pendingDowngradeTier ? (
                 <p className="mt-3 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-                  Scheduled downgrade to <strong className="capitalize">{sub.pendingDowngradeTier}</strong> at
-                  period end ({formatCairoDate(sub.currentPeriodEnd)}).
+                  {t('gyms.scheduledDowngrade', {
+                    tier: sub.pendingDowngradeTier,
+                    date: formatCairoDate(sub.currentPeriodEnd),
+                  })}
                 </p>
               ) : null}
             </section>
@@ -286,111 +280,107 @@ export function TenantDetailPage() {
 
           {sub?.status === 'past_due' ? (
             <section className="cp-card border-l-4 border-l-orange-500 p-4">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-orange-800">Past due</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Subscription is still live, but payment is overdue. Check the Billing tab for invoice
-                state.
-              </p>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-orange-800">{t('gyms.pastDueBanner')}</h2>
+              <p className="mt-1 text-sm text-gray-600">{t('gyms.pastDueBody')}</p>
             </section>
           ) : null}
 
           {sub?.status === 'suspended' ? (
             <section className="cp-card border-l-4 border-l-red-500 p-4">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-red-800">Suspended</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Access is blocked because the subscription is suspended. Reactivate moves{' '}
-                <strong>suspended → active</strong> (does not restore trialing).
-              </p>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-red-800">{t('gyms.suspendedBanner')}</h2>
+              <p className="mt-1 text-sm text-gray-600">{t('gyms.suspendedBody')}</p>
             </section>
           ) : null}
 
           {sub?.status === 'cancelled' ? (
             <section className="cp-card border-l-4 border-l-gray-400 p-4">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-gray-700">Cancelled</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                This subscription row is <strong>terminal</strong>. Restart as Paid creates a{' '}
-                <strong>new subscription</strong> — it does not resurrect this row.
-              </p>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-gray-700">{t('gyms.cancelledBanner')}</h2>
+              <p className="mt-1 text-sm text-gray-600">{t('gyms.cancelledBody')}</p>
               {sub.cancelledAtUtc ? (
                 <p className="mt-2 text-xs text-gray-500">
-                  Cancelled {formatCairoDateTime(sub.cancelledAtUtc)}
+                  {t('gyms.cancelledAt', { date: formatCairoDateTime(sub.cancelledAtUtc) })}
                 </p>
               ) : null}
             </section>
           ) : null}
 
           <section className="cp-card p-4">
-            <h2 className="text-lg font-semibold text-gray-900">Subscription details</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('gyms.subscriptionDetails')}</h2>
             {!sub ? (
-              <p className="mt-2 text-sm text-gray-500">No subscription on file.</p>
+              <p className="mt-2 text-sm text-gray-500">{t('gyms.noSubscription')}</p>
             ) : (
               <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                  <dt className="text-gray-500">Current plan</dt>
+                  <dt className="text-gray-500">{t('gyms.currentPlan')}</dt>
                   <dd className="capitalize font-semibold">{sub.planTier}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Frozen price</dt>
+                  <dt className="text-gray-500">{t('gyms.frozenPrice')}</dt>
                   <dd className="font-[var(--mono)] tabular-nums">{formatEgp(sub.priceEgp)}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Status</dt>
+                  <dt className="text-gray-500">{t('gyms.filterStatus')}</dt>
                   <dd>
                     <StatusBadge status={sub.status} />
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Billing cycle</dt>
+                  <dt className="text-gray-500">{t('gyms.billingCycle')}</dt>
                   <dd className="capitalize">{sub.billingCycle}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Period start</dt>
+                  <dt className="text-gray-500">{t('gyms.periodStart')}</dt>
                   <dd>{formatCairoDate(sub.currentPeriodStart)}</dd>
                 </div>
                 <div>
-                  <dt className="text-gray-500">Renewal / period end</dt>
+                  <dt className="text-gray-500">{t('gyms.renewalPeriodEnd')}</dt>
                   <dd>{formatCairoDate(sub.currentPeriodEnd)}</dd>
                 </div>
                 {sub.status === 'trialing' && sub.trialEndsAtUtc ? (
                   <div>
-                    <dt className="text-gray-500">Trial ends (UTC)</dt>
+                    <dt className="text-gray-500">{t('gyms.trialEndsUtc')}</dt>
                     <dd>{formatCairoDateTime(sub.trialEndsAtUtc)}</dd>
                   </div>
                 ) : null}
                 {sub.pendingDowngradeTier ? (
                   <div>
-                    <dt className="text-gray-500">Pending downgrade</dt>
+                    <dt className="text-gray-500">{t('gyms.pendingDowngrade')}</dt>
                     <dd className="capitalize font-semibold">{sub.pendingDowngradeTier}</dd>
                   </div>
                 ) : null}
                 <div>
-                  <dt className="text-gray-500">Updated</dt>
+                  <dt className="text-gray-500">{t('plans.updated')}</dt>
                   <dd>{formatCairoDateTime(sub.updatedAtUtc)}</dd>
                 </div>
               </dl>
             )}
           </section>
 
-          <ActionsPanel tenant={tenant} />
+          <details className="rounded-[var(--radius)] border border-gray-200 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-gray-900">{t('gyms.moreBilling')}</summary>
+            <div className="mt-3">
+              <ActionsPanel tenant={tenant} />
+            </div>
+          </details>
 
           <section className="cp-card p-4">
-            <h2 className="text-lg font-semibold text-gray-900">Subscription history</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('gyms.history')}</h2>
             {changesQuery.isLoading ? (
               <div className="mt-3 h-24 animate-pulse rounded bg-gray-200" />
             ) : changesQuery.isError ? (
-              <p className="mt-2 text-sm text-red-600">Failed to load history.</p>
+              <p className="mt-2 text-sm text-red-600">{t('gyms.historyFailed')}</p>
             ) : !changesQuery.data?.length ? (
-              <p className="mt-2 text-sm text-gray-500">No changes recorded yet.</p>
+              <p className="mt-2 text-sm text-gray-500">{t('gyms.historyEmpty')}</p>
             ) : (
               <div className="mt-3 overflow-x-auto">
                 <table className="cp-table min-w-full">
                   <thead>
                     <tr>
-                      <th>Type</th>
-                      <th>Tier</th>
-                      <th>Effective</th>
-                      <th>Initiated by</th>
-                      <th>Reason</th>
+                      <th>{t('gyms.changeType')}</th>
+                      <th>{t('gyms.tier')}</th>
+                      <th>{t('gyms.effective')}</th>
+                      <th>{t('gyms.initiatedBy')}</th>
+                      <th>{t('gyms.reason')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -414,20 +404,20 @@ export function TenantDetailPage() {
               </div>
             )}
           </section>
+          <TenantBillingTab subscription={sub} invoicesQuery={invoicesQuery} />
         </div>
       ) : null}
 
       {activeTab === 'usage' ? <UsagePanel usageCounters={tenant.usageCounters} /> : null}
 
-      {activeTab === 'health' ? <HealthTab health={tenant.health} /> : null}
-
       {activeTab === 'users' ? <StaffUsersPanel tenantId={tenant.id} tenantName={tenant.name} /> : null}
 
-      {activeTab === 'billing' ? (
-        <TenantBillingTab subscription={sub} invoicesQuery={invoicesQuery} />
+      {activeTab === 'activity' ? (
+        <div className="flex flex-col gap-4">
+          <HealthTab health={tenant.health} />
+          <AuditTrailPanel recentAudit={tenant.recentAudit} />
+        </div>
       ) : null}
-
-      {activeTab === 'audit' ? <AuditTrailPanel recentAudit={tenant.recentAudit} /> : null}
     </div>
   )
 }

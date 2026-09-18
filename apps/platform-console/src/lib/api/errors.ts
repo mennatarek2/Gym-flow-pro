@@ -18,6 +18,7 @@ export function parsePlatformError(data: unknown, status: number): ApiClientErro
     const errorCode = typeof body.errorCode === 'string' ? body.errorCode : undefined
     const primary =
       (typeof body.errorMessage === 'string' && body.errorMessage) ||
+      (typeof body.error === 'string' && body.error) ||
       (typeof body.message === 'string' && body.message) ||
       (typeof body.title === 'string' && body.title) ||
       null
