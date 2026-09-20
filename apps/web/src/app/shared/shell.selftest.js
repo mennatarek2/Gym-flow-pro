@@ -97,8 +97,11 @@ assert(sandbox.document.documentElement.dir === 'ltr', 'LTR on en locale');
 // ── Receptionist JWT (no plans.manage / settings.manage) ──
 var receptionistPerms = [
   'members.view', 'members.create', 'members.edit', 'checkin.manual',
+  'classes.view', 'attendance.view',
   'sales.sell', 'sales.discount.apply', 'payments.cash.accept', 'payments.refund.request',
-  'shift.open', 'shift.close', 'inventory.view'
+  'shift.open', 'shift.close', 'inventory.view',
+  'member_orders.view', 'member_orders.manage',
+  'hr.view', 'hr.attendance.view', 'hr.attendance.manage'
 ];
 storage.gfp_access_token = fakeJwt({
   sub: 'r1',
@@ -130,7 +133,7 @@ var invAdjust = Shell.NAV_ITEMS.find(function (n) { return n.key === 'inv-adjust
 
 var allOn = {
   sales: true, shifts: true, trials: true, refunds: true, debtors: true, imports: true,
-  inventory: true, stock_management: true
+  inventory: true, stock_management: true, hr: true, offers: true
 };
 
 assert(!!plans && !!activities && !!classes && !!pos && !!invHome && !!invStock && !!invProducts, 'nav items resolved by key');
@@ -147,6 +150,13 @@ assert(Shell.isNavItemVisible(call, allOn), 'Receptionist sees Call sheet (no fe
 assert(!Shell.isNavItemVisible(invHome, allOn), 'Shop UX hides Inventory Overview');
 assert(!Shell.isNavItemVisible(invStock, allOn), 'Shop UX hides Stock Management hub');
 assert(!Shell.isNavItemVisible(invProducts, allOn), 'Receptionist hides Inventory Products (no manage/purchase)');
+
+var reports = Shell.NAV_ITEMS.find(function (n) { return n.key === 'reports'; });
+var hrEmp = Shell.NAV_ITEMS.find(function (n) { return n.key === 'hr-employees'; });
+assert(!!reports, 'Reports nav item is registered');
+assert(!Shell.isNavItemVisible(reports, allOn), 'Receptionist hides Reports without financial.view');
+assert(!!hrEmp, 'HR Employees nav item is registered');
+assert(!Shell.isNavItemVisible(hrEmp, allOn), 'Receptionist HR Employees excluded despite hr claims');
 
 // FEATURE_DISABLED
 var salesOff = Object.assign({}, allOn, { sales: false });
@@ -249,8 +259,9 @@ assert(String(Shell.TABLE_WRAP_SEL).indexOf('.gfp-table-scroll') !== -1, 'TABLE_
 
 var serverSrc = fs.readFileSync(path.join(sharedDir, '..', '..', '..', 'server.js'), 'utf8');
 assert(serverSrc.indexOf('/shared/table-layout.css') !== -1, 'server injects table-layout.css');
-assert(serverSrc.indexOf('shell.js?v=prepare1') !== -1, 'shell cache-bust includes prepare-gym');
-assert(serverSrc.indexOf('/shared/prepare-gym.js?v=1') !== -1, 'server injects prepare-gym.js');
+assert(serverSrc.indexOf('shell.js?v=nav-ia1') !== -1, 'shell cache-bust includes nav IA overhaul');
+assert(serverSrc.indexOf('nav.js?v=nav-ia1') !== -1, 'nav cache-bust includes nav IA overhaul');
+assert(serverSrc.indexOf('/shared/prepare-gym.js?v=3') !== -1, 'server injects prepare-gym.js');
 assert(serverSrc.indexOf('/shared/prepare-gym.css?v=1') !== -1, 'server injects prepare-gym.css');
 
 // ── Form / filter layout (Task 6) ──

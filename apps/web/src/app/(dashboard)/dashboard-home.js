@@ -265,9 +265,9 @@
     if (collapsed > 0 && global.console && console.warn) {
       console.warn(
         '[dashboard] Collapsed ' +
-          collapsed +
-          ' duplicate membershipId row(s) from GET /call-sheet/expiring. ' +
-          'Backend CallSheetService should DISTINCT/GroupBy Membership.Id (likely join to payments/invoices/outcomes).'
+        collapsed +
+        ' duplicate membershipId row(s) from GET /call-sheet/expiring. ' +
+        'Backend CallSheetService should DISTINCT/GroupBy Membership.Id (likely join to payments/invoices/outcomes).'
       );
     }
     var out = Object.keys(byId).map(function (k) {
@@ -430,10 +430,10 @@
       '</p>' +
       (retryAttr
         ? '<button type="button" class="dash-btn" data-retry="' +
-          esc(retryAttr) +
-          '">' +
-          esc(t('Retry', 'إعادة المحاولة')) +
-          '</button>'
+        esc(retryAttr) +
+        '">' +
+        esc(t('Retry', 'إعادة المحاولة')) +
+        '</button>'
         : '') +
       '</div>'
     );
@@ -889,7 +889,7 @@
     var totalDisplay = opts.total != null ? money(opts.total) : '—';
     var addLink = running === 0 && opts.canManage
       ? '<a class="dash-link" href="/dashboard/reports/?tab=expenses">' +
-        esc(t('+ Add running cost', '+ إضافة مصروف تشغيل')) + '</a>'
+      esc(t('+ Add running cost', '+ إضافة مصروف تشغيل')) + '</a>'
       : '';
     return (
       '<div class="dash-exec-kpi dash-exec-kpi-cost">' +
@@ -1226,11 +1226,11 @@
 
     var payrollWarningHtml = payrollWarning
       ? '<p class="dash-exec-callout">' +
-        esc(t(
-          'Salaries are recognized only for full payroll months in this range. Not prorated.',
-          'تُحسب الرواتب فقط لأشهر الرواتب الكاملة ضمن هذا النطاق. غير مقسّمة يومياً.'
-        )) +
-        '</p>'
+      esc(t(
+        'Salaries are recognized only for full payroll months in this range. Not prorated.',
+        'تُحسب الرواتب فقط لأشهر الرواتب الكاملة ضمن هذا النطاق. غير مقسّمة يومياً.'
+      )) +
+      '</p>'
       : '';
 
     var cashSection =
@@ -1291,8 +1291,8 @@
           '<a class="dash-btn secondary" href="' + esc(item.href) + '">' + esc(item.cta) + '</a></div>';
       }).join('') + '</div>'
       : '<p class="dash-muted">' +
-        esc(t('No financial issues need your attention right now.', 'لا توجد مشاكل مالية تحتاج انتباهك الآن.')) +
-        '</p>';
+      esc(t('No financial issues need your attention right now.', 'لا توجد مشاكل مالية تحتاج انتباهك الآن.')) +
+      '</p>';
 
     var chartNote = t('Daily line shows revenue only', 'الخط اليومي يعرض الإيراد فقط');
 
@@ -1508,10 +1508,10 @@
         var remove =
           edit && !busy
             ? '<button type="button" class="dash-qa-remove" data-qa-remove="' +
-              esc(a.key) +
-              '" aria-label="' +
-              esc(t('Remove', 'إزالة')) +
-              '"><i class="ti ti-x"></i></button>'
+            esc(a.key) +
+            '" aria-label="' +
+            esc(t('Remove', 'إزالة')) +
+            '"><i class="ti ti-x"></i></button>'
             : '';
         return (
           '<div class="dash-qa-tile">' +
@@ -1550,8 +1550,8 @@
     var manage =
       edit && atCap
         ? '<button type="button" class="dash-qa-manage-link dash-qa-manage-below" data-qa-manage>' +
-          esc(t('Manage quick actions', 'إدارة الإجراءات السريعة')) +
-          '</button>'
+        esc(t('Manage quick actions', 'إدارة الإجراءات السريعة')) +
+        '</button>'
         : '';
 
     el.innerHTML =
@@ -1716,27 +1716,27 @@
         '</h4>' +
         (candidates.length
           ? '<div class="dash-qa-pick-list">' +
-            candidates
-              .map(function (a) {
-                return (
-                  '<button type="button" class="dash-qa-pick" data-qa-pick="' +
-                  esc(a.key) +
-                  '"><span class="dash-quick-ico ' +
-                  esc(a.accent) +
-                  '"><i class="ti ' +
-                  esc(a.icon) +
-                  '"></i></span><span>' +
-                  esc(t(a.en, a.ar)) +
-                  '</span></button>'
-                );
-              })
-              .join('') +
-            '</div>'
+          candidates
+            .map(function (a) {
+              return (
+                '<button type="button" class="dash-qa-pick" data-qa-pick="' +
+                esc(a.key) +
+                '"><span class="dash-quick-ico ' +
+                esc(a.accent) +
+                '"><i class="ti ' +
+                esc(a.icon) +
+                '"></i></span><span>' +
+                esc(t(a.en, a.ar)) +
+                '</span></button>'
+              );
+            })
+            .join('') +
+          '</div>'
           : '<p class="dash-muted">' +
-            esc(
-              t('All available actions are already added.', 'كل الإجراءات المتاحة متضافة بالفعل.')
-            ) +
-            '</p>');
+          esc(
+            t('All available actions are already added.', 'كل الإجراءات المتاحة متضافة بالفعل.')
+          ) +
+          '</p>');
     }
 
     body.innerHTML =
@@ -1746,8 +1746,8 @@
       (rows
         ? '<ol class="dash-qa-rows">' + rows + '</ol>'
         : '<p class="dash-muted">' +
-          esc(t('No shortcuts yet. Add one below.', 'مفيش اختصارات. ضيف من تحت.')) +
-          '</p>') +
+        esc(t('No shortcuts yet. Add one below.', 'مفيش اختصارات. ضيف من تحت.')) +
+        '</p>') +
       addSection;
     overlay.hidden = false;
   }
@@ -1777,9 +1777,9 @@
       qaToast(
         r.missingEndpoint
           ? t(
-              'Cannot save yet — PUT /api/settings/quick-actions is not on the server.',
-              'الحفظ مش متاح دلوقتي — الـ API لسه مش موجود على السيرفر.'
-            )
+            'Cannot save yet — PUT /api/settings/quick-actions is not on the server.',
+            'الحفظ مش متاح دلوقتي — الـ API لسه مش موجود على السيرفر.'
+          )
           : r.error || t('Could not save quick actions.', 'مش قادرين نحفظ الإجراءات السريعة.'),
         'err'
       );
@@ -2343,17 +2343,17 @@
       '</strong></div>' +
       (showOutstanding
         ? '<div class="dash-kpi"><span class="lbl">' +
-          esc(t('Outstanding (EGP)', 'مستحقات (ج.م)')) +
-          '</span><strong>' +
-          esc(money(dout)) +
-          '</strong></div>'
+        esc(t('Outstanding (EGP)', 'مستحقات (ج.م)')) +
+        '</span><strong>' +
+        esc(money(dout)) +
+        '</strong></div>'
         : '') +
       '</div>' +
       outstandingList +
       (financialIssues.length
         ? '<p class="dash-muted" style="margin-top:8px;font-size:11px">' +
-          esc(t('Financial data requires review: ', 'البيانات المالية تحتاج مراجعة: ') + financialIssues.join(', ')) +
-          '</p>'
+        esc(t('Financial data requires review: ', 'البيانات المالية تحتاج مراجعة: ') + financialIssues.join(', ')) +
+        '</p>'
         : '') +
       breakdownHtml +
       financePeriodControls(selectedPeriod, financial) +
@@ -2666,8 +2666,8 @@
       '<div class="dash-actions">' +
       (can('shift.close')
         ? '<a class="dash-btn primary" href="/dashboard/shifts/">' +
-          esc(t('Close shift', 'قفل الوردية')) +
-          '</a>'
+        esc(t('Close shift', 'قفل الوردية')) +
+        '</a>'
         : '') +
       '<a class="dash-btn ghost" href="/dashboard/shifts/">' +
       esc(t('Manage', 'إدارة')) +
@@ -2990,8 +2990,8 @@
       var key = btn.getAttribute('data-retry');
       btn.disabled = true;
       if (key === 'attendance' || key === 'occupancy' || key === 'classes' ||
-          key === 'business' || key === 'revenue-chart' || key === 'finance' ||
-          key === 'attention') {
+        key === 'business' || key === 'revenue-chart' || key === 'finance' ||
+        key === 'attention') {
         try {
           var cachePrefix = CACHE_PREFIX + cacheScope() + ':overview:';
           for (var cacheIndex = global.sessionStorage.length - 1; cacheIndex >= 0; cacheIndex -= 1) {

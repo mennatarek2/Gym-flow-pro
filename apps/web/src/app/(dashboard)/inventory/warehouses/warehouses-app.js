@@ -139,8 +139,8 @@
               '">تعديل / Edit</button>' +
               (!w.isDefault
                 ? '<button type="button" class="btn-link" data-default="' +
-                  esc(w.id) +
-                  '">اجعله الافتراضي / Set default</button>'
+                esc(w.id) +
+                '">اجعله الافتراضي / Set default</button>'
                 : '') +
               '</div>';
           }

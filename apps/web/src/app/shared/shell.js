@@ -45,7 +45,7 @@
     return !!(cat && cat.defaultCollapsed);
   }
 
-  function setCollapsed(key, value) {
+  function setCategoryCollapsed(key, value) {
     collapsedState[key] = !!value;
     saveCollapseState();
   }
@@ -90,12 +90,10 @@
       });
       if (offersNav) return offersNav;
     }
-    // HR secondary desks (de-navved) still belong under their parent nav item
+    // HR secondary desks — promoted items have own nav keys; others alias to parent
     var hrAliases = [
       { prefix: '/dashboard/hr/shifts/', key: 'hr-schedule' },
       { prefix: '/dashboard/hr/settings/', key: 'hr-employees' },
-      { prefix: '/dashboard/hr/departments/', key: 'hr-employees' },
-      { prefix: '/dashboard/hr/positions/', key: 'hr-employees' },
       { prefix: '/dashboard/hr/documents/', key: 'hr-employees' },
       { prefix: '/dashboard/hr/biometric-events/', key: 'hr-biometric-devices' }
     ];
@@ -141,8 +139,8 @@
       return [
         {
           key: 'overview',
-          label: 'Overview',
-          labelAr: 'نظرة عامة',
+          label: 'Home',
+          labelAr: 'الرئيسية',
           items: [
             {
               key: 'dashboard',
@@ -192,20 +190,28 @@
       '.gfp-appear-toggle button.act{background:var(--l500,#7ACC00);color:#0D0D0D}',
       '.gfp-appear-toggle button:focus-visible{outline:2px solid var(--l400,#A0E040);outline-offset:1px}',
       'html[dir=rtl] .sidebar{left:auto;right:0}',
-      'html[dir=rtl] .main{margin-left:0;margin-right:var(--sidebar-w,220px)}',
-      '.gfp-sb-nav{display:flex;flex-direction:column;gap:4px;padding:8px 0}',
+      'html[dir=rtl] .main{margin-left:0;margin-right:var(--sidebar-w,240px)}',
+      '.sidebar{width:var(--sidebar-w,240px)}',
+      '.main{margin-left:var(--sidebar-w,240px)}',
+      '.gfp-sb-nav{display:flex;flex-direction:column;gap:6px;padding:10px 0 12px;overflow-y:auto;flex:1;min-height:0}',
       'html[dir=rtl] .gfp-sb-nav{direction:rtl}',
       '.gfp-nav-cat{display:flex;flex-direction:column;gap:2px}',
-      '.gfp-nav-cat-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:8px 14px 6px;border:0;background:transparent;cursor:pointer;color:var(--c400,#9CA3AF);font-size:var(--gfp-fs-xs,12px);font-weight:700;text-transform:uppercase;letter-spacing:.6px;text-align:start}',
-      '.gfp-nav-cat-hdr:hover{color:var(--lts,#4A4A4A)}',
+      '.gfp-nav-cat-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 14px 6px;border:0;background:transparent;cursor:pointer;color:var(--c400,#9CA3AF);font-size:var(--gfp-fs-xs,12px);font-weight:700;letter-spacing:.4px;text-align:start;border-radius:6px}',
+      'html[dir=ltr] .gfp-nav-cat-hdr{text-transform:uppercase;letter-spacing:.6px}',
+      'html[dir=rtl] .gfp-nav-cat-hdr{text-transform:none;letter-spacing:0;font-family:var(--fa,"Cairo"),sans-serif}',
+      '.gfp-nav-cat-hdr:hover{color:var(--c200,#E5E7EB)}',
+      '.gfp-nav-cat-hdr:focus-visible{outline:2px solid var(--l400,#A0E040);outline-offset:2px}',
+      '.gfp-nav-cat.has-active > .gfp-nav-cat-hdr{color:var(--l400,#A0E040)}',
       '.gfp-nav-cat-hdr .gfp-chev{font-size:15px;transition:transform .15s ease;flex-shrink:0}',
       '.gfp-nav-cat.collapsed .gfp-nav-items{display:none}',
-      '.gfp-nav-items{display:flex;flex-direction:column;gap:1px;padding:0 6px 6px}',
+      '.gfp-nav-items{display:flex;flex-direction:column;gap:1px;padding:0 6px 8px}',
       'html[dir=rtl] .gfp-nav-items{direction:rtl}',
-      '.gfp-nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--c200,#E5E7EB);text-decoration:none;font-size:var(--gfp-fs-md,14px);font-weight:600;border-inline-start:3px solid transparent}',
+      '.gfp-nav-item{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:8px;color:var(--c200,#E5E7EB);text-decoration:none;font-size:var(--gfp-fs-md,14px);font-weight:600;line-height:1.35;border-inline-start:3px solid transparent}',
+      '.gfp-nav-item .gfp-nav-label{flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere}',
       '.gfp-nav-item:hover{background:rgba(255,255,255,.06);color:#fff}',
+      '.gfp-nav-item:focus-visible{outline:2px solid var(--l400,#A0E040);outline-offset:1px}',
       '.gfp-nav-item.act{background:rgba(122,204,0,.12);color:var(--l400,#A0E040);border-inline-start-color:var(--l500,#7ACC00)}',
-      '.gfp-nav-item i{font-size:19px;opacity:.9;flex-shrink:0}',
+      '.gfp-nav-item i{font-size:19px;opacity:.9;flex-shrink:0;margin-top:1px;width:20px;text-align:center}',
       '.gfp-nav-empty{padding:20px 16px;text-align:center;color:var(--c400,#9CA3AF);font-size:var(--gfp-fs-md,14px);line-height:1.5}',
       '.gfp-nav-empty i{font-size:28px;display:block;margin-bottom:10px;opacity:.7}',
       '.gfp-nav-empty .ar{font-family:var(--fa,"Cairo"),sans-serif;direction:rtl;margin-top:8px;font-size:var(--gfp-fs-sm,13px)}',
@@ -329,6 +335,16 @@
       var itemRetail = itemUrl.searchParams.get('mode') === 'retail';
       var curRetail = curUrl.searchParams.get('mode') === 'retail';
       return itemRetail === curRetail;
+    }
+    // Expenses deep-links to /dashboard/reports/?tab=expenses — distinguish from Reports
+    if (ip === normalizePath('/dashboard/reports/')) {
+      if (cp !== ip) return false;
+      var itemTab = itemUrl.searchParams.get('tab') || '';
+      var curTab = curUrl.searchParams.get('tab') || '';
+      // Expenses nav item: active only when ?tab=expenses
+      if (itemTab === 'expenses') return curTab === 'expenses';
+      // Reports nav item: active when no ?tab=expenses
+      return curTab !== 'expenses';
     }
     // Inventory overview is exact-only (do not steal On Hand / nested routes)
     if (ip === normalizePath('/dashboard/inventory/')) {
@@ -463,6 +479,7 @@
       html +=
         '<div class="gfp-nav-cat' +
         (collapsed ? ' collapsed' : '') +
+        (hasActive ? ' has-active' : '') +
         '" data-cat="' +
         cat.key +
         '">' +
@@ -482,6 +499,7 @@
 
       cat.items.forEach(function (item) {
         var active = pathIsActive(item.path, current);
+        var itemLabel = tLabel(item.label, item.labelAr);
         html +=
           '<a class="gfp-nav-item sb-item' +
           (active ? ' act' : '') +
@@ -491,12 +509,14 @@
           item.path +
           '" data-nav-key="' +
           item.key +
+          '" title="' +
+          itemLabel.replace(/"/g, '&quot;') +
           '">' +
           '<i class="ti ' +
           (item.icon || 'ti-circle') +
           '"></i>' +
-          '<span>' +
-          tLabel(item.label, item.labelAr) +
+          '<span class="gfp-nav-label">' +
+          itemLabel +
           '</span>' +
           (item.key === 'notifications'
             ? '<span class="gfp-notif-badge" hidden></span>'
@@ -514,7 +534,7 @@
         var key = this.getAttribute('data-cat-toggle');
         var catEl = this.closest('.gfp-nav-cat');
         var currentlyCollapsed = catEl && catEl.classList.contains('collapsed');
-        setCollapsed(key, !currentlyCollapsed);
+        setCategoryCollapsed(key, !currentlyCollapsed);
         renderShellNav(lastRegistry);
       });
     });
@@ -612,7 +632,7 @@
   /* ── Sidebar ↔ main layout (Task 2) ── */
   var SB_MIN = 180;
   var SB_MAX = 360;
-  var SB_DEFAULT = 220;
+  var SB_DEFAULT = 240;
   var MAIN_MIN = 480;
   var DRAWER_BP = 768;
   var WIDTH_KEY = 'gfp_sidebar_w';

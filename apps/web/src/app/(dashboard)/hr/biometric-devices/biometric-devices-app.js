@@ -123,15 +123,15 @@
         '<td>' + esc(d.vendor || '—') + '<div class="person-sub">' + esc(d.model || '') + '</div></td>' +
         '<td>' + esc(d.integrationType) + '</td>' +
         '<td><span class="status-badge ' + healthClass(d.healthStatus) + '">' + esc(healthLabel(d.healthStatus)) + '</span>' +
-          (d.isEnabled ? '' : ' <span class="person-sub">' + esc(t('Disabled', 'معطّل')) + '</span>') +
-          (d.lastError ? '<div class="person-sub" style="color:var(--dng500)">' + esc(d.lastError) + '</div>' : '') + '</td>' +
+        (d.isEnabled ? '' : ' <span class="person-sub">' + esc(t('Disabled', 'معطّل')) + '</span>') +
+        (d.lastError ? '<div class="person-sub" style="color:var(--dng500)">' + esc(d.lastError) + '</div>' : '') + '</td>' +
         '<td class="ltr">' + esc(fmtSync(d.lastSuccessfulSyncAtUtc)) + '</td>' +
         '<td>' + esc(d.locationLabel || '—') + '</td>' +
         '<td>' + esc(String(d.mappedEmployeeCount || 0)) + '</td>' +
         '<td><div class="act-group">' +
-          '<button type="button" class="act-btn" data-map="' + esc(d.id) + '" title="' + esc(t('Mappings', 'الربط')) + '"><i class="ti ti-users"></i></button>' +
-          (canManage ? '<button type="button" class="act-btn" data-edit="' + esc(d.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-edit"></i></button>' : '') +
-          (canManage ? '<button type="button" class="act-btn" data-rotate="' + esc(d.id) + '" title="' + esc(t('Rotate API key', 'تدوير مفتاح API')) + '"><i class="ti ti-key"></i></button>' : '') +
+        '<button type="button" class="act-btn" data-map="' + esc(d.id) + '" title="' + esc(t('Mappings', 'الربط')) + '"><i class="ti ti-users"></i></button>' +
+        (canManage ? '<button type="button" class="act-btn" data-edit="' + esc(d.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-edit"></i></button>' : '') +
+        (canManage ? '<button type="button" class="act-btn" data-rotate="' + esc(d.id) + '" title="' + esc(t('Rotate API key', 'تدوير مفتاح API')) + '"><i class="ti ti-key"></i></button>' : '') +
         '</div></td></tr>';
     });
     html += '</tbody></table>';
@@ -256,8 +256,8 @@
       html += '<tr><td>' + esc(m.employeeName) + '<div class="person-sub">' + esc(m.employeeNumber) + ' · ' + esc(m.employeeStatus) + '</div></td>' +
         '<td class="ltr">' + esc(m.deviceUserId) + '</td>' +
         '<td>' + (m.isEnabled ? esc(t('Enabled', 'مفعّل')) : esc(t('Disabled', 'معطّل'))) +
-          (m.disabledReason ? '<div class="person-sub">' + esc(m.disabledReason) + '</div>' : '') +
-          '<div class="person-sub">' + esc(t('Remote disable', 'تعطيل عن بُعد')) + ': ' + esc(m.remoteDisableStatus) + '</div></td>' +
+        (m.disabledReason ? '<div class="person-sub">' + esc(m.disabledReason) + '</div>' : '') +
+        '<div class="person-sub">' + esc(t('Remote disable', 'تعطيل عن بُعد')) + ': ' + esc(m.remoteDisableStatus) + '</div></td>' +
         '<td>' + (canManage && m.isEnabled ? '<button type="button" class="act-btn" data-disable-map="' + esc(m.id) + '"><i class="ti ti-ban"></i></button>' : '') + '</td></tr>';
     });
     html += '</tbody></table>';

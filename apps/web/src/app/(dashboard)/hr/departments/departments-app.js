@@ -169,12 +169,12 @@
         '<td><div class="person-name">' + esc(d.name) + '</div>' + (d.nameAr ? '<div class="person-sub">' + esc(d.nameAr) + '</div>' : '') + '</td>' +
         '<td>' + esc(d.employeeCount) + '</td>' +
         '<td><span class="status-badge ' + (d.isActive ? 'active' : 'terminated') + '"><span class="dot"></span>' +
-          esc(d.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) + '</span></td>' +
+        esc(d.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) + '</span></td>' +
         (canManage
           ? '<td><div class="act-group">' +
-            '<button type="button" class="act-btn" data-edit="' + esc(d.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-pencil"></i></button>' +
-            '<button type="button" class="act-btn danger" data-del="' + esc(d.id) + '" title="' + esc(t('Delete', 'حذف')) + '"><i class="ti ti-trash"></i></button>' +
-            '</div></td>'
+          '<button type="button" class="act-btn" data-edit="' + esc(d.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-pencil"></i></button>' +
+          '<button type="button" class="act-btn danger" data-del="' + esc(d.id) + '" title="' + esc(t('Delete', 'حذف')) + '"><i class="ti ti-trash"></i></button>' +
+          '</div></td>'
           : '') +
         '</tr>';
     });

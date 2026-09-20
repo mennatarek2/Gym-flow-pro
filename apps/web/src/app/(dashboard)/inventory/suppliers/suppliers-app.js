@@ -156,9 +156,9 @@
     var src = mediaUrl(p.imageUrl || p.relativeUrl);
     var thumb = src
       ? '<img class="thumb" src="' +
-        esc(src) +
-        '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
-        '<span class="thumb-ph" hidden><i class="ti ti-photo"></i></span>'
+      esc(src) +
+      '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.hidden=false)">' +
+      '<span class="thumb-ph" hidden><i class="ti ti-photo"></i></span>'
       : '<span class="thumb-ph"><i class="ti ti-photo"></i></span>';
     return '<div class="prod-cell">' + thumb + '<span>' + esc(name) + '</span></div>';
   }
@@ -320,12 +320,12 @@
       '</th>' +
       (canSeeMoney
         ? '<th>' +
-          esc(t('Purchases', 'المشتريات')) +
-          '</th><th>' +
-          esc(t('Paid', 'مدفوع')) +
-          '</th><th>' +
-          esc(t('Due', 'المستحق')) +
-          '</th>'
+        esc(t('Purchases', 'المشتريات')) +
+        '</th><th>' +
+        esc(t('Paid', 'مدفوع')) +
+        '</th><th>' +
+        esc(t('Due', 'المستحق')) +
+        '</th>'
         : '') +
       '<th></th></tr></thead><tbody>' +
       rows
@@ -362,28 +362,28 @@
             '<td>' +
             (canSeeMoney
               ? '<button type="button" class="name-link" data-stmt="' +
-                esc(s.id) +
-                '">' +
-                esc(s.name) +
-                '</button>'
+              esc(s.id) +
+              '">' +
+              esc(s.name) +
+              '</button>'
               : esc(s.name)) +
             '</td><td>' +
             esc(s.phone || '—') +
             '</td>' +
             (canSeeMoney
               ? '<td>' +
-                esc(money(s.purchasesTotal)) +
-                '</td><td>' +
-                esc(money(s.paidTotal)) +
-                '</td><td>' +
-                '<button type="button" class="due-link' +
-                (due > 0 ? ' money-due' : '') +
-                '" data-stmt="' +
-                esc(s.id) +
-                '">' +
-                esc(money(s.dueTotal)) +
-                '</button>' +
-                '</td>'
+              esc(money(s.purchasesTotal)) +
+              '</td><td>' +
+              esc(money(s.paidTotal)) +
+              '</td><td>' +
+              '<button type="button" class="due-link' +
+              (due > 0 ? ' money-due' : '') +
+              '" data-stmt="' +
+              esc(s.id) +
+              '">' +
+              esc(money(s.dueTotal)) +
+              '</button>' +
+              '</td>'
               : '') +
             '<td>' +
             actions +
@@ -575,32 +575,32 @@
     var lines = (doc && Array.isArray(doc.lines) ? doc.lines : []) || [];
     var linesHtml = lines.length
       ? '<table class="inv"><thead><tr><th>' +
-        esc(t('Product', 'المنتج')) +
-        '</th><th>' +
-        esc(t('Qty', 'الكمية')) +
-        '</th><th>' +
-        esc(t('Cost each', 'التكلفة')) +
-        '</th><th>' +
-        esc(t('Line', 'الإجمالي')) +
-        '</th></tr></thead><tbody>' +
-        lines
-          .map(function (ln) {
-            var lineTotal =
-              ln.unitCost != null && ln.qty != null ? Number(ln.qty) * Number(ln.unitCost) : null;
-            return (
-              '<tr><td>' +
-              productCellHtml(ln) +
-              '</td><td>' +
-              esc(String(ln.qty != null ? ln.qty : '—')) +
-              '</td><td>' +
-              esc(money(ln.unitCost)) +
-              '</td><td>' +
-              esc(money(lineTotal)) +
-              '</td></tr>'
-            );
-          })
-          .join('') +
-        '</tbody></table>'
+      esc(t('Product', 'المنتج')) +
+      '</th><th>' +
+      esc(t('Qty', 'الكمية')) +
+      '</th><th>' +
+      esc(t('Cost each', 'التكلفة')) +
+      '</th><th>' +
+      esc(t('Line', 'الإجمالي')) +
+      '</th></tr></thead><tbody>' +
+      lines
+        .map(function (ln) {
+          var lineTotal =
+            ln.unitCost != null && ln.qty != null ? Number(ln.qty) * Number(ln.unitCost) : null;
+          return (
+            '<tr><td>' +
+            productCellHtml(ln) +
+            '</td><td>' +
+            esc(String(ln.qty != null ? ln.qty : '—')) +
+            '</td><td>' +
+            esc(money(ln.unitCost)) +
+            '</td><td>' +
+            esc(money(lineTotal)) +
+            '</td></tr>'
+          );
+        })
+        .join('') +
+      '</tbody></table>'
       : '<p class="muted">' + esc(t('No items on this purchase', 'لا أصناف في هذا الشراء')) + '</p>';
     var when = (doc && doc.receivedAtUtc) || entry.createdAtUtc;
     document.getElementById('stmtDetailHost').innerHTML =
@@ -614,10 +614,10 @@
       linesHtml +
       (doc && doc.purchaseOrderId
         ? '<div class="modal-actions" style="justify-content:flex-start;margin-top:14px"><a class="btn-secondary" href="/dashboard/inventory/purchase-orders/?id=' +
-          encodeURIComponent(doc.purchaseOrderId) +
-          '">' +
-          esc(t('Open purchase', 'فتح المشترى')) +
-          '</a></div>'
+        encodeURIComponent(doc.purchaseOrderId) +
+        '">' +
+        esc(t('Open purchase', 'فتح المشترى')) +
+        '</a></div>'
         : '');
   }
 

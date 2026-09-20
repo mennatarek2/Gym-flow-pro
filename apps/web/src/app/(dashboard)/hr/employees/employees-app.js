@@ -322,16 +322,16 @@
     rows.forEach(function (e) {
       html += '<tr class="row-click" data-open="' + esc(e.id) + '">' +
         '<td><div class="person-cell">' +
-          (e.photoUrl
-            ? '<img class="person-av" style="object-fit:cover" src="' + esc(e.photoUrl) + '">'
-            : '<div class="person-av">' + esc(initials(e.firstName, e.lastName)) + '</div>') +
-          '<div><div class="person-name">' + esc(e.firstName) + ' ' + esc(e.lastName) + '</div>' +
-          '<div class="person-sub">' + esc(e.employeeNumber) + '</div></div>' +
+        (e.photoUrl
+          ? '<img class="person-av" style="object-fit:cover" src="' + esc(e.photoUrl) + '">'
+          : '<div class="person-av">' + esc(initials(e.firstName, e.lastName)) + '</div>') +
+        '<div><div class="person-name">' + esc(e.firstName) + ' ' + esc(e.lastName) + '</div>' +
+        '<div class="person-sub">' + esc(e.employeeNumber) + '</div></div>' +
         '</div></td>' +
         '<td>' + esc(e.departmentName || '—') + '</td>' +
         '<td>' + esc(e.positionName || '—') + '</td>' +
         '<td><span class="login-badge ' + (e.hasLogin ? 'has' : '') + '"><i class="ti ' + (e.hasLogin ? 'ti-lock-open' : 'ti-lock') + '"></i> ' +
-          esc(e.hasLogin ? t('Has login', 'لديه حساب') : t('No login', 'بدون حساب')) + '</span></td>' +
+        esc(e.hasLogin ? t('Has login', 'لديه حساب') : t('No login', 'بدون حساب')) + '</span></td>' +
         '<td><span class="status-badge ' + statusClass(e.status) + '"><span class="dot"></span>' + esc(statusLabel(e.status)) + '</span></td>' +
         '</tr>';
     });
@@ -508,14 +508,14 @@
     } else {
       body =
         '<div class="sys-access-card">' +
-          '<div class="name">' + esc(sa.fullName || t('Staff account', 'حساب الدخول')) + '</div>' +
-          (sa.email ? '<div class="meta">' + esc(sa.email) + '</div>' : '') +
-          '<div class="role-line">' +
-            (sa.role ? '<span class="staff-tag">' + esc(sa.role) + '</span>' : '') +
-            '<span class="staff-tag ' + (sa.status === 'Active' ? 'active' : 'inactive') + '">' +
-              esc(staffAccountStatusLabel(sa.status)) +
-            '</span>' +
-          '</div>' +
+        '<div class="name">' + esc(sa.fullName || t('Staff account', 'حساب الدخول')) + '</div>' +
+        (sa.email ? '<div class="meta">' + esc(sa.email) + '</div>' : '') +
+        '<div class="role-line">' +
+        (sa.role ? '<span class="staff-tag">' + esc(sa.role) + '</span>' : '') +
+        '<span class="staff-tag ' + (sa.status === 'Active' ? 'active' : 'inactive') + '">' +
+        esc(staffAccountStatusLabel(sa.status)) +
+        '</span>' +
+        '</div>' +
         '</div>';
     }
 
@@ -524,39 +524,39 @@
       if (!linked) {
         actions =
           '<div class="sys-access-actions">' +
-            '<button type="button" class="btn-link-staff" id="btnLinkStaff">' +
-              '<i class="ti ti-link"></i> ' + esc(t('Link Staff Account', 'ربط حساب الدخول')) +
-            '</button>' +
+          '<button type="button" class="btn-link-staff" id="btnLinkStaff">' +
+          '<i class="ti ti-link"></i> ' + esc(t('Link Staff Account', 'ربط حساب الدخول')) +
+          '</button>' +
           '</div>';
       } else {
         actions =
           '<div class="sys-access-actions">' +
-            '<button type="button" class="btn-unlink-staff" id="btnUnlinkStaff">' +
-              '<i class="ti ti-unlink"></i> ' + esc(t('Unlink Staff Account', 'فك ربط حساب الدخول')) +
-            '</button>' +
+          '<button type="button" class="btn-unlink-staff" id="btnUnlinkStaff">' +
+          '<i class="ti ti-unlink"></i> ' + esc(t('Unlink Staff Account', 'فك ربط حساب الدخول')) +
+          '</button>' +
           '</div>';
       }
     }
 
     var staffCard =
       '<div class="sys-access">' +
-        '<div class="sys-access-hdr">' +
-          '<span class="label">' + esc(t('Staff Desk Login', 'حساب مكتب الموظفين')) + '</span>' +
-          '<span class="sys-access-state ' + stateClass + '">' +
-            '<i class="ti ' + (linked ? 'ti-lock-open' : 'ti-lock') + '"></i> ' + esc(stateText) +
-          '</span>' +
-        '</div>' +
-        body +
-        actions +
+      '<div class="sys-access-hdr">' +
+      '<span class="label">' + esc(t('Staff Desk Login', 'حساب مكتب الموظفين')) + '</span>' +
+      '<span class="sys-access-state ' + stateClass + '">' +
+      '<i class="ti ' + (linked ? 'ti-lock-open' : 'ti-lock') + '"></i> ' + esc(stateText) +
+      '</span>' +
+      '</div>' +
+      body +
+      actions +
       '</div>';
 
     var appActions = '';
     if (canManage && e.status === 'Active') {
       appActions =
         '<button type="button" class="emp-app-btn" id="btnGenEmpAppCode">' +
-          '<i class="ti ti-key"></i> <span id="btnGenEmpAppCodeLabel">' +
-          esc(t('Generate Employee App code', 'إنشاء كود تطبيق الموظف')) +
-          '</span></button>';
+        '<i class="ti ti-key"></i> <span id="btnGenEmpAppCodeLabel">' +
+        esc(t('Generate Employee App code', 'إنشاء كود تطبيق الموظف')) +
+        '</span></button>';
     } else {
       appActions =
         '<p class="emp-app-muted">' +
@@ -568,30 +568,30 @@
 
     var empAppCard =
       '<div class="emp-app-card" style="margin-top:14px">' +
-        '<div class="emp-app-hdr">' +
-          '<i class="ti ti-device-mobile"></i>' +
-          '<div>' +
-            '<div class="emp-app-title">' + esc(t('Employee App', 'تطبيق الموظف')) + '</div>' +
-            '<div class="emp-app-sub">' +
-              esc(t(
-                'One-time code for Gym Code + Activation Code login (no Staff account required).',
-                'كود لمرة واحدة — كود الصالة + كود التفعيل (بدون حاجة لحساب مكتب).'
-              )) +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div id="empAppCodeReveal" class="emp-app-reveal" hidden>' +
-          '<div class="emp-app-code-row">' +
-            '<code class="emp-app-code" id="empAppCodeValue"></code>' +
-            '<button type="button" class="emp-app-copy" id="btnCopyEmpAppCode" title="' +
-              esc(t('Copy', 'نسخ')) + '"><i class="ti ti-copy"></i></button>' +
-          '</div>' +
-          '<div class="emp-app-expiry" id="empAppCodeExpiry"></div>' +
-          '<div class="emp-app-warn">' +
-            esc(t('Show once to the employee — not stored again.', 'يظهر مرة واحدة فقط — لا يُحفظ مرة أخرى.')) +
-          '</div>' +
-        '</div>' +
-        appActions +
+      '<div class="emp-app-hdr">' +
+      '<i class="ti ti-device-mobile"></i>' +
+      '<div>' +
+      '<div class="emp-app-title">' + esc(t('Employee App', 'تطبيق الموظف')) + '</div>' +
+      '<div class="emp-app-sub">' +
+      esc(t(
+        'One-time code for Gym Code + Activation Code login (no Staff account required).',
+        'كود لمرة واحدة — كود الصالة + كود التفعيل (بدون حاجة لحساب مكتب).'
+      )) +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      '<div id="empAppCodeReveal" class="emp-app-reveal" hidden>' +
+      '<div class="emp-app-code-row">' +
+      '<code class="emp-app-code" id="empAppCodeValue"></code>' +
+      '<button type="button" class="emp-app-copy" id="btnCopyEmpAppCode" title="' +
+      esc(t('Copy', 'نسخ')) + '"><i class="ti ti-copy"></i></button>' +
+      '</div>' +
+      '<div class="emp-app-expiry" id="empAppCodeExpiry"></div>' +
+      '<div class="emp-app-warn">' +
+      esc(t('Show once to the employee — not stored again.', 'يظهر مرة واحدة فقط — لا يُحفظ مرة أخرى.')) +
+      '</div>' +
+      '</div>' +
+      appActions +
       '</div>';
 
     return staffCard + empAppCard;
@@ -674,16 +674,16 @@
 
     host.innerHTML =
       '<div class="drawer-hdr"><h2><i class="ti ti-id-badge-2"></i> ' + esc(e.firstName) + ' ' + esc(e.lastName) + '</h2>' +
-        '<button type="button" class="modal-close" id="btnDrawerClose"><i class="ti ti-x"></i></button></div>' +
+      '<button type="button" class="modal-close" id="btnDrawerClose"><i class="ti ti-x"></i></button></div>' +
       tabsHtml +
       '<div class="drawer-body"><div id="empTabPanel" class="emp-tab-panel"><div class="loading-state"><div class="loader"></div></div></div></div>' +
       (canManage
         ? '<div class="drawer-footer">' +
-            (e.status !== 'Terminated'
-              ? '<button type="button" class="btn-danger" id="btnTerminate">' + esc(t('Terminate', 'إنهاء الخدمة')) + '</button>'
-              : '') +
-            '<button type="button" class="btn-primary" id="btnEditEmp">' + esc(t('Edit', 'تعديل')) + '</button>' +
-          '</div>'
+        (e.status !== 'Terminated'
+          ? '<button type="button" class="btn-danger" id="btnTerminate">' + esc(t('Terminate', 'إنهاء الخدمة')) + '</button>'
+          : '') +
+        '<button type="button" class="btn-primary" id="btnEditEmp">' + esc(t('Edit', 'تعديل')) + '</button>' +
+        '</div>'
         : '');
 
     document.getElementById('btnDrawerClose').addEventListener('click', closeDrawer);
@@ -713,14 +713,14 @@
     if (drawerTab === 'overview') {
       panel.innerHTML =
         '<div class="drawer-sec">' +
-          '<div class="kv"><span>' + esc(t('Employee #', 'رقم الموظف')) + '</span><span>' + esc(e.employeeNumber) + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Status', 'الحالة')) + '</span><span class="status-badge ' + statusClass(e.status) + '"><span class="dot"></span>' + esc(statusLabel(e.status)) + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Department', 'القسم')) + '</span><span>' + esc(e.departmentName || '—') + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Position', 'المسمى الوظيفي')) + '</span><span>' + esc(e.positionName || '—') + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Phone', 'الهاتف')) + '</span><span>' + esc(e.phone || '—') + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Email', 'البريد')) + '</span><span>' + esc(e.email || '—') + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Hire date', 'تاريخ التعيين')) + '</span><span>' + esc(e.hireDate) + '</span></div>' +
-          (e.terminationDate ? '<div class="kv"><span>' + esc(t('Termination date', 'تاريخ إنهاء الخدمة')) + '</span><span>' + esc(e.terminationDate) + '</span></div>' : '') +
+        '<div class="kv"><span>' + esc(t('Employee #', 'رقم الموظف')) + '</span><span>' + esc(e.employeeNumber) + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Status', 'الحالة')) + '</span><span class="status-badge ' + statusClass(e.status) + '"><span class="dot"></span>' + esc(statusLabel(e.status)) + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Department', 'القسم')) + '</span><span>' + esc(e.departmentName || '—') + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Position', 'المسمى الوظيفي')) + '</span><span>' + esc(e.positionName || '—') + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Phone', 'الهاتف')) + '</span><span>' + esc(e.phone || '—') + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Email', 'البريد')) + '</span><span>' + esc(e.email || '—') + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Hire date', 'تاريخ التعيين')) + '</span><span>' + esc(e.hireDate) + '</span></div>' +
+        (e.terminationDate ? '<div class="kv"><span>' + esc(t('Termination date', 'تاريخ إنهاء الخدمة')) + '</span><span>' + esc(e.terminationDate) + '</span></div>' : '') +
         '</div>';
       return;
     }
@@ -729,21 +729,21 @@
       var contracts = drawerContracts || [];
       var contractsHtml = contracts.length
         ? contracts.map(function (c) {
-            return '<div class="contract-row ' + (c.isCurrent ? 'current' : '') + '">' +
-              '<div><div class="num">' + esc(c.contractNumber) + (c.isCurrent ? '<span class="badge-current">' + esc(t('Current', 'حالي')) + '</span>' : '') + '</div>' +
-              '<div class="meta">' + esc(c.startDate) + ' → ' + esc(c.endDate || t('Ongoing', 'مستمر')) + ' · ' + esc(c.employmentType) + '</div></div>' +
-              '<div class="salary">' + esc(money(c.basicSalary)) + '</div>' +
+          return '<div class="contract-row ' + (c.isCurrent ? 'current' : '') + '">' +
+            '<div><div class="num">' + esc(c.contractNumber) + (c.isCurrent ? '<span class="badge-current">' + esc(t('Current', 'حالي')) + '</span>' : '') + '</div>' +
+            '<div class="meta">' + esc(c.startDate) + ' → ' + esc(c.endDate || t('Ongoing', 'مستمر')) + ' · ' + esc(c.employmentType) + '</div></div>' +
+            '<div class="salary">' + esc(money(c.basicSalary)) + '</div>' +
             '</div>';
-          }).join('')
+        }).join('')
         : '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No contracts yet.', 'لا توجد عقود بعد.')) + '</p>';
       panel.innerHTML =
         '<div class="drawer-sec">' +
-          '<h3>' + esc(t('Employment history', 'سجل التوظيف')) +
-            (canManage && e.status !== 'Terminated'
-              ? '<button type="button" class="btn-secondary" id="btnAddContract" style="width:auto;height:28px;padding:0 10px;font-size:11px;gap:4px" title="' + esc(t('Add contract', 'إضافة عقد')) + '"><i class="ti ti-plus"></i></button>'
-              : '') +
-          '</h3>' +
-          contractsHtml +
+        '<h3>' + esc(t('Employment history', 'سجل التوظيف')) +
+        (canManage && e.status !== 'Terminated'
+          ? '<button type="button" class="btn-secondary" id="btnAddContract" style="width:auto;height:28px;padding:0 10px;font-size:11px;gap:4px" title="' + esc(t('Add contract', 'إضافة عقد')) + '"><i class="ti ti-plus"></i></button>'
+          : '') +
+        '</h3>' +
+        contractsHtml +
         '</div>';
       var addContractBtn = document.getElementById('btnAddContract');
       if (addContractBtn) addContractBtn.addEventListener('click', function () { openAddContract(e.id); });
@@ -779,18 +779,18 @@
         if (shiftTemplates.length) {
           assignHtml =
             '<div class="drawer-sec emp-inline-ops">' +
-              '<h3 class="emp-inline-title">' + esc(t('Assign shift', 'تعيين وردية')) + '</h3>' +
-              '<div class="form-grid">' +
-                '<label class="fg"><span>' + esc(t('Shift template', 'قالب الوردية')) + '</span>' +
-                  '<select id="hubAssignShift"><option value="">' + esc(t('Select…', 'اختر…')) + '</option>' + shiftOptionsHtml('') + '</select></label>' +
-                '<label class="fg"><span>' + esc(t('Date', 'التاريخ')) + '</span><input id="hubAssignDate" type="date" value="' + esc(today) + '"></label>' +
-                '<label class="fg span2"><span>' + esc(t('Notes', 'ملاحظات')) + '</span><input id="hubAssignNotes" maxlength="500" placeholder="' + esc(t('Optional', 'اختياري')) + '"></label>' +
-              '</div>' +
-              '<div class="inline-act-row">' +
-                '<button type="button" class="btn-primary" id="btnHubAssignShift"><i class="ti ti-calendar-plus"></i> ' + esc(t('Assign day', 'تعيين يوم')) + '</button>' +
-                '<button type="button" class="btn-secondary" id="btnHubAssignWeek"><i class="ti ti-calendar-week"></i> ' + esc(t('Assign next 7 days', 'تعيين 7 أيام')) + '</button>' +
-              '</div>' +
-              '<p class="form-hint" id="hubAssignHint"></p>' +
+            '<h3 class="emp-inline-title">' + esc(t('Assign shift', 'تعيين وردية')) + '</h3>' +
+            '<div class="form-grid">' +
+            '<label class="fg"><span>' + esc(t('Shift template', 'قالب الوردية')) + '</span>' +
+            '<select id="hubAssignShift"><option value="">' + esc(t('Select…', 'اختر…')) + '</option>' + shiftOptionsHtml('') + '</select></label>' +
+            '<label class="fg"><span>' + esc(t('Date', 'التاريخ')) + '</span><input id="hubAssignDate" type="date" value="' + esc(today) + '"></label>' +
+            '<label class="fg span2"><span>' + esc(t('Notes', 'ملاحظات')) + '</span><input id="hubAssignNotes" maxlength="500" placeholder="' + esc(t('Optional', 'اختياري')) + '"></label>' +
+            '</div>' +
+            '<div class="inline-act-row">' +
+            '<button type="button" class="btn-primary" id="btnHubAssignShift"><i class="ti ti-calendar-plus"></i> ' + esc(t('Assign day', 'تعيين يوم')) + '</button>' +
+            '<button type="button" class="btn-secondary" id="btnHubAssignWeek"><i class="ti ti-calendar-week"></i> ' + esc(t('Assign next 7 days', 'تعيين 7 أيام')) + '</button>' +
+            '</div>' +
+            '<p class="form-hint" id="hubAssignHint"></p>' +
             '</div>';
         } else {
           assignHtml = '<p class="form-hint" style="color:var(--ltt);margin-bottom:12px">' +
@@ -889,13 +889,13 @@
       if (canAttendanceManage && e.status === 'Active') {
         opsHtml =
           '<div class="drawer-sec emp-inline-ops">' +
-            '<h3 class="emp-inline-title">' + esc(t('Today', 'اليوم')) + ' · ' + esc(todayIso) + '</h3>' +
-            '<div class="inline-act-row">' +
-              (!openVisit
-                ? '<button type="button" class="btn-primary" id="btnHubCheckIn"><i class="ti ti-login-2"></i> ' + esc(t('Check in', 'تسجيل حضور')) + '</button>'
-                : '<button type="button" class="btn-primary" id="btnHubCheckOut"><i class="ti ti-logout"></i> ' + esc(t('Check out', 'تسجيل انصراف')) + '</button>') +
-            '</div>' +
-            '<p class="form-hint" id="hubAttHint"></p>' +
+          '<h3 class="emp-inline-title">' + esc(t('Today', 'اليوم')) + ' · ' + esc(todayIso) + '</h3>' +
+          '<div class="inline-act-row">' +
+          (!openVisit
+            ? '<button type="button" class="btn-primary" id="btnHubCheckIn"><i class="ti ti-login-2"></i> ' + esc(t('Check in', 'تسجيل حضور')) + '</button>'
+            : '<button type="button" class="btn-primary" id="btnHubCheckOut"><i class="ti ti-logout"></i> ' + esc(t('Check out', 'تسجيل انصراف')) + '</button>') +
+          '</div>' +
+          '<p class="form-hint" id="hubAttHint"></p>' +
           '</div>';
       }
       var ahtml;
@@ -974,20 +974,20 @@
       if (canLeaveManage && e.status === 'Active') {
         formHtml =
           '<div class="drawer-sec emp-inline-ops">' +
-            '<h3 class="emp-inline-title">' + esc(t('New leave request', 'طلب إجازة جديد')) + '</h3>' +
-            '<div class="form-grid">' +
-              '<label class="fg"><span>' + esc(t('Type', 'النوع')) + '</span><select id="hubLeaveType">' +
-                ['Annual', 'Sick', 'Unpaid', 'Permission', 'Emergency', 'Maternity', 'Paternity'].map(function (v) {
-                  return '<option value="' + v + '">' + esc(leaveTypeLabel(v)) + '</option>';
-                }).join('') +
-              '</select></label>' +
-              '<label class="fg"><span>' + esc(t('From', 'من')) + '</span><input id="hubLeaveFrom" type="date" value="' + esc(cairoDateIso()) + '"></label>' +
-              '<label class="fg"><span>' + esc(t('To', 'إلى')) + '</span><input id="hubLeaveTo" type="date" value="' + esc(cairoDateIso()) + '"></label>' +
-              '<label class="fg"><span>' + esc(t('Duration (Permission only)', 'المدة (إذن فقط)')) + '</span><input id="hubLeaveDur" type="number" min="0.25" max="1" step="0.25" placeholder="0.25"></label>' +
-              '<label class="fg span2"><span>' + esc(t('Reason', 'السبب')) + '</span><input id="hubLeaveReason" maxlength="500"></label>' +
-            '</div>' +
-            '<div class="inline-act-row"><button type="button" class="btn-primary" id="btnHubLeaveSubmit"><i class="ti ti-send"></i> ' + esc(t('Submit request', 'إرسال الطلب')) + '</button></div>' +
-            '<p class="form-hint" id="hubLeaveHint"></p>' +
+          '<h3 class="emp-inline-title">' + esc(t('New leave request', 'طلب إجازة جديد')) + '</h3>' +
+          '<div class="form-grid">' +
+          '<label class="fg"><span>' + esc(t('Type', 'النوع')) + '</span><select id="hubLeaveType">' +
+          ['Annual', 'Sick', 'Unpaid', 'Permission', 'Emergency', 'Maternity', 'Paternity'].map(function (v) {
+            return '<option value="' + v + '">' + esc(leaveTypeLabel(v)) + '</option>';
+          }).join('') +
+          '</select></label>' +
+          '<label class="fg"><span>' + esc(t('From', 'من')) + '</span><input id="hubLeaveFrom" type="date" value="' + esc(cairoDateIso()) + '"></label>' +
+          '<label class="fg"><span>' + esc(t('To', 'إلى')) + '</span><input id="hubLeaveTo" type="date" value="' + esc(cairoDateIso()) + '"></label>' +
+          '<label class="fg"><span>' + esc(t('Duration (Permission only)', 'المدة (إذن فقط)')) + '</span><input id="hubLeaveDur" type="number" min="0.25" max="1" step="0.25" placeholder="0.25"></label>' +
+          '<label class="fg span2"><span>' + esc(t('Reason', 'السبب')) + '</span><input id="hubLeaveReason" maxlength="500"></label>' +
+          '</div>' +
+          '<div class="inline-act-row"><button type="button" class="btn-primary" id="btnHubLeaveSubmit"><i class="ti ti-send"></i> ' + esc(t('Submit request', 'إرسال الطلب')) + '</button></div>' +
+          '<p class="form-hint" id="hubLeaveHint"></p>' +
           '</div>';
       }
 
@@ -1080,12 +1080,12 @@
       drawerCurrentContract = current;
       var contractHtml =
         '<div class="drawer-sec emp-inline-ops">' +
-          '<h3 class="emp-inline-title">' + esc(t('Contract salary', 'راتب العقد')) + '</h3>' +
-          (current
-            ? '<div class="kv"><span>' + esc(t('Basic salary', 'الراتب الأساسي')) + '</span><span><strong>' + esc(money(current.basicSalary)) + '</strong></span></div>' +
-              '<div class="kv"><span>' + esc(t('Type', 'النوع')) + '</span><span>' + esc(current.employmentType) + '</span></div>'
-            : '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No current contract. Add one from Employment.', 'لا يوجد عقد حالي. أضفه من التوظيف.')) + '</p>') +
-          '<p class="form-hint">' + esc(t('Add adjustments below, then Calculate so they appear in net pay.', 'أضف التعديلات أدناه، ثم احسب الفترة لتظهر في الصافي.')) + '</p>' +
+        '<h3 class="emp-inline-title">' + esc(t('Contract salary', 'راتب العقد')) + '</h3>' +
+        (current
+          ? '<div class="kv"><span>' + esc(t('Basic salary', 'الراتب الأساسي')) + '</span><span><strong>' + esc(money(current.basicSalary)) + '</strong></span></div>' +
+          '<div class="kv"><span>' + esc(t('Type', 'النوع')) + '</span><span>' + esc(current.employmentType) + '</span></div>'
+          : '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No current contract. Add one from Employment.', 'لا يوجد عقد حالي. أضفه من التوظيف.')) + '</p>') +
+        '<p class="form-hint">' + esc(t('Add adjustments below, then Calculate so they appear in net pay.', 'أضف التعديلات أدناه، ثم احسب الفترة لتظهر في الصافي.')) + '</p>' +
         '</div>';
 
       var pr = await Gfp.get('/hr/payroll-periods');
@@ -1118,21 +1118,21 @@
 
       var adjHtml =
         '<div class="drawer-sec emp-inline-ops">' +
-          '<h3 class="emp-inline-title">' + esc(t('Adjustments', 'التعديلات')) + ' · ' + esc(latest.month + '/' + latest.year) + '</h3>';
+        '<h3 class="emp-inline-title">' + esc(t('Adjustments', 'التعديلات')) + ' · ' + esc(latest.month + '/' + latest.year) + '</h3>';
 
       if (canPayrollManage && periodEditable) {
         adjHtml +=
           '<div class="form-grid">' +
-            '<label class="fg"><span>' + esc(t('Type', 'النوع')) + '</span><select id="hubAdjType">' +
-              ['Bonus', 'Allowance', 'Overtime', 'Deduction'].map(function (v) {
-                return '<option value="' + v + '">' + esc(adjTypeLabel(v)) + '</option>';
-              }).join('') +
-            '</select></label>' +
-            '<label class="fg"><span>' + esc(t('Amount (EGP)', 'المبلغ (جنيه)')) + '</span><input id="hubAdjAmount" type="number" min="0.01" step="0.01"></label>' +
-            '<label class="fg span2"><span>' + esc(t('Reason', 'السبب')) + '</span><input id="hubAdjReason" maxlength="500" placeholder="' + esc(t('Optional', 'اختياري')) + '"></label>' +
+          '<label class="fg"><span>' + esc(t('Type', 'النوع')) + '</span><select id="hubAdjType">' +
+          ['Bonus', 'Allowance', 'Overtime', 'Deduction'].map(function (v) {
+            return '<option value="' + v + '">' + esc(adjTypeLabel(v)) + '</option>';
+          }).join('') +
+          '</select></label>' +
+          '<label class="fg"><span>' + esc(t('Amount (EGP)', 'المبلغ (جنيه)')) + '</span><input id="hubAdjAmount" type="number" min="0.01" step="0.01"></label>' +
+          '<label class="fg span2"><span>' + esc(t('Reason', 'السبب')) + '</span><input id="hubAdjReason" maxlength="500" placeholder="' + esc(t('Optional', 'اختياري')) + '"></label>' +
           '</div>' +
           '<div class="inline-act-row">' +
-            '<button type="button" class="btn-primary" id="btnHubAddAdj"><i class="ti ti-plus"></i> ' + esc(t('Add adjustment', 'إضافة تعديل')) + '</button>' +
+          '<button type="button" class="btn-primary" id="btnHubAddAdj"><i class="ti ti-plus"></i> ' + esc(t('Add adjustment', 'إضافة تعديل')) + '</button>' +
           '</div>' +
           '<p class="form-hint" id="hubAdjHint"></p>';
       } else if (!periodEditable) {
@@ -1178,8 +1178,8 @@
       if (canPayrollManage && periodEditable) {
         phtml +=
           '<div class="inline-act-row" style="margin-top:12px">' +
-            '<button type="button" class="btn-primary" id="btnHubCalcPayroll" data-period="' + esc(latest.id) + '"><i class="ti ti-calculator"></i> ' +
-            esc(t('Calculate payroll for this period', 'حساب رواتب هذه الفترة')) + '</button>' +
+          '<button type="button" class="btn-primary" id="btnHubCalcPayroll" data-period="' + esc(latest.id) + '"><i class="ti ti-calculator"></i> ' +
+          esc(t('Calculate payroll for this period', 'حساب رواتب هذه الفترة')) + '</button>' +
           '</div><p class="form-hint" id="hubPayHint"></p>';
       }
       panel.innerHTML = contractHtml + adjHtml + phtml;
@@ -1388,17 +1388,17 @@
       return '<label class="staff-pick-row' + (selected ? ' selected' : '') + '">' +
         '<input type="radio" name="linkStaffPick" value="' + esc(sid) + '"' + (selected ? ' checked' : '') + '>' +
         '<div class="staff-pick-body">' +
-          '<div class="name">' + esc(s.fullName || '—') + '</div>' +
-          '<div class="email">' + esc(s.email || '') + '</div>' +
-          '<div class="tags">' +
-            (s.role ? '<span class="staff-tag">' + esc(s.role) + '</span>' : '') +
-            '<span class="staff-tag ' + (s.isActive ? 'active' : 'inactive') + '">' +
-              esc(s.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) +
-            '</span>' +
-            (s.staffNumber ? '<span class="staff-tag">' + esc(s.staffNumber) + '</span>' : '') +
-          '</div>' +
+        '<div class="name">' + esc(s.fullName || '—') + '</div>' +
+        '<div class="email">' + esc(s.email || '') + '</div>' +
+        '<div class="tags">' +
+        (s.role ? '<span class="staff-tag">' + esc(s.role) + '</span>' : '') +
+        '<span class="staff-tag ' + (s.isActive ? 'active' : 'inactive') + '">' +
+        esc(s.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) +
+        '</span>' +
+        (s.staffNumber ? '<span class="staff-tag">' + esc(s.staffNumber) + '</span>' : '') +
         '</div>' +
-      '</label>';
+        '</div>' +
+        '</label>';
     }).join('');
 
     Array.prototype.forEach.call(host.querySelectorAll('input[name="linkStaffPick"]'), function (inp) {
@@ -1613,12 +1613,12 @@
     if (key === 'personal') {
       panel.innerHTML =
         '<div class="form-grid">' +
-          '<label class="fg"><span>' + esc(t('First name *', 'الاسم الأول *')) + '</span><input id="obFirstName" maxlength="100" value="' + esc(d.firstName) + '"></label>' +
-          '<label class="fg"><span>' + esc(t('Last name *', 'اسم العائلة *')) + '</span><input id="obLastName" maxlength="100" value="' + esc(d.lastName) + '"></label>' +
-          '<label class="fg"><span>' + esc(t('Phone', 'الهاتف')) + '</span><input id="obPhone" maxlength="20" dir="ltr" value="' + esc(d.phone) + '"></label>' +
-          '<label class="fg"><span>' + esc(t('Email', 'البريد')) + '</span><input id="obEmail" type="email" maxlength="256" dir="ltr" value="' + esc(d.email) + '"></label>' +
-          '<label class="fg"><span>' + esc(t('National ID', 'الرقم القومي')) + '</span><input id="obNationalId" maxlength="30" dir="ltr" value="' + esc(d.nationalId) + '"></label>' +
-          '<label class="fg"><span>' + esc(t('Date of birth', 'تاريخ الميلاد')) + '</span><input id="obDob" type="date" value="' + esc(d.dateOfBirth) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('First name *', 'الاسم الأول *')) + '</span><input id="obFirstName" maxlength="100" value="' + esc(d.firstName) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('Last name *', 'اسم العائلة *')) + '</span><input id="obLastName" maxlength="100" value="' + esc(d.lastName) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('Phone', 'الهاتف')) + '</span><input id="obPhone" maxlength="20" dir="ltr" value="' + esc(d.phone) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('Email', 'البريد')) + '</span><input id="obEmail" type="email" maxlength="256" dir="ltr" value="' + esc(d.email) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('National ID', 'الرقم القومي')) + '</span><input id="obNationalId" maxlength="30" dir="ltr" value="' + esc(d.nationalId) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('Date of birth', 'تاريخ الميلاد')) + '</span><input id="obDob" type="date" value="' + esc(d.dateOfBirth) + '"></label>' +
         '</div>' +
         '<label class="fg" style="margin-top:12px"><span>' + esc(t('Address', 'العنوان')) + '</span><input id="obAddress" maxlength="300" value="' + esc(d.address) + '"></label>';
     } else if (key === 'employment') {
@@ -1630,28 +1630,28 @@
       }).join('');
       panel.innerHTML =
         '<div class="form-grid">' +
-          '<label class="fg"><span>' + esc(t('Hire date *', 'تاريخ التعيين *')) + '</span><input id="obHireDate" type="date" value="' + esc(d.hireDate) + '"></label>' +
-          '<label class="fg"><span>' + esc(t('Status', 'الحالة')) + '</span><input value="' + esc(t('Active', 'نشط')) + '" disabled></label>' +
-          '<label class="fg"><span>' + esc(t('Department', 'القسم')) + '</span><select id="obDepartment">' + deptOpts + '</select></label>' +
-          '<label class="fg"><span>' + esc(t('Position', 'المسمى الوظيفي')) + '</span><select id="obPosition">' + posOpts + '</select></label>' +
+        '<label class="fg"><span>' + esc(t('Hire date *', 'تاريخ التعيين *')) + '</span><input id="obHireDate" type="date" value="' + esc(d.hireDate) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('Status', 'الحالة')) + '</span><input value="' + esc(t('Active', 'نشط')) + '" disabled></label>' +
+        '<label class="fg"><span>' + esc(t('Department', 'القسم')) + '</span><select id="obDepartment">' + deptOpts + '</select></label>' +
+        '<label class="fg"><span>' + esc(t('Position', 'المسمى الوظيفي')) + '</span><select id="obPosition">' + posOpts + '</select></label>' +
         '</div>' +
         '<p class="form-hint" style="margin-top:10px">' +
-          '<a href="/dashboard/hr/settings/?tab=departments" target="_self">' +
-            esc(t('Add or edit departments & positions', 'إضافة أو تعديل الأقسام والمسميات')) +
-          '</a>' +
+        '<a href="/dashboard/hr/settings/?tab=departments" target="_self">' +
+        esc(t('Add or edit departments & positions', 'إضافة أو تعديل الأقسام والمسميات')) +
+        '</a>' +
         '</p>';
     } else if (key === 'compensation') {
       panel.innerHTML =
         '<p class="page-subtitle" style="margin-bottom:12px">' + esc(t('Optional first contract. You can skip and add later.', 'عقد أول اختياري. يمكنك التخطي والإضافة لاحقاً.')) + '</p>' +
         '<div class="form-grid">' +
-          '<label class="fg"><span>' + esc(t('Employment type', 'نوع التوظيف')) + '</span>' +
-            '<select id="obEmpType">' +
-              ['FullTime', 'PartTime', 'Temporary', 'Contract'].map(function (v) {
-                return '<option value="' + v + '"' + (d.employmentType === v ? ' selected' : '') + '>' + esc(v) + '</option>';
-              }).join('') +
-            '</select></label>' +
-          '<label class="fg"><span>' + esc(t('Basic salary (EGP)', 'الراتب الأساسي (جنيه)')) + '</span><input id="obSalary" type="number" min="0" step="0.01" value="' + esc(d.basicSalary) + '"></label>' +
-          '<label class="fg"><span>' + esc(t('Start date', 'تاريخ البدء')) + '</span><input id="obContractStart" type="date" value="' + esc(d.contractStartDate || d.hireDate) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('Employment type', 'نوع التوظيف')) + '</span>' +
+        '<select id="obEmpType">' +
+        ['FullTime', 'PartTime', 'Temporary', 'Contract'].map(function (v) {
+          return '<option value="' + v + '"' + (d.employmentType === v ? ' selected' : '') + '>' + esc(v) + '</option>';
+        }).join('') +
+        '</select></label>' +
+        '<label class="fg"><span>' + esc(t('Basic salary (EGP)', 'الراتب الأساسي (جنيه)')) + '</span><input id="obSalary" type="number" min="0" step="0.01" value="' + esc(d.basicSalary) + '"></label>' +
+        '<label class="fg"><span>' + esc(t('Start date', 'تاريخ البدء')) + '</span><input id="obContractStart" type="date" value="' + esc(d.contractStartDate || d.hireDate) + '"></label>' +
         '</div>';
     } else if (key === 'schedule') {
       renderOnboardScheduleStep(panel, d);
@@ -1660,23 +1660,23 @@
     } else if (key === 'review') {
       panel.innerHTML =
         '<div class="drawer-sec">' +
-          '<div class="kv"><span>' + esc(t('Name', 'الاسم')) + '</span><span>' + esc(d.firstName + ' ' + d.lastName) + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Phone', 'الهاتف')) + '</span><span>' + esc(d.phone || '—') + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Email', 'البريد')) + '</span><span>' + esc(d.email || '—') + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Hire date', 'تاريخ التعيين')) + '</span><span>' + esc(d.hireDate) + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Department', 'القسم')) + '</span><span>' + esc(deptName(d.departmentId)) + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('Position', 'المسمى الوظيفي')) + '</span><span>' + esc(posName(d.positionId)) + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('First contract', 'العقد الأول')) + '</span><span>' +
-            esc(d.includeContract ? (d.employmentType + ' · ' + money(d.basicSalary)) : t('Skipped', 'تم التخطي')) + '</span></div>' +
-          '<div class="kv"><span>' + esc(t('System access', 'صلاحية الدخول')) + '</span><span>' +
-            esc(d.needAccess === false
-              ? t('No login (later)', 'بدون دخول (لاحقاً)')
-              : (d.createStaff
-                ? t('Create Staff', 'إنشاء حساب') + ' · ' + (d.staffEmail || '')
-                : (d.linkAppUserId
-                  ? t('Link', 'ربط') + ' · ' + (d.linkStaffLabel || d.linkAppUserId)
-                  : t('Yes — choose later', 'نعم — اختيار لاحقاً')))) +
-          '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Name', 'الاسم')) + '</span><span>' + esc(d.firstName + ' ' + d.lastName) + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Phone', 'الهاتف')) + '</span><span>' + esc(d.phone || '—') + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Email', 'البريد')) + '</span><span>' + esc(d.email || '—') + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Hire date', 'تاريخ التعيين')) + '</span><span>' + esc(d.hireDate) + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Department', 'القسم')) + '</span><span>' + esc(deptName(d.departmentId)) + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('Position', 'المسمى الوظيفي')) + '</span><span>' + esc(posName(d.positionId)) + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('First contract', 'العقد الأول')) + '</span><span>' +
+        esc(d.includeContract ? (d.employmentType + ' · ' + money(d.basicSalary)) : t('Skipped', 'تم التخطي')) + '</span></div>' +
+        '<div class="kv"><span>' + esc(t('System access', 'صلاحية الدخول')) + '</span><span>' +
+        esc(d.needAccess === false
+          ? t('No login (later)', 'بدون دخول (لاحقاً)')
+          : (d.createStaff
+            ? t('Create Staff', 'إنشاء حساب') + ' · ' + (d.staffEmail || '')
+            : (d.linkAppUserId
+              ? t('Link', 'ربط') + ' · ' + (d.linkStaffLabel || d.linkAppUserId)
+              : t('Yes — choose later', 'نعم — اختيار لاحقاً')))) +
+        '</span></div>' +
         '</div>';
     }
 
@@ -1726,18 +1726,18 @@
         }).join('');
       panel.innerHTML =
         '<p class="page-subtitle" style="margin-bottom:12px">' +
-          esc(t('Assign the first week here — saved when you create the employee. Stay on this wizard.', 'عيّن أول أسبوع هنا — يُحفظ عند إنشاء الموظف. ابقَ في هذا المعالج.')) +
+        esc(t('Assign the first week here — saved when you create the employee. Stay on this wizard.', 'عيّن أول أسبوع هنا — يُحفظ عند إنشاء الموظف. ابقَ في هذا المعالج.')) +
         '</p>' +
         (templates.length
           ? '<div class="form-grid">' +
-              '<label class="fg"><span>' + esc(t('Shift template', 'قالب الوردية')) + '</span><select id="obScheduleShift">' + shiftOpts + '</select></label>' +
-              '<label class="fg"><span>' + esc(t('From date', 'من تاريخ')) + '</span><input id="obScheduleFrom" type="date" value="' + esc(from) + '"></label>' +
-              '<label class="fg"><span>' + esc(t('To date', 'إلى تاريخ')) + '</span><input id="obScheduleTo" type="date" value="' + esc(to) + '"></label>' +
-              '<label class="fg span2"><span>' + esc(t('Note (optional)', 'ملاحظة (اختياري)')) + '</span><textarea id="obScheduleNote" rows="2" maxlength="500">' + esc(d.scheduleNote) + '</textarea></label>' +
-            '</div>'
+          '<label class="fg"><span>' + esc(t('Shift template', 'قالب الوردية')) + '</span><select id="obScheduleShift">' + shiftOpts + '</select></label>' +
+          '<label class="fg"><span>' + esc(t('From date', 'من تاريخ')) + '</span><input id="obScheduleFrom" type="date" value="' + esc(from) + '"></label>' +
+          '<label class="fg"><span>' + esc(t('To date', 'إلى تاريخ')) + '</span><input id="obScheduleTo" type="date" value="' + esc(to) + '"></label>' +
+          '<label class="fg span2"><span>' + esc(t('Note (optional)', 'ملاحظة (اختياري)')) + '</span><textarea id="obScheduleNote" rows="2" maxlength="500">' + esc(d.scheduleNote) + '</textarea></label>' +
+          '</div>'
           : '<p class="form-hint" style="color:var(--ltt)">' +
-              esc(t('No shift templates yet — skip this step.', 'لا توجد قوالب ورديات — تخطَّ هذه الخطوة.')) +
-            '</p><label class="fg"><span>' + esc(t('Note (optional)', 'ملاحظة (اختياري)')) + '</span><textarea id="obScheduleNote" rows="2" maxlength="500">' + esc(d.scheduleNote) + '</textarea></label>');
+          esc(t('No shift templates yet — skip this step.', 'لا توجد قوالب ورديات — تخطَّ هذه الخطوة.')) +
+          '</p><label class="fg"><span>' + esc(t('Note (optional)', 'ملاحظة (اختياري)')) + '</span><textarea id="obScheduleNote" rows="2" maxlength="500">' + esc(d.scheduleNote) + '</textarea></label>');
     });
   }
 
@@ -1747,8 +1747,8 @@
     var html =
       '<p class="page-subtitle">' + esc(t('Does this employee need HyMotion access?', 'هل يحتاج هذا الموظف إلى صلاحية دخول HyMotion؟')) + '</p>' +
       '<div class="choice-row">' +
-        '<div class="choice-card' + (d.needAccess === true ? ' act' : '') + '" data-ob-access="yes"><strong>' + esc(t('Yes', 'نعم')) + '</strong><span>' + esc(t('Link or create a Staff login', 'ربط أو إنشاء حساب دخول')) + '</span></div>' +
-        '<div class="choice-card' + (d.needAccess === false ? ' act' : '') + '" data-ob-access="no"><strong>' + esc(t('No, later', 'لا، لاحقاً')) + '</strong><span>' + esc(t('AppUserId stays empty', 'يبقى بدون حساب دخول')) + '</span></div>' +
+      '<div class="choice-card' + (d.needAccess === true ? ' act' : '') + '" data-ob-access="yes"><strong>' + esc(t('Yes', 'نعم')) + '</strong><span>' + esc(t('Link or create a Staff login', 'ربط أو إنشاء حساب دخول')) + '</span></div>' +
+      '<div class="choice-card' + (d.needAccess === false ? ' act' : '') + '" data-ob-access="no"><strong>' + esc(t('No, later', 'لا، لاحقاً')) + '</strong><span>' + esc(t('AppUserId stays empty', 'يبقى بدون حساب دخول')) + '</span></div>' +
       '</div>';
 
     if (d.needAccess === true) {
@@ -1775,20 +1775,20 @@
       if (isOwner) {
         html +=
           '<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--ls3)">' +
-            '<label class="chk"><input type="checkbox" id="obCreateStaff"' + (d.createStaff ? ' checked' : '') + '> ' +
-              esc(t('Create new Staff account (Owner)', 'إنشاء حساب دخول جديد (للمالك)')) + '</label>' +
-            '<div id="obCreateStaffFields" ' + (d.createStaff ? '' : 'hidden') + ' style="margin-top:10px">' +
-              '<div class="form-grid">' +
-                '<label class="fg"><span>' + esc(t('Staff email *', 'بريد الحساب *')) + '</span><input id="obStaffEmail" type="email" dir="ltr" value="' + esc(d.staffEmail || d.email) + '"></label>' +
-                '<label class="fg"><span>' + esc(t('Password *', 'كلمة المرور *')) + '</span><input id="obStaffPassword" type="password" value="' + esc(d.staffPassword) + '"></label>' +
-                '<label class="fg"><span>' + esc(t('Role *', 'الدور *')) + '</span>' +
-                  '<select id="obStaffRole">' +
-                    ['Manager', 'Trainer', 'Receptionist'].map(function (r) {
-                      return '<option value="' + r + '"' + (d.staffRole === r ? ' selected' : '') + '>' + esc(r) + '</option>';
-                    }).join('') +
-                  '</select></label>' +
-              '</div>' +
-            '</div>' +
+          '<label class="chk"><input type="checkbox" id="obCreateStaff"' + (d.createStaff ? ' checked' : '') + '> ' +
+          esc(t('Create new Staff account (Owner)', 'إنشاء حساب دخول جديد (للمالك)')) + '</label>' +
+          '<div id="obCreateStaffFields" ' + (d.createStaff ? '' : 'hidden') + ' style="margin-top:10px">' +
+          '<div class="form-grid">' +
+          '<label class="fg"><span>' + esc(t('Staff email *', 'بريد الحساب *')) + '</span><input id="obStaffEmail" type="email" dir="ltr" value="' + esc(d.staffEmail || d.email) + '"></label>' +
+          '<label class="fg"><span>' + esc(t('Password *', 'كلمة المرور *')) + '</span><input id="obStaffPassword" type="password" value="' + esc(d.staffPassword) + '"></label>' +
+          '<label class="fg"><span>' + esc(t('Role *', 'الدور *')) + '</span>' +
+          '<select id="obStaffRole">' +
+          ['Manager', 'Trainer', 'Receptionist'].map(function (r) {
+            return '<option value="' + r + '"' + (d.staffRole === r ? ' selected' : '') + '>' + esc(r) + '</option>';
+          }).join('') +
+          '</select></label>' +
+          '</div>' +
+          '</div>' +
           '</div>';
       } else {
         html += '<p class="form-hint" style="color:var(--ltt);margin-top:12px">' +

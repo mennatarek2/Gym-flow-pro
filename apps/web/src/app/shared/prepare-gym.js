@@ -398,7 +398,29 @@
     });
   }
 
-  function paint(host, model, opts) {
+  function resolveHost(host) {
+    if (!host) return null;
+    if (typeof host === 'string') {
+      if (global.document) {
+        if (global.document.getElementById) {
+          var el = global.document.getElementById(host);
+          if (el) return el;
+        }
+        if (global.document.querySelector) {
+          var elQs = global.document.querySelector(host);
+          if (elQs) return elQs;
+        }
+      }
+      return null;
+    }
+    if (typeof host === 'object' && host && ('innerHTML' in host || host.nodeType === 1)) {
+      return host;
+    }
+    return null;
+  }
+
+  function paint(hostInput, model, opts) {
+    var host = resolveHost(hostInput);
     if (!host) return;
     opts = opts || {};
     var prefs = loadPrefs(opts);
@@ -493,7 +515,9 @@
     );
   }
 
-  function bind(host, model, opts) {
+  function bind(hostInput, model, opts) {
+    var host = resolveHost(hostInput);
+    if (!host) return;
     host.querySelectorAll('[data-pg="skip"]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         patchPrefs({ dismissed: true }, opts);
@@ -514,8 +538,9 @@
     });
   }
 
-  async function mount(host, opts) {
+  async function mount(hostInput, opts) {
     opts = opts || {};
+    var host = resolveHost(hostInput);
     if (!host) return null;
     if (!shouldShow(opts)) {
       host.innerHTML = '';

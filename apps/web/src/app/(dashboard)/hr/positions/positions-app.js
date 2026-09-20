@@ -168,7 +168,7 @@
         '<td>' + esc(money(p.defaultBasicSalary)) + '</td>' +
         '<td>' + esc(p.employeeCount) + '</td>' +
         '<td><span class="status-badge ' + (p.isActive ? 'active' : 'terminated') + '"><span class="dot"></span>' +
-          esc(p.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) + '</span></td>' +
+        esc(p.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) + '</span></td>' +
         (canManage
           ? '<td><div class="act-group"><button type="button" class="act-btn" data-edit="' + esc(p.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-pencil"></i></button></div></td>'
           : '') +

@@ -2,17 +2,21 @@
  * Declarative navigation registry (§0.4) — apps/web.
  * Data only (no DOM). Icons are Tabler class names (`ti-*`).
  *
- * Category table (staff console IA — Phase 0 progressive disclosure):
- * | Category        | Items                                                         |
- * |-----------------|---------------------------------------------------------------|
- * | Overview        | Dashboard                                                     |
- * | Desk            | Plans, Staff, Current Shift, Members, Sale, Attendance        |
- * | Daily           | Call sheet, Classes, Member Orders, Access cards              |
- * | Management      | Invoices, Reports, Z-Reports (Offers paused — pilot)          |
- * | Advanced        | Activities, Products, Suppliers, Purchases, Invitations,      |
- * |                 | Import, HR (engines remain; category collapsed by default)    |
- * | Stock / Inventory hidden in shop UX (engines remain)                            |
- * | Administration  | Audit, Notifications, Roles, Settings, Backup (collapsed)     |
+ * Category table (staff console IA — Red Team overhaul 2026-09-20):
+ * | Category            | Items                                                         |
+ * |---------------------|---------------------------------------------------------------|
+ * | Home                | Dashboard                                                     |
+ * | Front Desk          | Current Shift, Members, Member Attendance, Sales, Call Sheet, |
+ * |                     | Classes, Member Orders, Access Cards                          |
+ * | Business & Finance  | Plans, Invoices, Expenses, Reports, Shift Summaries           |
+ * |                     | (Offers paused — pilot)                                       |
+ * | People & HR         | Employees, Departments, Positions, Employee Attendance,       |
+ * |                     | Schedule, Leaves, Payroll                                     |
+ * | Catalog & Inventory | Products, Suppliers, Purchases                                |
+ * |                     | (Stock hub / Overview / Insights when stock_management on)    |
+ * | Tools               | Activities, Invitations, Biometric Devices, Import            |
+ * | System              | Notifications, Staff Accounts, Roles & Permissions,           |
+ * |                     | Audit Log, Settings, Backup & Recovery                        |
  */
 (function (global) {
   'use strict';
@@ -34,20 +38,22 @@
    *   icon: string,
    *   access: NavAccess,
    *   featureFlag?: 'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr'|'offers',
-   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr'|'offers'>
+   *   featureFlags?: Array<'sales'|'shifts'|'trials'|'refunds'|'debtors'|'imports'|'inventory'|'stock_management'|'hr'|'offers'>,
+   *   excludeRoles?: string[]
    * }} NavItem
    */
 
   /**
-   * @typedef {{ key: string, label: string, labelAr: string, items: NavItem[] }} NavCategory
+   * @typedef {{ key: string, label: string, labelAr: string, defaultCollapsed?: boolean, items: NavItem[] }} NavCategory
    */
 
   /** @type {NavCategory[]} */
   var NAV_CATEGORIES = [
+    /* ── Home ── */
     {
       key: 'overview',
-      label: 'Overview',
-      labelAr: 'نظرة عامة',
+      label: 'Home',
+      labelAr: 'الرئيسية',
       items: [
         {
           key: 'dashboard',
@@ -59,27 +65,13 @@
         }
       ]
     },
+
+    /* ── Front Desk — daily member-facing operations ── */
     {
       key: 'core',
-      label: 'Desk',
-      labelAr: 'المكتب',
+      label: 'Front Desk',
+      labelAr: 'المكتب الأمامي',
       items: [
-        {
-          key: 'plans',
-          label: 'Plans',
-          labelAr: 'الباقات',
-          path: '/dashboard/plans/',
-          icon: 'ti-package',
-          access: { kind: 'permission', value: 'plans.manage' }
-        },
-        {
-          key: 'staff',
-          label: 'Staff',
-          labelAr: 'الموظفون',
-          path: '/dashboard/staff/',
-          icon: 'ti-user-shield',
-          access: { kind: 'policy', value: 'OwnerOnly' }
-        },
         {
           key: 'shifts',
           label: 'Current Shift',
@@ -98,33 +90,26 @@
           access: { kind: 'permission', value: 'members.view' }
         },
         {
+          key: 'attendance',
+          label: 'Member Attendance',
+          labelAr: 'حضور الأعضاء',
+          path: '/dashboard/attendance/',
+          icon: 'ti-door-enter',
+          access: { kind: 'permission', value: ['checkin.manual', 'members.view'] }
+        },
+        {
           key: 'pos',
           // Retail / general sales — membership onboarding lives in Members
-          label: 'Sale',
-          labelAr: 'بيع',
+          label: 'Sales',
+          labelAr: 'المبيعات',
           path: '/dashboard/pos/?mode=retail',
           icon: 'ti-shopping-cart',
           access: { kind: 'permission', value: 'sales.sell' },
           featureFlag: 'sales'
         },
         {
-          key: 'attendance',
-          label: 'Attendance',
-          labelAr: 'الحضور',
-          path: '/dashboard/attendance/',
-          icon: 'ti-door-enter',
-          access: { kind: 'permission', value: ['checkin.manual', 'members.view'] }
-        }
-      ]
-    },
-    {
-      key: 'daily',
-      label: 'Daily',
-      labelAr: 'يومي',
-      items: [
-        {
           key: 'call-sheet',
-          label: 'Call sheet',
+          label: 'Call Sheet',
           labelAr: 'ورقة المتابعة',
           path: '/dashboard/call-sheet/',
           icon: 'ti-phone-call',
@@ -147,12 +132,12 @@
           icon: 'ti-shopping-bag',
           access: {
             kind: 'permission',
-            value: ['sales.sell', 'orders.view', 'orders.fulfill', 'memberorders.view', 'memberorders.manage']
+            value: ['sales.sell', 'member_orders.view', 'member_orders.manage']
           }
         },
         {
           key: 'access-cards',
-          label: 'Access cards',
+          label: 'Access Cards',
           labelAr: 'كارنيهات الدخول',
           path: '/dashboard/access-cards/',
           icon: 'ti-id',
@@ -160,11 +145,21 @@
         }
       ]
     },
+
+    /* ── Business & Finance — revenue, plans, financial visibility ── */
     {
       key: 'management',
-      label: 'Management',
-      labelAr: 'الإدارة',
+      label: 'Business & Finance',
+      labelAr: 'الأعمال والمالية',
       items: [
+        {
+          key: 'plans',
+          label: 'Plans',
+          labelAr: 'الباقات',
+          path: '/dashboard/plans/',
+          icon: 'ti-package',
+          access: { kind: 'permission', value: 'plans.manage' }
+        },
         {
           // Paused for the pilot phase (2026-09-06) — PHASE_HIDE_OFFERS in features.js.
           // Page, API, and data are untouched; only the nav entry is hidden.
@@ -185,40 +180,118 @@
           access: { kind: 'permission', value: 'reports.financial.view' }
         },
         {
+          key: 'expenses',
+          label: 'Expenses',
+          labelAr: 'المصروفات',
+          path: '/dashboard/reports/?tab=expenses',
+          icon: 'ti-receipt',
+          access: { kind: 'permission', value: ['reports.expenses.view', 'reports.expenses.manage'] }
+        },
+        {
           key: 'reports',
           label: 'Reports',
           labelAr: 'التقارير',
           path: '/dashboard/reports/',
           icon: 'ti-chart-bar',
-          access: {
-            kind: 'permission',
-            value: ['reports.financial.view', 'members.view']
-          }
+          access: { kind: 'permission', value: 'reports.financial.view' }
         },
         {
           key: 'z-report',
-          label: 'Z-Reports',
-          labelAr: 'تقارير Z',
+          label: 'Shift Summaries',
+          labelAr: 'ملخص الورديات',
           path: '/dashboard/z-report/',
           icon: 'ti-report-money',
           access: { kind: 'permission', value: 'reports.financial.view' }
         }
       ]
     },
+
+    /* ── People & HR — first-class management area (not hidden) ── */
     {
-      key: 'advanced',
-      label: 'Advanced',
-      labelAr: 'متقدم',
-      defaultCollapsed: true,
+      key: 'people',
+      label: 'People & HR',
+      labelAr: 'الموظفون والموارد البشرية',
       items: [
         {
-          key: 'activities',
-          label: 'Activities',
-          labelAr: 'الأنشطة',
-          path: '/dashboard/activities/',
-          icon: 'ti-run',
-          access: { kind: 'permission', value: 'plans.manage' }
+          key: 'hr-employees',
+          label: 'Employees',
+          labelAr: 'بيانات الموظفين',
+          path: '/dashboard/hr/employees/',
+          icon: 'ti-id-badge-2',
+          access: { kind: 'permission', value: 'hr.view' },
+          featureFlag: 'hr',
+          excludeRoles: ['Receptionist']
         },
+        {
+          key: 'hr-departments',
+          label: 'Departments',
+          labelAr: 'الأقسام',
+          path: '/dashboard/hr/departments/',
+          icon: 'ti-building',
+          access: { kind: 'permission', value: 'hr.view' },
+          featureFlag: 'hr',
+          excludeRoles: ['Receptionist']
+        },
+        {
+          key: 'hr-positions',
+          label: 'Positions',
+          labelAr: 'المناصب',
+          path: '/dashboard/hr/positions/',
+          icon: 'ti-hierarchy-2',
+          access: { kind: 'permission', value: 'hr.view' },
+          featureFlag: 'hr',
+          excludeRoles: ['Receptionist']
+        },
+        {
+          key: 'hr-attendance',
+          label: 'Employee Attendance',
+          labelAr: 'حضور الموظفين',
+          path: '/dashboard/hr/attendance/',
+          icon: 'ti-fingerprint',
+          access: { kind: 'permission', value: 'hr.attendance.view' },
+          featureFlag: 'hr'
+          // Receptionists CAN see this — they check employees in/out at the desk
+        },
+        {
+          key: 'hr-schedule',
+          label: 'Schedule',
+          labelAr: 'الجدول الوظيفي',
+          path: '/dashboard/hr/schedule/',
+          icon: 'ti-calendar-week',
+          access: { kind: 'permission', value: 'hr.attendance.view' },
+          featureFlag: 'hr',
+          excludeRoles: ['Receptionist']
+        },
+        {
+          key: 'hr-leaves',
+          label: 'Leaves',
+          labelAr: 'الإجازات',
+          path: '/dashboard/hr/leaves/',
+          icon: 'ti-beach',
+          access: { kind: 'permission', value: 'hr.leave.view' },
+          featureFlag: 'hr',
+          excludeRoles: ['Receptionist']
+        },
+        {
+          key: 'hr-payroll',
+          label: 'Payroll',
+          labelAr: 'الرواتب',
+          path: '/dashboard/hr/payroll/',
+          icon: 'ti-cash-banknote',
+          access: { kind: 'permission', value: 'hr.payroll.view' },
+          featureFlag: 'hr',
+          excludeRoles: ['Receptionist']
+        }
+      ]
+    },
+
+    /* ── Catalog & Inventory — products, suppliers, procurement ── */
+    {
+      key: 'catalog',
+      label: 'Catalog & Inventory',
+      labelAr: 'الكتالوج والمخزون',
+      defaultCollapsed: true,
+      items: [
         {
           key: 'inv-products',
           label: 'Products',
@@ -242,97 +315,10 @@
           label: 'Purchases',
           labelAr: 'المشتريات',
           path: '/dashboard/inventory/purchase-orders/',
-          icon: 'ti-shopping-bag',
+          icon: 'ti-clipboard-list',
           access: { kind: 'permission', value: 'inventory.purchase' },
           featureFlag: 'inventory'
         },
-        {
-          key: 'invitations',
-          label: 'Invitations',
-          labelAr: 'الدعوات',
-          path: '/dashboard/invitations/',
-          icon: 'ti-user-plus',
-          access: { kind: 'permission', value: 'members.view' }
-        },
-        {
-          key: 'imports',
-          label: 'Import',
-          labelAr: 'الاستيراد',
-          path: '/dashboard/imports/',
-          icon: 'ti-file-import',
-          access: { kind: 'permission', value: 'settings.manage' },
-          featureFlag: 'imports'
-        },
-        {
-          key: 'hr-dashboard',
-          label: 'HR Dashboard',
-          labelAr: 'لوحة الموارد البشرية',
-          path: '/dashboard/hr/dashboard/',
-          icon: 'ti-layout-dashboard',
-          access: { kind: 'permission', value: 'hr.view' },
-          featureFlag: 'hr'
-        },
-        {
-          key: 'hr-employees',
-          label: 'Employees',
-          labelAr: 'بيانات الموظفين',
-          path: '/dashboard/hr/employees/',
-          icon: 'ti-id-badge-2',
-          access: { kind: 'permission', value: 'hr.view' },
-          featureFlag: 'hr'
-        },
-        {
-          key: 'hr-schedule',
-          label: 'Schedule',
-          labelAr: 'الجدول الوظيفي',
-          path: '/dashboard/hr/schedule/',
-          icon: 'ti-calendar-week',
-          access: { kind: 'permission', value: 'hr.attendance.view' },
-          featureFlag: 'hr'
-        },
-        {
-          key: 'hr-attendance',
-          label: 'HR Attendance',
-          labelAr: 'حضور الموظفين',
-          path: '/dashboard/hr/attendance/',
-          icon: 'ti-fingerprint',
-          access: { kind: 'permission', value: 'hr.attendance.view' },
-          featureFlag: 'hr'
-        },
-        {
-          key: 'hr-biometric-devices',
-          label: 'Biometric devices',
-          labelAr: 'أجهزة البصمة',
-          path: '/dashboard/hr/biometric-devices/',
-          icon: 'ti-device-desktop',
-          access: { kind: 'permission', value: 'hr.attendance.view' },
-          featureFlag: 'hr'
-        },
-        {
-          key: 'hr-leaves',
-          label: 'Leaves',
-          labelAr: 'الإجازات',
-          path: '/dashboard/hr/leaves/',
-          icon: 'ti-beach',
-          access: { kind: 'permission', value: 'hr.leave.view' },
-          featureFlag: 'hr'
-        },
-        {
-          key: 'hr-payroll',
-          label: 'Payroll',
-          labelAr: 'الرواتب',
-          path: '/dashboard/hr/payroll/',
-          icon: 'ti-cash-banknote',
-          access: { kind: 'permission', value: 'hr.payroll.view' },
-          featureFlag: 'hr'
-        }
-      ]
-    },
-    {
-      key: 'stock-management',
-      label: 'Stock Management',
-      labelAr: 'إدارة المخزون',
-      items: [
         {
           key: 'inv-stock-hub',
           label: 'Stock Management',
@@ -341,17 +327,10 @@
           icon: 'ti-stack-2',
           access: { kind: 'permission', value: 'inventory.view' },
           featureFlags: ['inventory', 'stock_management']
-        }
-      ]
-    },
-    {
-      key: 'inventory',
-      label: 'Inventory',
-      labelAr: 'المخزون',
-      items: [
+        },
         {
           key: 'inv-home',
-          label: 'Overview',
+          label: 'Inventory Overview',
           labelAr: 'نظرة عامة',
           path: '/dashboard/inventory/',
           icon: 'ti-gauge',
@@ -369,20 +348,59 @@
         }
       ]
     },
+
+    /* ── Tools — setup, configuration, utilities ── */
     {
-      key: 'administration',
-      label: 'Administration',
-      labelAr: 'الإدارة',
+      key: 'tools',
+      label: 'Tools',
+      labelAr: 'الأدوات',
       defaultCollapsed: true,
       items: [
         {
-          key: 'audit',
-          label: 'Audit',
-          labelAr: 'التدقيق',
-          path: '/dashboard/audit/',
-          icon: 'ti-list-search',
-          access: { kind: 'permission', value: 'settings.manage' }
+          key: 'activities',
+          label: 'Activities',
+          labelAr: 'الأنشطة',
+          path: '/dashboard/activities/',
+          icon: 'ti-run',
+          access: { kind: 'permission', value: 'plans.manage' }
         },
+        {
+          key: 'invitations',
+          label: 'Invitations',
+          labelAr: 'الدعوات',
+          path: '/dashboard/invitations/',
+          icon: 'ti-user-plus',
+          access: { kind: 'permission', value: 'members.view' }
+        },
+        {
+          key: 'hr-biometric-devices',
+          label: 'Biometric Devices',
+          labelAr: 'أجهزة البصمة',
+          path: '/dashboard/hr/biometric-devices/',
+          icon: 'ti-device-desktop',
+          access: { kind: 'permission', value: 'hr.attendance.view' },
+          featureFlag: 'hr',
+          excludeRoles: ['Receptionist']
+        },
+        {
+          key: 'imports',
+          label: 'Import',
+          labelAr: 'الاستيراد',
+          path: '/dashboard/imports/',
+          icon: 'ti-file-import',
+          access: { kind: 'permission', value: 'settings.manage' },
+          featureFlag: 'imports'
+        }
+      ]
+    },
+
+    /* ── System — accounts, permissions, admin ── */
+    {
+      key: 'administration',
+      label: 'System',
+      labelAr: 'النظام',
+      // Not collapsed — Notifications is here and accessible to all roles
+      items: [
         {
           key: 'notifications',
           label: 'Notifications',
@@ -392,12 +410,28 @@
           access: { kind: 'any' }
         },
         {
+          key: 'staff',
+          label: 'Staff Accounts',
+          labelAr: 'حسابات الموظفين',
+          path: '/dashboard/staff/',
+          icon: 'ti-user-shield',
+          access: { kind: 'policy', value: 'OwnerOnly' }
+        },
+        {
           key: 'roles',
-          label: 'Roles',
-          labelAr: 'الأدوار',
+          label: 'Roles & Permissions',
+          labelAr: 'الأدوار والصلاحيات',
           path: '/dashboard/roles/',
           icon: 'ti-shield-lock',
           access: { kind: 'policy', value: 'OwnerOnly' }
+        },
+        {
+          key: 'audit',
+          label: 'Audit Log',
+          labelAr: 'سجل التدقيق',
+          path: '/dashboard/audit/',
+          icon: 'ti-list-search',
+          access: { kind: 'permission', value: 'settings.manage' }
         },
         {
           key: 'settings',
@@ -422,12 +456,14 @@
     }
   ];
 
+
   var NAV_ITEMS = NAV_CATEGORIES.reduce(function (acc, cat) {
     return acc.concat(cat.items);
   }, []);
 
   /**
    * Never branch on role string for permission items — use access + claims.
+   * excludeRoles is nav-only progressive disclosure (API permissions unchanged).
    * @param {NavAccess} access
    * @param {{ accessToken?: string|null, role?: string|null, Authz?: object }} [opts]
    */
@@ -451,6 +487,21 @@
     return false;
   }
 
+  function isRoleExcluded(item, opts) {
+    if (!item || !item.excludeRoles || !item.excludeRoles.length) return false;
+    opts = opts || {};
+    var Authz = opts.Authz || global.GfpAuthz;
+    var role = opts.role != null ? opts.role : Authz && Authz.getUserRole ? Authz.getUserRole() : null;
+    if (!role) return false;
+    var norm = Authz && Authz.normalizeRole ? Authz.normalizeRole(role) : String(role).trim().toLowerCase();
+    for (var i = 0; i < item.excludeRoles.length; i++) {
+      var ex = item.excludeRoles[i];
+      var exNorm = Authz && Authz.normalizeRole ? Authz.normalizeRole(ex) : String(ex).trim().toLowerCase();
+      if (exNorm === norm) return true;
+    }
+    return false;
+  }
+
   /**
    * @param {NavItem} item
    * @param {Record<string,boolean>|null} registry
@@ -458,6 +509,7 @@
    */
   function isNavItemVisible(item, registry, opts) {
     opts = opts || {};
+    if (isRoleExcluded(item, opts)) return false;
     var Features = global.GfpFeatures;
     var flags = item.featureFlags;
     if (flags && flags.length) {

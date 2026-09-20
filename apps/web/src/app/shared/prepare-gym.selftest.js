@@ -206,11 +206,27 @@ assert(posHtml.indexOf('Open a cash shift first') !== -1, 'POS shift gate explai
 assert(posHtml.indexOf('/dashboard/shifts/') !== -1, 'POS shift gate links to Current Shift');
 
 const nav = fs.readFileSync(path.join(__dirname, 'nav.js'), 'utf8');
-assert(nav.indexOf("key: 'core'") !== -1, 'Desk/core category exists');
-assert(nav.indexOf("key: 'daily'") !== -1, 'Daily category exists');
-assert(nav.indexOf("key: 'advanced'") !== -1, 'Advanced category exists');
-assert(nav.indexOf('defaultCollapsed: true') !== -1, 'Advanced/admin collapse by default');
+assert(nav.indexOf("key: 'core'") !== -1, 'Front Desk/core category exists');
+assert(nav.indexOf("key: 'catalog'") !== -1, 'Catalog & Inventory category exists');
+assert(nav.indexOf("key: 'tools'") !== -1, 'Tools category exists');
+assert(nav.indexOf('defaultCollapsed: true') !== -1, 'Catalog/Tools collapse by default (progressive disclosure)');
 assert(nav.indexOf("key: 'members'") !== -1 && nav.indexOf("path: '/dashboard/members/'") !== -1, 'Members route unchanged');
-assert(nav.indexOf("path: '/dashboard/backup/'") !== -1, 'Backup route unchanged');
+// Test host element resolution (string ID, element object, invalid host)
+(async function testHostResolution() {
+  const dummyEl = { innerHTML: '', querySelectorAll: function () { return []; } };
+  sandbox.document.getElementById = function (id) {
+    if (id === 'prepareGymHost') return dummyEl;
+    return null;
+  };
 
-console.log('apps/web prepare-gym.selftest: OK (completion, skip/resume, roles, cash/skip copy, nav IA)');
+  // String host ID resolution
+  await PG.mount('prepareGymHost', { edition: 'Local', user: owner, snapshot: { plans: [], staff: [], shifts: [], members: [], invoices: [], todayAttendance: [] } });
+  assert(dummyEl.innerHTML.length > 0, 'mount works with string host ID');
+
+  // String host ID that does not exist
+  const nullResult = await PG.mount('nonExistentHost', { edition: 'SaaS' });
+  assert(nullResult === null, 'mount gracefully handles non-existent host string without error');
+})();
+
+console.log('apps/web prepare-gym.selftest: OK (completion, skip/resume, roles, cash/skip copy, nav IA, host resolution)');
+

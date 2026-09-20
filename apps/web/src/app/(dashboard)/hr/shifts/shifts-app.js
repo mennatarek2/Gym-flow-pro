@@ -152,14 +152,14 @@
     rows.forEach(function (s) {
       html += '<tr>' +
         '<td><div class="person-name">' + esc(s.name) +
-          (s.crossesMidnight ? ' <span class="badge-current" title="' + esc(t('Crosses midnight', 'يمتد لما بعد منتصف الليل')) + '">' + esc(t('overnight', 'ليلي')) + '</span>' : '') +
-          '</div></td>' +
+        (s.crossesMidnight ? ' <span class="badge-current" title="' + esc(t('Crosses midnight', 'يمتد لما بعد منتصف الليل')) + '">' + esc(t('overnight', 'ليلي')) + '</span>' : '') +
+        '</div></td>' +
         '<td>' + esc(hhmm(s.startTime)) + '</td>' +
         '<td>' + esc(hhmm(s.endTime)) + '</td>' +
         '<td>' + esc(s.breakMinutes) + ' ' + esc(t('min', 'د')) + '</td>' +
         '<td>' + esc(s.graceMinutes) + ' ' + esc(t('min', 'د')) + '</td>' +
         '<td><span class="status-badge ' + (s.isActive ? 'active' : 'terminated') + '"><span class="dot"></span>' +
-          esc(s.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) + '</span></td>' +
+        esc(s.isActive ? t('Active', 'نشط') : t('Inactive', 'غير نشط')) + '</span></td>' +
         (canManage
           ? '<td><div class="act-group"><button type="button" class="act-btn" data-edit="' + esc(s.id) + '" title="' + esc(t('Edit', 'تعديل')) + '"><i class="ti ti-pencil"></i></button></div></td>'
           : '') +

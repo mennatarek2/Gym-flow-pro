@@ -232,28 +232,28 @@
     var canEditPeriod = canManage && period && (period.status === 'Draft' || period.status === 'Calculated');
     var linesHtml = lines.length
       ? '<div style="overflow-x:auto"><table><thead><tr><th>' + esc(t('Employee', 'الموظف')) + '</th><th>' + esc(t('Basic', 'الأساسي')) + '</th><th>' + esc(t('Overtime', 'إضافي')) + '</th><th>' + esc(t('Bonus', 'مكافأة')) + '</th><th>' + esc(t('Allowance', 'بدل')) + '</th><th>' + esc(t('Deduction', 'خصم')) + '</th><th>' + esc(t('Net', 'الصافي')) + '</th></tr></thead><tbody>' +
-        lines.map(function (l) {
-          return '<tr><td class="person-name">' + esc(l.employeeName) + '<div class="person-sub">' + esc(l.employeeNumber) + '</div></td>' +
-            '<td>' + esc(money(l.basicSalary)) + '</td><td>' + esc(money(l.overtimeAmount)) + '</td><td>' + esc(money(l.bonusAmount)) + '</td>' +
-            '<td>' + esc(money(l.allowanceAmount)) + '</td><td>' + esc(money(l.deductionAmount)) + '</td><td><strong>' + esc(money(l.netSalary)) + '</strong></td></tr>';
-        }).join('') + '</tbody></table></div>'
+      lines.map(function (l) {
+        return '<tr><td class="person-name">' + esc(l.employeeName) + '<div class="person-sub">' + esc(l.employeeNumber) + '</div></td>' +
+          '<td>' + esc(money(l.basicSalary)) + '</td><td>' + esc(money(l.overtimeAmount)) + '</td><td>' + esc(money(l.bonusAmount)) + '</td>' +
+          '<td>' + esc(money(l.allowanceAmount)) + '</td><td>' + esc(money(l.deductionAmount)) + '</td><td><strong>' + esc(money(l.netSalary)) + '</strong></td></tr>';
+      }).join('') + '</tbody></table></div>'
       : '<p class="form-hint" style="color:var(--ltt)">' + esc(t('Not calculated yet.', 'لم يتم الحساب بعد.')) + '</p>';
 
     var adjHtml = adjustments.length
       ? adjustments.map(function (a) {
-          var emp = employees.filter(function (e) { return e.id === a.employeeId; })[0];
-          return '<div class="contract-row"><div><div class="num">' + esc(a.type) + '</div><div class="meta">' + esc(emp ? emp.firstName + ' ' + emp.lastName : a.employeeId) + (a.reason ? ' — ' + esc(a.reason) : '') + '</div></div><div class="salary">' + esc(money(a.amount)) + '</div></div>';
-        }).join('')
+        var emp = employees.filter(function (e) { return e.id === a.employeeId; })[0];
+        return '<div class="contract-row"><div><div class="num">' + esc(a.type) + '</div><div class="meta">' + esc(emp ? emp.firstName + ' ' + emp.lastName : a.employeeId) + (a.reason ? ' — ' + esc(a.reason) : '') + '</div></div><div class="salary">' + esc(money(a.amount)) + '</div></div>';
+      }).join('')
       : '<p class="form-hint" style="color:var(--ltt)">' + esc(t('No adjustments yet.', 'لا توجد تعديلات بعد.')) + '</p>';
 
     document.getElementById('drawerContent').innerHTML =
       '<div class="drawer-hdr"><h2><i class="ti ti-cash-banknote"></i> ' + esc(t(MONTH_NAMES[period.month], MONTH_NAMES[period.month])) + ' ' + esc(period.year) + '</h2>' +
-        '<button type="button" class="modal-close" id="btnDrawerClose"><i class="ti ti-x"></i></button></div>' +
+      '<button type="button" class="modal-close" id="btnDrawerClose"><i class="ti ti-x"></i></button></div>' +
       '<div class="drawer-body">' +
-        '<div class="drawer-sec"><h3>' + esc(t('Payroll lines', 'بنود الرواتب')) + '</h3>' + linesHtml + '</div>' +
-        '<div class="drawer-sec"><h3>' + esc(t('Adjustments', 'التعديلات')) +
-          (canEditPeriod ? '<button type="button" class="btn-secondary" id="btnAddAdjustment" style="width:auto;height:28px;padding:0 10px;font-size:11px;gap:4px"><i class="ti ti-plus"></i></button>' : '') +
-          '</h3>' + adjHtml + '</div>' +
+      '<div class="drawer-sec"><h3>' + esc(t('Payroll lines', 'بنود الرواتب')) + '</h3>' + linesHtml + '</div>' +
+      '<div class="drawer-sec"><h3>' + esc(t('Adjustments', 'التعديلات')) +
+      (canEditPeriod ? '<button type="button" class="btn-secondary" id="btnAddAdjustment" style="width:auto;height:28px;padding:0 10px;font-size:11px;gap:4px"><i class="ti ti-plus"></i></button>' : '') +
+      '</h3>' + adjHtml + '</div>' +
       '</div>';
 
     document.getElementById('btnDrawerClose').addEventListener('click', function () { document.getElementById('drawerOverlay').hidden = true; });
