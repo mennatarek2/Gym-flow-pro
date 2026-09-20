@@ -16,6 +16,9 @@ import { useOcCopy } from '../useOcCopy'
 
 export function SupportPage() {
   const t = useOcCopy()
+  const role = useAuthStore((s) => s.user?.role)
+  const canFeedback = isSupportOrAbove(role)
+  const canRisk = isSupportOrAbove(role)
   return (
     <div className="oc-stack">
       <DsPageHeader title={t('support.title')} subtitle={t('support.subtitle')} />
@@ -23,12 +26,16 @@ export function SupportPage() {
         <Link to="/oc/support" className="ds-btn ds-btn--secondary ds-btn--sm">
           {t('support.tickets')}
         </Link>
-        <Link to="/oc/support/feedback" className="ds-btn ds-btn--secondary ds-btn--sm">
-          {t('support.feedback')}
-        </Link>
-        <Link to="/oc/support/risk" className="ds-btn ds-btn--secondary ds-btn--sm">
-          {t('support.risk')}
-        </Link>
+        {canFeedback ? (
+          <Link to="/oc/support/feedback" className="ds-btn ds-btn--secondary ds-btn--sm">
+            {t('support.feedback')}
+          </Link>
+        ) : null}
+        {canRisk ? (
+          <Link to="/oc/support/risk" className="ds-btn ds-btn--secondary ds-btn--sm">
+            {t('support.risk')}
+          </Link>
+        ) : null}
         <Link to="/oc/support/playbooks" className="ds-btn ds-btn--secondary ds-btn--sm">
           {t('support.playbooks')}
         </Link>

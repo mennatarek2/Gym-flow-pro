@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { DsButton, PasswordInput, TextInput } from '@/design-system'
 import { platformLogin } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUiStore } from '@/stores/ui-store'
-import { InternalStrip } from '@/components/InternalStrip'
+import { AuthChrome } from './AuthChrome'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -61,46 +62,32 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <InternalStrip />
-      <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16">
-        <div>
-          <h1 className="cp-page-title">{t('auth.signIn')}</h1>
-          <p className="cp-page-subtitle">{t('auth.platformHint')}</p>
-        </div>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-[var(--radius)] border border-[var(--border)] bg-white p-6">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-[var(--text)]">{t('auth.email')}</span>
-            <input
-              type="email"
-              required
-              autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="cp-input"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-[var(--text)]">{t('auth.password')}</span>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="cp-input"
-            />
-          </label>
-          {error ? (
-            <p role="alert" className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {error}
-            </p>
-          ) : null}
-          <button type="submit" disabled={submitting} className="cp-btn cp-btn-primary disabled:opacity-60">
-            {submitting ? t('auth.signingIn') : t('common.continue')}
-          </button>
-        </form>
-      </main>
-    </div>
+    <AuthChrome title={t('auth.signIn')} subtitle={t('auth.platformHint')}>
+      <form onSubmit={onSubmit} className="hm-auth__card">
+        <TextInput
+          label={t('auth.email')}
+          type="email"
+          required
+          autoComplete="username"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <PasswordInput
+          label={t('auth.password')}
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        {error ? (
+          <p role="alert" className="hm-auth__error">
+            {error}
+          </p>
+        ) : null}
+        <DsButton type="submit" variant="primary" size="lg" loading={submitting} disabled={submitting}>
+          {submitting ? t('auth.signingIn') : t('common.continue')}
+        </DsButton>
+      </form>
+    </AuthChrome>
   )
 }

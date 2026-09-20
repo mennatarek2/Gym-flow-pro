@@ -526,8 +526,9 @@
           <!-- Empty State -->
           <div class="empty" id="emptyState" style="display:none">
             <div class="empty-icon"><i class="ti ti-users-minus"></i></div>
-            <h3 data-en="No members found matching your search" data-ar="لا يوجد أعضاء مطابقون لبحثك">No members found matching your search</h3>
-            <p data-en="Try adjusting your filters or search term" data-ar="جرّب تعديل الفلاتر أو كلمة البحث">Try adjusting your filters or search term</p>
+            <h3 id="emptyTitle" data-en="No members yet" data-ar="لا يوجد أعضاء بعد">No members yet</h3>
+            <p id="emptyBody" data-en="Add a person first. They can be saved without a membership, but they cannot use membership check-in until a valid plan is assigned." data-ar="أضف شخصًا أولًا. يمكن حفظه بدون عضوية، لكن لا يمكنه استخدام تسجيل الحضور بالعضوية حتى تُعيَّن له باقة سارية.">Add a person first. They can be saved without a membership, but they cannot use membership check-in until a valid plan is assigned.</p>
+            <button type="button" class="mdl-btn primary" id="emptyAddMember" style="margin-top:8px" data-en="Add first member" data-ar="أضف أول عضو">Add first member</button>
           </div>
 
           <!-- Pagination -->
@@ -651,6 +652,10 @@
             </div>
             <div id="onboardPlanLoading" style="display:none;padding:16px;color:var(--ltt)" data-en="Loading plans…" data-ar="جاري تحميل الخطط…">Loading plans…</div>
             <div id="onboardPlanCards" style="display:grid;gap:10px"></div>
+            <p class="payment-note show" id="onboardSkipHint" style="margin-top:12px">
+              <i class="ti ti-info-circle"></i>
+              <span data-en="You can skip membership and save the person now. They cannot use membership-based check-in until a valid membership is assigned." data-ar="يمكنك تخطي العضوية وحفظ الشخص الآن. لن يتمكن من استخدام تسجيل الحضور بالعضوية حتى تُعيَّن له عضوية سارية.">You can skip membership and save the person now. They cannot use membership-based check-in until a valid membership is assigned.</span>
+            </p>
             <div class="mdl-form-group" style="margin-top:12px">
               <label class="mdl-label" data-en="Start date" data-ar="تاريخ البدء">Start date</label>
               <input type="date" class="mdl-input" id="onboardStartDate">
@@ -685,7 +690,7 @@
               <input type="date" class="mdl-input" id="onboardDueDate">
               <div style="font-size:11px;color:var(--ltt);margin-top:4px" data-en="Required when amount paid is less than the plan price." data-ar="مطلوب عند دفع مبلغ أقل من سعر الخطة.">Required when amount paid is less than the plan price.</div>
             </div>
-            <div class="payment-note show" id="onboardPayNote"><i class="ti ti-info-circle"></i> <span data-en="Cash activates immediately when a shift is open. Pay less than the full price to leave a balance due." data-ar="يتم تفعيل الدفع النقدي فورًا عند فتح الوردية. ادفع أقل من السعر الكامل لترك رصيد مستحق.">Cash activates immediately when a shift is open. Pay less than the full price to leave a balance due.</span></div>
+            <div class="payment-note show" id="onboardPayNote"><i class="ti ti-info-circle"></i> <span data-en="Cash membership payments need an open cash shift. Open a cash shift first, then complete this payment." data-ar="دفع العضوية نقدًا يحتاج وردية صندوق مفتوحة. افتح وردية أولًا ثم أكمل هذا الدفع.">Cash membership payments need an open cash shift. Open a cash shift first, then complete this payment.</span> <a href="/dashboard/shifts/" data-en="Open shift" data-ar="افتح الوردية">Open shift</a></div>
           </div>
         </div>
 
@@ -891,8 +896,8 @@
 
   <script src="/shared/gfp-deployment.js"></script>
   <script src="/shared/refund-action.js?v=2"></script>
-  <script src="members-app.js?v=delconfirm1"></script>
-  <script src="member-modals.js?v=assign-card1"></script>
+  <script src="members-app.js?v=prepare1"></script>
+  <script src="member-modals.js?v=prepare1"></script>
 </body>
 
 </html>

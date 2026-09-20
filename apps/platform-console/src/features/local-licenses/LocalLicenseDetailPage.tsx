@@ -120,7 +120,7 @@ export function LocalLicenseDetailPage() {
   if (detailQuery.isError || !detailQuery.data) {
     return (
       <div className="flex flex-col gap-3">
-        <Link to="/gyms" className="text-sm text-blue-700 hover:underline">
+        <Link to="/oc/gyms" className="text-sm text-blue-700 hover:underline">
           ← {t('gyms.back')}
         </Link>
         <div className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-800">
@@ -138,7 +138,7 @@ export function LocalLicenseDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link to={lic.customerId ? `/customers/${lic.customerId}` : '/gyms'} className="text-sm text-blue-700 hover:underline">
+      <Link to={lic.customerId ? `/customers/${lic.customerId}` : '/oc/gyms'} className="text-sm text-blue-700 hover:underline">
         ← {lic.customerId ? t('customers.backGyms') : t('gyms.back')}
       </Link>
 

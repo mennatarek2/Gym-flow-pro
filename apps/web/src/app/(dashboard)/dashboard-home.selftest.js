@@ -30,6 +30,8 @@ check(source.includes('dash-exec-glossary'), 'owner shows financial glossary');
 check(source.includes('Financial glossary'), 'glossary uses financial-v1 language');
 check(source.includes('Net profit gate'), 'glossary covers net profit gate');
 check(source.includes('Payroll warning'), 'glossary covers payroll warning');
+check(source.includes('mountPrepareGym'), 'dashboard hosts Prepare Your Gym on Local');
+check(source.includes('prepareGymHost'), 'prepare gym mounts into prepareGymHost');
 
 const order = ['id: \'finance\'', 'id: \'kpis\'', 'id: \'quick-actions\'',
   'id: \'business\'', 'id: \'occupancy\'', 'id: \'classes\'', 'id: \'attention\''];

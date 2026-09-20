@@ -21,7 +21,7 @@ check(html.includes('btnCollectPayment') && html.includes('collectPaymentDrawer'
 check(js.includes("'/debtors/'") && js.includes('/sales'), 'loads outstanding sales for member');
 check(js.includes("'/sales/'") && js.includes('/payments'), 'posts payment against one sale');
 check(js.includes('loadFinancial()'), 'refreshes financial after successful collect');
-check(js.includes('Open a shift before accepting cash'), 'cash collect requires open shift');
+check(js.includes('Open a cash shift first, then complete this payment'), 'cash collect requires open shift');
 check(js.includes('selectCollectSale') && js.includes('btnTakePayment'), 'pick sale → take payment path wired');
 
 console.log('\nAll member-detail selftest checks passed (W-01 / W-02).');

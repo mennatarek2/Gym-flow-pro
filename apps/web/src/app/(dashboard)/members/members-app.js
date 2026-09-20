@@ -218,6 +218,22 @@
       tblWrap.style.display='none';
       pagiEl.style.display='none';
       emptyEl.style.display='flex';
+      const filtered = !!(search && search.trim()) || (statusFilter && statusFilter !== 'all');
+      const title = document.getElementById('emptyTitle');
+      const body = document.getElementById('emptyBody');
+      const cta = document.getElementById('emptyAddMember');
+      if(filtered){
+        if(title) title.textContent = tLabel('No members match this search','لا يوجد أعضاء مطابقون لهذا البحث');
+        if(body) body.textContent = tLabel('Clear the search or change the filter to see everyone.','امسح البحث أو غيّر التصفية لعرض الجميع.');
+        if(cta) cta.style.display = 'none';
+      } else {
+        if(title) title.textContent = tLabel('No members yet','لا يوجد أعضاء بعد');
+        if(body) body.textContent = tLabel(
+          'Add a person first. They can be saved without a membership, but they cannot use membership check-in until a valid plan is assigned.',
+          'أضف شخصًا أولًا. يمكن حفظه بدون عضوية، لكن لا يمكنه استخدام تسجيل الحضور بالعضوية حتى تُعيَّن له باقة سارية.'
+        );
+        if(cta) cta.style.display = canCreate ? '' : 'none';
+      }
       return;
     }
     tblWrap.style.display='';

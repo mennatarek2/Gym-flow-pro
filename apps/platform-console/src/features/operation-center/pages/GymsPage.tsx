@@ -18,6 +18,11 @@ import { OcLicenseStatus, OcStatus } from '../OcStatus'
 import { useOcCopy } from '../useOcCopy'
 import type { OcCopyKey } from '../i18n'
 
+/**
+ * @deprecated Unused after Phase 4 cutover. App.tsx mounts `@/features/gyms/GymsPage`
+ * under `/oc/gyms`. Kept for reference / later OC chrome parity — do not re-wire routes here.
+ */
+
 const LOCAL_FILTERS = ['all', 'not_live', 'pending', 'blocked', 'prospect', 'unlinked'] as const
 const FILTER_COPY: Record<(typeof LOCAL_FILTERS)[number], OcCopyKey> = {
   all: 'gyms.filter.all',

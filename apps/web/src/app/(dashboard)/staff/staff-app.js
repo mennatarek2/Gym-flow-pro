@@ -382,10 +382,40 @@
     renderTable();
   }
 
+  function paintStaffPrepareHint() {
+    var host = document.getElementById('staffPrepareHint');
+    if (!host) return;
+    var PG = window.GfpPrepareGym;
+    var missing = PG && PG.hasFrontDeskStaff ? !PG.hasFrontDeskStaff(allStaff) : false;
+    if (!missing) {
+      host.hidden = true;
+      host.innerHTML = '';
+      return;
+    }
+    host.hidden = false;
+    host.innerHTML =
+      '<div><strong>' + esc(t('Add a receptionist', 'أضف موظف استقبال')) + '</strong>' +
+      '<p>' + esc(t(
+        'The owner account can run the gym, but a front-desk login is what you need for daily check-in and cash sales.',
+        'حساب المالك يمكنه تشغيل النادي، لكن تحتاج حساب استقبال لتسجيل الحضور اليومي واستلام النقد.'
+      )) + '</p></div>';
+  }
+
   function renderTable() {
+    paintStaffPrepareHint();
     var staff = filteredStaff();
     if (!staff.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="empty-cell"><i class="ti ti-users-group" style="font-size:36px;display:block;margin-bottom:8px;color:var(--ls4)"></i>' + esc(t('No staff members found', 'لا يوجد موظفون')) + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-cell"><i class="ti ti-users-group" style="font-size:36px;display:block;margin-bottom:8px;color:var(--ls4)"></i>' +
+        (allStaff.length
+          ? esc(t('No staff match this search.', 'لا يوجد موظفون مطابقون لهذا البحث.'))
+          : ('<strong>' + esc(t('No front-desk staff yet', 'لا يوجد موظف استقبال بعد')) + '</strong><div style="margin-top:6px;font-size:13px;color:var(--ltt)">' +
+            esc(t('Add a receptionist so someone besides the owner can register members, take cash, and check people in.', 'أضف موظف استقبال حتى يتمكن غير المالك من تسجيل الأعضاء واستلام النقد وتسجيل الحضور.')) +
+            '</div><button type="button" class="btn-add-staff" id="emptyAddStaff" style="margin-top:10px"><i class="ti ti-user-plus"></i> ' +
+            esc(t('Add receptionist', 'إضافة موظف استقبال')) + '</button>')) +
+        '</td></tr>';
+      var emptyAdd = document.getElementById('emptyAddStaff');
+      var addBtn = document.getElementById('btnAddStaff');
+      if (emptyAdd && addBtn) emptyAdd.addEventListener('click', function () { addBtn.click(); });
       return;
     }
     tbody.innerHTML = staff.map(function (s) {

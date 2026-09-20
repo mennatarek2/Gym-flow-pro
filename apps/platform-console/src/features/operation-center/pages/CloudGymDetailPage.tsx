@@ -15,6 +15,11 @@ import { OcCloudActions } from '../OcCloudActions'
 import { OcStaffPasswordReset } from '../OcStaffPasswordReset'
 import { useOcCopy } from '../useOcCopy'
 
+/**
+ * @deprecated Unused after Phase 5 cutover. App.tsx mounts `TenantDetailPage` under
+ * `/oc/gyms/cloud/:id`. Kept for reference / later OC chrome parity — do not re-wire routes here.
+ */
+
 const TABS = ['summary', 'subscription', 'usage', 'users', 'activity'] as const
 type Tab = (typeof TABS)[number]
 

@@ -242,6 +242,7 @@
     await enrichPlanDetails(allPlans);
     renderPlans(allPlans);
     updateStats(allPlans);
+    paintTemplateBanner(allPlans);
   }
 
   async function enrichPlanDetails(plans) {
@@ -273,6 +274,46 @@
     );
   }
 
+  function paintTemplateBanner(plans) {
+    var host = document.getElementById('planTemplateBanner');
+    if (!host) return;
+    var PG = window.GfpPrepareGym;
+    var templates = PG && PG.looksLikeSeedTemplates
+      ? PG.looksLikeSeedTemplates(plans)
+      : false;
+    if (!templates) {
+      host.hidden = true;
+      host.innerHTML = '';
+      return;
+    }
+    host.hidden = false;
+    host.className = 'pg-template-banner';
+    host.innerHTML =
+      '<div><strong>' +
+      t('Starting templates — not final gym pricing', 'قوالب للبداية — ليست أسعار النادي النهائية') +
+      '</strong><p>' +
+      t(
+        'These example plans were added so you can start. Review names and prices before you sell memberships.',
+        'هذه باقات مثال أُضيفت للبداية. راجع الأسماء والأسعار قبل بيع العضويات.'
+      ) +
+      '</p></div>' +
+      '<button type="button" class="pg-btn pg-btn-primary" id="btnMarkPlansReviewed">' +
+      t('I have reviewed these plans', 'راجعت هذه الباقات') +
+      '</button>';
+    var btn = document.getElementById('btnMarkPlansReviewed');
+    if (btn && PG && PG.markPlansReviewed) {
+      btn.addEventListener('click', function () {
+        PG.markPlansReviewed();
+        host.innerHTML =
+          '<div><strong>' +
+          t('Plans marked as reviewed', 'تم اعتبار الباقات مراجعة') +
+          '</strong><p>' +
+          t('You can still edit prices any time from this page.', 'يمكنك تعديل الأسعار في أي وقت من هذه الصفحة.') +
+          '</p></div>';
+      });
+    }
+  }
+
   function updateStats(plans) {
     document.getElementById('statTotal').textContent = plans.length;
     document.getElementById('statActive').textContent = plans.filter(function (p) {
@@ -287,9 +328,12 @@
     if (!plans.length) {
       grid.innerHTML =
         '<div class="empty-state"><div class="empty-icon"><i class="ti ti-package-off"></i></div><div class="empty-title">' +
-        t('No Plans Yet', 'لا توجد خطط بعد') +
+        t('No membership plans yet', 'لا توجد باقات عضوية بعد') +
         '</div><div class="empty-desc">' +
-        t('Create your first membership plan to get started.', 'أنشئ أول خطة عضوية للبدء.') +
+        t(
+          'You need at least one active plan before you can sell a membership. Create a plan with the price you actually charge.',
+          'تحتاج باقة نشطة واحدة على الأقل قبل بيع عضوية. أنشئ باقة بالسعر الذي تحصّله فعلاً.'
+        ) +
         '</div><button class="btn-create" id="emptyCreate"><i class="ti ti-plus"></i> ' +
         t('Create Plan', 'إنشاء خطة') +
         '</button></div>';

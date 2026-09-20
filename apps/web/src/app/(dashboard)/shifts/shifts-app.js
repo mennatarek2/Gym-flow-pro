@@ -16,7 +16,7 @@
 
   var SHIFT_409 = {
     SHIFT_ALREADY_OPEN: 'A shift is already open for this staff member. Close it before opening another.',
-    NO_OPEN_SHIFT: 'No open shift. Open a drawer with an opening float first.',
+    NO_OPEN_SHIFT: 'Open a cash shift first, then complete this payment.',
     NOT_AWAITING_APPROVAL: 'This shift is not awaiting approval (wrong status for approve).',
     SHIFT_NOT_OPEN: 'This shift is not open. Force-close / movement actions require an open shift.'
   };
@@ -905,7 +905,10 @@
     var opens = data.openShifts || [];
     if (!opens.length) {
       document.getElementById('summaryBody').innerHTML =
-        '<p class="muted">No open shifts across staff.</p>';
+        '<p class="muted">' + esc(t(
+          'No cash shift is open. Open a shift before taking cash payments.',
+          'لا توجد وردية صندوق مفتوحة. افتح وردية قبل استلام الدفع النقدي.'
+        )) + ' <a href="/dashboard/shifts/">' + esc(t('Open shift', 'افتح الوردية')) + '</a></p>';
       return;
     }
     document.getElementById('summaryBody').innerHTML =

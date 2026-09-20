@@ -51,12 +51,12 @@ const SHARED_SCRIPTS = [
   '/shared/i18n.js?v=loc2',
   '/shared/theme.js?v=1',
   '/shared/feedback.js?v=1',
-  '/shared/nav.js?v=5',
+  '/shared/nav.js?v=6',
   '/shared/inventory-api.js',
   '/shared/member-orders-api.js',
   '/shared/gfp-branding.js?v=5',
   '/shared/analytics.js?v=1',
-  '/shared/shell.js?v=feedback1',
+  '/shared/shell.js?v=prepare1',
   '/shared/staff-notifications.js?v=2',
   '/shared/quick-actions.js?v=6',
   '/shared/refund-action.js?v=3',
@@ -66,6 +66,7 @@ const SHARED_SCRIPTS = [
   '/shared/session-guard.js?v=session1',
   '/shared/app-version.js?v=1',
   '/shared/local-nav-gate.js?v=session1',
+  '/shared/prepare-gym.js?v=1',
 ];
 
 const SHARED_STYLES = [
@@ -82,6 +83,7 @@ const SHARED_STYLES = [
   '/shared/form-layout.css?v=1',
   '/shared/modal-layout.css?v=2',
   '/shared/sweep-layout.css?v=2',
+  '/shared/prepare-gym.css?v=1',
 ];
 
 // Member App pages have no staff nav/shell/quick-actions/inventory context.

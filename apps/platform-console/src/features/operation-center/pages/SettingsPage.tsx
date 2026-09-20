@@ -36,6 +36,13 @@ export function SettingsPage() {
     isOpsOrAbove(role)
       ? { to: '/oc/settings/licenses', title: t('settings.licenses'), hint: t('settings.licensesHint') }
       : null,
+    isOpsOrAbove(role)
+      ? {
+          to: '/oc/settings/licenses/manage',
+          title: t('settings.manageLicenses'),
+          hint: t('settings.manageLicensesHint'),
+        }
+      : null,
   ].filter(Boolean) as Array<{ to: string; title: string; hint: string }>
 
   return (

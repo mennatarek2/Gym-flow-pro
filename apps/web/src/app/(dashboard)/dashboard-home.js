@@ -3060,6 +3060,34 @@
 
   }
 
+  function mountPrepareGym() {
+    var host = global.document.getElementById('prepareGymHost');
+    var PG = global.GfpPrepareGym;
+    if (!host || !PG || !PG.mount) return;
+    function go(edition) {
+      PG.mount(host, edition ? { edition: edition } : {});
+    }
+    if (PG.isLocalEdition()) {
+      go();
+      return;
+    }
+    var attr = global.document.documentElement && global.document.documentElement.getAttribute('data-gfp-edition');
+    if (attr) {
+      go(attr === 'local' ? 'Local' : 'SaaS');
+      return;
+    }
+    if (global.GfpDeployment && global.GfpDeployment.getEdition) {
+      global.GfpDeployment.getEdition().then(go);
+      return;
+    }
+    if (global.document.addEventListener) {
+      global.document.addEventListener('gfp:edition', function onEd(ev) {
+        global.document.removeEventListener('gfp:edition', onEd);
+        go(ev.detail && ev.detail.local ? 'Local' : 'SaaS');
+      });
+    }
+  }
+
   function paintUserChrome() {
     var user = (global.GfpApi && global.GfpApi.tokens.getUser()) || null;
     if (!user) {
@@ -3150,6 +3178,7 @@
     if (global.GfpI18n && global.GfpI18n.applyDocumentLocale) {
       global.GfpI18n.applyDocumentLocale();
     }
+    mountPrepareGym();
     await bootWidgets();
     global.addEventListener('resize', resizeDashboardCharts);
     global.addEventListener('gfp:locale', function () {
@@ -3157,8 +3186,14 @@
       if (global.GfpI18n && global.GfpI18n.applyDocumentLocale) {
         global.GfpI18n.applyDocumentLocale();
       }
+      mountPrepareGym();
       bootWidgets();
     });
+    if (global.document && global.document.addEventListener) {
+      global.document.addEventListener('gfp:edition', function () {
+        mountPrepareGym();
+      });
+    }
   }
 
   if (global.document.readyState === 'loading') {

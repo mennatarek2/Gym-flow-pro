@@ -404,7 +404,16 @@
         if(method==='cash'&&amount>0){
           const sh=await Gfp.get('/shifts/current');
           if(!sh.ok||!sh.data||!sh.data.id){
-            showAddError(window.GfpI18n.tLabel('Open a shift before accepting cash payment.','افتح وردية قبل قبول الدفع نقدًا.'));
+            if(errorBanner){
+              const te=errorBanner.querySelector('.error-text');
+              const arEl=errorBanner.querySelector('.error-text-ar');
+              if(te) te.innerHTML=window.GfpI18n.tLabel(
+                'Open a cash shift first, then complete this payment.',
+                'افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.'
+              )+' <a href="/dashboard/shifts/">'+window.GfpI18n.tLabel('Open shift','افتح الوردية')+'</a>';
+              if(arEl) arEl.style.display='none';
+              errorBanner.classList.add('show');
+            }
             return false;
           }
         }
@@ -414,6 +423,22 @@
         return { sale:r.data, payMethod:pay, amount:amount };
       }
       if(canMgr){
+        if(pay==='cash'&&amount>0){
+          const sh=await Gfp.get('/shifts/current');
+          if(!sh.ok||!sh.data||!sh.data.id){
+            if(errorBanner){
+              const te=errorBanner.querySelector('.error-text');
+              const arEl=errorBanner.querySelector('.error-text-ar');
+              if(te) te.innerHTML=window.GfpI18n.tLabel(
+                'Open a cash shift first, then complete this payment.',
+                'افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.'
+              )+' <a href="/dashboard/shifts/">'+window.GfpI18n.tLabel('Open shift','افتح الوردية')+'</a>';
+              if(arEl) arEl.style.display='none';
+              errorBanner.classList.add('show');
+            }
+            return false;
+          }
+        }
         const r=await Gfp.post('/memberships/'+createdMember.id+'/assign',{
           planId: selectedPlan.id,
           paymentMethod: pay==='vodafone_cash'?'fawry':pay,
@@ -590,9 +615,14 @@
     const btnSkip=overlay.querySelector('#btnOnboardSkip');
     if(btnSkip){
       btnSkip.addEventListener('click',function(){
+        const ok=window.confirm(window.GfpI18n.tLabel(
+          'This member can be saved, but they cannot use membership-based check-in until a valid membership is assigned. Continue without a membership?',
+          'يمكن حفظ هذا العضو، لكن لا يمكنه استخدام تسجيل الحضور بالعضوية حتى تُعيَّن له عضوية سارية. المتابعة بدون عضوية؟'
+        ));
+        if(!ok) return;
         closeOverlay('addMemberModal');
         resetAddForm();
-        toast(window.GfpI18n.tLabel('Member created without membership','تم إنشاء العضو بدون عضوية'));
+        toast(window.GfpI18n.tLabel('Member saved without membership','تم حفظ العضو بدون عضوية'));
         if(typeof window.loadMembers==='function') window.loadMembers();
       });
     }
@@ -1146,7 +1176,8 @@
             if(!sh.ok||!sh.data||!sh.data.id){
               if(errorBanner){
                 const te=errorBanner.querySelector('.error-text');
-                if(te) te.textContent=window.GfpI18n.tLabel('Open a shift before accepting cash.','افتح وردية قبل قبول الدفع نقدًا.');
+                if(te) te.innerHTML=window.GfpI18n.tLabel('Open a cash shift first, then complete this payment.','افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.') +
+                  ' <a href="/dashboard/shifts/">'+window.GfpI18n.tLabel('Open shift','افتح الوردية')+'</a>';
                 errorBanner.classList.add('show');
               }
               btnAssign.classList.remove('loading');
@@ -1228,6 +1259,10 @@
   }
   if(btnAdd){
     btnAdd.addEventListener('click',openAddMemberModal);
+  }
+  const emptyAdd=document.getElementById('emptyAddMember');
+  if(emptyAdd){
+    emptyAdd.addEventListener('click',openAddMemberModal);
   }
   try{
     var params=new URLSearchParams(location.search);

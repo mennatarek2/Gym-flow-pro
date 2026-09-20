@@ -80,7 +80,8 @@ vi.mock('@/lib/api', () => ({
   fetchLocalOwnerRecoveries: () => Promise.resolve([]),
 }))
 
-import { customerLicenses, formatOwnerAccount, LocalGymDetailPage, resolveLocalGymIdentity } from './LocalGymDetailPage'
+import { LocalGymDetailPage } from './LocalGymDetailPage'
+import { customerLicenses, formatOwnerAccount, resolveLocalGymIdentity } from './local-gym/helpers'
 
 function signIn(role = 'platform_ops') {
   useAuthStore.getState().applySuccessfulAuth({
@@ -150,11 +151,29 @@ describe('LocalGymDetailPage multi-license safety', () => {
   })
 
   it('does not render owner account as None when only a reset status exists', () => {
-    expect(formatOwnerAccount({ ownerAccountStatus: 'reset_requested' }, 'None')).toBe('reset_requested')
+    expect(formatOwnerAccount({ ownerAccountStatus: 'reset_requested' }, 'None')).toBe('reset requested')
     expect(formatOwnerAccount({ ownerEmail: 'abdu@gmail.com', ownerAccountStatus: 'reset_requested' }, 'None')).toBe(
-      'abdu@gmail.com · reset_requested',
+      'abdu@gmail.com · reset requested',
     )
     expect(formatOwnerAccount({ ownerAccountStatus: 'unknown' }, 'None')).toBe('None')
+  })
+
+  it('keeps a single header Sales CTA and mounts license More under License & PC', async () => {
+    const user = userEvent.setup()
+    // Single-license profile path: use first license only via selecting it
+    renderPage()
+    expect(await screen.findByRole('heading', { name: 'Pulse A' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Go to Sales' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Print sales contract' })).not.toBeInTheDocument()
+    // Multi-license: More only after target selected (already covered below)
+    const page = document.body.textContent ?? ''
+    expect(page).toContain('Gym identity')
+    expect(page).toContain('People & contact')
+    expect(page).toContain('At a glance')
+    expect(page).toContain('License & PC')
+    const radios = screen.getAllByRole('radio')
+    await user.click(radios[0]!)
+    expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument()
   })
 
   it('shows all licenses and withholds mutation until an explicit target is selected', async () => {

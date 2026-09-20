@@ -120,9 +120,9 @@ describe('Cloud gym details', () => {
     const user = userEvent.setup()
     render(<CloudGymDetailPage />)
     expect(screen.getByRole('heading', { name: 'Nasr City' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Impersonate tenant' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Impersonate Cloud gym' })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'More' }))
-    expect(screen.getByRole('button', { name: 'Impersonate tenant' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Impersonate Cloud gym' })).toBeInTheDocument()
   })
 
   it('does not expose impersonation to support', () => {
@@ -130,14 +130,14 @@ describe('Cloud gym details', () => {
     render(<CloudGymDetailPage />)
     expect(screen.getByRole('heading', { name: 'Nasr City' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'More' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Impersonate tenant' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Impersonate Cloud gym' })).not.toBeInTheDocument()
   })
 
   it('shows an explicit unlinked state when tenant detail has no customerId', () => {
     tenant.customerId = undefined
     signIn('platform_admin')
     render(<CloudGymDetailPage />)
-    expect(screen.getByText('No Local customer points at this Cloud tenant.')).toBeInTheDocument()
+    expect(screen.getByText('No Local customer points at this Cloud gym.')).toBeInTheDocument()
     expect(screen.getByText(/Names are not matched/)).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Linked from a Local customer' })).not.toBeInTheDocument()
   })

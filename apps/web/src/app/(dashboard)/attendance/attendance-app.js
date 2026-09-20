@@ -32,6 +32,14 @@
   const canViewToday = Authz ? Authz.useCan('members.view') : true;
   const canManual = Authz ? Authz.useCan('checkin.manual') : false;
 
+  function markPrepareCheckin() {
+    try {
+      if (window.GfpPrepareGym && window.GfpPrepareGym.patchPrefs) {
+        window.GfpPrepareGym.patchPrefs({ checkinObserved: true });
+      }
+    } catch (e) { /* ignore */ }
+  }
+
   if (!canViewToday && !canManual) {
     window.location.href = '/dashboard/';
     return;
@@ -408,7 +416,13 @@
     if (!records.length) {
       tbody.innerHTML =
         '<tr><td colspan="5" class="empty-msg"><i class="ti ti-mood-empty" style="font-size:32px;display:block;margin-bottom:8px;color:var(--ls4)"></i>' +
-        esc(t('No check-ins today', 'لا يوجد حضور اليوم')) +
+        '<strong>' + esc(t('No check-ins today', 'لا يوجد حضور اليوم')) + '</strong>' +
+        '<div style="margin-top:6px;font-size:12px;color:var(--ltt);font-weight:400">' +
+        esc(t(
+          'A member with a valid covering membership can be checked in here. Cash sales need an open shift first.',
+          'يمكن تسجيل حضور عضو لديه عضوية سارية من هنا. البيع النقدي يحتاج وردية مفتوحة أولاً.'
+        )) +
+        ' <a href="/dashboard/members/">' + esc(t('Open members', 'فتح الأعضاء')) + '</a></div>' +
         '</td></tr>';
       return;
     }
@@ -795,6 +809,7 @@
       focusBarcode();
 
       if (res && res.ok) {
+        markPrepareCheckin();
         // Soft toast only — do not steal focus from scanner
         toast(
           (res.data && (res.data.message || res.data.messageAr)) || 'Check-in successful!',
@@ -874,6 +889,7 @@
 
       const res = await Gfp.post('/attendance/manual-checkin', body);
       if (res && res.ok) {
+        markPrepareCheckin();
         toast((res.data && (res.data.message || res.data.messageAr)) || 'Check-in successful!');
         try {
           if (globalThis.GfpAnalytics && typeof globalThis.GfpAnalytics.track === 'function') {

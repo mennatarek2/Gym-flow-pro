@@ -113,7 +113,7 @@
     const title = data.title || '';
     const detail = data.detail || data.message || data.error || '';
     if (title === 'OPEN_SHIFT_REQUIRED')
-      return t('Open a cash shift first, then try again.', 'افتح وردية كاش أولاً، بعدين حاول تاني.');
+      return t('Open a cash shift first, then complete this payment.', 'افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.');
     if (title === 'PAYMENT_INCOMPLETE')
       return t(
         'Paid amount is less than the total. Cover the full total, or turn on partial payment.',
@@ -1396,7 +1396,7 @@
 
   async function submitSale() {
     if (!shiftOk) {
-      toast(t('Open a cash shift first.', 'افتح وردية كاش الأول.'), 'err');
+      toast(t('Open a cash shift first, then complete this payment.', 'افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.'), 'err');
       return;
     }
     if (!inventoryOn) {

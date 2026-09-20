@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   applyDsDocument,
   DsButton,
@@ -7,7 +7,7 @@ import {
   ToastStack,
   type DsLocale,
 } from '@/design-system'
-import { isAdmin } from '@/lib/platform-roles'
+import { ImpersonationSessionBanner } from '@/components/ImpersonationSessionBanner'
 import { useAuthStore } from '@/stores/auth-store'
 import { useUiStore } from '@/stores/ui-store'
 import { ocNavActive, visibleOcNav } from './nav'
@@ -42,13 +42,14 @@ export function OcShell() {
 
   return (
     <div ref={rootRef} data-oc data-theme={theme} className="oc-root">
+      <ImpersonationSessionBanner />
       <div className={`ds-oc${collapsed ? ' is-collapsed' : ''}`}>
         {mobileOpen ? (
           <button type="button" className="oc-backdrop" aria-label={t('nav.close')} onClick={() => setMobileOpen(false)} />
         ) : null}
         <aside className={`ds-oc-sidebar${mobileOpen ? ' is-open' : ''}`}>
           <div className="ds-oc-brand">
-            <LogoLockup compact={collapsed} productLabel={t('shell.product')} />
+            <LogoLockup compact={collapsed} />
           </div>
           <nav className="ds-oc-nav" aria-label={t('shell.product')}>
             {items.map((item) => {
@@ -72,11 +73,6 @@ export function OcShell() {
             <DsButton variant="ghost" size="sm" onClick={logout}>
               {t('shell.logout')}
             </DsButton>
-            {isAdmin(user?.role) ? (
-              <Link to="/gyms" className="oc-session-role oc-mono">
-                {t('shell.adminConsole')}
-              </Link>
-            ) : null}
           </div>
         </aside>
         <div className="min-w-0">
@@ -150,4 +146,3 @@ function OcToast() {
     />
   )
 }
-

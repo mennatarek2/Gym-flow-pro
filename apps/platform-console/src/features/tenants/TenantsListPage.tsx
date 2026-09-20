@@ -297,9 +297,9 @@ export function TenantsListPage({ embedded = false }: { embedded?: boolean }) {
               <tr
                 key={row.id}
                 tabIndex={0}
-                onClick={() => navigate(`/tenants/${row.id}?${params.toString()}`)}
+                onClick={() => navigate(`/oc/gyms/cloud/${row.id}?${params.toString()}`)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') navigate(`/tenants/${row.id}?${params.toString()}`)
+                  if (e.key === 'Enter') navigate(`/oc/gyms/cloud/${row.id}?${params.toString()}`)
                 }}
               >
                 <td>
@@ -388,7 +388,7 @@ export function TenantsListPage({ embedded = false }: { embedded?: boolean }) {
       ) : null}
 
       <p className="sr-only">
-        <Link to="/gyms?mode=cloud">{t('gyms.title')}</Link>
+        <Link to="/oc/gyms?mode=cloud">{t('gyms.title')}</Link>
       </p>
     </div>
   )

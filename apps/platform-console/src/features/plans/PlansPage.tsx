@@ -49,7 +49,7 @@ export function PlansPage() {
             <button type="button" className="cp-btn cp-btn-primary" onClick={() => setPreviewOpen(true)}>
               {t('plans.preview')}
             </button>
-            <Link to="/settings/audit?action=platform.plan" className="cp-btn cp-btn-secondary">
+            <Link to="/oc/settings/audit?action=platform.plan" className="cp-btn cp-btn-secondary">
               {t('nav.auditLog')}
             </Link>
             <button type="button" className="cp-btn cp-btn-secondary" disabled={query.isFetching} onClick={() => query.refetch()}>

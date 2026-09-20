@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { DsButton } from '@/design-system'
 import { platformLogin } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
-import { InternalStrip } from '@/components/InternalStrip'
 import { OtpInput } from '@/components/OtpInput'
 import { useUiStore } from '@/stores/ui-store'
+import { AuthChrome } from './AuthChrome'
 
 export function MfaChallengePage() {
   const t = useUiStore((s) => s.t)
@@ -52,38 +53,22 @@ export function MfaChallengePage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <InternalStrip />
-      <main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-12">
-        <div>
-          <h1 className="cp-page-title">{t('auth.mfaChallengeTitle')}</h1>
-          <p className="mt-2 text-sm text-gray-500">{t('auth.mfaHint')}</p>
-        </div>
-        <form
-          onSubmit={onSubmit}
-          className="flex flex-col gap-4 rounded-[var(--radius)] border border-gray-200 bg-white p-6"
-        >
-          <OtpInput value={code} onChange={setCode} autoFocus />
-          <p className="text-xs text-gray-500">
-            {t('auth.mfaClockHint')}
+    <AuthChrome title={t('auth.mfaChallengeTitle')} subtitle={t('auth.mfaHint')}>
+      <form onSubmit={onSubmit} className="hm-auth__card">
+        <OtpInput value={code} onChange={setCode} autoFocus />
+        <p className="hm-auth__hint">{t('auth.mfaClockHint')}</p>
+        {error ? (
+          <p role="alert" className="hm-auth__error">
+            {error}
           </p>
-          {error ? (
-            <p role="alert" className="rounded-[var(--radius)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
-              {error}
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            disabled={submitting || code.length < 6}
-            className="cp-btn cp-btn-primary disabled:opacity-60"
-          >
-            {submitting ? t('auth.mfaVerifying') : t('auth.mfaVerify')}
-          </button>
-          <Link to="/login" onClick={() => clearMfaFlow()} className="text-center text-sm text-gray-500 underline">
-            {t('auth.mfaBackLogin')}
-          </Link>
-        </form>
-      </main>
-    </div>
+        ) : null}
+        <DsButton type="submit" variant="primary" size="lg" loading={submitting} disabled={submitting || code.length < 6}>
+          {submitting ? t('auth.mfaVerifying') : t('auth.mfaVerify')}
+        </DsButton>
+        <Link to="/login" onClick={() => clearMfaFlow()} className="text-center text-sm text-[var(--ds-text-muted)] underline">
+          {t('auth.mfaBackLogin')}
+        </Link>
+      </form>
+    </AuthChrome>
   )
 }

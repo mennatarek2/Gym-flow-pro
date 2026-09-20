@@ -559,7 +559,13 @@
         if(method==='cash'){
           const sh=await Gfp.get('/shifts/current');
           if(!sh.ok||!sh.data||!sh.data.id){
-            collectErr(t('Open a shift before accepting cash.','افتح وردية قبل قبول النقد.'));
+            collectErr(t('Open a cash shift first, then complete this payment.','افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.') + ' ');
+            const banner=document.getElementById('collectErrorBanner');
+            const te=banner&&banner.querySelector('.error-text');
+            if(te){
+              te.innerHTML=t('Open a cash shift first, then complete this payment.','افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.') +
+                ' <a href="/dashboard/shifts/">'+t('Open shift','افتح الوردية')+'</a>';
+            }
             btnTakePayment.disabled=false;
             return;
           }
@@ -2015,7 +2021,11 @@
         if(payMethod==='cash'&&amountPaid>0){
           const sh=await Gfp.get('/shifts/current');
           if(!sh.ok||!sh.data||!sh.data.id){
-            if(errBanner){ errBanner.style.display='flex'; errBanner.querySelector('.error-text').textContent=t('Open a shift before accepting cash renewal.','افتح وردية قبل قبول تجديد نقدي.'); }
+            if(errBanner){
+              errBanner.style.display='flex';
+              errBanner.querySelector('.error-text').innerHTML=t('Open a cash shift first, then complete this payment.','افتح وردية الصندوق أولاً، ثم أكمل هذا الدفع.') +
+                ' <a href="/dashboard/shifts/">'+t('Open shift','افتح الوردية')+'</a>';
+            }
             btnDoRenew.disabled=false;
             return;
           }

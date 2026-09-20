@@ -246,12 +246,12 @@ export function ProvisionGymDialog({ open, onClose }: ProvisionGymDialogProps) {
       <div className="flex max-h-[90vh] flex-col gap-3 overflow-y-auto p-5" aria-busy={busy}>
         <div>
           <h2 id={titleId} className="text-lg font-bold text-gray-900">
-            {step === 'created' ? 'Tenant created' : 'Create Tenant'}
+            {step === 'created' ? 'Cloud gym created' : 'Create Cloud gym'}
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             {step === 'created'
               ? 'Provisioning finished. Review the outcome below.'
-              : 'Creates a gym tenant, Owner account with an initial password, and starts the platform trial.'}
+              : 'Creates a Cloud gym, Owner account with an initial password, and starts the platform trial.'}
           </p>
         </div>
 
@@ -526,7 +526,7 @@ export function ProvisionGymDialog({ open, onClose }: ProvisionGymDialogProps) {
         {step === 'created' && created ? (
           <div className="flex flex-col gap-3 text-sm">
             <div className="rounded-[var(--radius)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-emerald-900">
-              <div className="font-bold">Tenant created</div>
+              <div className="font-bold">Cloud gym created</div>
               <dl className="mt-2 grid gap-2 sm:grid-cols-2">
                 <div>
                   <dt className="text-emerald-700/80">Gym code</dt>
@@ -546,7 +546,7 @@ export function ProvisionGymDialog({ open, onClose }: ProvisionGymDialogProps) {
                   <dt className="text-emerald-700/80">Trial</dt>
                   <dd>
                     {created.trialStarted
-                      ? `Trial started — ${values.trialDays.trim() || String(PLATFORM_TRIAL_DAYS)} days (see Tenant 360 for exact end).`
+                      ? `Trial started — ${values.trialDays.trim() || String(PLATFORM_TRIAL_DAYS)} days (see Cloud gym 360 for exact end).`
                       : `Did not start${created.trialError ? `: ${created.trialError}` : ''}`}
                   </dd>
                 </div>
@@ -583,10 +583,10 @@ export function ProvisionGymDialog({ open, onClose }: ProvisionGymDialogProps) {
                   className="cp-btn cp-btn-primary"
                   onClick={() => {
                     onClose()
-                    navigate(`/tenants/${created.tenantId}`)
+                    navigate(`/oc/gyms/cloud/${created.tenantId}`)
                   }}
                 >
-                  Open Tenant
+                  Open Cloud gym
                 </button>
               </>
             ) : (
@@ -601,7 +601,7 @@ export function ProvisionGymDialog({ open, onClose }: ProvisionGymDialogProps) {
                     onClick={handleCreate}
                     className="cp-btn cp-btn-primary"
                   >
-                    {busy ? 'Creating…' : 'Create Tenant'}
+                    {busy ? 'Creating…' : 'Create Cloud gym'}
                   </button>
                 ) : (
                   <button type="button" disabled={busy} onClick={goNext} className="cp-btn cp-btn-primary">

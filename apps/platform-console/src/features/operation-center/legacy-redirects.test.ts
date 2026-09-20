@@ -24,17 +24,25 @@ describe('Phase 5 legacy redirects', () => {
     expect(app).toContain('path="/risk-queue" element={<Navigate to="/oc/support/risk" replace />}')
   })
 
-  it('keeps Admin Control Plane gyms and settings editors live', () => {
-    expect(app).toContain('path="/gyms" element={<GymsPage />}')
-    expect(app).toContain('path="/settings/plans" element={<PlansPage />}')
-    expect(app).toContain('path="/settings/users"')
+  it('redirects Control Plane gyms and settings into Operation Center', () => {
+    expect(app).toContain('path="/gyms" element={<Navigate to="/oc/gyms" replace />}')
+    expect(app).toContain('path="/settings/plans" element={<Navigate to="/oc/settings/plans" replace />}')
+    expect(app).toContain('path="/settings/users" element={<Navigate to="/oc/settings/users" replace />}')
   })
 
-  it('keeps Cloud tenant Admin detail behind Support+ (no Sales bypass)', () => {
+  it('mounts Cloud Gym360 via TenantDetailPage under Support+ and redirects /tenants/:id', () => {
     expect(app).toContain('path="/tenants/:id"')
-    expect(app).toContain('TenantDetailPage')
-    expect(app).toContain('path="gyms/cloud/:id"')
-    expect(app).toContain('OcRequireRole allow={isSupportOrAbove}')
+    expect(app).toContain('RedirectToCloudGym')
+    expect(app).toContain('`/oc/gyms/cloud/${id}')
+    expect(app).toMatch(/path="gyms\/cloud\/:id"[\s\S]*TenantDetailPage/)
+    expect(app).toMatch(/path="gyms\/cloud\/:id"[\s\S]*OcRequireRole allow=\{isSupportOrAbove\}/)
+    expect(app).not.toContain('CloudGymDetailPage')
+  })
+
+  it('mounts legacy GymsPage under /oc/gyms for Phase 4 cutover', () => {
+    expect(app).toMatch(/path="gyms"\s+element=\{<GymsPage \/>\}/)
+    expect(app).toContain("from '@/features/gyms/GymsPage'")
+    expect(app).not.toContain('OcGymsPage')
   })
 
   it('uses LocalLicenseRedirect for legacy license detail URLs', () => {

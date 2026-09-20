@@ -18,7 +18,7 @@ interface ConfirmDialogProps {
 
 /**
  * Modal dialog for Stage 2 write confirmations.
- * Native &lt;dialog&gt; — no shadcn dependency in this app; styled to match the light Control Plane.
+ * Native &lt;dialog&gt; — inherits OcShell DS tokens via CP→DS bridge under [data-oc].
  */
 export function ConfirmDialog({
   open,
@@ -51,7 +51,7 @@ export function ConfirmDialog({
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      className="w-[min(100%,28rem)] rounded-[var(--radius)] border border-[var(--border)] bg-white p-0 text-[var(--text)] shadow-[var(--shadow-sm)] backdrop:bg-black/40 open:flex open:flex-col"
+      className="w-[min(100%,28rem)] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] p-0 text-[var(--text)] shadow-[var(--shadow-sm)] backdrop:bg-black/40 open:flex open:flex-col"
       onCancel={(e) => {
         if (busy) {
           e.preventDefault()
@@ -65,13 +65,16 @@ export function ConfirmDialog({
       }}
     >
       <div className="flex flex-col gap-3 p-5" aria-busy={busy}>
-        <h2 id={titleId} className="text-lg font-semibold text-gray-900">
+        <h2 id={titleId} className="text-lg font-semibold text-[var(--text)]">
           {title}
         </h2>
-        <div className="text-sm text-gray-700">{description}</div>
+        <div className="text-sm text-[var(--text-muted)]">{description}</div>
         {children}
         {error ? (
-          <p role="alert" className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          <p
+            role="alert"
+            className="rounded border border-[var(--danger)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--danger)]"
+          >
             {error}
           </p>
         ) : null}

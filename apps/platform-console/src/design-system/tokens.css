@@ -1,13 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
 
 /*
-  HyMotion Operation Center — production design tokens.
-  Approved Phase 0 visual direction.
+  HyMotion design tokens (charcoal + lime).
 
-  Component → semantic token → theme value.
   Lime is identity / primary action only. Status uses --ds-status-*.
   Dark is the default Operations theme. Light is a separate theme, not an invert.
-  This file does not restyle live Platform Console pages (they do not import it).
 */
 
 :root {

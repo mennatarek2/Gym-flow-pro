@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { EmptyState, ErrorBanner, TableSkeleton } from '@/components/EmptyState'
-import { PageHeader } from '@/components/PageHeader'
 import { StatusChip } from '@/components/Status'
+import { DsPageHeader } from '@/design-system'
 import { TenantsListPage } from '@/features/tenants/TenantsListPage'
 import { fetchCustomers, fetchLocalLicenses, fetchSupportTickets, fetchTenantStatusCounts } from '@/lib/api'
 import { ApiClientError } from '@/lib/api/errors'
@@ -44,17 +44,17 @@ export function GymsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <PageHeader
+    <div className="oc-stack">
+      <DsPageHeader
         title={t('gyms.title')}
         subtitle={mode === 'cloud' ? t('gyms.cloudSubtitle') : t('gyms.localSubtitle')}
         actions={
           canSeeCloud ? (
-            <div className="cp-segment" role="group" aria-label={t('gyms.title')}>
-              <button type="button" className={mode === 'local' ? 'is-active' : ''} onClick={() => setMode('local')}>
+            <div className="ds-segment" role="group" aria-label={t('gyms.title')}>
+              <button type="button" aria-pressed={mode === 'local'} onClick={() => setMode('local')}>
                 {t('gyms.local')}
               </button>
-              <button type="button" className={mode === 'cloud' ? 'is-active' : ''} onClick={() => setMode('cloud')}>
+              <button type="button" aria-pressed={mode === 'cloud'} onClick={() => setMode('cloud')}>
                 {t('gyms.cloud')}
               </button>
             </div>
@@ -77,14 +77,11 @@ function AttentionTile({
   value: number
   loading: boolean
 }) {
-  const tone = value > 0 ? 'border-l-[var(--warning)]' : 'border-l-[var(--border)]'
+  const tone = value > 0 ? ' is-alert' : ''
   return (
-    <Link
-      to={to}
-      className={`rounded-[var(--radius-lg)] border border-[var(--border)] border-l-[3px] ${tone} bg-white p-3.5 hover:border-[var(--accent-border)]`}
-    >
-      <div className="text-xs font-semibold text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 text-[22px] font-semibold tabular-nums text-[var(--text)]">{loading ? '…' : value}</div>
+    <Link to={to} className={`ds-card oc-attention${tone}`}>
+      <div className="text-xs font-semibold text-[var(--ds-text-muted)]">{label}</div>
+      <div className="oc-attention-value">{loading ? '…' : value}</div>
     </Link>
   )
 }
@@ -146,7 +143,7 @@ function LocalGymsTable() {
         ) : null}
         {canReadLicenses ? (
           <AttentionTile
-            to="/gyms?filter=pending"
+            to="/oc/gyms?filter=pending"
             label={t('overview.pendingLicenses')}
             value={pendingLicenses}
             loading={licensesQuery.isLoading}
@@ -154,7 +151,7 @@ function LocalGymsTable() {
         ) : null}
         {canReadLicenses ? (
           <AttentionTile
-            to="/gyms?filter=suspended"
+            to="/oc/gyms?filter=suspended"
             label={t('overview.suspendedLicenses')}
             value={suspendedLicenses}
             loading={licensesQuery.isLoading}
@@ -162,7 +159,7 @@ function LocalGymsTable() {
         ) : null}
         {canReadCloud ? (
           <AttentionTile
-            to="/gyms?mode=cloud&status=past_due"
+            to="/oc/gyms?mode=cloud&status=past_due"
             label={t('overview.pastDue')}
             value={pastDue}
             loading={countsQuery.isLoading}
@@ -198,14 +195,14 @@ function LocalGymsTable() {
           {canIssue ? (
             <details className="relative">
               <summary className="cp-btn cp-btn-ghost cursor-pointer list-none">{t('common.more')}</summary>
-              <div className="absolute end-0 z-10 mt-1 min-w-[14rem] rounded-[var(--radius)] border border-[var(--border)] bg-white p-2 text-sm">
-                <Link to="/gyms?filter=unlinked" className="block rounded px-2 py-1 hover:bg-gray-50">
+              <div className="absolute end-0 z-10 mt-1 min-w-[14rem] rounded-[var(--ds-radius-md)] border border-[var(--ds-border)] bg-[var(--ds-surface)] p-2 text-sm shadow-[var(--ds-shadow-md)]">
+                <Link to="/oc/gyms?filter=unlinked" className="block rounded px-2 py-1 hover:bg-[var(--ds-surface-2)]">
                   {t('gyms.filter.unlinked')}
                 </Link>
-                <Link to="/settings/licenses" className="block rounded px-2 py-1 hover:bg-gray-50">
+                <Link to="/oc/settings/licenses" className="block rounded px-2 py-1 hover:bg-[var(--ds-surface-2)]">
                   {t('gyms.issueUnlinked')}
                 </Link>
-                <Link to="/oc/support/playbooks" className="block rounded px-2 py-1 hover:bg-gray-50">
+                <Link to="/oc/support/playbooks" className="block rounded px-2 py-1 hover:bg-[var(--ds-surface-2)]">
                   {t('gyms.help')}
                 </Link>
               </div>
@@ -219,7 +216,7 @@ function LocalGymsTable() {
       </div>
 
       {filter === 'unlinked' ? (
-        <p className="rounded-[var(--radius)] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="rounded-[var(--ds-radius-md)] border border-[var(--ds-status-warning-border)] bg-[var(--ds-status-warning-bg)] px-3 py-2 text-sm text-[var(--ds-status-warning)]">
           {t('gyms.unlinkedHint')}
         </p>
       ) : null}
@@ -235,7 +232,7 @@ function LocalGymsTable() {
         />
       ) : null}
 
-      <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-white">
+      <div className="overflow-x-auto rounded-[var(--ds-radius-lg)] border border-[var(--ds-border)] bg-[var(--ds-surface)]">
         <table className="cp-table min-w-[960px]">
           <thead>
             <tr>
@@ -275,7 +272,7 @@ function LocalGymsTable() {
                   ) : null}
                   {row.tenantId && isSupportOrAbove(role) ? (
                     <Link
-                      to={`/tenants/${row.tenantId}`}
+                      to={`/oc/gyms/cloud/${row.tenantId}`}
                       className="text-xs text-[var(--accent)] hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >

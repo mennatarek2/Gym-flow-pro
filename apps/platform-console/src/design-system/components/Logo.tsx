@@ -21,14 +21,17 @@ export function Wordmark({ className }: { className?: string }) {
   )
 }
 
-export function LogoLockup({ compact = false, productLabel = 'Operation Center' }: { compact?: boolean; productLabel?: string }) {
+export function LogoLockup({ compact = false, productLabel }: { compact?: boolean; productLabel?: string }) {
+  const subtitle = productLabel?.trim()
   return (
     <span className="flex items-center gap-2.5 min-w-0">
       <LogoMark size={compact ? 28 : 36} />
       {compact ? null : (
         <span className="min-w-0">
           <Wordmark className="block text-[15px]" />
-          <span className="block text-[11px] font-medium text-[var(--ds-text-muted)] truncate">{productLabel}</span>
+          {subtitle ? (
+            <span className="block text-[11px] font-medium text-[var(--ds-text-muted)] truncate">{subtitle}</span>
+          ) : null}
         </span>
       )}
     </span>

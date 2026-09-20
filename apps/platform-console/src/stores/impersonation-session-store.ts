@@ -29,6 +29,8 @@ function load(): ActiveImpersonationSession | null {
 interface ImpersonationUiState {
   session: ActiveImpersonationSession | null
   setSession: (session: ActiveImpersonationSession | null) => void
+  /** Clears platform-console tracking of the support session (not a gym-token revoke API). */
+  endSession: () => void
   hydrate: () => void
   clearIfExpired: () => void
 }
@@ -44,6 +46,10 @@ export const useImpersonationSessionStore = create<ImpersonationUiState>((set, g
     }
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session))
     set({ session })
+  },
+  endSession: () => {
+    sessionStorage.removeItem(STORAGE_KEY)
+    set({ session: null })
   },
   clearIfExpired: () => {
     const current = get().session ?? load()

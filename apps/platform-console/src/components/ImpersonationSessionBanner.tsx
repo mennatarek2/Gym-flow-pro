@@ -4,12 +4,16 @@ import {
   useImpersonationSessionStore,
 } from '@/stores/impersonation-session-store'
 
-/** Persistent shell cue so ops don't lose track of an open support session. */
+/**
+ * Persistent cue for an open gym support (impersonation) session.
+ * Must stay visible while the platform console still tracks the session —
+ * no “dismiss while active” affordance (Phase 1).
+ */
 export function ImpersonationSessionBanner() {
   const session = useImpersonationSessionStore((s) => s.session)
   const hydrate = useImpersonationSessionStore((s) => s.hydrate)
   const clearIfExpired = useImpersonationSessionStore((s) => s.clearIfExpired)
-  const setSession = useImpersonationSessionStore((s) => s.setSession)
+  const endSession = useImpersonationSessionStore((s) => s.endSession)
   const [mins, setMins] = useState(0)
 
   useEffect(() => {
@@ -29,11 +33,17 @@ export function ImpersonationSessionBanner() {
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+      aria-live="polite"
+      className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2 text-sm"
+      style={{
+        borderColor: 'var(--ds-status-warning-border, #f0b42955)',
+        background: 'var(--ds-status-warning-bg, #fef3c7)',
+        color: 'var(--ds-text, #78350f)',
+      }}
     >
       <span>
         Active support session: <strong>{session.gymName}</strong>
-        <span className="text-amber-700"> ({session.gymCode})</span>
+        <span className="opacity-80"> ({session.gymCode})</span>
         {mins > 0 ? (
           <>
             , expires in <strong>{mins} min</strong>
@@ -41,13 +51,17 @@ export function ImpersonationSessionBanner() {
         ) : (
           <> — expired</>
         )}
+        <span className="block text-xs opacity-80 sm:inline sm:ms-2 sm:before:content-['·_']">
+          Close the gym window after ending. Platform cannot revoke the gym token from here.
+        </span>
       </span>
       <button
         type="button"
-        className="rounded border border-amber-300 px-2 py-0.5 text-xs text-amber-900 hover:bg-amber-100"
-        onClick={() => setSession(null)}
+        className="rounded border px-2 py-0.5 text-xs font-semibold hover:opacity-90"
+        style={{ borderColor: 'var(--ds-status-warning-border, #f0b42988)' }}
+        onClick={() => endSession()}
       >
-        Dismiss indicator
+        End session
       </button>
     </div>
   )

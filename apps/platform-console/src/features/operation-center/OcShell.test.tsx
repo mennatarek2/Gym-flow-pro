@@ -59,15 +59,16 @@ describe('OcShell', () => {
   it('renders HyMotion identity and primary navigation', () => {
     signIn()
     render(<OcShell />)
-    expect(screen.getByLabelText('HyMotion')).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: 'Operation Center' })).toBeInTheDocument()
+    expect(screen.getAllByLabelText('HyMotion').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByRole('navigation', { name: 'HyMotion' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /overview/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /gyms/i })).toBeInTheDocument()
     expect(screen.getByText('overview-outlet')).toBeInTheDocument()
     const mark = document.querySelector('.ds-logo-mark img') as HTMLImageElement | null
     expect(mark?.getAttribute('src')).toContain('hymotion-mark-transparent.png')
     expect(document.querySelector('.ds-logo-tile')).toBeNull()
-    expect(screen.getByRole('link', { name: /admin control plane/i })).toHaveAttribute('href', '/gyms')
+    expect(screen.queryByRole('link', { name: /legacy editors/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /settings/i })).toHaveAttribute('href', '/oc/settings')
   })
 
   it('hides Sales from support and keeps it for sales', () => {
@@ -93,7 +94,7 @@ describe('OcShell', () => {
     expect(root.dataset.theme).toBe('dark')
   })
 
-  it('applies Arabic RTL on the Operation Center root', async () => {
+  it('applies Arabic RTL on the HyMotion shell root', async () => {
     signIn()
     const user = userEvent.setup()
     render(<OcShell />)
@@ -101,6 +102,6 @@ describe('OcShell', () => {
     const root = document.querySelector('[data-oc]') as HTMLElement
     expect(root.dir).toBe('rtl')
     expect(root.lang).toBe('ar')
-    expect(screen.getByRole('navigation', { name: 'مركز العمليات' })).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'HyMotion' })).toBeInTheDocument()
   })
 })

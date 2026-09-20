@@ -38,13 +38,15 @@
     } catch (e) { /* ignore */ }
   }
 
-  function isCollapsed(key) {
-    return !!collapsedState[key];
+  function isCollapsed(key, cat) {
+    if (Object.prototype.hasOwnProperty.call(collapsedState, key)) {
+      return !!collapsedState[key];
+    }
+    return !!(cat && cat.defaultCollapsed);
   }
 
   function setCollapsed(key, value) {
-    if (value) collapsedState[key] = true;
-    else delete collapsedState[key];
+    collapsedState[key] = !!value;
     saveCollapseState();
   }
 
@@ -94,7 +96,8 @@
       { prefix: '/dashboard/hr/settings/', key: 'hr-employees' },
       { prefix: '/dashboard/hr/departments/', key: 'hr-employees' },
       { prefix: '/dashboard/hr/positions/', key: 'hr-employees' },
-      { prefix: '/dashboard/hr/documents/', key: 'hr-employees' }
+      { prefix: '/dashboard/hr/documents/', key: 'hr-employees' },
+      { prefix: '/dashboard/hr/biometric-events/', key: 'hr-biometric-devices' }
     ];
     for (i = 0; i < hrAliases.length; i++) {
       var alias = hrAliases[i];
@@ -451,7 +454,11 @@
 
     // Category order follows registry; DOM dir=rtl mirrors start/end (chevron + border)
     cats.forEach(function (cat) {
-      var collapsed = isCollapsed(cat.key);
+      var collapsed = isCollapsed(cat.key, cat);
+      var hasActive = cat.items.some(function (item) {
+        return pathIsActive(item.path, current);
+      });
+      if (hasActive) collapsed = false;
       var catLabel = tLabel(cat.label, cat.labelAr);
       html +=
         '<div class="gfp-nav-cat' +
@@ -505,7 +512,9 @@
     host.querySelectorAll('[data-cat-toggle]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var key = this.getAttribute('data-cat-toggle');
-        setCollapsed(key, !isCollapsed(key));
+        var catEl = this.closest('.gfp-nav-cat');
+        var currentlyCollapsed = catEl && catEl.classList.contains('collapsed');
+        setCollapsed(key, !currentlyCollapsed);
         renderShellNav(lastRegistry);
       });
     });

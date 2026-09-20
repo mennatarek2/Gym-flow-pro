@@ -9,6 +9,8 @@
     "publish:monsterasp": "node scripts/prepare-wwwroot.mjs",
     "serve": "node server.js",
     "test:nav": "node src/app/shared/nav.selftest.js",
+    "test:prepare": "node src/app/shared/prepare-gym.selftest.js",
+    "test:shell": "node src/app/shared/shell.selftest.js",
     "test:staff": "node src/app/(dashboard)/staff/staff.selftest.js",
     "test:roles": "node src/app/(dashboard)/roles/roles.selftest.js",
     "test:classes": "node src/app/(dashboard)/classes/classes.selftest.js",

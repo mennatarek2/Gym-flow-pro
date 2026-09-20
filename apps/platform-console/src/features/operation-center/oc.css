@@ -134,8 +134,12 @@
 [data-oc] .oc-dl {
   display: grid;
   gap: var(--ds-space-3);
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: 1fr;
   margin: 0;
+}
+
+[data-oc] .oc-dl > div {
+  min-width: 0;
 }
 
 [data-oc] .oc-dl dt {
@@ -146,6 +150,144 @@
 
 [data-oc] .oc-dl dd {
   margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ds-text);
+  word-break: break-word;
+}
+
+[data-oc] .oc-dl-metrics {
+  display: grid;
+  gap: var(--ds-space-3);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  margin: 0;
+}
+
+[data-oc] .oc-dl-metrics dt {
+  font-size: 12px;
+  color: var(--ds-text-muted);
+  font-weight: 600;
+}
+
+[data-oc] .oc-dl-metrics dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ds-text);
+}
+
+[data-oc] .oc-summary-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ds-text-muted);
+  max-width: 42rem;
+}
+
+[data-oc] .oc-profile {
+  display: grid;
+  gap: var(--ds-space-6);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 820px) {
+  [data-oc] .oc-profile {
+    grid-template-columns: 1fr;
+  }
+}
+
+[data-oc] .oc-profile-block {
+  min-width: 0;
+}
+
+[data-oc] .oc-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+
+[data-oc] .oc-facts > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr);
+  gap: var(--ds-space-3);
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ds-border);
+}
+
+[data-oc] .oc-facts > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+[data-oc] .oc-facts > div:first-child {
+  padding-top: 0;
+}
+
+[data-oc] .oc-facts dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-text-muted);
+}
+
+[data-oc] .oc-facts dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--ds-text);
+  word-break: break-word;
+}
+
+[data-oc] .oc-metrics {
+  display: grid;
+  gap: var(--ds-space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+@media (max-width: 820px) {
+  [data-oc] .oc-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+[data-oc] .oc-metrics > div {
+  min-width: 0;
+}
+
+[data-oc] .oc-metrics dt {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-text-muted);
+}
+
+[data-oc] .oc-metrics dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-text);
+}
+
+[data-oc] .oc-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-2);
+  margin-top: calc(var(--ds-space-2) * -1);
+}
+
+[data-oc] .oc-section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-space-2);
+  margin-block-start: var(--ds-space-3);
 }
 
 [data-oc] .oc-stack {
@@ -293,4 +435,222 @@
     border: 0;
     background: var(--ds-overlay);
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* CP → DS visual bridge (mount-reused pages inside OcShell)                  */
+/* Remap Control Plane tokens + neutralize light hardcodes under [data-oc].   */
+/* -------------------------------------------------------------------------- */
+
+[data-oc] {
+  --sidebar: var(--ds-bg-sidebar);
+  --sidebar-2: var(--ds-bg-sidebar);
+  --sidebar-border: var(--ds-border);
+  --sidebar-text: var(--ds-text-sidebar);
+  --sidebar-text-h: var(--ds-text-sidebar-active);
+  --canvas: var(--ds-bg-canvas);
+  --surface: var(--ds-surface);
+  --surface-2: var(--ds-surface-2);
+  --border: var(--ds-border);
+  --border-soft: var(--ds-border);
+  --text: var(--ds-text);
+  --text-muted: var(--ds-text-muted);
+  --text-faint: var(--ds-text-faint);
+  --accent: var(--ds-action);
+  --accent-strong: var(--ds-action-hover);
+  --accent-soft: var(--ds-action-soft);
+  --accent-border: var(--ds-action-border);
+  --danger: var(--ds-status-danger);
+  --success: var(--ds-status-success);
+  --warning: var(--ds-status-warning);
+  --focus: var(--ds-focus);
+  --strip: var(--ds-bg-sidebar);
+  --font: var(--ds-font);
+  --radius: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+  --shadow-sm: var(--ds-shadow-sm);
+  --shadow-md: var(--ds-shadow-md);
+  --bg: var(--ds-bg-canvas);
+  --bg-elevated: var(--ds-surface);
+  --bg-muted: var(--ds-surface-2);
+}
+
+[data-oc] .cp-input {
+  border-color: var(--ds-border-strong);
+  background: var(--ds-bg-input);
+  color: var(--ds-text);
+}
+
+[data-oc] .cp-table thead th {
+  background: var(--ds-table-head);
+  color: var(--ds-text-muted);
+  border-bottom-color: var(--ds-border);
+}
+
+[data-oc] .cp-table tbody td {
+  border-bottom-color: var(--ds-border);
+}
+
+[data-oc] .cp-table tbody tr:hover {
+  background: var(--ds-table-hover);
+}
+
+[data-oc] .cp-card {
+  background: var(--ds-surface);
+  border-color: var(--ds-border);
+}
+
+[data-oc] .cp-btn-primary {
+  background: var(--ds-action);
+  color: var(--ds-action-fg);
+}
+
+[data-oc] .cp-btn-primary:hover:not(:disabled) {
+  background: var(--ds-action-hover);
+}
+
+[data-oc] .cp-btn-secondary {
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  border-color: var(--ds-border-strong);
+}
+
+[data-oc] .cp-btn-secondary:hover:not(:disabled) {
+  background: var(--ds-surface-2);
+}
+
+[data-oc] .cp-btn-ghost:hover:not(:disabled) {
+  background: var(--ds-surface-2);
+  color: var(--ds-text);
+}
+
+[data-oc] .cp-btn-danger {
+  background: var(--ds-status-danger);
+  color: var(--ds-status-danger-fg);
+}
+
+[data-oc] .cp-segment {
+  background: var(--ds-surface);
+  border-color: var(--ds-border);
+}
+
+[data-oc] .cp-segment button.is-active {
+  background: var(--ds-action-soft);
+  color: var(--ds-action);
+}
+
+[data-oc] .cp-tab[aria-selected='true'],
+[data-oc] .cp-tab.is-active {
+  border-bottom-color: var(--ds-teal-500);
+  color: var(--ds-text);
+}
+
+[data-oc] .cp-status-success {
+  background: var(--ds-status-success-bg);
+  color: var(--ds-status-success);
+  border: 1px solid var(--ds-status-success-border);
+}
+
+[data-oc] .cp-status-warning {
+  background: var(--ds-status-warning-bg);
+  color: var(--ds-status-warning);
+  border: 1px solid var(--ds-status-warning-border);
+}
+
+[data-oc] .cp-status-danger {
+  background: var(--ds-status-danger-bg);
+  color: var(--ds-status-danger);
+  border: 1px solid var(--ds-status-danger-border);
+}
+
+[data-oc] .cp-status-neutral {
+  background: var(--ds-surface-2);
+  color: var(--ds-text-muted);
+  border: 1px solid var(--ds-border);
+}
+
+/* Tailwind light-utility neutralization (mount-reused CP pages) */
+[data-oc] .bg-white,
+[data-oc] .bg-white\/40,
+[data-oc] .bg-white\/60 {
+  background-color: var(--ds-surface) !important;
+}
+[data-oc] .bg-gray-50,
+[data-oc] .bg-gray-100 {
+  background-color: var(--ds-surface-2) !important;
+}
+[data-oc] .bg-gray-200 {
+  background-color: var(--ds-surface-3) !important;
+}
+[data-oc] .border-gray-200,
+[data-oc] .border-gray-300 {
+  border-color: var(--ds-border) !important;
+}
+[data-oc] .hover\:border-gray-300:hover {
+  border-color: var(--ds-border-strong) !important;
+}
+[data-oc] .text-gray-500,
+[data-oc] .text-gray-600 {
+  color: var(--ds-text-muted) !important;
+}
+[data-oc] .text-gray-700,
+[data-oc] .text-gray-800,
+[data-oc] .text-gray-900 {
+  color: var(--ds-text) !important;
+}
+[data-oc] .hover\:bg-gray-50:hover,
+[data-oc] .hover\:bg-gray-100:hover {
+  background-color: var(--ds-surface-2) !important;
+}
+[data-oc] .bg-amber-50 {
+  background-color: var(--ds-status-warning-bg) !important;
+}
+[data-oc] .border-amber-200 {
+  border-color: var(--ds-status-warning-border) !important;
+}
+[data-oc] .text-amber-900 {
+  color: var(--ds-status-warning) !important;
+}
+[data-oc] .ring-gray-200 {
+  --tw-ring-color: var(--ds-border) !important;
+}
+
+/* Blue CP accents → HyMotion teal/lime */
+[data-oc] .border-blue-600,
+[data-oc] .border-blue-500 {
+  border-color: var(--ds-teal-500) !important;
+}
+[data-oc] .text-blue-700,
+[data-oc] .text-blue-600 {
+  color: var(--ds-action) !important;
+}
+[data-oc] .focus\:border-blue-600:focus,
+[data-oc] .focus\:border-blue-500:focus {
+  border-color: var(--ds-focus) !important;
+}
+[data-oc] .focus\:ring-blue-600:focus,
+[data-oc] .focus\:ring-blue-500:focus {
+  --tw-ring-color: var(--ds-focus) !important;
+}
+
+/* Light danger banners → DS status */
+[data-oc] .bg-red-50 {
+  background-color: var(--ds-status-danger-bg) !important;
+}
+[data-oc] .border-red-200 {
+  border-color: var(--ds-status-danger-border) !important;
+}
+[data-oc] .text-red-800,
+[data-oc] .text-red-700 {
+  color: var(--ds-status-danger) !important;
+}
+
+/* Native dialogs / overlays that inherit CP light chrome */
+[data-oc] dialog {
+  color: var(--ds-text);
+}
+[data-oc] dialog.bg-white,
+[data-oc] dialog[class*='bg-white'] {
+  background-color: var(--ds-surface) !important;
+  border-color: var(--ds-border) !important;
 }

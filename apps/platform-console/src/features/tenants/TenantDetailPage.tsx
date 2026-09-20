@@ -61,7 +61,7 @@ export function TenantDetailPage() {
   backParams.delete('tab')
   backParams.delete('returnTo')
   const backQuery = backParams.toString()
-  const backHref = returnTo ?? `/gyms?mode=cloud${backQuery ? `&${backQuery}` : ''}`
+  const backHref = returnTo ?? `/oc/gyms?mode=cloud${backQuery ? `&${backQuery}` : ''}`
   const backLabel = returnTo?.startsWith('/support') ? `← ${t('gyms.backSupport')}` : `← ${t('gyms.back')}`
 
   const detailQuery = useQuery({
@@ -181,7 +181,7 @@ export function TenantDetailPage() {
             {canImpersonate ? (
               <details className="relative">
                 <summary className="cp-btn cp-btn-secondary cursor-pointer list-none">{t('common.more')}</summary>
-                <div className="absolute end-0 z-10 mt-1 min-w-[12rem] rounded-[var(--radius)] border border-[var(--border)] bg-white p-2">
+                <div className="absolute end-0 z-10 mt-1 min-w-[12rem] rounded-[var(--ds-radius-md)] border border-[var(--ds-border)] bg-[var(--ds-surface)] p-2 shadow-[var(--ds-shadow-md)]">
                   <ImpersonateButton tenant={tenant} />
                 </div>
               </details>
@@ -191,7 +191,7 @@ export function TenantDetailPage() {
       </div>
 
       <div
-        className="flex gap-1 overflow-x-auto border-b border-gray-200"
+        className="flex gap-1 overflow-x-auto border-b border-[var(--ds-border)]"
         role="tablist"
         aria-label={t('gyms.sectionsAria')}
       >
@@ -204,8 +204,8 @@ export function TenantDetailPage() {
             onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 border-b-2 px-3 py-2.5 text-sm font-semibold ${
               activeTab === tab
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                ? 'border-[var(--ds-teal-500)] text-[var(--ds-text)]'
+                : 'border-transparent text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'
             }`}
           >
             {t(`gyms.tab.${tab}`)}
